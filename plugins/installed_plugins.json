@@ -1,0 +1,285 @@
+{
+  "version": 2,
+  "plugins": {
+    "agent-sdk-dev@claude-plugins-official": [
+      {
+        "scope": "user",
+        "installPath": "/Users/summerrae/.claude/plugins/cache/claude-plugins-official/agent-sdk-dev/2cd88e7947b7",
+        "version": "2cd88e7947b7",
+        "installedAt": "2026-02-16T03:13:06.944Z",
+        "lastUpdated": "2026-02-16T03:13:06.944Z",
+        "gitCommitSha": "2cd88e7947b7382e045666abee790c7f55f669f3"
+      }
+    ],
+    "clangd-lsp@claude-plugins-official": [
+      {
+        "scope": "user",
+        "installPath": "/Users/summerrae/.claude/plugins/cache/claude-plugins-official/clangd-lsp/1.0.0",
+        "version": "1.0.0",
+        "installedAt": "2026-02-16T03:13:25.465Z",
+        "lastUpdated": "2026-02-16T03:13:25.465Z",
+        "gitCommitSha": "2cd88e7947b7382e045666abee790c7f55f669f3"
+      }
+    ],
+    "claude-code-setup@claude-plugins-official": [
+      {
+        "scope": "user",
+        "installPath": "/Users/summerrae/.claude/plugins/cache/claude-plugins-official/claude-code-setup/1.0.0",
+        "version": "1.0.0",
+        "installedAt": "2026-02-16T03:13:27.517Z",
+        "lastUpdated": "2026-02-16T03:13:27.517Z",
+        "gitCommitSha": "2cd88e7947b7382e045666abee790c7f55f669f3"
+      }
+    ],
+    "claude-md-management@claude-plugins-official": [
+      {
+        "scope": "user",
+        "installPath": "/Users/summerrae/.claude/plugins/cache/claude-plugins-official/claude-md-management/1.0.0",
+        "version": "1.0.0",
+        "installedAt": "2026-02-16T03:13:31.001Z",
+        "lastUpdated": "2026-02-16T03:13:31.001Z",
+        "gitCommitSha": "2cd88e7947b7382e045666abee790c7f55f669f3"
+      }
+    ],
+    "code-review@claude-plugins-official": [
+      {
+        "scope": "user",
+        "installPath": "/Users/summerrae/.claude/plugins/cache/claude-plugins-official/code-review/2cd88e7947b7",
+        "version": "2cd88e7947b7",
+        "installedAt": "2026-02-16T03:13:33.894Z",
+        "lastUpdated": "2026-02-16T03:13:33.894Z",
+        "gitCommitSha": "2cd88e7947b7382e045666abee790c7f55f669f3"
+      }
+    ],
+    "code-simplifier@claude-plugins-official": [
+      {
+        "scope": "user",
+        "installPath": "/Users/summerrae/.claude/plugins/cache/claude-plugins-official/code-simplifier/1.0.0",
+        "version": "1.0.0",
+        "installedAt": "2026-02-16T03:13:36.420Z",
+        "lastUpdated": "2026-02-16T03:13:36.420Z",
+        "gitCommitSha": "2cd88e7947b7382e045666abee790c7f55f669f3"
+      }
+    ],
+    "coderabbit@claude-plugins-official": [
+      {
+        "scope": "user",
+        "installPath": "/Users/summerrae/.claude/plugins/cache/claude-plugins-official/coderabbit/1.0.0",
+        "version": "1.0.0",
+        "installedAt": "2026-02-16T03:13:44.343Z",
+        "lastUpdated": "2026-02-16T03:13:44.343Z",
+        "gitCommitSha": "51651e86d8d71e150e13313f43298f212abb47db"
+      }
+    ],
+    "commit-commands@claude-plugins-official": [
+      {
+        "scope": "user",
+        "installPath": "/Users/summerrae/.claude/plugins/cache/claude-plugins-official/commit-commands/2cd88e7947b7",
+        "version": "2cd88e7947b7",
+        "installedAt": "2026-02-16T03:13:47.869Z",
+        "lastUpdated": "2026-02-16T03:13:47.869Z",
+        "gitCommitSha": "2cd88e7947b7382e045666abee790c7f55f669f3"
+      }
+    ],
+    "feature-dev@claude-plugins-official": [
+      {
+        "scope": "user",
+        "installPath": "/Users/summerrae/.claude/plugins/cache/claude-plugins-official/feature-dev/2cd88e7947b7",
+        "version": "2cd88e7947b7",
+        "installedAt": "2026-02-16T03:14:10.624Z",
+        "lastUpdated": "2026-02-16T03:14:10.624Z",
+        "gitCommitSha": "2cd88e7947b7382e045666abee790c7f55f669f3"
+      }
+    ],
+    "frontend-design@claude-plugins-official": [
+      {
+        "scope": "user",
+        "installPath": "/Users/summerrae/.claude/plugins/cache/claude-plugins-official/frontend-design/2cd88e7947b7",
+        "version": "2cd88e7947b7",
+        "installedAt": "2026-02-16T03:14:22.133Z",
+        "lastUpdated": "2026-02-16T03:14:22.133Z",
+        "gitCommitSha": "2cd88e7947b7382e045666abee790c7f55f669f3"
+      }
+    ],
+    "github@claude-plugins-official": [
+      {
+        "scope": "user",
+        "installPath": "/Users/summerrae/.claude/plugins/cache/claude-plugins-official/github/2cd88e7947b7",
+        "version": "2cd88e7947b7",
+        "installedAt": "2026-02-16T03:14:24.713Z",
+        "lastUpdated": "2026-02-16T03:14:24.713Z",
+        "gitCommitSha": "2cd88e7947b7382e045666abee790c7f55f669f3"
+      }
+    ],
+    "gitlab@claude-plugins-official": [
+      {
+        "scope": "user",
+        "installPath": "/Users/summerrae/.claude/plugins/cache/claude-plugins-official/gitlab/2cd88e7947b7",
+        "version": "2cd88e7947b7",
+        "installedAt": "2026-02-16T03:14:28.183Z",
+        "lastUpdated": "2026-02-16T03:14:28.183Z",
+        "gitCommitSha": "2cd88e7947b7382e045666abee790c7f55f669f3"
+      }
+    ],
+    "greptile@claude-plugins-official": [
+      {
+        "scope": "user",
+        "installPath": "/Users/summerrae/.claude/plugins/cache/claude-plugins-official/greptile/2cd88e7947b7",
+        "version": "2cd88e7947b7",
+        "installedAt": "2026-02-16T03:14:34.828Z",
+        "lastUpdated": "2026-02-16T03:14:34.828Z",
+        "gitCommitSha": "2cd88e7947b7382e045666abee790c7f55f669f3"
+      }
+    ],
+    "hookify@claude-plugins-official": [
+      {
+        "scope": "user",
+        "installPath": "/Users/summerrae/.claude/plugins/cache/claude-plugins-official/hookify/2cd88e7947b7",
+        "version": "2cd88e7947b7",
+        "installedAt": "2026-02-16T03:14:41.985Z",
+        "lastUpdated": "2026-02-16T03:14:41.985Z",
+        "gitCommitSha": "2cd88e7947b7382e045666abee790c7f55f669f3"
+      }
+    ],
+    "huggingface-skills@claude-plugins-official": [
+      {
+        "scope": "user",
+        "installPath": "/Users/summerrae/.claude/plugins/cache/claude-plugins-official/huggingface-skills/1.0.0",
+        "version": "1.0.0",
+        "installedAt": "2026-02-16T03:14:46.645Z",
+        "lastUpdated": "2026-02-16T03:14:46.645Z",
+        "gitCommitSha": "3f4f55d6264b7baddec94031eeda70780d7e9189"
+      }
+    ],
+    "jdtls-lsp@claude-plugins-official": [
+      {
+        "scope": "user",
+        "installPath": "/Users/summerrae/.claude/plugins/cache/claude-plugins-official/jdtls-lsp/1.0.0",
+        "version": "1.0.0",
+        "installedAt": "2026-02-16T03:14:49.825Z",
+        "lastUpdated": "2026-02-16T03:14:49.825Z",
+        "gitCommitSha": "2cd88e7947b7382e045666abee790c7f55f669f3"
+      }
+    ],
+    "pinecone@claude-plugins-official": [
+      {
+        "scope": "user",
+        "installPath": "/Users/summerrae/.claude/plugins/cache/claude-plugins-official/pinecone/1.1.2",
+        "version": "1.1.2",
+        "installedAt": "2026-02-16T03:15:24.193Z",
+        "lastUpdated": "2026-02-16T03:15:24.193Z",
+        "gitCommitSha": "f9a4c37ce2758b79afafe3739ea31bc6f09d06b3"
+      }
+    ],
+    "playground@claude-plugins-official": [
+      {
+        "scope": "user",
+        "installPath": "/Users/summerrae/.claude/plugins/cache/claude-plugins-official/playground/2cd88e7947b7",
+        "version": "2cd88e7947b7",
+        "installedAt": "2026-02-16T03:15:29.588Z",
+        "lastUpdated": "2026-02-16T03:15:29.588Z",
+        "gitCommitSha": "2cd88e7947b7382e045666abee790c7f55f669f3"
+      }
+    ],
+    "playwright@claude-plugins-official": [
+      {
+        "scope": "user",
+        "installPath": "/Users/summerrae/.claude/plugins/cache/claude-plugins-official/playwright/2cd88e7947b7",
+        "version": "2cd88e7947b7",
+        "installedAt": "2026-02-16T03:15:31.392Z",
+        "lastUpdated": "2026-02-16T03:15:31.392Z",
+        "gitCommitSha": "2cd88e7947b7382e045666abee790c7f55f669f3"
+      }
+    ],
+    "plugin-dev@claude-plugins-official": [
+      {
+        "scope": "user",
+        "installPath": "/Users/summerrae/.claude/plugins/cache/claude-plugins-official/plugin-dev/2cd88e7947b7",
+        "version": "2cd88e7947b7",
+        "installedAt": "2026-02-16T03:15:34.872Z",
+        "lastUpdated": "2026-02-16T03:15:34.872Z",
+        "gitCommitSha": "2cd88e7947b7382e045666abee790c7f55f669f3"
+      }
+    ],
+    "pr-review-toolkit@claude-plugins-official": [
+      {
+        "scope": "user",
+        "installPath": "/Users/summerrae/.claude/plugins/cache/claude-plugins-official/pr-review-toolkit/2cd88e7947b7",
+        "version": "2cd88e7947b7",
+        "installedAt": "2026-02-16T03:15:55.396Z",
+        "lastUpdated": "2026-02-16T03:15:55.396Z",
+        "gitCommitSha": "2cd88e7947b7382e045666abee790c7f55f669f3"
+      }
+    ],
+    "ralph-loop@claude-plugins-official": [
+      {
+        "scope": "user",
+        "installPath": "/Users/summerrae/.claude/plugins/cache/claude-plugins-official/ralph-loop/2cd88e7947b7",
+        "version": "2cd88e7947b7",
+        "installedAt": "2026-02-16T03:16:01.140Z",
+        "lastUpdated": "2026-02-16T03:16:01.140Z",
+        "gitCommitSha": "2cd88e7947b7382e045666abee790c7f55f669f3"
+      }
+    ],
+    "security-guidance@claude-plugins-official": [
+      {
+        "scope": "user",
+        "installPath": "/Users/summerrae/.claude/plugins/cache/claude-plugins-official/security-guidance/2cd88e7947b7",
+        "version": "2cd88e7947b7",
+        "installedAt": "2026-02-16T03:16:06.754Z",
+        "lastUpdated": "2026-02-16T03:16:06.754Z",
+        "gitCommitSha": "2cd88e7947b7382e045666abee790c7f55f669f3"
+      }
+    ],
+    "sentry@claude-plugins-official": [
+      {
+        "scope": "user",
+        "installPath": "/Users/summerrae/.claude/plugins/cache/claude-plugins-official/sentry/1.0.0",
+        "version": "1.0.0",
+        "installedAt": "2026-02-16T03:16:09.904Z",
+        "lastUpdated": "2026-02-16T03:16:09.904Z",
+        "gitCommitSha": "e489ce53f1d85cb35c0d059a49ca38616a4105a0"
+      }
+    ],
+    "serena@claude-plugins-official": [
+      {
+        "scope": "user",
+        "installPath": "/Users/summerrae/.claude/plugins/cache/claude-plugins-official/serena/2cd88e7947b7",
+        "version": "2cd88e7947b7",
+        "installedAt": "2026-02-16T03:16:15.689Z",
+        "lastUpdated": "2026-02-16T03:16:15.689Z",
+        "gitCommitSha": "2cd88e7947b7382e045666abee790c7f55f669f3"
+      }
+    ],
+    "slack@claude-plugins-official": [
+      {
+        "scope": "user",
+        "installPath": "/Users/summerrae/.claude/plugins/cache/claude-plugins-official/slack/2cd88e7947b7",
+        "version": "2cd88e7947b7",
+        "installedAt": "2026-02-16T03:16:17.714Z",
+        "lastUpdated": "2026-02-16T03:16:17.714Z",
+        "gitCommitSha": "2cd88e7947b7382e045666abee790c7f55f669f3"
+      }
+    ],
+    "stripe@claude-plugins-official": [
+      {
+        "scope": "user",
+        "installPath": "/Users/summerrae/.claude/plugins/cache/claude-plugins-official/stripe/0.1.0",
+        "version": "0.1.0",
+        "installedAt": "2026-02-16T03:16:25.076Z",
+        "lastUpdated": "2026-02-16T03:16:25.076Z",
+        "gitCommitSha": "2cd88e7947b7382e045666abee790c7f55f669f3"
+      }
+    ],
+    "superpowers@claude-plugins-official": [
+      {
+        "scope": "user",
+        "installPath": "/Users/summerrae/.claude/plugins/cache/claude-plugins-official/superpowers/4.3.0",
+        "version": "4.3.0",
+        "installedAt": "2026-02-16T03:16:34.629Z",
+        "lastUpdated": "2026-02-16T03:16:34.629Z",
+        "gitCommitSha": "e16d611eee14ac4c3253b4bf4c55a98d905c2e64"
+      }
+    ]
+  }
+}

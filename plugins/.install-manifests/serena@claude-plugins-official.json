@@ -1,0 +1,8 @@
+{
+  "pluginId": "serena@claude-plugins-official",
+  "createdAt": "2026-02-16T03:16:15.698Z",
+  "files": {
+    ".claude-plugin/plugin.json": "a046a275ba705b370ddabfdf85b337c6a07336983a3f0764e7623e64b7418ba0",
+    ".mcp.json": "cacd90801da4e1d72a4eb2e2d1e5b9ee40dd1a5a23e921c6bbe683d502171817"
+  }
+}

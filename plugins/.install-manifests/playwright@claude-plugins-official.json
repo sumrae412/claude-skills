@@ -1,0 +1,8 @@
+{
+  "pluginId": "playwright@claude-plugins-official",
+  "createdAt": "2026-02-16T03:15:31.407Z",
+  "files": {
+    ".claude-plugin/plugin.json": "f2d7c0f611b93287ebb07454255d0cccf3a343d7095b7f8f763ff21d1995c096",
+    ".mcp.json": "b6fd7e9ccee1682af353854195516826da6970026b68c86ad800ff4d931d3250"
+  }
+}

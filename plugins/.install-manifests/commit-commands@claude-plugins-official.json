@@ -1,0 +1,11 @@
+{
+  "pluginId": "commit-commands@claude-plugins-official",
+  "createdAt": "2026-02-16T03:13:47.883Z",
+  "files": {
+    ".claude-plugin/plugin.json": "ad7e089b8ab209e4a4a72438dabe5db77c32de9d0131d91b1d4816233e1653a1",
+    "README.md": "03172e9933f1c1556a3a32a98dc54b31e73ebe57d3348e58aced204e0a9f526b",
+    "commands/clean_gone.md": "4f07fa2ccf4f81a69c6455bdc563b53a3d3b20aea6e4e82337c52b172ee02344",
+    "commands/commit-push-pr.md": "3bc3d171939149cbbef141cbced553dce6ba6f97dac4a764f4ef1e055c35064d",
+    "commands/commit.md": "d1acbc2bf0c50164f48d6bda872de6a343cd9390954ce903c3431c3119e7f8c4"
+  }
+}

@@ -1,0 +1,11 @@
+{
+  "pluginId": "stripe@claude-plugins-official",
+  "createdAt": "2026-02-16T03:16:25.095Z",
+  "files": {
+    ".claude-plugin/plugin.json": "00fd710098ba2f96fc36c4e49259432b641b4dba391bea588ba15a380da35c5f",
+    ".mcp.json": "c8425624d85f6f4ed5e93465d5d423bf18ee8e0d1d3fe444e8fb22ed52614475",
+    "commands/explain-error.md": "4d1e56c4de18cf164ff9e227e15bb529b2d9bfc07d4e96d90d5e465a17774d6f",
+    "commands/test-cards.md": "4e2496258654baac2ab3837a3c5d273f7acb1c45e46a58293d11a1e3df23104b",
+    "skills/stripe-best-practices/SKILL.md": "838eb4e00a22f817b8577be230600547441493bf8c7aa15b0ee7e04f71f875cf"
+  }
+}

@@ -1,0 +1,8 @@
+{
+  "pluginId": "code-simplifier@claude-plugins-official",
+  "createdAt": "2026-02-16T03:13:36.431Z",
+  "files": {
+    ".claude-plugin/plugin.json": "f18fb26b2f03e95ad165a4333c73ecd292da18e74d2b89d89bd9848839f8d0e7",
+    "agents/code-simplifier.md": "2a51e8d210580d9f66ac2ed1226c41f9374565fc275da30d7bb95f65c2cc87bb"
+  }
+}

@@ -1,0 +1,8 @@
+{
+  "pluginId": "slack@claude-plugins-official",
+  "createdAt": "2026-02-16T03:16:17.725Z",
+  "files": {
+    ".claude-plugin/plugin.json": "b6b1975138c13a244433950801554477bdb39ba408e1589ccc97f5e7aa532afe",
+    ".mcp.json": "55e7474792e855f34ba0b51a14b216b9ab15cda74e0362dceefea3f414995687"
+  }
+}

@@ -1,0 +1,40 @@
+# Only track: CLAUDE.md, scripts/, skills/, plugins config
+# Ignore everything else
+
+# Session and runtime data
+debug/
+backups/
+cache/
+projects/
+file-history/
+paste-cache/
+plans/
+downloads/
+statsig/
+todos/
+tasks/
+shell-snapshots/
+telemetry/
+
+# Logs and history
+history.jsonl
+*.log
+stats-cache.json
+
+# State files
+mcp-needs-auth-cache.json
+security_warnings_state_*.json
+
+# Settings (may contain sensitive data)
+settings.json
+settings.local.json
+
+# Plugin marketplaces (these are git submodules)
+plugins/marketplaces/
+
+# Secrets
+.env
+*.key
+
+# OS files
+.DS_Store
