@@ -7,14 +7,15 @@ description: Use when creating implementation plans for features or complex chan
 
 ## Overview
 
-Multi-agent planning skill that chains five phases:
+Multi-agent planning skill that chains six phases:
 1. **Brainstorming** — Requirements exploration and design approval
 2. **Writing-Plans** — Detailed TDD implementation plan with bite-sized tasks
 3. **AI Review** — DeepSeek (security/architecture) + OpenAI (code quality/efficiency) review
-4. **Execution** — Automatically invokes `superpowers:executing-plans` when plan is approved
-5. **Docs Cleanup** — Automatically invokes `/docs-cleanup` to archive plans and update documentation
+4. **Review & Confirm** — Summarize agent updates and get user confirmation before executing
+5. **Execution** — Invokes `superpowers:executing-plans` after user confirms
+6. **Docs Cleanup** — Automatically invokes `/docs-cleanup` to archive plans and update documentation
 
-**Announce:** "I'm using PlanCraft to create a multi-model reviewed implementation plan. This includes brainstorming, detailed plan writing, AI review, execution, and documentation cleanup."
+**Announce:** "I'm using PlanCraft to create a multi-model reviewed implementation plan. This includes brainstorming, detailed plan writing, AI review, user confirmation, execution, and documentation cleanup."
 
 ## Architecture
 
@@ -55,8 +56,10 @@ digraph plancraft {
     cx1 [label="Step 5: Codex\nreview + filter"];
     final_rev [label="Step 6: Final round\n(both reviewers)"];
     present [label="Step 7: Present\nfinal plan"];
-    execute [label="Step 8: Execution\nhandoff"];
-    cleanup [label="Step 9: Docs\ncleanup" shape=doublecircle];
+    review_updates [label="Step 8: Review\nagent updates"];
+    confirm [label="Confirm with user\nbefore executing" shape=diamond];
+    execute [label="Step 9: Execution\nhandoff"];
+    cleanup [label="Step 10: Docs\ncleanup" shape=doublecircle];
 
     brainstorm -> writing;
     writing -> mode;
@@ -67,8 +70,13 @@ digraph plancraft {
     ds1 -> cx1;
     cx1 -> final_rev;
     final_rev -> present;
-    present -> execute [label="approved"];
+    present -> review_updates [label="approved"];
     present -> enrich [label="revise"];
+    review_updates -> confirm;
+    confirm -> execute [label="user confirms"];
+    confirm -> review_updates [label="user requests changes"];
+    save_stop [label="Save plan\nand stop"];
+    confirm -> save_stop [label="save and stop"];
     execute -> cleanup;
 }
 ```
@@ -251,6 +259,16 @@ After brainstorming produces an approved design:
    - Write the plan to `/tmp/plancraft_plan.md` for reviewers
    - Proceed to Step 0
 
+<NO-PAUSE>
+After gathering information and before writing, NEVER say:
+- "I have everything I need"
+- "Now I'm ready to write"
+- "Let me proceed to writing"
+- Or any similar announcement
+
+Just write. No announcements. No confirmations. Execute the write operation immediately.
+</NO-PAUSE>
+
 ### Step 0 — Select Mode
 1. Ask involvement mode (Silent/Balanced/Consultative) via AskUserQuestion
 2. Confirm scope definition from brainstorming phase
@@ -265,6 +283,19 @@ After brainstorming produces an approved design:
 1. `Grep` + `Glob` + `Read` for relevant source files
 2. `Task` (Explore subagent) for deep analysis if needed
 3. Update plan to align with actual code
+
+<NO-PAUSE>
+Steps 1–3 are continuous. After completing analysis, proceed DIRECTLY to enriching and writing the plan.
+
+FORBIDDEN PHRASES — never output these:
+- "I have everything I need"
+- "Now I'm ready to write"
+- "Let me write the plan"
+- "I'll now proceed to..."
+- Any variation asking if the user is ready
+
+Just execute the next step immediately. No announcements.
+</NO-PAUSE>
 
 ### Step 3 — Enrich Plan
 1. Synthesize steps 1-2 into detailed plan
@@ -318,11 +349,36 @@ After brainstorming produces an approved design:
    rm -f /tmp/plancraft_plan.md /tmp/plancraft_scope.txt
    ```
 
-### Step 8 — Execution Handoff
+### Step 8 — Review Agent Updates
 
-After plan approval, **automatically invoke the executing-plans skill** to begin implementation:
+After plan approval but **before starting execution**, review all updates from other agents that contributed during the planning phase:
 
-1. **Announce:** "Plan approved. Starting execution with the executing-plans skill."
+1. **Check for agent outputs:**
+   - Read back through the conversation for any subagent results (Explore, Plan, code-reviewer, etc.)
+   - Check for any background task outputs that completed during review phases
+   - Review the AI review log for flagged items that need human attention
+
+2. **Summarize updates for the user:**
+   - List any changes made to the plan during AI review (accepted/rejected counts)
+   - Highlight scope-creep rejections and why
+   - Note any unresolved questions or items flagged for user decision
+   - Show the final task count and estimated scope
+
+3. **Ask user to confirm execution:**
+   Use AskUserQuestion to confirm:
+   - "The plan has X tasks. AI review accepted Y suggestions and rejected Z (scope creep). Ready to begin execution?"
+   - Options: "Start execution", "Review plan first", "Make changes", "Save plan and stop"
+   - If "Save plan and stop" is selected: confirm the plan file path, commit it, and end the PlanCraft workflow. The user can resume execution later by invoking `superpowers:executing-plans` in a new session.
+
+<HARD-GATE>
+Do NOT begin execution without explicit user confirmation. Always summarize agent updates and ask before invoking `superpowers:executing-plans`.
+</HARD-GATE>
+
+### Step 9 — Execution Handoff
+
+After user confirms execution:
+
+1. **Announce:** "Starting execution with the executing-plans skill."
 
 2. **Invoke the skill:**
    ```
@@ -335,11 +391,7 @@ After plan approval, **automatically invoke the executing-plans skill** to begin
    - Commit after each completed task
    - Pause for review at checkpoints
 
-<HARD-GATE>
-Do NOT ask the user which execution approach to use. Always invoke `superpowers:executing-plans` automatically when the plan is approved.
-</HARD-GATE>
-
-### Step 9 — Documentation Cleanup
+### Step 10 — Documentation Cleanup
 
 After execution completes, **automatically invoke the docs-cleanup skill** to clean up project documentation:
 
@@ -418,7 +470,8 @@ Do NOT skip documentation cleanup. Always invoke `docs-cleanup` after execution 
 | Not cleaning up temp files | Always rm temp files after finalization |
 | Using MCP tools instead of Bash | This skill uses direct API calls via `plancraft_review.py` |
 | Asking multiple questions at once | One clarifying question per message during brainstorming |
-| Skipping execution handoff | Always invoke `superpowers:executing-plans` after plan approval |
+| Auto-executing without user confirmation | Always review agent updates and ask user before invoking `superpowers:executing-plans` |
+| Pausing between analysis and writing | Steps 1–3 are continuous — never say "I have everything I need" or announce intentions, just execute |
 | Skipping docs cleanup | Always invoke `docs-cleanup` after execution completes |
 
 ## Error Handling
