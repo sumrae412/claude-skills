@@ -117,9 +117,13 @@ The **coding-best-practices** skill applies at every code touchpoint:
 | Modifying JS | Null checks, event handlers, cache bust `?v=N` |
 | **Modifying UI flows** | **defensive-ui-flows** — guard feedback, state flags try-catch, overlay inline feedback, multi-step reset |
 | **Fixing a UI bug** | **defensive-ui-flows** — update the skill with the bug pattern and fix so it won't recur |
+| **Writing backend error handling** | **defensive-backend-flows** — no silent swallows, catch all raised types, copy before delete |
+| **Writing data migrations** | **defensive-backend-flows** — copy data before NULL/DROP, reversible downgrade, atomic operations |
+| **Cross-module service calls** | **defensive-backend-flows** — respect encapsulation (no `_private` calls), one source of truth for constants |
+| **Fixing a backend bug** | **defensive-backend-flows** — update the skill with the bug pattern and fix so it won't recur |
 | Before commit | Pre-commit checklist from skill |
 
-Reference: `~/.claude/skills/coding-best-practices/SKILL.md`, `~/claude_code/courierflow/skills/defensive-ui-flows/SKILL.md`
+Reference: `~/.claude/skills/coding-best-practices/SKILL.md`, `~/.claude/skills/defensive-ui-flows/SKILL.md`, `~/.claude/skills/defensive-backend-flows/SKILL.md`
 
 ---
 
@@ -173,6 +177,15 @@ Skills in these directories are incorporated into the workflow:
 
 If `~/claude_code/courierflow/skills/` exists, load any SKILL.md files there as additional project-specific skills. Includes **defensive-ui-flows** — guard clauses with feedback, state flags with try-catch, overlay inline feedback, multi-step state reset.
 
+### Global Defensive Skills (~/.claude/skills/)
+
+| Skill | Trigger | Core Question |
+|-------|---------|---------------|
+| **defensive-ui-flows** | Interactive UI with async buttons, modals, multi-step flows | "What does the user see if this fails?" |
+| **defensive-backend-flows** | Error handling, data migrations, service functions, cross-module calls, constants | "What happens to the data if this fails halfway?" |
+
+Both skills follow the same update pattern: when you find a new bug, add it to the skill's `evidence.md` and run RED/GREEN testing via `update-skill.md`.
+
 ---
 
 ## Project-Specific: CourierFlow
@@ -206,3 +219,5 @@ When the workspace is CourierFlow (`courierflow/` or similar):
 | Ignoring coding-best-practices | Reference it during implementation |
 | Not finishing the branch | Always run finishing-a-development-branch at end |
 | Executing without user confirmation | PlanCraft requires explicit approval before execution |
+| Writing `except: pass` in backend code | Apply defensive-backend-flows — every except must log or re-raise |
+| Calling `_private` methods cross-module | Apply defensive-backend-flows — create a public wrapper |
