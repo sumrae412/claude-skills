@@ -450,6 +450,57 @@ When the browser shows `Uncaught SyntaxError: Unexpected token '<'` or `Unexpect
 
 ---
 
+## 18. Button Elements Need Browser Default Resets
+
+When a component uses mixed element types (`<a>`, `<button>`, `<div>`) sharing a common base CSS class, `<button>` elements render differently because browsers apply their own `font`, `color`, and `cursor` defaults to buttons — unlike `<a>` and `<div>` which inherit from parents. The fix is to add `font: inherit; color: inherit; cursor: pointer;` on the button variant class.
+
+Also: **never redeclare base class properties in variant classes.** If `.base-card` already defines `border`, `padding`, `background`, `box-shadow`, don't repeat them in `.base-card-button`. The redundant declarations drift out of sync and create subtle visual differences.
+
+```css
+/* BAD - redeclares base class props, missing browser resets */
+.stat-card { /* base */
+    border: 1px solid var(--ds-border-color);
+    border-radius: var(--ds-radius-xl);
+    padding: var(--ds-space-5);
+    background: var(--ds-color-surface);
+    box-shadow: var(--ds-p-shadow-card);
+}
+.stat-card-button { /* variant for <button> */
+    border: 1px solid var(--ds-border-color);   /* redundant */
+    border-radius: var(--ds-radius-xl);          /* redundant */
+    padding: var(--ds-space-5);                  /* redundant */
+    background: var(--ds-color-surface);         /* redundant */
+    box-shadow: var(--ds-p-shadow-card);         /* redundant */
+    text-align: left;
+    width: 100%;
+    /* Missing: font: inherit; color: inherit; cursor: pointer; */
+}
+
+/* GOOD - variant only resets button-specific browser defaults */
+.stat-card { /* base — all visual styles here */
+    border: 1px solid var(--ds-border-color);
+    border-radius: var(--ds-radius-xl);
+    padding: var(--ds-space-5);
+    background: var(--ds-color-surface);
+    box-shadow: var(--ds-p-shadow-card);
+}
+.stat-card-button { /* variant — only button resets */
+    font: inherit;
+    color: inherit;
+    text-align: left;
+    width: 100%;
+    cursor: pointer;
+}
+```
+
+**Why it's dangerous:** The visual difference is subtle — slightly different font, color, or line-height — so it passes a quick glance but looks "off" to users. The redundant property declarations also mean any future change to the base class must be duplicated in the variant, or they drift apart.
+
+**Check:** When a component mixes `<a>`, `<button>`, and `<div>` with a shared base class, verify the `<button>` variant includes `font: inherit; color: inherit;` and does NOT redeclare properties already on the base class.
+
+**Learned from:** `home-dashboard.css` / `_stats.html` — Alerts stat card used `<button>` while the other three used `<a>`. The `.home-stat-card-button` class redeclared all base class properties but omitted `font: inherit` and `color: inherit`, causing the Alerts card to render with different text styling.
+
+---
+
 ## Checklist for New UI Code
 
 - [ ] Every guard clause shows feedback (toast, inline, or console)
@@ -469,3 +520,4 @@ When the browser shows `Uncaught SyntaxError: Unexpected token '<'` or `Unexpect
 - [ ] Service worker cache name bumped after asset changes
 - [ ] Framework CDN uses production build (`.prod.js` or `.min.js`)
 - [ ] "Unexpected token" errors checked via Network tab before debugging JS
+- [ ] `<button>` variants include `font: inherit; color: inherit;` and don't redeclare base class props

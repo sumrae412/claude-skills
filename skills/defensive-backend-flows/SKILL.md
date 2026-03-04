@@ -111,6 +111,20 @@ return templates.TemplateResponse("tenants/list.html", ...)
 
 **Learned from:** `tenants.py` — route rendered `properties/list.html` which was 100% tenant content. When debugging "tenants disappeared," the wrong directory added confusion about which template was responsible.
 
+This also applies to **CSS variant classes**: when a base class (`.stat-card`) defines visual properties, variant classes (`.stat-card-button`, `.stat-card-link`) must NOT redeclare those same properties. The variant should only add what the base doesn't cover (e.g., browser resets for `<button>` elements). Redundant declarations drift out of sync and cause subtle visual inconsistencies.
+
+```css
+/* ❌ BAD — variant redeclares base properties */
+.stat-card { border: 1px solid gray; padding: 16px; }
+.stat-card-button { border: 1px solid gray; padding: 16px; /* redundant */ }
+
+/* ✅ GOOD — variant only adds what's unique */
+.stat-card { border: 1px solid gray; padding: 16px; }
+.stat-card-button { font: inherit; color: inherit; cursor: pointer; }
+```
+
+**Learned from:** `home-dashboard.css` — `.home-stat-card-button` redeclared all properties from `.home-stat-card`, creating a visual mismatch with the `<a>`-based sibling cards.
+
 ### 5. Respect Encapsulation
 
 Never call `_private` methods from outside the owning class/module. Create a public wrapper. Cross-module private calls cause double side-effects and break when internals change.
@@ -407,6 +421,7 @@ except Exception:
 - `str(e)` or `traceback.format_exc()` in an HTTP response or redirect URL
 - `print()` debug statements in production code
 - Template file in a directory that doesn't match the route module using it
+- CSS variant class that redeclares properties already on the base class
 
 ## When NOT to Use
 
