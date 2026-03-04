@@ -118,9 +118,9 @@ This also applies to **CSS variant classes**: when a base class (`.stat-card`) d
 .stat-card { border: 1px solid gray; padding: 16px; }
 .stat-card-button { border: 1px solid gray; padding: 16px; /* redundant */ }
 
-/* ✅ GOOD — variant only adds what's unique */
+/* ✅ GOOD — variant only adds what's unique (all 5 button resets) */
 .stat-card { border: 1px solid gray; padding: 16px; }
-.stat-card-button { font: inherit; color: inherit; cursor: pointer; }
+.stat-card-button { display: block; appearance: none; font: inherit; color: inherit; cursor: pointer; }
 ```
 
 **Learned from:** `home-dashboard.css` — `.home-stat-card-button` redeclared all properties from `.home-stat-card`, creating a visual mismatch with the `<a>`-based sibling cards.

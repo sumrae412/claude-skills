@@ -452,7 +452,15 @@ When the browser shows `Uncaught SyntaxError: Unexpected token '<'` or `Unexpect
 
 ## 18. Button Elements Need Browser Default Resets
 
-When a component uses mixed element types (`<a>`, `<button>`, `<div>`) sharing a common base CSS class, `<button>` elements render differently because browsers apply their own `font`, `color`, and `cursor` defaults to buttons — unlike `<a>` and `<div>` which inherit from parents. The fix is to add `font: inherit; color: inherit; cursor: pointer;` on the button variant class.
+When a component uses mixed element types (`<a>`, `<button>`, `<div>`) sharing a common base CSS class, `<button>` elements render differently because browsers apply their own defaults. You need ALL of these resets — missing even one causes a visible difference:
+
+| Reset | Why |
+|-------|-----|
+| `display: block` | Buttons default to `inline-block`; `<a>` with `display: block` fills the grid cell |
+| `appearance: none` | Strips native browser button chrome (bevels, gradients) |
+| `font: inherit` | Buttons get a system font instead of inheriting from parent |
+| `color: inherit` | Buttons get `buttontext` color instead of inheriting |
+| `cursor: pointer` | Buttons don't show pointer cursor by default |
 
 Also: **never redeclare base class properties in variant classes.** If `.base-card` already defines `border`, `padding`, `background`, `box-shadow`, don't repeat them in `.base-card-button`. The redundant declarations drift out of sync and create subtle visual differences.
 
@@ -473,7 +481,7 @@ Also: **never redeclare base class properties in variant classes.** If `.base-ca
     box-shadow: var(--ds-p-shadow-card);         /* redundant */
     text-align: left;
     width: 100%;
-    /* Missing: font: inherit; color: inherit; cursor: pointer; */
+    /* Missing: display, appearance, font, color, cursor resets */
 }
 
 /* GOOD - variant only resets button-specific browser defaults */
@@ -485,6 +493,8 @@ Also: **never redeclare base class properties in variant classes.** If `.base-ca
     box-shadow: var(--ds-p-shadow-card);
 }
 .stat-card-button { /* variant — only button resets */
+    display: block;
+    appearance: none;
     font: inherit;
     color: inherit;
     text-align: left;
@@ -493,11 +503,11 @@ Also: **never redeclare base class properties in variant classes.** If `.base-ca
 }
 ```
 
-**Why it's dangerous:** The visual difference is subtle — slightly different font, color, or line-height — so it passes a quick glance but looks "off" to users. The redundant property declarations also mean any future change to the base class must be duplicated in the variant, or they drift apart.
+**Why it's dangerous:** Each missing reset causes a *different* subtle issue. `font: inherit` alone fixes text but the card still looks wrong because `display: inline-block` breaks grid sizing. This leads to iterative "it's still broken" cycles where you fix one property at a time. Apply ALL resets from the table above in one pass.
 
-**Check:** When a component mixes `<a>`, `<button>`, and `<div>` with a shared base class, verify the `<button>` variant includes `font: inherit; color: inherit;` and does NOT redeclare properties already on the base class.
+**Check:** When a component mixes `<a>`, `<button>`, and `<div>` with a shared base class, verify the `<button>` variant includes ALL five resets (`display`, `appearance`, `font`, `color`, `cursor`) and does NOT redeclare properties already on the base class.
 
-**Learned from:** `home-dashboard.css` / `_stats.html` — Alerts stat card used `<button>` while the other three used `<a>`. The `.home-stat-card-button` class redeclared all base class properties but omitted `font: inherit` and `color: inherit`, causing the Alerts card to render with different text styling.
+**Learned from:** `home-dashboard.css` / `_stats.html` — Alerts stat card used `<button>` while the other three used `<a>`. First fix attempt only added `font: inherit; color: inherit;` — card still looked wrong because `display: block` and `appearance: none` were also needed. Required two rounds of fixes to get right.
 
 ---
 
@@ -520,4 +530,5 @@ Also: **never redeclare base class properties in variant classes.** If `.base-ca
 - [ ] Service worker cache name bumped after asset changes
 - [ ] Framework CDN uses production build (`.prod.js` or `.min.js`)
 - [ ] "Unexpected token" errors checked via Network tab before debugging JS
-- [ ] `<button>` variants include `font: inherit; color: inherit;` and don't redeclare base class props
+- [ ] `<button>` variants include ALL 5 resets (`display:block`, `appearance:none`, `font:inherit`, `color:inherit`, `cursor:pointer`)
+- [ ] Cache-busting updated in BOTH `?v=` param AND service worker cache name (doing one without the other doesn't work)
