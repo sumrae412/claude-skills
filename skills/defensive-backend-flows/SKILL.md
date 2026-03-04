@@ -381,6 +381,99 @@ except Exception:
 
 **Learned from:** `auth.py` — OAuth callback leaked raw exception strings (including file paths and tracebacks) in redirect URL query params. Also contained `print()` debug statements.
 
+### 14. Never Compare Datetimes as Strings
+
+String comparison of ISO timestamps breaks with timezone offsets, variable-length fractional seconds, and `Z` vs `+00:00` differences. Always parse to `datetime` objects and compare with timezone-aware values.
+
+```python
+# ❌ BAD — string comparison, "2026-03-04T10:00:00+00:00" > "2026-03-04T09:00:00-05:00" is WRONG
+upcoming = [
+    e for e in events
+    if e["start"] >= datetime.utcnow().isoformat()
+]
+
+# ❌ BAD — naive datetime compared to offset-aware string
+now = datetime.utcnow()  # naive, no tzinfo
+upcoming = [e for e in events if parse(e["start"]) >= now]  # TypeError
+
+# ✅ GOOD — parse both sides, timezone-aware comparison
+from datetime import datetime, timezone
+from dateutil.parser import parse
+
+now = datetime.now(timezone.utc)
+upcoming = [
+    e for e in events
+    if parse(e["start"]) >= now
+]
+```
+
+**Check:** Search for `.isoformat()` in comparisons or `>=`/`<=` with string timestamps. Every datetime comparison should use parsed `datetime` objects with explicit timezone.
+
+**Learned from:** Home dashboard — upcoming events were filtered using string comparison of ISO timestamps, which dropped future events when timezone offsets varied.
+
+### 15. Use the Canonical Service for Connection State
+
+When checking if an external service (Google, Twilio, Stripe) is connected, use the service/manager that owns the connection state — not a shortcut column on the user model. Shortcut columns go stale when the real connection changes.
+
+```python
+# ❌ BAD — checks deprecated user column, stale after token refresh
+if not user.google_calendar_token:
+    return {"google_connected": False}
+
+# ✅ GOOD — token manager owns Google connection state
+connection = await token_manager.get_active_connection(
+    db, user_id, "google"
+)
+google_connected = connection is not None and connection.is_valid
+```
+
+**Check:** When you see `user.some_token` or `user.is_connected_to_x` in a route, verify it's not a stale shortcut. The service that manages tokens/connections is the source of truth.
+
+**Learned from:** Home dashboard — used `user.google_calendar_token` to decide if Google was connected, but the real connection lived in `IntegrationConnection` via the token manager. Home skipped remote calendar fetches even when Google was connected.
+
+### 16. Primary View Must Use the Live Data Source
+
+When a page becomes the primary UI for a data domain (e.g., Home becomes the only calendar view after `/calendar` redirects there), it must fetch from the live source — not rely on a sparse local cache that was adequate when it was a secondary view.
+
+```python
+# ❌ BAD — Home shows cached events only, but /calendar redirects here
+events = await get_cached_events(db, user_id)  # sparse, stale
+# User sees "1 event" when they have 15 on Google Calendar
+
+# ✅ GOOD — try live source first, fall back to cache with warning
+try:
+    events = await fetch_remote_events(db, user_id)
+except ExternalServiceError:
+    events = await get_cached_events(db, user_id)
+    show_warning = True  # Surface that data may be stale
+```
+
+**Also:** When a page becomes the primary view, it should surface connection status and remote-fetch errors visibly. Silent "only one event" with no explanation violates Fail Visible.
+
+**Check:** If route A redirects to route B, verify route B fetches from the same data source route A used. A redirect that silently downgrades data quality is a bug.
+
+**Learned from:** Home dashboard — relied on sparse DB cache while `/calendar` redirected to Home. Users saw far fewer events than expected with no explanation.
+
+### 17. After Conflict Resolution, Re-Run Targeted Tests
+
+When a cherry-pick or merge has conflicts, the resolved code may subtly differ from the original. Always re-run the tests that cover the changed code before pushing — don't assume the resolution preserved behavior.
+
+```bash
+# ❌ BAD — resolve conflict, push immediately
+git cherry-pick abc123
+# ... resolve conflicts ...
+git add . && git cherry-pick --continue && git push
+
+# ✅ GOOD — resolve, test, then push
+git cherry-pick abc123
+# ... resolve conflicts ...
+git add . && git cherry-pick --continue
+pytest tests/test_home_dashboard.py -v  # verify resolved behavior
+git push
+```
+
+**Learned from:** Cherry-pick of datetime filter fix conflicted on main. The first resolution silently dropped the datetime-based filter, requiring a second fix.
+
 ## Quick Reference
 
 | Rule | Symptom | Check |
@@ -398,6 +491,10 @@ except Exception:
 | Error Visibility | Errors hidden from user | Dashboard feed includes ERROR-level logs? |
 | Ephemeral Storage | Files vanish after deploy | All file I/O uses persistent storage? |
 | Error Leaking | Internal details in HTTP response | Error messages generic, no `str(e)`? |
+| String Datetime Compare | Future items filtered out | All datetime comparisons use parsed tz-aware objects? |
+| Stale Connection Check | Feature disabled despite connection | Connection state read from owning service, not user column? |
+| Cache-Only Primary View | "Only 1 event" when 15 exist | Primary view fetches live source, not just local cache? |
+| Post-Conflict Testing | Resolved code breaks behavior | Tests re-run after conflict resolution before push? |
 
 ## Red Flags — STOP and Fix
 
@@ -422,6 +519,10 @@ except Exception:
 - `print()` debug statements in production code
 - Template file in a directory that doesn't match the route module using it
 - CSS variant class that redeclares properties already on the base class
+- Datetime comparison using string `>=`/`<=` instead of parsed objects
+- Connection check using `user.some_token` instead of the token manager
+- Primary view reading from local cache when it's the only UI for that data
+- Cherry-pick/merge pushed without re-running affected tests
 
 ## When NOT to Use
 

@@ -511,6 +511,37 @@ Also: **never redeclare base class properties in variant classes.** If `.base-ca
 
 ---
 
+## 19. Primary Views Must Surface Data Source Status
+
+When a page becomes the primary UI for a data domain (e.g., Home becomes the only calendar view), it must show connection status and surface remote-fetch errors. A dashboard that silently shows stale/sparse data with no explanation violates "Fail Visible."
+
+```html
+<!-- BAD - shows "1 event" with no indication data is from sparse cache -->
+<div class="upcoming-events">
+  <h3>Upcoming Events</h3>
+  <!-- renders whatever's in local DB -->
+</div>
+
+<!-- GOOD - connection status visible, stale data warned -->
+<div class="upcoming-events">
+  <h3>Upcoming Events</h3>
+  <div class="connection-status">
+    {% if not google_connected %}
+      <span class="badge bg-warning">Google Calendar not connected</span>
+    {% elif fetch_error %}
+      <span class="badge bg-danger">Could not refresh — showing cached data</span>
+    {% endif %}
+  </div>
+  <!-- renders events -->
+</div>
+```
+
+**Check:** If the page is the only way to see certain data, ask: "Does the user know where the data came from and whether it's current?" If not, add a visible status indicator.
+
+**Learned from:** Home dashboard — became the only calendar view after `/calendar` redirected there, but showed sparse cached events with no indication that the remote fetch was failing or that Google wasn't connected.
+
+---
+
 ## Checklist for New UI Code
 
 - [ ] Every guard clause shows feedback (toast, inline, or console)
@@ -532,3 +563,4 @@ Also: **never redeclare base class properties in variant classes.** If `.base-ca
 - [ ] "Unexpected token" errors checked via Network tab before debugging JS
 - [ ] `<button>` variants include ALL 5 resets (`display:block`, `appearance:none`, `font:inherit`, `color:inherit`, `cursor:pointer`)
 - [ ] Cache-busting updated in BOTH `?v=` param AND service worker cache name (doing one without the other doesn't work)
+- [ ] Primary data views show connection status and surface fetch errors visibly
