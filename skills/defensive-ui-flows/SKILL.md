@@ -342,17 +342,29 @@ function tenantTable() {
 
 `<script>` and `<link>` tags for app JS/CSS must include a `?v=` version parameter. Without it, browsers cache the old file indefinitely — even after a fix is deployed, users still get the broken version.
 
+**CourierFlow specifics:** The middleware sets `max-age=31536000` (1 year) on static files. This means a missing or stale `?v=` param causes the browser to serve cached assets for up to **one year** — hard refresh alone won't fix it because CDN/proxy caches also honor the header.
+
 ```html
-<!-- BAD - no version param, browser serves stale cached file -->
+<!-- BAD - no version param, browser serves stale cached file for 1 YEAR -->
 <script defer src="/static/js/components/tenant-table.js"></script>
 
-<!-- GOOD - version param forces cache refresh on deploy -->
-<script defer src="/static/js/components/tenant-table.js?v=20260304"></script>
+<!-- BAD - version param exists but wasn't bumped after file changed -->
+<link href="/static/css/pages/calendar.css?v=3" rel="stylesheet">
+
+<!-- GOOD - version param bumped to today's date after file change -->
+<link href="/static/css/pages/calendar.css?v=20260304a" rel="stylesheet">
+<script defer src="/static/js/components/tenant-table.js?v=20260304a"></script>
 ```
 
-**When to update:** Bump the version parameter any time the file content changes. Ideally, automate this with a build step or content hash.
+**When to update:** Bump the version parameter **every time** the file content changes. A CSS or JS file can be loaded from multiple templates — you must update ALL of them.
 
-**Learned from:** `base.html` — loaded `tenant-table.js` without a version param. After fixing a syntax error, the browser kept serving the cached broken version. User reported "still not seeing tenants" despite the fix being deployed.
+**Workflow after modifying a static file:**
+1. `grep -r "filename.css" app/templates/` — find every template that loads it
+2. Bump `?v=` to today's date + letter suffix (e.g., `?v=20260305a`)
+3. If no `?v=` exists, add one
+4. Commit the version bumps alongside the CSS/JS changes (or immediately after)
+
+**Learned from:** `base.html` — loaded `tenant-table.js` without a version param. After fixing a syntax error, the browser kept serving the cached broken version. User reported "still not seeing tenants" despite the fix being deployed. Also: `calendar.html`, `dashboard.html`, `home.html`, `tasks/list_modern.html`, `properties/list_modern.html` — CSS files were updated across 4 commits but version strings never bumped. Deployed successfully but no visual changes appeared on the site due to year-long cache headers.
 
 ---
 
@@ -387,9 +399,11 @@ When using runtime-compiled Vue templates (CDN build, not SFC), `v-if`/`v-else-i
 
 ---
 
-## 15. Service Worker Cache Must Be Bumped After Asset Changes
+## 15. Service Worker Cache Must Be Bumped After Asset Changes + Network-First for Mutable Assets
 
 When the app uses a service worker for caching, fixing a JS/CSS bug is not enough — you must also bump the service worker's cache name. Otherwise the SW serves stale assets from its own cache, completely bypassing `?v=` query params and even server-side changes.
+
+**Additionally, the SW caching strategy for CSS/JS must be network-first, not cache-first.** Cache-first for `/static/` assets causes stale deploys that survive cache-buster version bumps because the old SW intercepts requests before the new SW activates.
 
 ```javascript
 // BAD - same cache name after fixing a bug, SW serves old assets
@@ -397,14 +411,33 @@ const CACHE_NAME = 'app-cache-v1';  // Never changes
 
 // GOOD - bump cache name when assets change
 const CACHE_NAME = 'app-cache-v2';  // Forces SW to re-fetch all assets
+
+// BAD - cache-first for CSS/JS, stale deploys survive ?v= bumps
+async function handleStaticAsset(request) {
+    const cached = await caches.match(request);
+    if (cached) return cached; // Serves stale CSS forever
+    return fetch(request);
+}
+
+// GOOD - network-first, cache is offline fallback only
+async function handleStaticAsset(request) {
+    try {
+        const resp = await fetch(request);
+        if (resp.ok) { /* cache for offline */ }
+        return resp;
+    } catch {
+        return caches.match(request); // Offline fallback
+    }
+}
 ```
 
 **Full cache-busting checklist after any asset fix:**
 1. Bump `?v=` params on `<script>`/`<link>` tags (pattern #13)
 2. Bump the service worker cache name constant
 3. If using a CDN, purge the CDN cache or use content-hashed filenames
+4. Verify the SW uses **network-first** for CSS/JS (not cache-first)
 
-**Learned from:** After fixing a Vue template compiler error, the console still showed the old broken template. The service worker was serving its cached copy, ignoring the server-side fix entirely.
+**Learned from:** After fixing a Vue template compiler error, the console still showed the old broken template. The service worker was serving its cached copy, ignoring the server-side fix entirely. Later, even bumping CACHE_NAME to v17 didn't help because the old SW served old assets before the new SW activated. Switching to network-first was the definitive fix (`sw.js`).
 
 ---
 
@@ -542,6 +575,272 @@ When a page becomes the primary UI for a data domain (e.g., Home becomes the onl
 
 ---
 
+## 20. Navigation Guards Must Be Gated on the Navigation Condition
+
+When a boolean flag blocks UI reset to prevent flicker during navigation (e.g., `redirecting = true` makes `resetModal()` return early), that flag must ONLY be set after confirming the navigation will actually happen. Setting it optimistically — before checking the response has the data needed to navigate — creates a permanent stuck state.
+
+```javascript
+// BAD - sets redirecting before checking instance.id exists
+// If server returns 200 with no id, modal is permanently locked
+if (response.ok) {
+    const instance = await response.json();
+    state.redirecting = true;  // Reset guard activated
+    showSuccess();
+    modal.hide();
+    if (instance?.id) {
+        setTimeout(() => { window.location.href = `/item/${instance.id}`; }, 1200);
+    }
+    // No else — redirecting stays true, resetModal() is blocked forever
+}
+
+// GOOD - only set redirecting when navigation is confirmed
+if (response.ok) {
+    const instance = await response.json();
+    if (instance?.id) {
+        state.redirecting = true;  // Safe — we WILL navigate
+        showSuccess();
+        modal.hide();
+        setTimeout(() => { window.location.href = `/item/${instance.id}`; }, 1200);
+    } else {
+        showWarning('Created but no ID returned.');
+        setBtnLoading(btn, false);  // Re-enable UI
+    }
+}
+```
+
+**Rule of thumb:** If a flag prevents cleanup/reset, it must only be set inside the branch that makes cleanup unnecessary (i.e., the branch that navigates away).
+
+**Learned from:** `tenants/detail.html` `submitTenantWorkflowStart()` — `redirecting = true` set before `if (instance?.id)` check. A 200 response without an ID permanently locked the modal because `resetTenantWorkflowModal()` returned early on the `redirecting` guard.
+
+---
+
+## 21. Async Form Handlers Need Double-Submit Guards
+
+Every async function triggered by a button click must disable the button at the start of the operation and re-enable it on failure. Use whatever loading-state mechanism the codebase already provides (e.g., `setBtnLoading`). Inconsistency within the same file is a code smell — if 3 out of 4 handlers in a file use a guard, the 4th is a bug.
+
+```javascript
+// BAD - no loading guard, user can click 5 times and create 5 instances
+async function submitWorkflowStart() {
+    const payload = { template_id: selectedId };
+    const response = await fetch('/api/instances', {
+        method: 'POST', body: JSON.stringify(payload)
+    });
+    // ...
+}
+
+// GOOD - setBtnLoading disables button, re-enabled on all failure paths
+async function submitWorkflowStart() {
+    const btn = document.getElementById('submitBtn');
+    setBtnLoading(btn, true);
+    try {
+        const response = await fetch('/api/instances', {
+            method: 'POST', body: JSON.stringify(payload)
+        });
+        if (response.ok) {
+            // success path — navigating away, no need to re-enable
+        } else {
+            showError('Failed to start.');
+            setBtnLoading(btn, false);
+        }
+    } catch (err) {
+        showError('Network error.');
+        setBtnLoading(btn, false);
+    }
+}
+```
+
+**Consistency check:** When reviewing a file, grep for the loading-state function name. If some handlers use it and others don't, the ones without it are bugs.
+
+**Learned from:** `tenants/detail.html` `submitTenantWorkflowStart()` — no `setBtnLoading()` call despite `submitConfirmEvent()` and `submitBulkActions()` in the same file both using it. A slow network could result in duplicate workflow instances.
+
+---
+
+## 22. Verify CSS Classes Exist Before Using Them in HTML
+
+When adding a CSS class to an HTML element, verify the class is actually defined in a CSS file that gets loaded on that page. An undefined class silently renders as browser defaults — no error in the console, no build failure, just broken styling that's hard to trace.
+
+The inverse is equally dangerous: CSS selectors targeting classes that no longer exist in HTML are dead code that masks the real problem.
+
+```html
+<!-- BAD - .filter-pill class used in HTML but has NO CSS definition anywhere -->
+<button class="filter-pill active" onclick="filterCategory('all')">All</button>
+
+<!-- Meanwhile in CSS — styles exist for a DIFFERENT class nobody uses -->
+<style>
+.category-filters .wf-btn-ghost { /* orphaned CSS, never rendered */ }
+</style>
+
+<!-- GOOD - class matches a real CSS definition in a loaded stylesheet -->
+<button class="filter-bar__pill active" onclick="filterCategory('all')">All</button>
+```
+
+**Why it's dangerous:** The element renders with browser defaults (no padding, no border-radius, system font). It *looks* like a styling bug, so you might waste time adjusting tokens or specificity — but the real problem is the class name doesn't exist. Grep for the class name in CSS and you'll find zero matches.
+
+**Check (two-way):**
+1. **HTML → CSS:** `grep -r "\.class-name" app/static/css/` — if zero results, the class is undefined
+2. **CSS → HTML:** `grep -r "class-name" app/templates/` — if zero results, the CSS selector is dead code
+
+**Prevention:** Use design system partials (e.g., `_filter_bar.html` macros) instead of writing raw HTML. Partials guarantee the HTML classes match the component CSS.
+
+**Learned from:** `workflows.html` — used `class="filter-pill"` but no `.filter-pill` selector existed in any CSS file. The `workflow-manager.css` defined `.category-filters .wf-btn-ghost` styles, but the HTML never used `.wf-btn-ghost`. Both sides of the mismatch went undetected because neither caused an error — just unstyled buttons.
+
+---
+
+## 23. Floating Bulk Action Bars Must Use Full Border-Radius
+
+When building a floating action bar for bulk operations (multi-select on cards/rows), the bar AND its buttons must use `border-radius: var(--ds-radius-full)` for fully rounded pill shapes. A rectangular bar or square-cornered buttons look inconsistent with the design system's rounded filter pills and badges.
+
+```css
+/* BAD - rectangular bar with square buttons */
+.bulk-bar {
+    border-radius: 8px;       /* too angular */
+}
+.bulk-bar button {
+    border-radius: 4px;       /* square corners */
+}
+
+/* GOOD - fully rounded bar and pill-shaped buttons */
+.bulk-bar {
+    position: fixed;
+    bottom: 24px;
+    left: 50%;
+    transform: translateX(-50%);
+    border-radius: var(--ds-radius-full);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15),
+                0 2px 8px rgba(0, 0, 0, 0.08);
+}
+.bulk-bar button {
+    border-radius: var(--ds-radius-full);
+}
+```
+
+**Required elements:** count badge (accent color, fully rounded), divider, action buttons (fully rounded), close button (fully rounded).
+
+**Animation:** Use slide-in from bottom on show (`translateY(12px) → 0`).
+
+**Mobile:** Switch to full-width with `left: 12px; right: 12px; transform: none;` and `border-radius: var(--ds-radius-xl)`.
+
+**Learned from:** `workflow-manager.css` — user explicitly required rounded edges on bulk action bar buttons, matching the filter pill style from `_filter-bar.css`.
+
+---
+
+## 24. Card Selection Checkboxes Need Progressive Disclosure
+
+When adding multi-select to card grids, checkboxes must be hidden by default and revealed progressively: on card hover, when the card is selected, or when any card is selected (selecting mode). A permanently visible checkbox clutters the UI and breaks the "Content over Chrome" principle.
+
+```css
+/* BAD - checkbox always visible, clutters every card */
+.card .select-checkbox {
+    opacity: 1;
+}
+
+/* GOOD - progressive disclosure: hover, selected, or selecting mode */
+.card .select-checkbox {
+    position: absolute;
+    top: var(--ds-space-3);
+    right: var(--ds-space-3);
+    opacity: 0;
+    transition: opacity var(--ds-transition-fast);
+}
+.card:hover .select-checkbox,
+.card.is-selected .select-checkbox,
+.selecting-mode .card .select-checkbox {
+    opacity: 1;
+}
+```
+
+**Pattern:** Add a `selecting-mode` class to the parent container when any checkbox is checked. This reveals all checkboxes so the user can continue selecting without hovering each card individually.
+
+**Required:** `position: relative` on the card element so the checkbox positions correctly. Cards need `data-*` attributes for JS to find them. The checkbox `change` event (not `click`) should drive selection state.
+
+**Learned from:** `workflows.html` Custom Workflows tab — checkbox hidden by default, shown on hover/selected/selecting-mode. Parent pane gets `custom-workflows-selecting` class when any card is selected.
+
+---
+
+## 25. Clear Container Content Safely — No innerHTML
+
+When clearing a container to rebuild its content (e.g., refreshing a card grid from API data), use the DOM loop `while (el.firstChild) el.removeChild(el.firstChild)` instead of assigning an empty string to the element's HTML content. The assignment triggers the HTML parser, creates an XSS surface, and may trigger security lint hooks. The loop approach is safe, explicit, and avoids parser invocation.
+
+```javascript
+// BAD - triggers HTML parser, XSS risk, security hook flags
+grid.innerH‍TML = '';
+
+// GOOD - safe, explicit, no parser invocation
+while (grid.firstChild) grid.removeChild(grid.firstChild);
+```
+
+**Same rule for building content:** When constructing DOM from API data, use `document.createElement()` + `textContent` for text, not string concatenation into an HTML parser. User-controlled strings (template names, descriptions) must never enter a parser.
+
+```javascript
+// GOOD - textContent auto-escapes, createElement is safe
+var h6 = document.createElement('h6');
+h6.textContent = tmpl.name;
+card.appendChild(h6);
+```
+
+**Learned from:** `workflows.html` `loadCustomWorkflows()` — original implementation assigned empty string to grid HTML to clear before re-rendering. Security hook caught this. Fixed to the safe DOM loop.
+
+---
+
+## 26. Verify Route-to-Template Mapping Before Frontend Changes
+
+Before editing a template or its CSS to fix a visual bug on a page, **verify which template the route actually renders.** Route names, template filenames, and URL paths often do not match. Editing the wrong template means your fix deploys but has zero effect on the page.
+
+```python
+# landing.py
+@router.get("/home")
+async def home_page(...):
+    return templates.TemplateResponse("dashboard.html", ...)
+    #                                  ^^^^^^^^^^^^^^
+    #  /home renders dashboard.html, NOT home.html!
+```
+
+**Check before any frontend fix:**
+1. Find the route handler: `grep -r '"/the-url"' app/routes/`
+2. Read the handler to see which template it renders
+3. Check what CSS/partials that template includes
+4. Only then edit the correct template and CSS files
+
+**Learned from:** `/home` renders `dashboard.html`, not `home.html`. Multiple sessions edited `home.html` CSS and cache busters while the actual page used `dashboard.html`. Fixes appeared deployed but had no visual effect.
+
+---
+
+## 27. Unlayered CSS Silently Overrides the Entire Design System
+
+In a `@layer`-based cascade, unlayered CSS always beats layered CSS regardless of specificity or source order. A file loaded without `@layer` wrapping can silently override every design system token and component style.
+
+```css
+/* BAD - cute.css loaded last, unlayered, overrides everything */
+.btn { border-radius: 20px; }  /* beats @layer components .btn */
+
+/* GOOD - wrap in the correct layer or remove */
+@layer components {
+  .btn { border-radius: var(--ds-p-radius-btn); }
+}
+```
+
+**Check:** When a design system token appears to be "ignored," check if an unlayered stylesheet is loaded after the layered ones. `grep -L '@layer' app/static/css/*.css` finds unlayered files.
+
+**Learned from:** `cute.css` (28 KB, unlayered, loaded last in `base.html`) was overriding the entire design system's buttons, cards, and typography. Removing it restored all design tokens.
+
+---
+
+## 28. Cross-Reference CSS With Templates Before Declaring Dead
+
+Before archiving a CSS file, verify it is truly unused by cross-referencing three sources: (1) template `<link>` tags, (2) `@import` in other CSS files, (3) class name usage in templates and JS. Automated "dead CSS" tools can miss dynamically-generated class names and partial matches.
+
+```bash
+# Check all three sources before archiving
+grep -r "filename.css" app/templates/ app/static/css/
+grep -r "class-from-file" app/templates/ app/static/js/
+```
+
+**Gotcha:** Cache-buster normalization across many files can miss individual templates (e.g., `buildings/list.html` was missed by an automated agent). Always do a manual verification pass after bulk changes.
+
+**Learned from:** CSS streamlining session — `buildings/list.html` cache-buster was missed by the normalization agent. Manual `grep` caught it.
+
+---
+
 ## Checklist for New UI Code
 
 - [ ] Every guard clause shows feedback (toast, inline, or console)
@@ -556,7 +855,7 @@ When a page becomes the primary UI for a data domain (e.g., Home becomes the onl
 - [ ] API fetches in overlays include auth credentials
 - [ ] Dependency availability checked before multi-step operations
 - [ ] JS files validated with `node --check` after editing object literals
-- [ ] Static asset `<script>`/`<link>` tags include `?v=` cache-busting param
+- [ ] Static asset `<script>`/`<link>` tags include `?v=` cache-busting param (grep ALL templates for the filename — one file may be loaded from multiple templates)
 - [ ] Vue `v-else`/`v-else-if` has an immediately adjacent `v-if` sibling
 - [ ] Service worker cache name bumped after asset changes
 - [ ] Framework CDN uses production build (`.prod.js` or `.min.js`)
@@ -564,3 +863,12 @@ When a page becomes the primary UI for a data domain (e.g., Home becomes the onl
 - [ ] `<button>` variants include ALL 5 resets (`display:block`, `appearance:none`, `font:inherit`, `color:inherit`, `cursor:pointer`)
 - [ ] Cache-busting updated in BOTH `?v=` param AND service worker cache name (doing one without the other doesn't work)
 - [ ] Primary data views show connection status and surface fetch errors visibly
+- [ ] Navigation-guard flags (e.g., `redirecting`) only set INSIDE the branch that actually navigates
+- [ ] Every async button handler has a double-submit guard (`setBtnLoading` or `disabled`); grep the file for consistency
+- [ ] CSS classes used in HTML verified to exist in loaded stylesheets (`grep -r "\.class-name" app/static/css/`); prefer design system partials over raw HTML
+- [ ] Floating bulk action bars use `border-radius: var(--ds-radius-full)` on BOTH the bar AND its buttons; include count badge, divider, action buttons, close button, and slide-in animation
+- [ ] Card selection checkboxes use progressive disclosure (`opacity: 0` default, shown on hover/selected/selecting-mode); parent container gets a `selecting-mode` class when any card is selected
+- [ ] Container clearing uses `while (el.firstChild) el.removeChild(el.firstChild)` — never assign empty HTML strings; DOM construction uses `createElement` + `textContent`, not string concatenation into HTML parser
+- [ ] Service worker uses **network-first** strategy for CSS/JS (never cache-first for mutable assets)
+- [ ] Before any frontend fix, verified which template the route actually renders (`grep -r '"/url"' app/routes/` and read the handler)
+- [ ] New CSS files wrapped in the correct `@layer` (`design-system`, `components`, or `pages`); only Bootstrap and `mobile.css` should be unlayered

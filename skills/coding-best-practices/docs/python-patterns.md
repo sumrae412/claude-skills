@@ -307,3 +307,23 @@ def test_migration_data_integrity(db, alembic_runner):
 - [ ] Large tables: migration runs in < 30 seconds
 - [ ] Indexes created CONCURRENTLY for large tables (Postgres)
 - [ ] Foreign keys have appropriate ON DELETE behavior
+
+---
+
+## Dependency Version Coupling
+
+When pinning a package version, check whether it has transitive version constraints that affect other packages. Async wrappers (`aioboto3`, `aiobotocore`) commonly constrain the sync library version (`boto3`, `botocore`).
+
+```python
+# BAD - upgrade boto3 independently, breaks aiobotocore
+boto3==1.42.59
+aioboto3==12.3.0  # requires botocore<1.34.35
+
+# GOOD - pin boto3 within aiobotocore's constraint
+boto3==1.34.34  # aioboto3 -> aiobotocore -> botocore<1.34.35
+aioboto3==12.3.0
+```
+
+**Check:** `pip install --dry-run` or read the chain of `install_requires` constraints before upgrading.
+
+**Learned from:** `requirements.txt` — `boto3==1.42.59` broke install because `aiobotocore==2.11.2` requires `botocore<1.34.35`.

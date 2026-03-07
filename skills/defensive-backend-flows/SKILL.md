@@ -174,9 +174,28 @@ async def _send_email_with_retry(self, ...):
     conn = await token_manager.get_connection(db, user_id)
 ```
 
-**Check:** After writing any function, scan its signature and body for every type/object name and verify a matching import exists *above* first use.
+This also applies to **string-quoted type annotations** — even though `"UUID | None"` is a string and won't cause a runtime `NameError`, linters (flake8 F821) flag the unquoted names as undefined. If a type appears in an annotation, it must be imported at module level:
 
-**Learned from:** `client.py` — `TenantPanelResponse` in return type without import. `email.py` — `token_manager` referenced before its late import. `calendar.py` — `AsyncSession` used in type hint before import.
+```python
+# ❌ BAD — UUID only imported inside function body, flake8 F821
+def _parse_state(
+    state: str | None,
+) -> tuple["UUID | None", str | None]:
+    from uuid import UUID  # too late for linter
+    ...
+
+# ✅ GOOD — module-level import satisfies both runtime and linter
+from uuid import UUID
+
+def _parse_state(
+    state: str | None,
+) -> tuple["UUID | None", str | None]:
+    ...
+```
+
+**Check:** After writing any function, scan its signature and body for every type/object name and verify a matching import exists *above* first use. For string-quoted annotations, verify the type is imported at module level even though Python won't evaluate the string.
+
+**Learned from:** `client.py` — `TenantPanelResponse` in return type without import. `email.py` — `token_manager` referenced before its late import. `calendar.py` — `AsyncSession` used in type hint before import. `auth.py` — `UUID` in string annotation `"UUID | None"` but only imported inside the function body.
 
 ### 7. Test Queries Against Real DB Semantics
 
@@ -474,6 +493,62 @@ git push
 
 **Learned from:** Cherry-pick of datetime filter fix conflicted on main. The first resolution silently dropped the datetime-based filter, requiring a second fix.
 
+### 18. Variables Don't Follow When Functions Split
+
+When refactoring a large function into smaller ones (or copying logic from one function to another), variables defined in the original function don't carry over. Each function has its own scope — a variable computed in `function_a()` is not available in `function_b()` even if they're in the same module.
+
+```python
+# ❌ BAD — google_connected defined in get_chat_context(),
+#          used in get_home_data() where it doesn't exist
+async def get_chat_context(db, user):
+    status = await token_manager.get_connection_status(db, user.id)
+    google_connected = status.is_connected  # defined here
+    ...
+
+async def get_home_data(db, user):
+    ...
+    if google_connected:  # NameError — not defined in this scope
+        events = await fetch_remote_events(db, user.id)
+
+# ✅ GOOD — each function computes what it needs
+async def get_home_data(db, user):
+    status = await token_manager.get_connection_status(db, user.id)
+    google_connected = status.is_connected
+    if google_connected:
+        events = await fetch_remote_events(db, user.id)
+```
+
+**Check:** After splitting a function or copying a code block that references local variables, verify every variable used in the new function is either (a) a parameter, (b) defined locally, or (c) imported. Search for names used before assignment.
+
+**Learned from:** `chat.py` — `google_connected` was defined in `get_chat_context()` but referenced in `get_home_data()` where it was never defined. Caused `NameError` at runtime.
+
+### 19. Static Asset Changes Must Include Cache-Busting Bumps
+
+When modifying CSS or JS files, the commit must also bump the `?v=` version parameter in every template that loads the file. The middleware sets `max-age=31536000` (1 year) on static files, so without a version bump, the deploy succeeds but browsers serve the old cached file — the change is invisible to users.
+
+```python
+# ❌ BAD — CSS file updated, templates untouched
+# git diff shows: app/static/css/pages/calendar.css changed
+# But calendar.html still has: <link href="...calendar.css?v=3">
+# Deploy succeeds, no visual change on site
+
+# ✅ GOOD — CSS change + version bump in same commit (or immediately after)
+# git diff shows:
+#   app/static/css/pages/calendar.css  (style changes)
+#   app/templates/calendar.html        (?v=3 → ?v=20260304a)
+#   app/templates/dashboard.html       (?v=3 → ?v=20260304a)
+```
+
+**Workflow after modifying any static file:**
+1. `grep -r "filename.css" app/templates/` — find ALL templates that load it
+2. Bump every `?v=` to today's date + letter suffix
+3. If no `?v=` exists, add one
+4. Commit the version bumps alongside the asset changes
+
+**Check:** After any commit that touches `.css` or `.js` files, verify the same commit (or a follow-up) also bumps the `?v=` parameters in all templates that reference those files. A CSS-only commit with no template changes is a red flag.
+
+**Learned from:** Four CSS commits (`09ee4b29` through `3d4b22a1`) were pushed and deployed but no visual changes appeared on the site. The CSS files were updated on disk, but `calendar.html`, `dashboard.html`, `home.html`, `tasks/list_modern.html`, and `properties/list_modern.html` all still had stale `?v=` parameters. Required a follow-up commit to bump all version strings.
+
 ## Quick Reference
 
 | Rule | Symptom | Check |
@@ -495,6 +570,8 @@ git push
 | Stale Connection Check | Feature disabled despite connection | Connection state read from owning service, not user column? |
 | Cache-Only Primary View | "Only 1 event" when 15 exist | Primary view fetches live source, not just local cache? |
 | Post-Conflict Testing | Resolved code breaks behavior | Tests re-run after conflict resolution before push? |
+| Split Function Scope | `NameError` on variable from sibling function | Every variable in new function defined locally, as param, or imported? |
+| Static Asset Cache-Busting | "Deployed but no visual change" | CSS/JS commit also bumps `?v=` in all loading templates? |
 
 ## Red Flags — STOP and Fix
 
@@ -523,6 +600,9 @@ git push
 - Connection check using `user.some_token` instead of the token manager
 - Primary view reading from local cache when it's the only UI for that data
 - Cherry-pick/merge pushed without re-running affected tests
+- Variable used in a function that was defined in a different function (split/copy artifact)
+- String-quoted type annotation (`"UUID | None"`) without module-level import of the type
+- A commit that changes `.css`/`.js` files but doesn't bump `?v=` params in loading templates
 
 ## When NOT to Use
 

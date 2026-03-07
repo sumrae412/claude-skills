@@ -468,9 +468,40 @@ uploadForm.addEventListener('submit', function(e) {
 
 ---
 
+## Bug 17: UI State Tests Check Wrong Template After Redirect (2026-03-04)
+
+**Symptom:** Four calendar UI state consistency tests failed with HTTP 302 instead of 200. Tests were hitting `/calendar/` and asserting on `calendarEventsLabel` and "Connect a calendar to see your events" — elements from `calendar.html`.
+
+**Root cause:** The `/calendar/` route was changed to redirect to `/home`, which renders `dashboard.html`. The tests still asserted on elements unique to `calendar.html`. The first fix attempt naively changed the URL to `/home` but kept the same assertions — which still failed because those elements don't exist in `dashboard.html`.
+
+**Which rule violated:** Rule 19 (Primary Views Must Surface Data Source Status) — broader: when a route redirects, tests must assert on the redirect target's actual content, not the old template's elements.
+
+**Code (bad):**
+```javascript
+// Test hits route that now redirects, asserts on old template's elements
+resp = await client.get("/calendar/");
+assert resp.status_code == 200;  // Actually 302
+assert "calendarEventsLabel" in resp.text;  // Only in calendar.html
+```
+
+**Code (fix):**
+```javascript
+// Separate test for redirect behavior
+resp = await client.get("/calendar/", follow_redirects=False);
+assert resp.status_code == 302;
+
+// State test hits the actual destination, asserts on its content
+resp = await client.get("/home");
+assert "googleConnected" in resp.text;  // JS config in dashboard.html
+```
+
+**Learned from:** `test_api_calendar.py` — `TestCalendarEventsBadgeState` class had 4 tests checking `calendar.html` elements, but `/calendar/` now redirects to `/home` → `dashboard.html`.
+
+---
+
 ## Common Thread
 
-All 16 bugs share one root cause: **the agent optimized for the happy path and didn't think about what the user sees when something goes wrong** — or when the data model is more complex than assumed.
+All 17 bugs share one root cause: **the agent optimized for the happy path and didn't think about what the user sees when something goes wrong** — or when the data model is more complex than assumed.
 
 The agent:
 1. Assumed guard clauses don't need feedback (Bug 1)
@@ -485,6 +516,7 @@ The agent:
 10. Assumed one table contains all records of a type (Bug 14)
 11. Assumed string comparison works for datetimes across timezones (Bug 15)
 12. Assumed button click == form submit (Bug 16)
+13. Assumed tests checking old template elements still valid after route redirect (Bug 17)
 
 Each is a failure to ask: **"What does the user see if this fails?"** or **"Is this the complete picture?"**
 

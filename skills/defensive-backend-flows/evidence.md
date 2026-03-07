@@ -967,9 +967,107 @@ async def _export_or_download_pdf(self, access_token, file_id):
 
 ---
 
+## Bug 35: String-Quoted Type Annotation Missing Module Import (2026-03-04)
+
+**Symptom:** Flake8 F821 error: `undefined name 'UUID'` on line 458 of `auth.py`. The type annotation `tuple["UUID | None", str | None]` used `UUID` but it was only imported inside the function body.
+
+**Root cause:** `from uuid import UUID` was placed inside the function body (line 461) but the type annotation referencing `UUID` was on the function signature (line 458). Even though `"UUID | None"` is a string annotation and won't cause a runtime `NameError`, flake8 flags it as F821.
+
+**Which rule violated:** 6: Verify Imports Match Signatures (extended — string annotations still need module-level imports for linters)
+
+**Code (bad):**
+```python
+def _parse_google_state(
+    state: str | None,
+) -> tuple["UUID | None", str | None]:
+    from uuid import UUID  # too late for flake8
+    ...
+```
+
+**Code (fix):**
+```python
+from uuid import UUID  # module-level
+
+def _parse_google_state(
+    state: str | None,
+) -> tuple["UUID | None", str | None]:
+    ...
+```
+
+**Pressure scenario prompt:** "Add a helper function that parses a state parameter and returns a UUID. Import UUID inside the function to keep imports local."
+
+---
+
+## Bug 36: Variable Scope Error After Function Split (2026-03-04)
+
+**Symptom:** Flake8 F821 error: `undefined name 'google_connected'` on line 647 of `chat.py`. The variable was defined in `get_chat_context()` but used in `get_home_data()`.
+
+**Root cause:** When `get_home_data()` was created (likely by copying/splitting logic from `get_chat_context()`), the code referencing `google_connected` was moved but the variable definition was not. Each function has its own scope — variables from one don't carry to another.
+
+**Which rule violated:** NEW — 18: Variables Don't Follow When Functions Split
+
+**Code (bad):**
+```python
+async def get_chat_context(db, user):
+    status = await token_manager.get_connection_status(db, user.id)
+    google_connected = status.is_connected
+    ...
+
+async def get_home_data(db, user):
+    ...
+    if google_connected:  # NameError — not in scope
+        events = await fetch_remote(db, user.id)
+```
+
+**Code (fix):**
+```python
+async def get_home_data(db, user):
+    status = await token_manager.get_connection_status(db, user.id)
+    google_connected = status.is_connected
+    if google_connected:
+        events = await fetch_remote(db, user.id)
+```
+
+**Pressure scenario prompt:** "Split the get_chat_context() function into two: one for chat context and one for home data. The home data function should check if Google Calendar is connected before fetching events."
+
+---
+
+## Bug 37: Tests Check Wrong Template After Route Redirect (2026-03-04)
+
+**Symptom:** Four calendar UI state tests failed with 302 instead of 200. Tests were hitting `/calendar/` expecting HTML content, but the route now redirects to `/home`.
+
+**Root cause:** The `/calendar/` route was changed to redirect to `/home`, but the tests still checked for HTML elements (`calendarEventsLabel`, "Connect a calendar to see your events") that only exist in `calendar.html`, not in `dashboard.html` which `/home` renders.
+
+**Which rule violated:** 17: After Conflict Resolution, Re-Run Targeted Tests (broader: tests must track route behavior changes)
+
+**Code (bad):**
+```python
+# Test hits old route, expects old template content
+resp = await client.get("/calendar/")
+assert resp.status_code == 200
+assert "calendarEventsLabel" in resp.text  # only in calendar.html
+```
+
+**Code (fix):**
+```python
+# Test verifies redirect behavior
+resp = await client.get("/calendar/", follow_redirects=False)
+assert resp.status_code == 302
+assert "/home" in resp.headers["location"]
+
+# Separate test hits /home, checks dashboard content
+resp = await client.get("/home")
+assert resp.status_code == 200
+assert "googleConnected" in resp.text  # JS config in dashboard.html
+```
+
+**Pressure scenario prompt:** "The /calendar route now redirects to /home. Update the existing calendar tests to verify the new behavior."
+
+---
+
 ## Common Thread
 
-All thirty-four bugs share one root cause: **the code optimized for the happy path and didn't consider what happens when things go wrong or when the same concept exists in multiple places.**
+All thirty-seven bugs share one root cause: **the code optimized for the happy path and didn't consider what happens when things go wrong or when the same concept exists in multiple places.**
 
 The agent:
 1. Assumed exceptions could be silently ignored (Bugs 1, 8)
@@ -978,7 +1076,7 @@ The agent:
 4. Assumed data operations are atomic (Bug 1)
 5. Assumed duplicate definitions would stay in sync (Bugs 4, 10, 18, 20, 25)
 6. Assumed private methods could be safely called externally (Bugs 3, 7, 9)
-7. Assumed all types/objects used in code were imported (Bugs 11, 14, 15, 27)
+7. Assumed all types/objects used in code were imported (Bugs 11, 14, 15, 27, 35)
 8. Assumed SQLite query semantics match Postgres (Bug 12)
 9. Assumed model attributes/methods exist without checking (Bugs 13, 19)
 10. Assumed auxiliary side-effects (SMS) are safe to run unwrapped (Bug 17)
@@ -989,25 +1087,8 @@ The agent:
 15. Assumed internal error details are safe to show users (Bug 30)
 16. Assumed no-op stubs would be caught during review (Bug 28)
 17. Assumed raw metadata is safe to persist in audit logs (Bug 29)
-
-Each is a failure to ask: **"What happens to the data if this fails halfway?"**
-
-All twenty-four bugs share one root cause: **the code optimized for the happy path and didn't consider what happens when things go wrong or when the same concept exists in multiple places.**
-
-The agent:
-1. Assumed exceptions could be silently ignored (Bugs 1, 8)
-2. Assumed callers would catch all exception types (Bug 6)
-3. Assumed error-code sets were complete (Bug 16)
-4. Assumed data operations are atomic (Bug 1)
-5. Assumed duplicate definitions would stay in sync (Bugs 4, 10, 18, 20)
-6. Assumed private methods could be safely called externally (Bugs 3, 7, 9)
-7. Assumed all types/objects used in code were imported (Bugs 11, 14, 15)
-8. Assumed SQLite query semantics match Postgres (Bug 12)
-9. Assumed model attributes/methods exist without checking (Bugs 13, 19)
-10. Assumed auxiliary side-effects (SMS) are safe to run unwrapped (Bug 17)
-11. Assumed refactored URLs don't need backward compatibility (Bug 21)
-12. Assumed user-facing actions are visible without audit logging (Bugs 22, 23)
-13. Assumed error-level logs should be hidden from users (Bug 24)
+18. Assumed variables from one function scope are available in another (Bug 36)
+19. Assumed tests don't need updating when route behavior changes (Bug 37)
 
 Each is a failure to ask: **"What happens to the data if this fails halfway?"**
 

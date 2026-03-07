@@ -1,1 +1,0 @@
-- before merging pr's for this project, remind me to run ./scripts/quick_ci.sh

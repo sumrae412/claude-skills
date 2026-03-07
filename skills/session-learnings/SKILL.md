@@ -129,6 +129,7 @@ For each approved proposal:
 | "I'll remember this for next time" | You won't. Next session starts fresh. Document it now. |
 | "This is too minor to document" | Minor gotchas (security hooks, worktree quirks) save the most time |
 | "I already updated skills manually" | Run the agent anyway — it may catch things you missed |
+| "I'll run multiple agents in parallel for speed" | Parallel subagents doing git commits in the same worktree cause conflicts. Serialize commits or use separate worktrees per agent. |
 
 ## Example Session Context
 
