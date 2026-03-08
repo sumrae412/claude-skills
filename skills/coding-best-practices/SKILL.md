@@ -75,3 +75,31 @@ Before committing code changes:
 - [ ] Route has `name=` parameter for `url_for()`
 - [ ] HTTP method matches frontend expectations (PATCH vs PUT)
 - [ ] Content-Type matches (JSON vs Form data)
+
+## CI/CD Script Structure
+
+Scripts in `scripts/` for CI/CD operations follow this structure:
+
+1. **Docstring** with usage examples and exit codes
+2. **Result dataclass** for structured output (success, message, error, dry_run, timestamp)
+3. **Manager class** with all operations as methods
+4. **Dry-run mode** throughout (never modify state if `--dry-run`)
+5. **argparse CLI** with `--dry-run`, `--format json|text`, and operation-specific flags
+6. **Exit codes**: 0=success, 1=operation failed, 2=invalid arguments
+
+```python
+@dataclass
+class DeployResult:
+    success: bool
+    message: str
+    dry_run: bool = False
+    error: Optional[str] = None
+    timestamp: str = field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
+
+class DeployManager:
+    def __init__(self, dry_run: bool = False, timeout: int = 30):
+        self.dry_run = dry_run
+        self.timeout = timeout
+```
+
+**Examples:** scripts/release.py, scripts/rollback.py, scripts/canary_deploy.py

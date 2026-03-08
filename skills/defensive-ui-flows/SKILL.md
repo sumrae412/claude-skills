@@ -684,6 +684,21 @@ The inverse is equally dangerous: CSS selectors targeting classes that no longer
 
 **Learned from:** `workflows.html` — used `class="filter-pill"` but no `.filter-pill` selector existed in any CSS file. The `workflow-manager.css` defined `.category-filters .wf-btn-ghost` styles, but the HTML never used `.wf-btn-ghost`. Both sides of the mismatch went undetected because neither caused an error — just unstyled buttons.
 
+**Migration variant:** When migrating CSS class names from one framework to another (e.g., Bootstrap `d-none` to Tailwind `hidden`), the new class names must have CSS definitions available on the page. If the target framework is not installed (no CDN link, no build tool, no PostCSS config), you must add the class definitions manually to the design system. A class rename without a backing definition is the same as using a class that doesn't exist — it silently renders as nothing.
+
+```html
+<!-- BAD - renamed to Tailwind classes but Tailwind CSS is not installed -->
+<div class="hidden">...</div>  <!-- .hidden has no definition, div is visible -->
+
+<!-- GOOD - added .hidden definition to design system -->
+/* In app/static/css/design-system/index.css */
+.hidden { display: none !important; }
+```
+
+**Check:** When renaming utility classes across templates, run `grep -r "\.new-class-name" app/static/css/` to confirm the new class has a CSS definition. If the framework that defines the class is not installed, add the definitions to the design system.
+
+**Learned from:** PR #155 — migrated 91 template files from Bootstrap `d-none`/`d-md-block` to Tailwind `hidden`/`md:block` classes, but Tailwind CSS was never installed. All renamed classes rendered as nothing.
+
 ---
 
 ## 23. Floating Bulk Action Bars Must Use Full Border-Radius
@@ -841,6 +856,34 @@ grep -r "class-from-file" app/templates/ app/static/js/
 
 ---
 
+## 29. Use One Visibility Mechanism Per File
+
+Within a single JS file, pick one approach for showing/hiding elements and use it consistently: either `style.display` or `classList.add/remove('hidden')`. Mixing both creates bugs when one function hides via `style.display = 'none'` and another tries to show by removing the `hidden` class — the element stays hidden because the inline `display: none` still wins.
+
+```javascript
+// BAD - mixed mechanisms in same file
+function hidePanel() {
+    panel.style.display = 'none';  // sets inline style
+}
+function showPanel() {
+    panel.classList.remove('hidden');  // removes class, but inline style still hides it
+}
+
+// GOOD - one mechanism throughout the file
+function hidePanel() {
+    panel.classList.add('hidden');
+}
+function showPanel() {
+    panel.classList.remove('hidden');
+}
+```
+
+**Check:** `grep -c 'style\.display' <file>` and `grep -c "classList.*'hidden'" <file>`. If both return non-zero counts, the file has mixed mechanisms. Pick one and migrate the other.
+
+**Learned from:** `calendar.js` — 21 `style.display` usages alongside 43 `classList` usages. PR #155 review caught 6 instances that should have been `classList` to match the file's dominant pattern.
+
+---
+
 ## Checklist for New UI Code
 
 - [ ] Every guard clause shows feedback (toast, inline, or console)
@@ -872,3 +915,5 @@ grep -r "class-from-file" app/templates/ app/static/js/
 - [ ] Service worker uses **network-first** strategy for CSS/JS (never cache-first for mutable assets)
 - [ ] Before any frontend fix, verified which template the route actually renders (`grep -r '"/url"' app/routes/` and read the handler)
 - [ ] New CSS files wrapped in the correct `@layer` (`design-system`, `components`, or `pages`); only Bootstrap and `mobile.css` should be unlayered
+- [ ] When migrating CSS class names between frameworks, confirmed the new classes have CSS definitions (framework installed OR definitions added to design system)
+- [ ] Visibility toggling uses ONE mechanism per file (`style.display` OR `classList.add/remove('hidden')`, not both); `grep -c` both patterns to verify

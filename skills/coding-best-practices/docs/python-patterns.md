@@ -327,3 +327,28 @@ aioboto3==12.3.0
 **Check:** `pip install --dry-run` or read the chain of `install_requires` constraints before upgrading.
 
 **Learned from:** `requirements.txt` — `boto3==1.42.59` broke install because `aiobotocore==2.11.2` requires `botocore<1.34.35`.
+
+---
+
+## Feature Flag Pattern
+
+Database-backed feature flags with multiple targeting strategies:
+
+```python
+class FlagType(str, enum.Enum):
+    BOOLEAN = "boolean"        # Simple on/off
+    PERCENTAGE = "percentage"  # Hash-based rollout
+    USER_LIST = "user_list"    # Explicit user IDs
+
+# Deterministic percentage bucketing (same user always gets same result)
+def _percent_enabled(user_id: str, flag_name: str, percent: int) -> bool:
+    token = f"{user_id}:{flag_name}".encode("utf-8")
+    bucket = int(hashlib.sha256(token).hexdigest()[:8], 16) % 100
+    return bucket < percent
+```
+
+**Key points:**
+- Use SHA-256 hash of `user_id + flag_name` for even distribution
+- Store `allowed_user_ids` as JSON array for USER_LIST type
+- Default `enabled=False` for new flags (safety)
+- Batch-load flags to avoid N+1 queries in `get_all_flags_for_user`

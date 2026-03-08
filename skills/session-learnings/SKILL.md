@@ -39,6 +39,8 @@ SESSION CONTEXT:
 - Gotchas hit: [security hooks, env quirks, API limitations, workarounds]
 - Investigation conclusions: ["feature never existed", "regression from cherry-pick"]
 - New components built: [UI components, utilities, patterns that others should reuse]
+- Spec review catches: [things spec reviewer found missing before implementation]
+- Code quality catches: [N+1 queries, race conditions, duplicate code found in review]
 ```
 
 ### Step 2: Dispatch Background Agent

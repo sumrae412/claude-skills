@@ -524,7 +524,50 @@ async def get_home_data(db, user):
 
 ### 19. Static Asset Changes Must Include Cache-Busting Bumps
 
-When modifying CSS or JS files, the commit must also bump the `?v=` version parameter in every template that loads the file. The middleware sets `max-age=31536000` (1 year) on static files, so without a version bump, the deploy succeeds but browsers serve the old cached file — the change is invisible to users.
+When modifying CSS or JS files, the commit must also bump the `?v=` version parameter in every template that loads the file.
+
+### 20. Subprocess Commands Must Use List Arguments
+
+Never use `shell=True` or string commands with subprocess. Always use list-based arguments with configurable timeouts. Add `# nosec` annotations with explanations for security scanners.
+
+```python
+# ❌ BAD — shell=True allows command injection
+subprocess.run(f"git tag {tag_name}", shell=True)
+
+# ✅ GOOD — list args, timeout, security annotation
+# nosec B603,B607 - git is a trusted command with known arguments
+result = subprocess.run(
+    ["git", "tag", "-a", tag_name, "-m", message],
+    capture_output=True,
+    text=True,
+    cwd=self.project_root,
+    timeout=30,
+)
+```
+
+**Learned from:** CI/CD scripts (release.py, rollback.py, canary_deploy.py) — all use list-based subprocess calls with timeouts and security annotations.
+
+### 21. Lock File Acquisition Has TOCTOU Risk
+
+When using file-based locks to prevent concurrent operations, there's a Time-Of-Check-To-Time-Of-Use race condition between checking if the lock exists and creating it. For critical operations, use atomic file creation or a proper locking library.
+
+```python
+# ❌ BAD — TOCTOU race between check and create
+if os.path.exists(LOCK_FILE):
+    raise RuntimeError("Already locked")
+with open(LOCK_FILE, "w") as f:  # Another process could create it here
+    f.write(str(os.getpid()))
+
+# ✅ GOOD — atomic creation with exclusive flag
+try:
+    fd = os.open(LOCK_FILE, os.O_CREAT | os.O_EXCL | os.O_WRONLY)
+    os.write(fd, str(os.getpid()).encode())
+    os.close(fd)
+except FileExistsError:
+    raise RuntimeError("Lock already held")
+```
+
+**Note:** For simple scripts where race conditions are unlikely, the simpler pattern is acceptable with a comment acknowledging the limitation. The middleware sets `max-age=31536000` (1 year) on static files, so without a version bump, the deploy succeeds but browsers serve the old cached file — the change is invisible to users.
 
 ```python
 # ❌ BAD — CSS file updated, templates untouched
@@ -572,6 +615,9 @@ When modifying CSS or JS files, the commit must also bump the `?v=` version para
 | Post-Conflict Testing | Resolved code breaks behavior | Tests re-run after conflict resolution before push? |
 | Split Function Scope | `NameError` on variable from sibling function | Every variable in new function defined locally, as param, or imported? |
 | Static Asset Cache-Busting | "Deployed but no visual change" | CSS/JS commit also bumps `?v=` in all loading templates? |
+| Subprocess Shell Injection | Command injection vulnerability | Using list args with `shell=False` and timeout? |
+| Lock File TOCTOU | Race condition in concurrent ops | Using atomic `O_CREAT | O_EXCL` or proper lock library? |
+| Flag Evaluation N+1 | Slow feature flag checks | Batch-loading flags before loop evaluation? |
 
 ## Red Flags — STOP and Fix
 
