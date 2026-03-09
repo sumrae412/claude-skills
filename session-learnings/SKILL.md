@@ -1,0 +1,155 @@
+---
+name: session-learnings
+description: Use proactively after committing significant work to capture session lessons — dispatches a background agent that analyzes code changes and session events, then proposes updates to personal skills, project skills, and CLAUDE.md
+---
+
+# Session Learnings
+
+## Overview
+
+After major commits, dispatch a background agent to reflect on what was learned and propose updates to skills and project docs. The agent analyzes both **code diffs** and **session conversation** to find new patterns, bug lessons, user corrections, and conventions that should be documented.
+
+**Core principle:** The conversation is the richest source of learnings. Code diffs show *what* changed; session events show *why* and *what went wrong first*.
+
+## When to Use
+
+Proactively invoke after:
+- Committing a significant feature or bug fix
+- A debugging investigation that uncovered root causes
+- The user correcting your approach ("that's wrong, do it this way")
+- Discovering a new convention or component pattern
+- The user explicitly asking to update skills
+
+Do NOT invoke after:
+- Trivial commits (typo fixes, version bumps)
+- Work that only touched files already fully documented in skills
+- Mid-task commits where more work follows immediately
+
+## The Process
+
+### Step 1: Compile Session Context
+
+Before dispatching the background agent, compile a structured summary from the conversation:
+
+```
+SESSION CONTEXT:
+- User corrections: [list times user said something was wrong or needed changing]
+- Bugs investigated: [root causes found, what was misleading]
+- Patterns established: [user said "make this the default", "always do X"]
+- Gotchas hit: [security hooks, env quirks, API limitations, workarounds]
+- Investigation conclusions: ["feature never existed", "regression from cherry-pick"]
+- New components built: [UI components, utilities, patterns that others should reuse]
+- Spec review catches: [things spec reviewer found missing before implementation]
+- Code quality catches: [N+1 queries, race conditions, duplicate code found in review]
+```
+
+### Step 2: Dispatch Background Agent
+
+Use the Task tool with `run_in_background: true`:
+
+```
+Task tool:
+  subagent_type: general-purpose
+  run_in_background: true
+  prompt: |
+    You are a session-learnings analyst. Your job is to analyze code changes
+    and session events, then propose updates to skills and project docs.
+
+    IMPORTANT: You are ONLY proposing changes. Do NOT edit any files.
+    Write all proposals to your output as structured text.
+
+    ## Code Context
+    Run these commands to understand what changed:
+    - git log --oneline -10
+    - git diff HEAD~N..HEAD --stat  (where N = number of session commits)
+    - Read any skill files that match changed domains
+
+    ## Session Context
+    [paste compiled session context from Step 1]
+
+    ## Domain Mapping
+    Map changed files to skill domains:
+    - CSS/HTML/templates → defensive-ui-flows, project UI standards skill
+    - routes/*.py, services/*.py → defensive-backend-flows
+    - models/*.py, alembic/ → coding-best-practices
+    - tests/ → coding-best-practices (testing section)
+    - .claude/skills/ → meta (skills changed directly)
+
+    ## Available Skills
+    Personal: ls ~/.claude/skills/
+    Project: ls .claude/skills/ (if exists)
+
+    ## Reflection Questions (per matched domain)
+    For each relevant skill, read its current content and ask:
+    1. Are there new patterns in committed code not documented here?
+    2. Did we hit a bug/gotcha that should become a defensive pattern?
+    3. Did the user correct the agent's approach? What rule prevents it?
+    4. Did we discover a convention/component for project standards?
+    5. Were there investigation lessons worth documenting?
+
+    Also check CLAUDE.md:
+    6. Are there new bash commands, env quirks, or conventions for CLAUDE.md?
+
+    ## Output Format
+    For EACH proposed update, write:
+
+    ### [target-name] — [1-line reason]
+    **File:** [full path]
+    **Action:** Add pattern | Update section | Add checklist item | Add line
+    **Content:**
+    > [the proposed addition — match the style of the existing file]
+    > [keep concise: 1-10 lines per proposal]
+
+    If no updates are needed for a domain, say so explicitly.
+    End with: "## Summary: N proposals across M targets"
+```
+
+### Step 3: Present Results
+
+When the background agent completes (check via TaskOutput):
+
+1. Read the agent's output
+2. Present a concise summary: "Session learnings found **N updates** across **M targets**"
+3. List each proposal with its 1-line reason
+4. Ask: "Apply all / select which ones / skip?"
+
+### Step 4: Apply Approved Updates
+
+For each approved proposal:
+- Read the target file
+- Make the edit (matching existing style — patterns numbered sequentially, checklist items appended, etc.)
+- Confirm each edit succeeded
+
+**Never edit without approval.** The background agent proposes; the user decides.
+
+## Red Flags
+
+| Thought | Reality |
+|---------|---------|
+| "Nothing notable happened this session" | User corrections alone are worth capturing |
+| "The code diff tells the whole story" | Session context (corrections, investigations) is richer |
+| "I'll remember this for next time" | You won't. Next session starts fresh. Document it now. |
+| "This is too minor to document" | Minor gotchas (security hooks, worktree quirks) save the most time |
+| "I already updated skills manually" | Run the agent anyway — it may catch things you missed |
+| "I'll run multiple agents in parallel for speed" | Parallel subagents doing git commits in the same worktree cause conflicts. Serialize commits or use separate worktrees per agent. |
+
+## Example Session Context
+
+From a real session that built a bulk action bar:
+
+```
+SESSION CONTEXT:
+- User corrections: "The bulk options menu does not have rounded edges —
+  make sure it does" (user provided screenshot showing expected pill shape)
+- Bugs investigated: User reported "bulk select was removed from workflows
+  page" — systematic investigation showed feature NEVER existed in any
+  git version. CSS classes existed but were used by a different JS file.
+- Patterns established: "Update the UI skills to make this the default
+  style" — bulk action bar with rounded edges is now standard.
+- Gotchas hit: Security hook blocked innerHTML=''. Fixed with
+  while(el.firstChild) el.removeChild(el.firstChild).
+- New components built: Floating bulk action bar (.wf-bulk-bar),
+  card selection with progressive disclosure (.card-select-checkbox)
+```
+
+This produced 3 skill updates (defensive-ui-flows patterns #23-25) and 1 project skill update (courierflow-ui-standards bulk action bar section).
