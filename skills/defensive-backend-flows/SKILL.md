@@ -592,6 +592,111 @@ except FileExistsError:
 
 **Learned from:** Four CSS commits (`09ee4b29` through `3d4b22a1`) were pushed and deployed but no visual changes appeared on the site. The CSS files were updated on disk, but `calendar.html`, `dashboard.html`, `home.html`, `tasks/list_modern.html`, and `properties/list_modern.html` all still had stale `?v=` parameters. Required a follow-up commit to bump all version strings.
 
+### 22. Never Use eval() — Use ast.parse() for Expression Evaluation
+
+When evaluating composed expressions (boolean logic, arithmetic), never use the eval built-in. Even with "controlled" input, it is a code smell that security scanners (Bandit B307) flag. Use `ast.parse()` with a recursive evaluator that only handles expected node types.
+
+```python
+# BAD — security scanner flags this, potential code execution
+expr = "True and False or not True"
+return __builtins__["eval"](expr)  # Bandit B307
+
+# GOOD — ast.parse with explicit node handling
+import ast
+
+def _safe_eval_bool(expr: str) -> bool:
+    tree = ast.parse(expr.strip(), mode="eval")
+
+    def _walk(node):
+        if isinstance(node, ast.Expression):
+            return _walk(node.body)
+        if isinstance(node, ast.Constant) and isinstance(node.value, bool):
+            return node.value
+        if isinstance(node, ast.BoolOp):
+            if isinstance(node.op, ast.And):
+                return all(_walk(v) for v in node.values)
+            if isinstance(node.op, ast.Or):
+                return any(_walk(v) for v in node.values)
+        if isinstance(node, ast.UnaryOp) and isinstance(node.op, ast.Not):
+            return not _walk(node.operand)
+        raise ValueError(f"Unsupported node: {ast.dump(node)}")
+
+    return _walk(tree)
+```
+
+**Check:** Search for the eval built-in in the codebase. Every occurrence should be replaced with a purpose-built evaluator using `ast.parse()`.
+
+**Learned from:** `automation_engine.py` — used the eval built-in to evaluate composed boolean expressions. Replaced with `_safe_eval_bool()` using `ast.parse(expr, mode="eval")`.
+
+### 23. SQL Dynamic Table Names: Allowlist + Assert, Not F-Strings
+
+When SQL queries need a dynamic table name (e.g., during table renaming migrations), never use f-strings inside `text()`. Instead: (1) assert the name is in an explicit allowlist, (2) use `.replace()` on a plain string, (3) wrap with `text()` after substitution.
+
+```python
+# BAD — f-string SQL injection vector, Bandit B608
+query = text(f"""
+    SELECT * FROM {table_name} WHERE user_id = :uid
+""")
+
+# GOOD — allowlist + replace + text()
+assert table_name in ("households", "properties"), "Invalid table name"
+sql = """
+    SELECT * FROM {table_name} WHERE user_id = :uid
+"""
+query = text(sql.replace("{table_name}", table_name))
+```
+
+**Check:** Search for `text(f"` or `text(f'` in services. Every dynamic table/column name in SQL must use the allowlist pattern.
+
+**Learned from:** `household_service.py` — three SQL queries used `text(f"...{households_table}...")`. Fixed with assert-allowlist + `.replace()`.
+
+### 24. Retry Once on Transient DB OperationalError
+
+For operations that call the database through dynamic dispatch (tool executors, plugin systems), wrap in a single-retry loop for `sqlalchemy.exc.OperationalError`. Transient connection resets happen on cloud platforms (Railway, Heroku) and a single retry usually succeeds.
+
+```python
+# BAD — transient connection reset crashes the operation
+result = await self._execute_via_skill(tool_name, intent, input, ctx)
+
+# GOOD — retry once on transient DB error
+from sqlalchemy.exc import OperationalError
+
+for attempt in range(2):
+    try:
+        result = await self._execute_via_skill(tool_name, intent, input, ctx)
+        break
+    except OperationalError:
+        if attempt == 0:
+            logger.warning(f"Transient DB error in {tool_name}, retrying")
+            continue
+        raise
+```
+
+**Check:** For any operation that calls the DB through a plugin/dispatch layer, ask: "Will a transient connection reset crash this?" If yes, add a single-retry loop.
+
+**Learned from:** `tool_executor.py` — `_execute_via_skill()` occasionally hit transient DB connection resets. Added single-retry loop with `except OperationalError`.
+
+### 25. Handle None vs Empty String for Nullable Text Fields
+
+When a service updates a nullable text field, handle three cases: (1) non-None value → `.strip() or None`, (2) explicit `None` → set to `None` (clear the field), (3) not provided → don't touch. Missing the "explicit None" case means users can't clear a field once set.
+
+```python
+# BAD — only handles non-None, can't clear the field
+if value is not None:
+    profile.field = value.strip() or None
+# Passing None does nothing — field stays set forever
+
+# GOOD — three-way handling
+if value is not None:
+    profile.field = value.strip() or None
+else:
+    profile.field = None  # explicit clear
+```
+
+**Check:** For every nullable text field update, ask: "Can the user clear this field by passing None/null?" If the service only has an `if value is not None` branch, it can't.
+
+**Learned from:** `user_profile_service.py` — `update_tenant_opt_in_clause()` only handled non-None values. Passing `None` was silently ignored, so users couldn't clear the clause.
+
 ## Quick Reference
 
 | Rule | Symptom | Check |
@@ -618,6 +723,10 @@ except FileExistsError:
 | Subprocess Shell Injection | Command injection vulnerability | Using list args with `shell=False` and timeout? |
 | Lock File TOCTOU | Race condition in concurrent ops | Using atomic `O_CREAT | O_EXCL` or proper lock library? |
 | Flag Evaluation N+1 | Slow feature flag checks | Batch-loading flags before loop evaluation? |
+| Eval Built-in Usage | Security scanner flags, code injection risk | Using `ast.parse()` with explicit node handler? |
+| SQL F-String Table Names | SQL injection via dynamic table name | Using allowlist assert + `.replace()` pattern? |
+| Transient DB Crash | Operation fails on connection reset | Single-retry loop for `OperationalError`? |
+| Can't Clear Nullable Field | User can set but never clear a text field | Explicit `None` → set to `None` branch exists? |
 
 ## Red Flags — STOP and Fix
 
@@ -649,6 +758,10 @@ except FileExistsError:
 - Variable used in a function that was defined in a different function (split/copy artifact)
 - String-quoted type annotation (`"UUID | None"`) without module-level import of the type
 - A commit that changes `.css`/`.js` files but doesn't bump `?v=` params in loading templates
+- Any use of the eval built-in — replace with `ast.parse()` + purpose-built evaluator
+- `text(f"...{variable}...")` in SQL — use allowlist assert + `.replace()` instead
+- DB call through dynamic dispatch with no retry for `OperationalError`
+- Nullable text field update with only `if value is not None` branch (can't clear)
 
 ## When NOT to Use
 

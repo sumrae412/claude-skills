@@ -192,6 +192,33 @@ async def test_partial_mock(db):
         mock_email.assert_called_once()
 ```
 
+### Mock Settings Alongside API Clients
+
+When testing services that create API clients from settings (OpenAI, Twilio, etc.),
+mock both the client class AND the settings object. If settings aren't mocked, the
+real `settings.api_key` is `None` and the client constructor may fail before your
+mock takes effect.
+
+```python
+# BAD — only mocks the client class, settings.api_key is None
+with patch("app.services.ai.llm_fallback.AsyncOpenAI") as mock_cls:
+    mock_cls.return_value = mock_client
+    result = await get_completion("prompt")  # may fail on settings
+
+# GOOD — mock settings AND client class together
+with (
+    patch("app.services.ai.llm_fallback.settings") as mock_settings,
+    patch("app.services.ai.llm_fallback.AsyncOpenAI") as mock_cls,
+):
+    mock_settings.openai_api_key = "test-key"
+    mock_settings.openai_model = "gpt-4o-mini"
+    mock_cls.return_value = mock_client
+    result = await get_completion("prompt")  # works
+```
+
+**Learned from:** `test_llm_fallback.py` — test only mocked `AsyncOpenAI` but not
+`settings`. The real settings had `openai_api_key = None`, causing test failure.
+
 ---
 
 ## Edge Cases to Always Test

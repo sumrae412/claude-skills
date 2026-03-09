@@ -34,6 +34,26 @@ if not re.match(r'^[\w\-\.]+$', user_filename):
     raise ValueError("Invalid filename")
 ```
 
+### 1b. Safe Hashing for Non-Security Purposes
+
+```python
+# BAD — Bandit B324, fails on FIPS-compliant systems
+cache_key = hashlib.md5(data.encode()).hexdigest()
+
+# GOOD — explicit non-security flag
+cache_key = hashlib.md5(data.encode(), usedforsecurity=False).hexdigest()
+
+# GOOD — for file content hashing
+file_hash = hashlib.md5(usedforsecurity=False)
+for chunk in iter(lambda: f.read(8192), b''):
+    file_hash.update(chunk)
+```
+
+When using MD5 for cache keys, asset fingerprinting, or deterministic identifiers
+(not passwords/signatures), always pass `usedforsecurity=False`. Python 3.9+ and
+FIPS-compliant systems may raise errors without this flag. Bandit B324 also flags
+bare `hashlib.md5()` calls.
+
 ### 2. Broken Authentication
 
 ```python
