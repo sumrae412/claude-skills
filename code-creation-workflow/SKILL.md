@@ -309,15 +309,17 @@ Invoke `verification-before-completion` skill:
 - Implementation matches the original request?
 - No regressions in existing functionality?
 
-### Finish Branch
+### Auto-Ship
 
-Invoke `finishing-a-development-branch` skill → which uses `/ship` to run the full pipeline:
-1. Run `./scripts/quick_ci.sh` (or project test suite)
-2. Commit with conventional message
-3. Push and create PR
-4. Launch background review agent (CodeRabbit + defensive patterns + CI + cherry-pick to main)
+After verification passes, invoke `/ship` directly — do NOT go through `finishing-a-development-branch`'s option menu. The user chose to implement; shipping is the expected outcome.
 
-**This runs automatically** — no manual PR creation or review invocation needed.
+`/ship` handles:
+1. Commit with conventional message
+2. Push and create PR
+3. Launch background review agent (CodeRabbit + defensive patterns + CI + cherry-pick to main)
+4. Session learnings capture
+
+**No user prompt needed** — verification passing IS the gate. Ship runs automatically.
 
 ### Capture Learnings
 
@@ -338,7 +340,7 @@ Invoke `session-learnings` skill:
 | 3 | Clarification | Surface all ambiguities | **User answers** |
 | 4 | Architecture | 2 parallel code-architect subagents | **User chooses + approves plan** |
 | 5 | Implementation | TDD per step + parallel dispatch | Tests pass |
-| 6 | Quality + Finish | Parallel reviewers → verify → `/ship` | **Verification** |
+| 6 | Quality + Auto-Ship | Parallel reviewers → verify → `/ship` (no menu) | **Verification** |
 
 ## Skills Invoked Within This Workflow
 
@@ -352,7 +354,7 @@ Invoke `session-learnings` skill:
 | test-driven-development | Phase 5 (TDD per step) |
 | subagent-driven-development | Phase 5 (parallel independent steps) |
 | verification-before-completion | Phase 6 (pre-finish check) |
-| finishing-a-development-branch → `/ship` | Phase 6 (branch completion → auto review → merge) |
+| `/ship` (direct, no menu) | Phase 6 (auto-ship after verification → review → merge) |
 | session-learnings | Phase 6 (capture discoveries) |
 
 ## Skills Eliminated (Absorbed)
