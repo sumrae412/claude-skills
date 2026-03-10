@@ -37,11 +37,43 @@ Internal guide for writing introductory lessons (Lesson Zero / L0) and marketing
 - If the list is longer, make it an **explicit numbered list** (slides help) so structure is clear — don't run concepts together in prose
 - Emphasize **development-time** benefits, not just post-deployment. Most learners are actively building, not shipping to production yet.
 
+### Concrete Over Categorical
+Name the specific things, not the abstract category they belong to.
+- ❌ "a different generation paradigm entirely"
+- ✅ "from text to images"
+- ❌ "a new optimization technique"
+- ✅ "a radix tree cache"
+
+### Purpose Framing Over Output Framing
+Frame around what the tool *does* or *is used for*, not just what it *produces*.
+- ❌ "here's what SGLang produces with it"
+- ✅ "here's what SGLang uses it for"
+- ❌ "the output is..."
+- ✅ "SGLang uses this to..."
+
+### Talking Head Intro Length
+Lesson-specific talking head intros (not L0) should be tight — ~20 seconds max:
+- One sentence of context (what came before)
+- One sentence of what's new in this lesson
+- Done. No preview lists, no expanded setup.
+
+### Cut Vague Endings
+If a sentence ending doesn't add specific information, cut it rather than replacing with something generic.
+- ❌ "...to get high quality visual output"
+- ✅ [cut — the example already showed the quality]
+- ❌ "...and that's what makes this powerful"
+- ✅ [end on the specific fact, not the editorial]
+
 ### What We Write Scripts For
 - Lesson Zero (L0) intro video — talking head only
 - Marketing teaser video — talking head only
 - Lesson talking heads (THs)
 - **NOT** for lesson screencasts
+
+### Iteration Protocol
+- When the user rewrites a sentence and keeps their version, accept it — do not re-suggest the same alternative in subsequent turns
+- Flag issues once; if the user declines the fix, move on
+- Only re-raise a concern if it creates a new problem downstream
 
 ### Speakability
 Scripts are read aloud on a teleprompter — test sentences by reading them out loud before finalizing.
@@ -70,6 +102,28 @@ Avoid framing that implies the learner doesn't know something obvious or that co
 ### Teleprompter Note
 - Google Doc must be in **Edit mode** (not View mode) for updates to appear on the teleprompter
 - Remove spacing between paragraphs manually in Edit mode before filming
+
+---
+
+## Course Map / Overview Slides
+
+These slides appear at the start of each lesson and show where the current lesson fits in the overall course. The script should NOT just describe what's on the slide or restate the lesson list.
+
+**Goal:** Help the learner understand why what they're doing in this lesson matters and how it connects to the broader arc of the course.
+
+**Pattern:**
+- Acknowledge what they've already built (1 sentence, specific)
+- Name what's new in this lesson and why it's a meaningful step, not just the next item on a list
+- Optionally, gesture at what it unlocks in the lesson(s) ahead
+
+**Do NOT:**
+- Repeat anything already said in the talking head intro for the same lesson
+- Just narrate the bullet list on the slide ("Lesson 1 covered X, Lesson 2 covered Y...")
+- Use generic transitions ("now we move on to the next topic")
+
+**Example (L4):**
+❌ "You've completed three lessons. This lesson is Lesson 4, where we move into diffusion."
+✅ "The first three lessons gave you the full LLM inference stack. This lesson adds a second modality — diffusion models. SGLang handles both with the same framework, and by the end you'll see why that matters."
 
 ---
 
@@ -217,6 +271,9 @@ Before finalizing any script:
 - [ ] Marketing script sounds different from L0 (different energy/emphasis)
 - [ ] Pronunciation guide included for acknowledgments names if non-obvious
 - [ ] Google Doc in Edit mode before filming
+- [ ] Course map slide script explains why the current lesson matters — not just what's on the list
+- [ ] Lesson TH intros are ~20 seconds — one sentence of context, one sentence of what's new
+- [ ] Sentences end on specific facts, not vague editorial payoffs
 
 ---
 
@@ -257,3 +314,9 @@ If the session produced a finalized or near-final script, add it to `references/
 | Defining technical terms (hit/miss) before the example | Reads like a glossary, kills narrative flow | Weave the definition into the walkthrough as the term appears naturally |
 | Transition sentence with no specifics ("now you're ready for the next level") | Meaningless — could apply to anything | Name the specific concept or action coming next |
 | SME notes integrated without checking which slide they fit | Notes may belong to a different slide | Read the slide content first, then map SME notes to where they add explanatory value |
+| Course map slide just narrates the lesson list | Misses the point of the slide | Explain why this lesson matters and how it connects to the broader arc |
+| Categorical framing ("a different paradigm") | Abstract, not informative | Name the specific things: "from text to images" |
+| Output framing ("here's what SGLang produces") | Passive; puts system before learner | Purpose framing: "here's what SGLang uses it for" |
+| Vague sentence endings ("...to get high quality output") | Adds no information | Cut it — let the specific example do the work |
+| Lesson TH intro longer than ~20 seconds | Over-explains; learner already has context | One sentence of prior context + one sentence of what's new |
+| Re-suggesting a phrasing the user already declined | Ignores user's judgment | Accept the user's version; move on |
