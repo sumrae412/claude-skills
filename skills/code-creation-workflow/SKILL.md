@@ -1,10 +1,23 @@
 ---
 name: code-creation-workflow
-description: Use when creating new features, implementing complex changes, or executing implementation plans. Agentic workflow with parallel subagents for exploration, architecture, implementation, and review.
+description: PRIMARY workflow for ALL feature development and implementation. SUPERSEDES brainstorming, writing-plans, executing-plans, test-driven-development, plancraft, and feature-dev — do NOT use those individually when this skill is available. Trigger on any request to build, implement, add, create, or fix features. Includes parallel exploration, architecture, TDD, and review as unified phases.
 user-invocable: true
 ---
 
 # Code Creation Workflow
+
+<SUPERSEDES>
+This skill is the unified orchestrator for all feature development. When this skill is active, do NOT separately invoke:
+- superpowers:brainstorming (absorbed → Phases 1-3)
+- superpowers:writing-plans (absorbed → Phase 4)
+- superpowers:executing-plans (absorbed → Phase 5)
+- superpowers:test-driven-development (absorbed → Phase 5, per-step TDD)
+- superpowers:subagent-driven-development (absorbed → Phase 5, parallel dispatch)
+- plancraft (absorbed → Phase 4 optional AI review)
+- feature-dev:feature-dev (replaced entirely)
+
+These skills' behaviors are already embedded in the phases below. Invoking them separately causes duplicate work and broken flow.
+</SUPERSEDES>
 
 ## Overview
 
@@ -56,9 +69,15 @@ Load **only** what matches. Don't dump everything into context.
 | Condition | Action |
 |-----------|--------|
 | Feature uses external API | `chub search <service>` → `chub get <doc-id>` |
-| Codebase >500 files or unfamiliar | Consider `repomix --compress` |
+| Codebase >500 files or unfamiliar | Run `python scripts/generate_repo_outline.py app/` for token-efficient context |
 | Need symbol-level precision | Activate Serena project, read relevant memories |
-| Small familiar codebase | Skip all three |
+| Small familiar codebase | Skip context tools |
+
+**Token-saving tools available:**
+- `generate_repo_outline.py` — Extracts function/class signatures without bodies (use for AI context)
+- `semgrep` — Semantic static analysis (catches bugs before review)
+- `ast-grep` — AST-based code search (more precise than grep)
+- `pyright` — Fast type checking (augments mypy)
 
 ### Step 6: Git Check
 
@@ -100,6 +119,18 @@ User says "implement X"
 ---
 
 ## Phase 2: Exploration (Parallel Subagents)
+
+### Pre-Exploration: Generate Repo Outline (Token Saver)
+
+Before launching explorers, generate a token-efficient codebase map:
+
+```bash
+python scripts/generate_repo_outline.py app/services/ --max-depth 2
+```
+
+This provides function/class signatures WITHOUT implementation bodies — dramatically reduces tokens while preserving structure awareness. Share this outline with explorer agents.
+
+### Launch Explorers
 
 Launch 2-3 **code-explorer** subagents in parallel to understand the codebase:
 
@@ -236,7 +267,13 @@ For each plan step:
 
 3. Run test → verify green
 
-4. Mark TodoWrite item complete
+4. Run static analysis on changed files (catch issues early):
+   semgrep --config=.semgrep.yml <changed-files>
+   ast-grep scan <changed-directory>
+
+   Fix any ERROR-level issues before proceeding.
+
+5. Mark TodoWrite item complete
 ```
 
 ### Parallel Subagent Dispatch (For Independent Steps)
@@ -288,6 +325,23 @@ Launch 2 **code-reviewer** subagents in parallel:
 
 **Subagent dispatch:** Use the Task tool with `subagent_type` of `feature-dev:code-reviewer`. Each gets the diff + the plan + project conventions.
 
+### Static Analysis Gate
+
+Before verification, run comprehensive static analysis on all changed files:
+
+```bash
+# Type checking (fast, catches type errors)
+pyright
+
+# Semantic analysis (catches security + logic issues)
+semgrep --config=.semgrep.yml --error app/
+
+# Structural analysis (catches anti-patterns)
+ast-grep scan app/
+```
+
+Fix any ERROR-level issues. Warnings/hints can be addressed later.
+
 ### Verification Gate
 
 Invoke `verification-before-completion` skill:
@@ -295,15 +349,19 @@ Invoke `verification-before-completion` skill:
 - No unintended file changes?
 - Implementation matches the original request?
 - No regressions in existing functionality?
+- Static analysis passes (no ERROR-level issues)?
 
-### Finish Branch
+### Auto-Ship
 
-Invoke `finishing-a-development-branch` skill:
-1. Run full test suite (`pytest tests/ -v` or project equivalent)
-2. **CourierFlow:** Run `./scripts/quick_ci.sh` or `just ci`
-3. Commit with conventional message
-4. Present options: merge, PR, keep branch, discard
-5. Execute user's choice
+After verification passes, invoke `/ship` directly — do NOT go through `finishing-a-development-branch`'s option menu. The user chose to implement; shipping is the expected outcome.
+
+`/ship` handles:
+1. Commit with conventional message
+2. Push and create PR
+3. Launch background review agent (CodeRabbit + defensive patterns + CI + cherry-pick to main)
+4. Session learnings capture
+
+**No user prompt needed** — verification passing IS the gate. Ship runs automatically.
 
 ### Capture Learnings
 
@@ -324,7 +382,7 @@ Invoke `session-learnings` skill:
 | 3 | Clarification | Surface all ambiguities | **User answers** |
 | 4 | Architecture | 2 parallel code-architect subagents | **User chooses + approves plan** |
 | 5 | Implementation | TDD per step + parallel dispatch | Tests pass |
-| 6 | Quality + Finish | Parallel reviewers → verify → commit | **Verification** |
+| 6 | Quality + Auto-Ship | Parallel reviewers → verify → `/ship` (no menu) | **Verification** |
 
 ## Skills Invoked Within This Workflow
 
@@ -338,8 +396,17 @@ Invoke `session-learnings` skill:
 | test-driven-development | Phase 5 (TDD per step) |
 | subagent-driven-development | Phase 5 (parallel independent steps) |
 | verification-before-completion | Phase 6 (pre-finish check) |
-| finishing-a-development-branch | Phase 6 (branch completion) |
+| `/ship` (direct, no menu) | Phase 6 (auto-ship after verification → review → merge) |
 | session-learnings | Phase 6 (capture discoveries) |
+
+## Static Analysis Tools (Automatic)
+
+| Tool | Where Used | Purpose |
+|------|------------|---------|
+| `generate_repo_outline.py` | Phase 2 (pre-exploration) | Token-efficient codebase context |
+| `semgrep` | Phase 5 (per-step), Phase 6 (gate) | Semantic analysis, security checks |
+| `ast-grep` | Phase 5 (per-step), Phase 6 (gate) | Structural anti-pattern detection |
+| `pyright` | Phase 6 (gate) | Fast type checking |
 
 ## Skills Eliminated (Absorbed)
 
