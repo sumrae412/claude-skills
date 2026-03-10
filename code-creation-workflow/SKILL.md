@@ -1,10 +1,23 @@
 ---
 name: code-creation-workflow
-description: Use when creating new features, implementing complex changes, or executing implementation plans. Agentic workflow with parallel subagents for exploration, architecture, implementation, and review.
+description: PRIMARY workflow for ALL feature development and implementation. SUPERSEDES brainstorming, writing-plans, executing-plans, test-driven-development, plancraft, and feature-dev — do NOT use those individually when this skill is available. Trigger on any request to build, implement, add, create, or fix features. Includes parallel exploration, architecture, TDD, and review as unified phases.
 user-invocable: true
 ---
 
 # Code Creation Workflow
+
+<SUPERSEDES>
+This skill is the unified orchestrator for all feature development. When this skill is active, do NOT separately invoke:
+- superpowers:brainstorming (absorbed → Phases 1-3)
+- superpowers:writing-plans (absorbed → Phase 4)
+- superpowers:executing-plans (absorbed → Phase 5)
+- superpowers:test-driven-development (absorbed → Phase 5, per-step TDD)
+- superpowers:subagent-driven-development (absorbed → Phase 5, parallel dispatch)
+- plancraft (absorbed → Phase 4 optional AI review)
+- feature-dev:feature-dev (replaced entirely)
+
+These skills' behaviors are already embedded in the phases below. Invoking them separately causes duplicate work and broken flow.
+</SUPERSEDES>
 
 ## Overview
 
@@ -298,12 +311,13 @@ Invoke `verification-before-completion` skill:
 
 ### Finish Branch
 
-Invoke `finishing-a-development-branch` skill:
-1. Run full test suite (`pytest tests/ -v` or project equivalent)
-2. **CourierFlow:** Run `./scripts/quick_ci.sh` or `just ci`
-3. Commit with conventional message
-4. Present options: merge, PR, keep branch, discard
-5. Execute user's choice
+Invoke `finishing-a-development-branch` skill → which uses `/ship` to run the full pipeline:
+1. Run `./scripts/quick_ci.sh` (or project test suite)
+2. Commit with conventional message
+3. Push and create PR
+4. Launch background review agent (CodeRabbit + defensive patterns + CI + cherry-pick to main)
+
+**This runs automatically** — no manual PR creation or review invocation needed.
 
 ### Capture Learnings
 
@@ -324,7 +338,7 @@ Invoke `session-learnings` skill:
 | 3 | Clarification | Surface all ambiguities | **User answers** |
 | 4 | Architecture | 2 parallel code-architect subagents | **User chooses + approves plan** |
 | 5 | Implementation | TDD per step + parallel dispatch | Tests pass |
-| 6 | Quality + Finish | Parallel reviewers → verify → commit | **Verification** |
+| 6 | Quality + Finish | Parallel reviewers → verify → `/ship` | **Verification** |
 
 ## Skills Invoked Within This Workflow
 
@@ -338,7 +352,7 @@ Invoke `session-learnings` skill:
 | test-driven-development | Phase 5 (TDD per step) |
 | subagent-driven-development | Phase 5 (parallel independent steps) |
 | verification-before-completion | Phase 6 (pre-finish check) |
-| finishing-a-development-branch | Phase 6 (branch completion) |
+| finishing-a-development-branch → `/ship` | Phase 6 (branch completion → auto review → merge) |
 | session-learnings | Phase 6 (capture discoveries) |
 
 ## Skills Eliminated (Absorbed)
