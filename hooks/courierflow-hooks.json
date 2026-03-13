@@ -1,0 +1,64 @@
+{
+  "hooks": {
+    "SessionStart": [
+      {
+        "matcher": "startup",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"$CLAUDE_PROJECT_DIR\"/scripts/cleanup_worktrees.sh"
+          },
+          {
+            "type": "command",
+            "command": "[ ! -f \"$CLAUDE_PROJECT_DIR/.env\" ] && echo 'First time setup? Run seed scripts: see skills/README.md or /seed-data' || true"
+          }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "if echo \"$TOOL_INPUT\" | grep -qE '\\.env([^.]|$)' && ! echo \"$TOOL_INPUT\" | grep -q '.example'; then echo 'BLOCKED: Cannot edit .env files directly. Edit .env.example instead.' >&2; exit 1; fi"
+          },
+          {
+            "type": "command",
+            "command": "echo \"$TOOL_INPUT\" | grep -qE '(templates/|static/css/|static/js/)' && echo 'REMINDER: Load courierflow-ui-standards + defensive-ui-flows for UI work' >&2 || true"
+          }
+        ]
+      }
+    ],
+    "WorktreeRemove": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"$CLAUDE_PROJECT_DIR\"/scripts/hooks/guard_worktree_remove.sh"
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Bash(*git commit*)",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"$CLAUDE_PROJECT_DIR\"/scripts/hooks/post-commit-memory-update.sh"
+          }
+        ]
+      },
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "FILE=$(echo \"$TOOL_INPUT\" | grep -oE '/[^ ]*\\.py' | head -1); if [ -n \"$FILE\" ] && [ -f \"$FILE\" ]; then flake8 --max-line-length 79 --select=E9,F63,F7,F82 \"$FILE\" 2>&1 | head -20; fi"
+          }
+        ]
+      }
+    ]
+  }
+}
