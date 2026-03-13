@@ -128,6 +128,47 @@ async def test_something(db):
 
 ---
 
+## Pytest Fixture Typing
+
+Use typed fixtures for better IDE support and catching errors early:
+
+```python
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from _pytest.capture import CaptureFixture
+    from _pytest.fixtures import FixtureRequest
+    from _pytest.logging import LogCaptureFixture
+    from _pytest.monkeypatch import MonkeyPatch
+    from pytest_mock.plugin import MockerFixture
+
+async def test_workflow_logging(
+    db: AsyncSession,
+    caplog: "LogCaptureFixture",
+) -> None:
+    """Verify workflow activation emits correct log."""
+    with caplog.at_level(logging.INFO):
+        await activate_workflow(db, workflow_id)
+    assert "Workflow activated" in caplog.text
+
+async def test_with_monkeypatch(
+    db: AsyncSession,
+    monkeypatch: "MonkeyPatch",
+) -> None:
+    """Override env var for test."""
+    monkeypatch.setenv("FEATURE_FLAG_X", "true")
+    result = await check_feature(db)
+    assert result.enabled is True
+```
+
+**Rules:**
+- Import pytest types under `TYPE_CHECKING` to avoid runtime dependency
+- Annotate all test function parameters including fixtures
+- Add `-> None` return type to all test functions
+- Use `"quoted"` string annotations for TYPE_CHECKING imports
+
+---
+
 ## Async Testing Setup
 
 ```ini

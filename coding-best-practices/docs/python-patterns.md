@@ -48,6 +48,57 @@ def test_sqlalchemy_mapper_configuration():
 
 ---
 
+## Guard Clauses & Early Returns
+
+Handle errors and edge cases at the top of functions — never nest happy-path logic inside conditionals:
+
+```python
+# GOOD - guard clauses, flat structure
+async def activate_workflow(
+    db: AsyncSession, workflow_id: UUID, user_id: UUID
+) -> WorkflowTemplate:
+    workflow = await get_workflow(db, workflow_id)
+    if not workflow:
+        raise not_found("Workflow not found")
+    if workflow.user_id != user_id:
+        raise forbidden("Not your workflow")
+    if workflow.state == WorkflowState.ARCHIVED:
+        raise bad_request("Cannot activate archived workflow")
+    if not workflow.steps:
+        raise bad_request("Workflow has no steps")
+
+    workflow.state = WorkflowState.PUBLISHED
+    await db.flush()
+    return workflow
+
+# BAD - nested conditionals, hard to follow
+async def activate_workflow(db, workflow_id, user_id):
+    workflow = await get_workflow(db, workflow_id)
+    if workflow:
+        if workflow.user_id == user_id:
+            if workflow.state != WorkflowState.ARCHIVED:
+                if workflow.steps:
+                    workflow.state = WorkflowState.PUBLISHED
+                    await db.flush()
+                    return workflow
+                else:
+                    raise bad_request("No steps")
+            else:
+                raise bad_request("Archived")
+        else:
+            raise forbidden("Not yours")
+    else:
+        raise not_found("Not found")
+```
+
+**Rules:**
+- Validate inputs at function entry, return/raise immediately on failure
+- Happy path runs at the shallowest indentation level
+- Each guard handles exactly one concern
+- Order guards: existence → authorization → state validity → business rules
+
+---
+
 ## Async Patterns
 
 ### Always Use Async for I/O

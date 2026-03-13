@@ -47,6 +47,43 @@ Route URLs, handler names, and template filenames do not always match:
 grep -r '"/home"' app/routes/
 ```
 
+## RORO Pattern (Receive an Object, Return an Object)
+
+Services receive structured input and return structured output — never raw primitives for complex operations:
+
+```python
+# GOOD - RORO with Pydantic models
+class CreateWorkflowRequest(BaseModel):
+    name: str
+    event_type: LandlordEventType
+    steps: list[StepCreate] = []
+
+class WorkflowResponse(BaseModel):
+    model_config = {"from_attributes": True}
+    id: UUID
+    name: str
+    status: WorkflowState
+
+async def create_workflow(
+    db: AsyncSession,
+    user_id: UUID,
+    request: CreateWorkflowRequest,
+) -> WorkflowResponse:
+    template = WorkflowTemplate(user_id=user_id, **request.model_dump())
+    db.add(template)
+    await db.flush()
+    return WorkflowResponse.model_validate(template)
+
+# BAD - scattered primitives
+async def create_workflow(db, user_id, name, event_type, steps=None):
+    ...  # Easy to mix up argument order, no validation
+```
+
+**When to use RORO:**
+- Service functions with 3+ parameters → wrap in a request model
+- Functions returning data to routes → use a response model
+- Simple lookups (get by ID) → primitives are fine
+
 ## Code Style
 
 - Python: flake8/PEP 8, max line length 79

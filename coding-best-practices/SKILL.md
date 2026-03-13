@@ -50,12 +50,44 @@ For specific patterns and examples, see:
 - [Performance](docs/performance.md) - Caching, circuit breakers, optimization
 - [Security](docs/security.md) - OWASP top 10, input validation, secrets
 
+## Type Hint Discipline
+
+**Every function gets type hints** — parameters, return types, and `None` where applicable:
+
+```python
+# GOOD - fully annotated
+async def get_workflow_by_id(
+    db: AsyncSession,
+    workflow_id: UUID,
+    user_id: UUID,
+) -> Optional[WorkflowTemplate]:
+    ...
+
+# GOOD - explicit None return
+async def delete_workflow(
+    db: AsyncSession,
+    workflow_id: UUID,
+) -> None:
+    ...
+
+# BAD - missing annotations
+async def get_workflow_by_id(db, workflow_id, user_id):
+    ...
+```
+
+**Rules:**
+- All function parameters: annotated
+- All return types: annotated (including `-> None`)
+- Use `Optional[X]` or `X | None` for nullable values
+- Use `TYPE_CHECKING` block for import-only types to avoid circular imports
+- Collection types: `list[Step]`, `dict[str, Any]`, `set[UUID]` (Python 3.9+)
+
 ## Pre-Commit Checklist
 
 Before committing code changes:
 
 ### Python
-- [ ] Type hints on function signatures
+- [ ] Type hints on function signatures (params + return)
 - [ ] `AsyncMock` for async method mocking
 - [ ] `pattern=` not `regex=` in Pydantic v2
 - [ ] Service layer for business logic (not in routes)
