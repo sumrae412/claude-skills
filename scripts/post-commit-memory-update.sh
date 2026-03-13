@@ -75,6 +75,22 @@ if $UPDATES_NEEDED; then
     echo "memory files so future sessions have accurate context."
 fi
 
+# Write session-state.md for cross-session continuity
+BRANCH=$(git branch --show-current 2>/dev/null || echo "unknown")
+LAST_COMMIT_HASH=$(git rev-parse --short HEAD 2>/dev/null || echo "unknown")
+LAST_COMMIT_MSG=$(git log -1 --pretty=%s 2>/dev/null || echo "unknown")
+CHANGED_LIST=$(echo "$CHANGED_FILES" | tr '\n' ', ' | sed 's/,$//')
+CHANGED_LIST=${CHANGED_LIST:-none}
+
+cat > "$MEMORY_DIR/session-state.md" << STATE_EOF
+# Session State
+Last updated: $(date -u +"%Y-%m-%dT%H:%M:%SZ")
+Branch: $BRANCH
+Last commit: $LAST_COMMIT_HASH — $LAST_COMMIT_MSG
+Files touched: $CHANGED_LIST
+Commits ahead of main: $COMMITS_AHEAD
+STATE_EOF
+
 # Always trigger session-learnings for significant work
 if [ "$COMMITS_AHEAD" != "?" ] && [ "$COMMITS_AHEAD" -ge 2 ]; then
     echo ""

@@ -11,6 +11,30 @@
           {
             "type": "command",
             "command": "[ ! -f \"$CLAUDE_PROJECT_DIR/.env\" ] && echo 'First time setup? Run seed scripts: see skills/README.md or /seed-data' || true"
+          },
+          {
+            "type": "command",
+            "command": "\"$CLAUDE_PROJECT_DIR\"/scripts/hooks/session-start-context.sh"
+          }
+        ]
+      }
+    ],
+    "PreCompact": [
+      {
+        "matcher": "auto",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"$CLAUDE_PROJECT_DIR\"/scripts/hooks/pre-compaction-save.sh"
+          }
+        ]
+      },
+      {
+        "matcher": "manual",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"$CLAUDE_PROJECT_DIR\"/scripts/hooks/pre-compaction-save.sh"
           }
         ]
       }
