@@ -179,7 +179,23 @@ When you need specific formatting in AI-generated content:
 
 ---
 
-## 6. Pre-Commit JavaScript Checklist
+## 6. Vue Runtime Template String Literals Must Not Contain `}}`
+
+In runtime-compiled Vue templates (CDN build), the mustache parser scans for `}}` before JavaScript evaluates string literals. A string containing `'}}'` inside a `{{ }}` expression is parsed as ending the interpolation early, breaking compilation.
+
+```html
+<!-- BAD - }} in string literal parsed as mustache end -->
+{{ '{{key}}' }}
+
+<!-- GOOD - split the closing braces -->
+{{ '{{key}' + '}' }}
+```
+
+This also applies to template literals with `${}` interpolation: `` `{{${token.key}}}` `` contains `}}` and breaks. Use `payload.token` (pre-formatted) instead of manually constructing token strings.
+
+---
+
+## 7. Pre-Commit JavaScript Checklist
 
 Before committing JavaScript changes:
 

@@ -667,6 +667,28 @@ if (btn.disabled) {
 
 ---
 
+## Bug 18: Pre-existing `}}` in StatusUpdateConfig (2026-03-16)
+
+**Symptom:** Workflow builder step clicks did nothing; StatusUpdateConfig component failed to compile.
+
+**Root cause:** `{{ '{{previous_status}}' }}` in the template contained literal `}}` which Vue's mustache parser treated as the interpolation end marker. This was a pre-existing instance of the Rule 30 pattern — the same bug already fixed in PR #211 for other components existed in StatusUpdateConfig but was only caught by the automated code review agent, not during manual implementation.
+
+**Which rule violated:** 30: Vue Template Expressions Must Not Contain Literal `}}`
+
+**Code (bad):**
+```html
+{{ '{{previous_status}}' }}
+```
+
+**Code (fix):**
+```html
+{{ '{{previous_status}' + '}' }}
+```
+
+**Lesson:** When fixing a pattern across files, always grep ALL files for the same pattern. The original PR #211 fix missed this occurrence because it only fixed the token-menu `v-for` loop instances, not static display strings.
+
+---
+
 ### Future evidence to collect
 - Any new bugs found in future sessions that fit these patterns
 - Edge cases: what about `async/await` vs Promise chains?
