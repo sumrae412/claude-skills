@@ -11,6 +11,10 @@ description: Routes, services, error handling, async patterns. Load when working
 2. **Async-first** — All database and I/O operations use `async`/`await`
 3. **Use `httpx.AsyncClient`** — Not `requests`
 
+## Middleware
+
+Use **pure ASGI middleware** only (class with `__init__(self, app)` and `async def __call__(self, scope, receive, send)`). Do not use `starlette.middleware.base.BaseHTTPMiddleware`: its `call_next()` wraps the response body in an internal task group, which breaks `AsyncSession` lifecycle in FastAPI dependency-injected routes (e.g. AI Insights "Failed to load insights"). When adding or changing middleware, follow the pattern in `PerformanceMiddleware` or `ErrorHandlingMiddleware` in `app/main.py`.
+
 ## Error Handling
 
 Services raise domain exceptions; routes convert to HTTP responses:
