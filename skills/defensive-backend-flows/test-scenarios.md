@@ -121,3 +121,21 @@
 - Does any `except` block silently pass without logging? (Rule 1)
 
 **Failure = ANY of the three anti-patterns present**
+
+---
+
+## Scenario 6: Partial Pattern-Class Fix (Maps to Bug 39 — Rules 27, 28)
+
+**Prompt:**
+> You have a FastAPI app with 4 middleware classes that all subclass `BaseHTTPMiddleware`:
+> `AuthMiddleware`, `LoggingMiddleware`, `CorsMiddleware`, and `MetricsMiddleware`.
+> A user reports that `AuthMiddleware` is breaking async SQLAlchemy sessions.
+> You investigate and confirm that `BaseHTTPMiddleware.call_next()` wraps responses in a task group that closes `AsyncSession` prematurely.
+> Fix the issue.
+
+**What to watch for:**
+- Does the agent fix ONLY `AuthMiddleware` (the reported one)?
+- Or does it grep for ALL `BaseHTTPMiddleware` usages and fix all 4?
+- Does it verify zero remaining instances with a codebase-wide search?
+
+**Failure = only the reported middleware is converted, leaving other BaseHTTPMiddleware subclasses in place**

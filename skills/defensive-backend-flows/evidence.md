@@ -1063,11 +1063,79 @@ assert "googleConnected" in resp.text  # JS config in dashboard.html
 
 **Pressure scenario prompt:** "The /calendar route now redirects to /home. Update the existing calendar tests to verify the new behavior."
 
+## Bug 38: Naive vs Aware Datetime Arithmetic (2026-03-16)
+
+**Symptom:** `TypeError: can't subtract offset-naive and offset-aware datetimes` on the documents list endpoint, causing 500 errors for any user with archived documents.
+
+**Root cause:** `doc.archived_at` was timezone-naive (from a `DateTime` column without `timezone=True`) while `now = datetime.now(timezone.utc)` was aware. The subtraction `deletes_at - now` raised `TypeError`.
+
+**Which rule violated:** 14: Never Compare Datetimes as Strings (extended to arithmetic)
+
+**Code (bad):**
+```python
+now = datetime.now(timezone.utc)
+deletes_at = doc.archived_at + timedelta(days=retention_days)
+delta = deletes_at - now  # TypeError
+```
+
+**Code (fix):**
+```python
+now = datetime.now(timezone.utc)
+archived_at = doc.archived_at if doc.archived_at.tzinfo else doc.archived_at.replace(tzinfo=timezone.utc)
+deletes_at = archived_at + timedelta(days=retention_days)
+delta = deletes_at - now
+```
+
+**Pressure scenario prompt:** Write a route that calculates how many days until an archived document is permanently deleted. The retention period is configurable. Use `datetime.now(timezone.utc)` for the current time.
+
+---
+
+## Bug 39: BaseHTTPMiddleware Breaks Async SQLAlchemy Sessions (2026-03-16)
+
+**Symptom:** AI Insights endpoint returns "Failed to load insights" — async SQLAlchemy sessions close prematurely or raise "greenlet_spawn has not been called" errors on routes that use FastAPI dependency injection.
+
+**Root cause:** Four middleware classes (`PerformanceMiddleware`, `AuditMiddleware`, `GoogleConnectionMiddleware`, `ProxySchemeMiddleware`) subclassed Starlette's `BaseHTTPMiddleware`, whose `call_next()` wraps response bodies in an internal task group that breaks `AsyncSession` lifecycle. PR #223 fixed only one instance (`CopilotAuthMiddleware`); the remaining three were missed, requiring a second bug report and PR #226.
+
+**Which rule violated:** 27: Never Use BaseHTTPMiddleware with Async SQLAlchemy + 28: Audit ALL Instances When Fixing a Class of Bug
+
+**Code (bad):**
+```python
+from starlette.middleware.base import BaseHTTPMiddleware
+
+class PerformanceMiddleware(BaseHTTPMiddleware):
+    async def dispatch(self, request, call_next):
+        response = await call_next(request)  # Wraps body in task group → breaks AsyncSession
+        return response
+```
+
+**Code (fix):**
+```python
+class PerformanceMiddleware:
+    """Pure ASGI middleware."""
+    def __init__(self, app):
+        self.app = app
+
+    async def __call__(self, scope, receive, send):
+        if scope["type"] != "http":
+            await self.app(scope, receive, send)
+            return
+        # Wrap send to inject headers
+        async def send_with_headers(message):
+            if message["type"] == "http.response.start":
+                headers = list(message.get("headers", []))
+                headers.append((b"x-custom", b"value"))
+                message = {**message, "headers": headers}
+            await send(message)
+        await self.app(scope, receive, send_with_headers)
+```
+
+**Pressure scenario prompt:** "Convert a `BaseHTTPMiddleware` subclass that adds timing headers and security headers to a pure ASGI middleware. There are also 3 other middleware classes in the project using `BaseHTTPMiddleware` — make sure you convert all of them."
+
 ---
 
 ## Common Thread
 
-All thirty-seven bugs share one root cause: **the code optimized for the happy path and didn't consider what happens when things go wrong or when the same concept exists in multiple places.**
+All thirty-nine bugs share one root cause: **the code optimized for the happy path and didn't consider what happens when things go wrong or when the same concept exists in multiple places.**
 
 The agent:
 1. Assumed exceptions could be silently ignored (Bugs 1, 8)
@@ -1089,6 +1157,7 @@ The agent:
 17. Assumed raw metadata is safe to persist in audit logs (Bug 29)
 18. Assumed variables from one function scope are available in another (Bug 36)
 19. Assumed tests don't need updating when route behavior changes (Bug 37)
+20. Assumed fixing one instance of a pattern-class bug fixes all instances (Bug 39)
 
 Each is a failure to ask: **"What happens to the data if this fails halfway?"**
 
