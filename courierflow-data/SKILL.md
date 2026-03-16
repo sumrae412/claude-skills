@@ -51,6 +51,41 @@ WorkflowTemplate
 - Always implement reversible `downgrade()`
 - Test both upgrade and downgrade
 
+### Alembic Version Desync
+
+The `alembic_version` table can reference a revision that does not exist as a migration file (e.g., after manual stamping or failed operations). When this happens, `alembic upgrade head` fails because Alembic cannot traverse the migration chain from the current revision.
+
+**Diagnosis:**
+```sql
+SELECT version_num FROM alembic_version;  -- Check current stamp
+```
+Then verify the returned revision exists in `alembic/versions/`. If it does not, the chain is broken.
+
+**Recovery:**
+1. Identify the actual latest revision file: `ls -t alembic/versions/ | head -5`
+2. Stamp to a known-good revision: `alembic stamp <existing_revision>`
+3. Then run `alembic upgrade head`
+
+**Prevention:** Never manually stamp `alembic_version` to a revision ID that does not correspond to an actual migration file. When creating manual "alignment" migrations, always generate a real migration file with `alembic revision`.
+
+### Backfill: Nullable Derived Columns
+
+When backfilling a nullable column derived from multiple source columns (e.g. `preferred_contact_method` from `email` and `phone`), use a `CASE` with an explicit `ELSE NULL` when all sources are NULL. Without it, the column may get a wrong default or violate NOT NULL in edge cases.
+
+```sql
+-- BAD — when both email and phone are NULL, ELSE defaults to 'phone'
+CASE WHEN hm.email IS NOT NULL THEN 'email' ELSE 'phone' END
+
+-- GOOD — explicit ELSE NULL
+CASE
+  WHEN hm.email IS NOT NULL THEN 'email'
+  WHEN hm.phone IS NOT NULL THEN 'phone'
+  ELSE NULL
+END
+```
+
+**Learned from:** `scripts/run_migration_manual.py` backfill for `preferred_contact_method`; CodeRabbit review.
+
 ## Performance Patterns
 
 1. **Cursor-based pagination** — No offset pagination in new code

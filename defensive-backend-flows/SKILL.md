@@ -426,9 +426,24 @@ upcoming = [
 ]
 ```
 
-**Check:** Search for `.isoformat()` in comparisons or `>=`/`<=` with string timestamps. Every datetime comparison should use parsed `datetime` objects with explicit timezone.
+This also applies to **datetime arithmetic** — adding `timedelta` and then subtracting two datetimes. If one operand is timezone-naive (common for DB columns without `timezone=True`) and the other is aware, Python raises `TypeError`. Normalize before any arithmetic:
 
-**Learned from:** Home dashboard — upcoming events were filtered using string comparison of ISO timestamps, which dropped future events when timezone offsets varied.
+```python
+# ❌ BAD — archived_at may be naive, now is aware -> TypeError
+now = datetime.now(timezone.utc)
+deletes_at = doc.archived_at + timedelta(days=30)
+remaining = deletes_at - now  # TypeError if archived_at is naive
+
+# ✅ GOOD — normalize to aware before arithmetic
+now = datetime.now(timezone.utc)
+archived_at = doc.archived_at if doc.archived_at.tzinfo else doc.archived_at.replace(tzinfo=timezone.utc)
+deletes_at = archived_at + timedelta(days=30)
+remaining = deletes_at - now
+```
+
+**Check:** Search for `.isoformat()` in comparisons or `>=`/`<=` with string timestamps. Every datetime comparison should use parsed `datetime` objects with explicit timezone. Any time a datetime from the database is used in arithmetic with `datetime.now(timezone.utc)`, verify the DB value has `tzinfo`.
+
+**Learned from:** Home dashboard — upcoming events were filtered using string comparison of ISO timestamps, which dropped future events when timezone offsets varied. `documents.py` — `doc.archived_at` was naive while `now = datetime.now(timezone.utc)` was aware, causing `TypeError` on subtraction at line 486.
 
 ### 15. Use the Canonical Service for Connection State
 
@@ -592,6 +607,135 @@ except FileExistsError:
 
 **Learned from:** Four CSS commits (`09ee4b29` through `3d4b22a1`) were pushed and deployed but no visual changes appeared on the site. The CSS files were updated on disk, but `calendar.html`, `dashboard.html`, `home.html`, `tasks/list_modern.html`, and `properties/list_modern.html` all still had stale `?v=` parameters. Required a follow-up commit to bump all version strings.
 
+### 22. Never Use eval() — Use ast.parse() for Expression Evaluation
+
+When evaluating composed expressions (boolean logic, arithmetic), never use the eval built-in. Even with "controlled" input, it is a code smell that security scanners (Bandit B307) flag. Use `ast.parse()` with a recursive evaluator that only handles expected node types.
+
+```python
+# BAD — security scanner flags this, potential code execution
+expr = "True and False or not True"
+return __builtins__["eval"](expr)  # Bandit B307
+
+# GOOD — ast.parse with explicit node handling
+import ast
+
+def _safe_eval_bool(expr: str) -> bool:
+    tree = ast.parse(expr.strip(), mode="eval")
+
+    def _walk(node):
+        if isinstance(node, ast.Expression):
+            return _walk(node.body)
+        if isinstance(node, ast.Constant) and isinstance(node.value, bool):
+            return node.value
+        if isinstance(node, ast.BoolOp):
+            if isinstance(node.op, ast.And):
+                return all(_walk(v) for v in node.values)
+            if isinstance(node.op, ast.Or):
+                return any(_walk(v) for v in node.values)
+        if isinstance(node, ast.UnaryOp) and isinstance(node.op, ast.Not):
+            return not _walk(node.operand)
+        raise ValueError(f"Unsupported node: {ast.dump(node)}")
+
+    return _walk(tree)
+```
+
+**Check:** Search for the eval built-in in the codebase. Every occurrence should be replaced with a purpose-built evaluator using `ast.parse()`.
+
+**Learned from:** `automation_engine.py` — used the eval built-in to evaluate composed boolean expressions. Replaced with `_safe_eval_bool()` using `ast.parse(expr, mode="eval")`.
+
+### 23. SQL Dynamic Table Names: Allowlist + Assert, Not F-Strings
+
+When SQL queries need a dynamic table name (e.g., during table renaming migrations), never use f-strings inside `text()`. Instead: (1) assert the name is in an explicit allowlist, (2) use `.replace()` on a plain string, (3) wrap with `text()` after substitution.
+
+```python
+# BAD — f-string SQL injection vector, Bandit B608
+query = text(f"""
+    SELECT * FROM {table_name} WHERE user_id = :uid
+""")
+
+# GOOD — allowlist + replace + text()
+assert table_name in ("households", "properties"), "Invalid table name"
+sql = """
+    SELECT * FROM {table_name} WHERE user_id = :uid
+"""
+query = text(sql.replace("{table_name}", table_name))
+```
+
+**Check:** Search for `text(f"` or `text(f'` in services. Every dynamic table/column name in SQL must use the allowlist pattern.
+
+**Learned from:** `household_service.py` — three SQL queries used `text(f"...{households_table}...")`. Fixed with assert-allowlist + `.replace()`.
+
+### 24. Retry Once on Transient DB OperationalError
+
+For operations that call the database through dynamic dispatch (tool executors, plugin systems), wrap in a single-retry loop for `sqlalchemy.exc.OperationalError`. Transient connection resets happen on cloud platforms (Railway, Heroku) and a single retry usually succeeds.
+
+```python
+# BAD — transient connection reset crashes the operation
+result = await self._execute_via_skill(tool_name, intent, input, ctx)
+
+# GOOD — retry once on transient DB error
+from sqlalchemy.exc import OperationalError
+
+for attempt in range(2):
+    try:
+        result = await self._execute_via_skill(tool_name, intent, input, ctx)
+        break
+    except OperationalError:
+        if attempt == 0:
+            logger.warning(f"Transient DB error in {tool_name}, retrying")
+            continue
+        raise
+```
+
+**Check:** For any operation that calls the DB through a plugin/dispatch layer, ask: "Will a transient connection reset crash this?" If yes, add a single-retry loop.
+
+**Learned from:** `tool_executor.py` — `_execute_via_skill()` occasionally hit transient DB connection resets. Added single-retry loop with `except OperationalError`.
+
+### 25. Handle None vs Empty String for Nullable Text Fields
+
+When a service updates a nullable text field, handle three cases: (1) non-None value → `.strip() or None`, (2) explicit `None` → set to `None` (clear the field), (3) not provided → don't touch. Missing the "explicit None" case means users can't clear a field once set.
+
+```python
+# BAD — only handles non-None, can't clear the field
+if value is not None:
+    profile.field = value.strip() or None
+# Passing None does nothing — field stays set forever
+
+# GOOD — three-way handling
+if value is not None:
+    profile.field = value.strip() or None
+else:
+    profile.field = None  # explicit clear
+```
+
+**Check:** For every nullable text field update, ask: "Can the user clear this field by passing None/null?" If the service only has an `if value is not None` branch, it can't.
+
+**Learned from:** `user_profile_service.py` — `update_tenant_opt_in_clause()` only handled non-None values. Passing `None` was silently ignored, so users couldn't clear the clause.
+
+### 26. DB Fallback Paths: Narrow Catch and Preserve Filters
+
+When a service uses a primary query, then a fallback query, then a "bare" query (e.g. no eager loading), (1) catch only `SQLAlchemyError` (not a generic exception type) so non-DB errors propagate; (2) in the bare fallback, apply the same filters (e.g. status, search) as in the primary path — do not skip filters or the bare path returns different data than the primary. For unknown filter values (e.g. status_filter not in allowlist), log a warning and treat as no filter; do not silently ignore.
+
+**Check:** In layered DB fallbacks, does the bare path call the same filter helper as the primary? Does the `except` block catch only `SQLAlchemyError`?
+
+**Learned from:** `client.py` — `search_clients_grouped` fallback skipped status filter in bare path; CodeRabbit review.
+
+### 27. Never Use BaseHTTPMiddleware with Async SQLAlchemy
+
+Starlette's `BaseHTTPMiddleware.call_next()` wraps the response body in an internal task group, which breaks `AsyncSession` lifecycle in FastAPI dependency-injected routes. Symptoms: random "Session is closed" / "greenlet_spawn has not been called" errors on endpoints that work fine without the middleware. **Always** use the pure ASGI pattern (`__init__(self, app)` / `async def __call__(self, scope, receive, send)`) instead.
+
+**Check:** `grep -r "BaseHTTPMiddleware" app/` returns zero hits? Any new middleware uses the `scope/receive/send` signature?
+
+**Learned from:** `app/main.py`, `app/middleware/audit.py`, `app/middleware/google_connection.py` — Four middleware classes using `BaseHTTPMiddleware` broke async SQLAlchemy sessions on `/api/copilot` and AI Insights endpoints. PR #223 fixed one; PR #226 fixed the remaining three only after a second bug report.
+
+### 28. Audit ALL Instances When Fixing a Class of Bug
+
+When a bug is caused by a **pattern** (e.g., using a deprecated base class, a wrong import style, a misconfigured decorator), do not fix only the instance the user reported. `grep` the entire codebase for ALL instances of the same pattern and fix them all in one PR. A partial fix leads to a second bug report and a second PR for the same root cause.
+
+**Check:** Before shipping a pattern-class fix, run a codebase-wide grep for the offending pattern. Are there zero remaining instances?
+
+**Learned from:** PR #223 fixed `CopilotAuthMiddleware` but missed `PerformanceMiddleware`, `AuditMiddleware`, and `GoogleConnectionMiddleware` — all using the same broken `BaseHTTPMiddleware` base class. PR #226 was needed to finish the job.
+
 ## Quick Reference
 
 | Rule | Symptom | Check |
@@ -610,6 +754,7 @@ except FileExistsError:
 | Ephemeral Storage | Files vanish after deploy | All file I/O uses persistent storage? |
 | Error Leaking | Internal details in HTTP response | Error messages generic, no `str(e)`? |
 | String Datetime Compare | Future items filtered out | All datetime comparisons use parsed tz-aware objects? |
+| Naive/Aware Datetime Arithmetic | `TypeError: can't subtract offset-naive and offset-aware` | DB datetime normalized to aware before arithmetic with `datetime.now(tz.utc)`? |
 | Stale Connection Check | Feature disabled despite connection | Connection state read from owning service, not user column? |
 | Cache-Only Primary View | "Only 1 event" when 15 exist | Primary view fetches live source, not just local cache? |
 | Post-Conflict Testing | Resolved code breaks behavior | Tests re-run after conflict resolution before push? |
@@ -618,6 +763,13 @@ except FileExistsError:
 | Subprocess Shell Injection | Command injection vulnerability | Using list args with `shell=False` and timeout? |
 | Lock File TOCTOU | Race condition in concurrent ops | Using atomic `O_CREAT | O_EXCL` or proper lock library? |
 | Flag Evaluation N+1 | Slow feature flag checks | Batch-loading flags before loop evaluation? |
+| Eval Built-in Usage | Security scanner flags, code injection risk | Using `ast.parse()` with explicit node handler? |
+| SQL F-String Table Names | SQL injection via dynamic table name | Using allowlist assert + `.replace()` pattern? |
+| Transient DB Crash | Operation fails on connection reset | Single-retry loop for `OperationalError`? |
+| Can't Clear Nullable Field | User can set but never clear a text field | Explicit `None` → set to `None` branch exists? |
+| DB fallback filters | Bare path returns different set than primary | Fallback path applies same filters as primary? Catch only SQLAlchemyError? |
+| No BaseHTTPMiddleware | "Session is closed" / greenlet errors | `grep -r "BaseHTTPMiddleware" app/` returns zero? |
+| Audit ALL Pattern Instances | Same bug reported twice, different file | Codebase-wide grep for pattern before shipping fix? |
 
 ## Red Flags — STOP and Fix
 
@@ -643,12 +795,21 @@ except FileExistsError:
 - Template file in a directory that doesn't match the route module using it
 - CSS variant class that redeclares properties already on the base class
 - Datetime comparison using string `>=`/`<=` instead of parsed objects
+- Datetime arithmetic between a DB column value and `datetime.now(timezone.utc)` without normalizing timezone awareness
 - Connection check using `user.some_token` instead of the token manager
 - Primary view reading from local cache when it's the only UI for that data
 - Cherry-pick/merge pushed without re-running affected tests
 - Variable used in a function that was defined in a different function (split/copy artifact)
 - String-quoted type annotation (`"UUID | None"`) without module-level import of the type
 - A commit that changes `.css`/`.js` files but doesn't bump `?v=` params in loading templates
+- Any use of the eval built-in — replace with `ast.parse()` + purpose-built evaluator
+- `text(f"...{variable}...")` in SQL — use allowlist assert + `.replace()` instead
+- DB call through dynamic dispatch with no retry for `OperationalError`
+- Nullable text field update with only `if value is not None` branch (can't clear)
+- A layered DB fallback whose bare path skips filters (status, search) applied in primary path
+- `except Exception` in a DB fallback — use `except SQLAlchemyError` so non-DB errors propagate
+- `from starlette.middleware.base import BaseHTTPMiddleware` — use pure ASGI middleware instead
+- A pattern-class bug fix that only fixes the reported instance without grepping for all occurrences
 
 ## When NOT to Use
 

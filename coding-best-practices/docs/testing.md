@@ -128,47 +128,6 @@ async def test_something(db):
 
 ---
 
-## Pytest Fixture Typing
-
-Use typed fixtures for better IDE support and catching errors early:
-
-```python
-from typing import TYPE_CHECKING
-
-if TYPE_CHECKING:
-    from _pytest.capture import CaptureFixture
-    from _pytest.fixtures import FixtureRequest
-    from _pytest.logging import LogCaptureFixture
-    from _pytest.monkeypatch import MonkeyPatch
-    from pytest_mock.plugin import MockerFixture
-
-async def test_workflow_logging(
-    db: AsyncSession,
-    caplog: "LogCaptureFixture",
-) -> None:
-    """Verify workflow activation emits correct log."""
-    with caplog.at_level(logging.INFO):
-        await activate_workflow(db, workflow_id)
-    assert "Workflow activated" in caplog.text
-
-async def test_with_monkeypatch(
-    db: AsyncSession,
-    monkeypatch: "MonkeyPatch",
-) -> None:
-    """Override env var for test."""
-    monkeypatch.setenv("FEATURE_FLAG_X", "true")
-    result = await check_feature(db)
-    assert result.enabled is True
-```
-
-**Rules:**
-- Import pytest types under `TYPE_CHECKING` to avoid runtime dependency
-- Annotate all test function parameters including fixtures
-- Add `-> None` return type to all test functions
-- Use `"quoted"` string annotations for TYPE_CHECKING imports
-
----
-
 ## Async Testing Setup
 
 ```ini
@@ -233,9 +192,44 @@ async def test_partial_mock(db):
         mock_email.assert_called_once()
 ```
 
+### Mock Settings Alongside API Clients
+
+When testing services that create API clients from settings (OpenAI, Twilio, etc.),
+mock both the client class AND the settings object. If settings aren't mocked, the
+real `settings.api_key` is `None` and the client constructor may fail before your
+mock takes effect.
+
+```python
+# BAD — only mocks the client class, settings.api_key is None
+with patch("app.services.ai.llm_fallback.AsyncOpenAI") as mock_cls:
+    mock_cls.return_value = mock_client
+    result = await get_completion("prompt")  # may fail on settings
+
+# GOOD — mock settings AND client class together
+with (
+    patch("app.services.ai.llm_fallback.settings") as mock_settings,
+    patch("app.services.ai.llm_fallback.AsyncOpenAI") as mock_cls,
+):
+    mock_settings.openai_api_key = "test-key"
+    mock_settings.openai_model = "gpt-4o-mini"
+    mock_cls.return_value = mock_client
+    result = await get_completion("prompt")  # works
+```
+
+**Learned from:** `test_llm_fallback.py` — test only mocked `AsyncOpenAI` but not
+`settings`. The real settings had `openai_api_key = None`, causing test failure.
+
 ---
 
 ## Edge Cases to Always Test
+
+### Enum and allowlist tests use production sources
+
+- **Enum validator tests:** Use the enum value actually used in production for the test (e.g. `ClientType.RENTER` for "renter"), not a different enum (e.g. `ACTIVE` for "active") so the test validates the real conversion.
+- **Allowlist/filter tests:** Import and assert against the same constant the route/service uses (e.g. `_VALID_STATUS_FILTERS` from `app.routes.tenants`) so the test cannot drift from the implementation.
+- **Exception-path tests:** When testing a fallback triggered by an exception, raise the same exception type the code catches (e.g. `SQLAlchemyError`), not a generic `Exception`, so the catch block is actually exercised.
+
+**Learned from:** `test_tenants_standalone.py` — ClientType test used "active" → ACTIVE; status filter tests used a local set instead of `_VALID_STATUS_FILTERS`; fallback test raised generic Exception so the SQLAlchemyError catch was not hit.
 
 ```python
 # Null/None handling
