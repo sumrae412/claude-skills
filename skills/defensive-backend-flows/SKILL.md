@@ -736,6 +736,78 @@ When a bug is caused by a **pattern** (e.g., using a deprecated base class, a wr
 
 **Learned from:** PR #223 fixed `CopilotAuthMiddleware` but missed `PerformanceMiddleware`, `AuditMiddleware`, and `GoogleConnectionMiddleware` — all using the same broken `BaseHTTPMiddleware` base class. PR #226 was needed to finish the job.
 
+### 29. Catch-All Path Params Must Accept `str` and Validate Manually
+
+When a FastAPI route uses a `{resource_id}` path parameter typed as `UUID`, any non-UUID path segment (e.g., `/api/upload`) that matches the pattern returns a 422 (Unprocessable Entity) instead of routing correctly or returning 404. Accept `str`, validate manually, and raise 404 on parse failure.
+
+```python
+# BAD -- /documents/upload hits this route, returns 422
+@router.get("/{document_id}")
+async def get_document(document_id: UUID):
+    ...
+
+# GOOD -- accepts any string, validates manually
+@router.get("/{document_id}")
+async def get_document(document_id: str):
+    try:
+        doc_uuid = UUID(document_id)
+    except (ValueError, AttributeError):
+        raise HTTPException(status_code=404, detail="Document not found")
+    ...
+```
+
+**Check:** For any router with both specific paths (`/api/upload`) and catch-all params (`/{id}`), verify the catch-all uses `str` type. A `UUID`-typed catch-all silently intercepts sibling routes.
+
+**Learned from:** `documents.py` -- `/{document_id}` typed as `UUID` caused 422 when user clicked "Upload" because `/upload` matched the catch-all before reaching the actual upload route.
+
+### 30. Extracted Helpers Must Preserve Exact Response Shape
+
+When refactoring inline code into a helper function (especially serializers or response builders), the extracted function must return the exact same fields as the original inline code. Adding fields that weren't in the original response is a behavior change, not a refactor.
+
+```python
+# BAD -- refactored helper adds fields not in original inline dict
+def _serialize_document(doc) -> dict:
+    return {
+        "id": str(doc.id),
+        "title": doc.title,
+        "property_id": str(doc.property_id),  # NEW -- not in original
+        ...
+    }
+
+# GOOD -- exact same fields as original inline code
+def _serialize_document(doc) -> dict:
+    return {
+        "id": str(doc.id),
+        "title": doc.title,
+        ...  # only fields from the original inline dict
+    }
+```
+
+**Check:** After extracting a serializer, diff the new function's return dict keys against the original inline dict. Any new key is a behavior change.
+
+**Learned from:** `documents.py` -- extracting `_serialize_document` inadvertently added `property_id`, `client_id`, `template_id` that weren't in the original response. Code review caught it; required a follow-up commit to remove.
+
+### 31. Verify Service Method Names and Parameter Names Match the Service Definition
+
+When wiring a route to a service call, the method name and keyword argument names must match the service's actual signature — not the route's domain terminology. CourierFlow uses `Property` in the UI but `Household` in models/services. A route named `get_property_communications` must call `service.get_property_history()` (not `get_household_history()`) and pass `household_id=` (not `property_id=`).
+
+```python
+# BAD — method name and kwarg both wrong
+result = await comm_service.get_household_history(
+    db, user_id=user.id, property_id=property_id,
+)
+# NameError or unexpected behavior
+
+# GOOD — matches actual service signature
+result = await comm_service.get_property_history(
+    db, user_id=user.id, household_id=property_id,
+)
+```
+
+**Check:** Before committing a new route-to-service call, open the service file and verify: (1) the method name exists, (2) every keyword argument matches a parameter name in the method signature.
+
+**Learned from:** `routes/properties.py` called `get_household_history(property_id=...)` — both the method name and the kwarg were wrong. The correct call was `get_property_history(household_id=...)`.
+
 ## Quick Reference
 
 | Rule | Symptom | Check |
@@ -770,6 +842,9 @@ When a bug is caused by a **pattern** (e.g., using a deprecated base class, a wr
 | DB fallback filters | Bare path returns different set than primary | Fallback path applies same filters as primary? Catch only SQLAlchemyError? |
 | No BaseHTTPMiddleware | "Session is closed" / greenlet errors | `grep -r "BaseHTTPMiddleware" app/` returns zero? |
 | Audit ALL Pattern Instances | Same bug reported twice, different file | Codebase-wide grep for pattern before shipping fix? |
+| Catch-All UUID Path Param | 422 instead of 404 on non-UUID path segment | Catch-all `/{id}` uses `str` type, not `UUID`? |
+| Extracted Helper Field Drift | API response gains extra fields after refactor | New helper returns exact same dict keys as original inline code? |
+| Route-Service Name Mismatch | `AttributeError` or wrong method called | Method name + kwargs match service's actual signature? |
 
 ## Red Flags — STOP and Fix
 
@@ -810,6 +885,9 @@ When a bug is caused by a **pattern** (e.g., using a deprecated base class, a wr
 - `except Exception` in a DB fallback — use `except SQLAlchemyError` so non-DB errors propagate
 - `from starlette.middleware.base import BaseHTTPMiddleware` — use pure ASGI middleware instead
 - A pattern-class bug fix that only fixes the reported instance without grepping for all occurrences
+- A `{resource_id}: UUID` catch-all route on a router that also has specific string paths (e.g., `/upload`)
+- An extracted helper function whose return dict has more keys than the original inline code
+- A route-to-service call where the method name or kwarg names don't match the service's actual signature (UI vs code terminology mismatch)
 
 ## When NOT to Use
 

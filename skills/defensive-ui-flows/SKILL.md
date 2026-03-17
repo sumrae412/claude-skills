@@ -884,6 +884,140 @@ function showPanel() {
 
 ---
 
+## 30. Vue Template Expressions Must Not Contain Literal `}}`
+
+In runtime-compiled Vue templates, the mustache parser treats the first `}}` inside an expression as the end of the interpolation. A string literal like `'}}'` inside `{{ '{{' + token.key + '}}' }}` is parsed as closing the expression, which breaks compilation and can prevent the entire component from rendering (e.g. workflow builder step clicks do nothing).
+
+```html
+<!-- BAD - }} inside the expression is parsed as end of interpolation -->
+<span class="token-key">{{ '{{' + token.key + '}}' }}</span>
+
+<!-- GOOD - split so the compiler doesn't see }} in the expression -->
+<span class="token-key">{{ '{{' + token.key + '}' + '}' }}</span>
+```
+
+For **static** text that should display literal `{{` (e.g. "Type `{{` in text fields"), use `v-pre` on the element so Vue doesn't compile its contents: `<code v-pre>{{</code>`.
+
+**Check:** When fixing this pattern in one component, grep for the same pattern across all similar components (e.g. `app/static/js/workflow-builder/config/*.js`, `tokens/*.js`) so the same bug isn't left in other files.
+
+**Learned from:** PR #211 — Vue template compilation errors in EmailConfig, SMSConfig, TaskConfig, TokenSidebar; same pattern existed in NoticeConfig, SendDocumentConfig, StatusUpdateConfig.
+
+---
+
+## 31. Truncated Lists Must Show Overflow Indicator
+
+Any UI that caps visible items (avatar stacks, tag lists, table rows) must render an overflow indicator ("+N more") when items exceed the cap. Silent truncation is a UX bug — users cannot discover hidden data.
+
+```html
+<!-- BAD - Silently shows only first 2 avatars, hides the rest -->
+{% for m in members[:2] %}
+<span class="avatar">{{ m.initials }}</span>
+{% endfor %}
+
+<!-- GOOD - Shows first 2 + overflow badge -->
+{% for m in members[:2] %}
+<span class="avatar">{{ m.initials }}</span>
+{% endfor %}
+{% if members|length > 2 %}
+<span class="avatar avatar-overflow">+{{ members|length - 2 }}</span>
+{% endif %}
+```
+
+**Learned from:** PR #227 — Tenant avatar stack on property detail page showed 2 of 3 tenants with no indication of the hidden third.
+
+---
+
+## 32. Clickable Containers Must Not Contain Action-Specific Icons as Decoration
+
+When an entire card or row is clickable via a parent `onclick`, do not use action-specific icons (phone, email, download) as decorative or navigational indicators. These icons create **false affordance** — the user expects clicking the phone icon to initiate a call, but the click actually bubbles to the parent handler (e.g., opening an edit modal). Use neutral navigation icons (`fa-chevron-right`) instead.
+
+```html
+<!-- BAD - phone icon implies "click to call" but onclick is on parent card -->
+<div class="unit-card" onclick="openEditModal('{{unit.id}}')">
+    <span class="tenant-name">Jane Doe</span>
+    <a href="tel:555-1234" class="phone-btn"><i class="fas fa-phone-alt"></i></a>
+</div>
+
+<!-- GOOD - neutral chevron signals "click to navigate", matches parent onclick -->
+<div class="unit-card" onclick="openEditModal('{{unit.id}}')">
+    <span class="tenant-name">Jane Doe</span>
+    <span class="arrow-btn"><i class="fas fa-chevron-right"></i></span>
+</div>
+```
+
+**Exception:** If the icon IS a real action (e.g., `<a href="tel:...">` with `event.stopPropagation()`), it must stop event bubbling so it doesn't trigger the parent handler.
+
+**Learned from:** `properties/detail.html` — phone icon on tenant rows inside unit cards triggered the parent card's onclick instead of making a phone call. Replaced with `fa-chevron-right` and `.pd-tenant-arrow-btn`.
+
+---
+
+## 33. Remove Placeholder UI That Has No Data Source
+
+Do not render a labeled section (e.g., "Next Payment") with a permanent placeholder dash ("—") when there is no backend data to populate it. A persistent placeholder misleads users into thinking the feature exists but is broken. Either implement the data source or remove the section entirely.
+
+```html
+<!-- BAD - "Next Payment" always shows "—", no data ever populates it -->
+<div class="text-end">
+    <span class="label">Next Payment</span>
+    <p class="value">—</p>
+</div>
+
+<!-- GOOD - removed entirely until data source exists -->
+<!-- (no element rendered) -->
+```
+
+**Rule:** If a UI element will show "—" 100% of the time because no code path provides real data, it is misleading — remove it.
+
+**Learned from:** `properties/detail.html` — "Next Payment" section on unit cards always showed "—" with no backend data.
+
+---
+
+## 34. Utility Hide Classes Must Use `!important` When Competing with Component Display Rules
+
+When a component class sets an explicit `display` value (e.g. `.pd-timeline-item { display: flex; }`), a same-specificity utility class like `.pd-timeline-hidden { display: none; }` will lose if it appears *before* the component rule in source order — CSS resolves same-specificity conflicts by last-rule-wins. Always use `!important` on utility hide/show toggles that are applied via JS `classList.add/remove`:
+
+```css
+/* BAD — .pd-timeline-item (display:flex) appears after this, overriding it */
+.pd-timeline-hidden { display: none; }
+
+/* GOOD — !important guarantees the hide regardless of source order */
+.pd-timeline-hidden { display: none !important; }
+```
+
+**Check:** When adding a CSS class that JS toggles for show/hide, verify it beats every component `display` rule it competes with. If both are unlayered single-class selectors, source order decides — use `!important` on the utility.
+
+**Learned from:** `properties-detail.css` — `.pd-timeline-hidden` (display:none) appeared before `.pd-timeline-item` (display:flex). Filter pills toggled the hidden class but items stayed visible because the later flex rule won.
+
+---
+
+## 35. Wrap Per-Item Rendering in Try-Catch
+
+When rendering a list of items from API data, wrap each item's DOM construction in its own `try/catch`. One malformed item (missing field, unexpected type) should not break the entire list.
+
+```javascript
+// BAD — one bad item kills the whole list
+items.forEach(function(item) {
+    var row = document.createElement('div');
+    row.textContent = item.title.toUpperCase(); // crashes if title is null
+    container.appendChild(row);
+});
+
+// GOOD — bad items skipped, rest still render
+items.forEach(function(item) {
+    try {
+        var row = document.createElement('div');
+        row.textContent = (item.title || '').toUpperCase();
+        container.appendChild(row);
+    } catch (err) {
+        console.warn('Skipped malformed item:', err, item);
+    }
+});
+```
+
+**Learned from:** `properties/detail.html` activity timeline — each timeline item rendered inside try/catch to survive missing fields.
+
+---
+
 ## Checklist for New UI Code
 
 - [ ] Every guard clause shows feedback (toast, inline, or console)
@@ -914,6 +1048,12 @@ function showPanel() {
 - [ ] Container clearing uses `while (el.firstChild) el.removeChild(el.firstChild)` — never assign empty HTML strings; DOM construction uses `createElement` + `textContent`, not string concatenation into HTML parser
 - [ ] Service worker uses **network-first** strategy for CSS/JS (never cache-first for mutable assets)
 - [ ] Before any frontend fix, verified which template the route actually renders (`grep -r '"/url"' app/routes/` and read the handler)
+- [ ] Truncated lists (avatar stacks, tags, rows) show "+N" overflow indicator when items exceed display cap
 - [ ] New CSS files wrapped in the correct `@layer` (`design-system`, `components`, or `pages`); only Bootstrap and `mobile.css` should be unlayered
 - [ ] When migrating CSS class names between frameworks, confirmed the new classes have CSS definitions (framework installed OR definitions added to design system)
 - [ ] Visibility toggling uses ONE mechanism per file (`style.display` OR `classList.add/remove('hidden')`, not both); `grep -c` both patterns to verify
+- [ ] Vue template expressions that display literal `}}` use `'}' + '}'` (not `'}}'`); static `{{` text uses `v-pre`; after fixing in one file, grep similar config/components for the same pattern
+- [ ] Clickable containers (cards/rows with parent `onclick`) use neutral icons (`chevron-right`), not action-specific icons (phone, email) that create false affordance via event bubbling
+- [ ] No UI sections show permanent placeholder dashes ("—") with no backend data source — remove until data integration exists
+- [ ] Utility hide/show classes (`.hidden`, `.pd-timeline-hidden`, etc.) use `!important` to beat component `display` rules at same specificity
+- [ ] List rendering from API data wraps each item in its own `try/catch` so one malformed item doesn't break the entire list

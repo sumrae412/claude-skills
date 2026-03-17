@@ -104,6 +104,28 @@ All config components (SMSConfig, TaskConfig, NoticeConfig, StatusUpdateConfig, 
 
 **payload.token is pre-formatted:** `handleTokenSelect(payload)` receives `payload.token` already formatted as `{{category.key}}` — do NOT wrap in additional `{{ }}`.
 
+## SVG Progress Rings
+
+Always include a `<text>` element inside SVG progress rings with class `.pd-ring-text` showing the ratio (e.g. "2/2"). A ring without a label is ambiguous — especially at 0% or 100% where the visual is indistinguishable from empty/full circles. Use `text-anchor="middle" dominant-baseline="central"` for centering, and apply `transform: rotate(90deg); transform-origin: center;` to counter the ring's -90deg rotation.
+
+## Avatar Stacks with Limits
+
+When displaying avatar stacks capped at N visible items (e.g. 2), always render a `+M` overflow badge (class `.pd-avatar-overflow`) when the actual count exceeds N. The badge uses the same `.pd-avatar-stack-item` base class plus the overflow modifier. Never silently truncate a list without indicating hidden items.
+
+## Clickable Row Indicators
+
+On fully clickable cards/rows (e.g., unit cards on property detail), use `.pd-tenant-arrow-btn` with `fa-chevron-right` as the navigation indicator. Do not use action-specific icons (phone, email) as decorative elements on clickable containers — they create false affordance via event bubbling. The old `.pd-tenant-phone-btn` class has been removed.
+
+## Activity Timeline Pattern
+
+The property detail page includes a full activity timeline (`properties/detail.html` + `properties-detail.css`). Key conventions:
+
+- **Filter pills** use `.pd-timeline-filter` buttons with `data-filter` attributes; JS toggles `.active` on the pill and `.pd-timeline-hidden` on non-matching items
+- **Channel badges** use `.pd-timeline-badge--{channel}` (email, sms, task, system)
+- **Cursor-based pagination**: API returns `{ items, next_cursor, has_more }`; JS appends new items on "Load More"
+- **Static anchor**: "Property Created" event is rendered server-side at the bottom, not from API data
+- **DOM safety**: All dynamic content uses `createElement` + `textContent` (no innerHTML); each item wrapped in try/catch
+
 ## Before Creating New CSS
 
 Check if existing component/page file already covers the need.
