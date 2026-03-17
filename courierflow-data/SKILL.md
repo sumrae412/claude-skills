@@ -96,6 +96,8 @@ END
 
 ## Postgres-First Scaling
 
+- **PostgreSQL only** — No SQLite support. `app/database/__init__.py` has no dialect branching; `app/config.py` defaults to `postgresql+asyncpg://`. Do not add SQLite fallbacks, `_is_postgresql()` checks, or `aiosqlite` imports.
+
 No Redis, no external queue. Maximize PostgreSQL:
 
 - **Job queue** — `pending_operations` table with `SKIP LOCKED` dequeue

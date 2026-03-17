@@ -38,6 +38,8 @@ description: Git workflow, branching, deploys, PRs. Load when committing, deploy
 
 ## Worktree Cleanup (Mandatory)
 
+**Gotcha:** A worktree cannot check out `main` if the main repo already has it checked out. When using `gh pr merge` from a worktree, the post-merge branch cleanup may show an error — this is harmless; the merge itself succeeds. Verify with `gh pr view <number> --json state`.
+
 If you used a worktree, clean it up:
 
 ```bash
@@ -91,6 +93,17 @@ git push origin <tag-name>
 2. Open each file and resolve (keep both changes where appropriate)
 3. Run tests to verify
 4. Stage resolved files and complete merge
+
+## Squash-Merge Branch Recovery
+
+When a parent PR is squash-merged into main but your branch has commits from before the squash, a normal rebase fails with many conflicts (because git replays all original commits against the squash). Use `--onto` to replay only your new commits:
+
+```bash
+# Only replay the last N commits (your fixes) onto main
+git rebase --onto origin/main HEAD~1
+```
+
+**When to use:** Your branch was based on a feature branch that got squash-merged. `git log` shows the original feature commits plus your fix commits, but main only has the single squash commit.
 
 ## Railway Commands
 

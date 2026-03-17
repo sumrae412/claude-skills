@@ -197,9 +197,9 @@ def _parse_state(
 
 **Learned from:** `client.py` — `TenantPanelResponse` in return type without import. `email.py` — `token_manager` referenced before its late import. `calendar.py` — `AsyncSession` used in type hint before import. `auth.py` — `UUID` in string annotation `"UUID | None"` but only imported inside the function body.
 
-### 7. Test Queries Against Real DB Semantics
+### 7. Test Queries Against PostgreSQL Semantics
 
-SQLAlchemy queries that work on SQLite may fail on PostgreSQL. Common traps:
+SQLAlchemy queries must respect PostgreSQL semantics. Common traps:
 
 - **DISTINCT + JSON columns:** Postgres cannot compare JSON for equality, so `DISTINCT` on a table with JSON columns fails.
 - **ORDER BY not in SELECT DISTINCT:** Postgres requires ORDER BY expressions to appear in the SELECT list when using DISTINCT.

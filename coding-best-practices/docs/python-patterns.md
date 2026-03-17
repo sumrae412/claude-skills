@@ -304,7 +304,7 @@ def upgrade():
     # Step 3: Make non-nullable
     op.alter_column('users', 'status', nullable=False)
 
-# Renaming column (use batch for SQLite compatibility)
+# Renaming column
 def upgrade():
     with op.batch_alter_table('users') as batch_op:
         batch_op.alter_column('name', new_column_name='full_name')
