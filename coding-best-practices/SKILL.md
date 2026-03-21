@@ -108,6 +108,10 @@ Before committing code changes:
 - [ ] HTTP method matches frontend expectations (PATCH vs PUT)
 - [ ] Content-Type matches (JSON vs Form data)
 
+## Alembic Migration Heads
+
+Never parse Alembic migration files manually (e.g., with Python scripts reading `down_revision`) to determine heads. The migration chain has complex branches and merges. Use `alembic heads` CLI command, which correctly resolves the DAG. Manual parsing produces false positives.
+
 ## CI/CD Script Structure
 
 Scripts in `scripts/` for CI/CD operations follow this structure:

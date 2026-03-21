@@ -736,6 +736,43 @@ When a bug is caused by a **pattern** (e.g., using a deprecated base class, a wr
 
 **Learned from:** PR #223 fixed `CopilotAuthMiddleware` but missed `PerformanceMiddleware`, `AuditMiddleware`, and `GoogleConnectionMiddleware` — all using the same broken `BaseHTTPMiddleware` base class. PR #226 was needed to finish the job.
 
+### 29. Expose Public Wrappers for Cross-Service Data Sync
+
+When a private service method needs to be called by other services (e.g., `_sync_client_for_member()` needed by integration services), expose a public wrapper rather than making the private method public or calling it directly. This preserves encapsulation (rule 5) while enabling defensive sync from multiple code paths.
+
+```python
+# ❌ BAD — integration service reaches into private internals
+await household_service._sync_client_for_member(db, user_id, ...)
+
+# ✅ GOOD — public wrapper with simpler interface
+await household_service.ensure_client_for_member(
+    db, user_id=user_id, household_id=hid,
+    first_name="Jane", last_name="Doe", email="jane@example.com",
+)
+```
+
+**Learned from:** `sync_service.py` and `contact_import_service.py` — both needed to call `_sync_client_for_member()` to enforce the HouseholdMember → Client invariant. Added `ensure_client_for_member()` as a public wrapper.
+
+### 30. Dedup Must Cover All Contact Identifiers
+
+When syncing or creating records that deduplicate by contact info, the lookup must check **all** identifier types — not just one. If dedup only checks email, phone-only records create duplicates silently.
+
+```python
+# ❌ BAD — only email dedup, phone-only members always create duplicates
+if member_data.email:
+    existing = await find_by_email(db, user_id, member_data.email)
+# No phone fallback — phone-only member always inserts
+
+# ✅ GOOD — email first, then phone fallback
+if member_data.email:
+    existing = await find_by_email(db, user_id, member_data.email)
+elif member_data.phone:
+    phone_digits = re.sub(r"[^0-9]", "", member_data.phone)
+    existing = await find_by_phone_normalized(db, user_id, phone_digits)
+```
+
+**Learned from:** `_sync_client_for_member()` — only checked email for dedup. CRM contacts with phone but no email created duplicate Clients on every sync.
+
 ## Quick Reference
 
 | Rule | Symptom | Check |

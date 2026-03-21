@@ -40,6 +40,14 @@ description: External API patterns — Calendar, Twilio, OpenAI, webhooks. Load 
 - Validate signature/shared secret before processing
 - Twilio IP whitelist for SMS webhooks
 
+## Integration Data Sync Invariant
+
+Any integration code path that creates a `HouseholdMember` (e.g., `sync_service.py`, `contact_import_service.py`) **must** call `household_service.ensure_client_for_member()` after creation. The Tenants page queries `Client` exclusively via `search_clients_grouped` — a member without a corresponding Client is invisible in the UI.
+
+## Column Name Gotcha: `is_primary_contact`
+
+The `HouseholdMember` model uses `is_primary_contact` (not `is_primary`). The shorter name silently fails — SQLAlchemy creates a filter that matches nothing instead of raising an error. Always verify column names against the model definition.
+
 ## Dependency Pinning
 
 | Package | Pin | Reason |

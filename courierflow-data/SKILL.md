@@ -50,6 +50,7 @@ WorkflowTemplate
 - Data migrations that NULL or DROP columns MUST copy data first
 - Always implement reversible `downgrade()`
 - Test both upgrade and downgrade
+- Backfill migrations that INSERT records MUST include duplicate protection (e.g., a `seen_keys` set in Python or `ON CONFLICT DO NOTHING` in SQL). Members sharing the same `(user_id, email)` can exist across households — without dedup, the migration crashes on unique constraints or creates duplicates.
 
 ### Alembic Version Desync
 
