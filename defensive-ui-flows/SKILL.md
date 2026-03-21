@@ -884,6 +884,70 @@ function showPanel() {
 
 ---
 
+## 30. Vue Apps With External DOM Elements Need Explicit Bridging
+
+When a Vue app mounts inside a container but header/toolbar elements live outside the mount point (e.g., page-level headers rendered by Jinja), the Vue app must bridge to those elements explicitly using `getElementById` + `addEventListener` in `mounted()`, plus `$watch` to sync reactive state back to the DOM.
+
+```javascript
+// BAD - header buttons outside #vue-app have no connection to Vue state
+// <div class="page-header">  <!-- outside Vue -->
+//   <button id="undo-btn">Undo</button>
+// </div>
+// <div id="vue-app">...</div>
+
+// GOOD - wire external DOM in mounted(), watch state for sync
+mounted() {
+    const undoBtn = document.getElementById('undo-btn');
+    if (undoBtn) undoBtn.addEventListener('click', () => this.undo());
+
+    this.$watch(
+        () => this.store.state.undoStack.length,
+        () => { if (undoBtn) undoBtn.disabled = !this.canUndo; }
+    );
+}
+```
+
+**Key rules:**
+- Null-check every external element (pattern #5)
+- Use `$watch` for state-to-DOM sync (don't poll or use timers)
+- Keep external DOM manipulation in dedicated methods (`wireHeaderButtons`, `updateHeaderStatus`)
+
+**Learned from:** `TimelineListBuilder.js` — builder page header (workflow name, status badge, undo/redo, publish) lives outside the Vue mount point in `builder.html`. Required `wireHeaderButtons()` + two `$watch` hooks to keep header in sync with Vue state.
+
+---
+
+## 31. Store Setters Must Normalize Legacy Data Formats
+
+When a store's `setTemplate()` or `loadData()` accepts data from an API or template injection, it must normalize legacy field formats to the current schema. Otherwise, components that depend on the new schema (e.g., `timing_config`) will render incorrectly because old data only has the legacy fields (e.g., `delay_days`).
+
+```javascript
+// BAD - trusts incoming data shape, legacy steps break timeline grouping
+setTemplate(template) {
+    state.steps = template.steps || [];
+}
+
+// GOOD - normalize legacy fields to current schema
+setTemplate(template) {
+    state.steps = (template.steps || []).map(step => {
+        if (!step.timing_config) {
+            step.timing_config = {
+                relative_to: 'PREVIOUS_STEP',
+                offset_days: step.relative_days ?? step.delay_days ?? 0,
+                offset_hours: step.delay_hours || 0,
+            };
+        }
+        if (!step.id) {
+            step.id = 'step-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9);
+        }
+        return step;
+    });
+}
+```
+
+**Learned from:** `store.js` `setTemplate()` — steps from "Use this template" had `delay_days` but no `timing_config`. The timeline grouped all steps at day 0 because the rendering logic only read `timing_config.offset_days`.
+
+---
+
 ## Checklist for New UI Code
 
 - [ ] Every guard clause shows feedback (toast, inline, or console)
@@ -917,3 +981,5 @@ function showPanel() {
 - [ ] New CSS files wrapped in the correct `@layer` (`design-system`, `components`, or `pages`); only Bootstrap and `mobile.css` should be unlayered
 - [ ] When migrating CSS class names between frameworks, confirmed the new classes have CSS definitions (framework installed OR definitions added to design system)
 - [ ] Visibility toggling uses ONE mechanism per file (`style.display` OR `classList.add/remove('hidden')`, not both); `grep -c` both patterns to verify
+- [ ] Vue apps with header/toolbar elements outside the mount point have explicit DOM bridging (`getElementById` + `$watch` in `mounted()`)
+- [ ] Store setters that accept external data normalize legacy field formats to the current schema (e.g., `delay_days` → `timing_config`)

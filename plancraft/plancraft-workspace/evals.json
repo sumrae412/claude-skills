@@ -1,0 +1,55 @@
+{
+  "skill_name": "plancraft",
+  "evals": [
+    {
+      "id": 0,
+      "name": "eval-webhook-endpoint",
+      "prompt": "I have an approved design for a DocuSeal webhook endpoint. The design specifies: a new route at POST /webhooks/docuseal that receives signature completion events, validates the HMAC signature, updates the Document model status, and sends a confirmation email to the landlord. The scope is: In Scope: webhook route, HMAC validation, document status update, email notification. Out of Scope: DocuSeal template management, document upload, tenant-facing UI. Please write the implementation plan following Phase 2 of PlanCraft — I need bite-sized TDD tasks with exact file paths and complete code.",
+      "expected_output": "A plan with: plan document header, file structure map, bite-sized TDD tasks (2-5 min each) with complete code, exact file paths, test commands with expected output, scope section",
+      "assertions": [
+        {"text": "Plan has a document header with Goal, Architecture, and Tech Stack fields", "type": "structural"},
+        {"text": "Plan includes a file structure map (table or list) showing files to create/modify with responsibilities", "type": "structural"},
+        {"text": "Tasks follow TDD cycle: write failing test -> verify it fails -> implement -> verify pass -> commit", "type": "process"},
+        {"text": "Code blocks contain complete implementation code, not placeholders like 'add validation here'", "type": "quality"},
+        {"text": "Uses real project file paths from the CourierFlow codebase (app/routes/*, app/services/*, etc.)", "type": "quality"},
+        {"text": "Includes pytest commands targeting specific test files and functions", "type": "quality"},
+        {"text": "Has explicit In Scope and Out of Scope sections", "type": "structural"},
+        {"text": "Does NOT invoke superpowers:writing-plans as a separate skill", "type": "integration"},
+        {"text": "Mentions HMAC validation using DOCUSEAL_WEBHOOK_SECRET environment variable", "type": "domain"}
+      ]
+    },
+    {
+      "id": 1,
+      "name": "eval-notification-prefs",
+      "prompt": "I have an approved design for tenant notification preferences. The design specifies: a new NotificationPreference model with tenant_id, category (enum matching workflow categories), and channel (email/sms/both/none). A new route GET/POST /tenants/{id}/preferences for the settings page. A Jinja template with toggle controls per category. The service layer checks preferences before sending workflow messages. Scope — In Scope: model, migration, route, template, service integration. Out of Scope: push notifications, preference inheritance from property defaults, bulk preference updates. Please write the implementation plan with bite-sized TDD tasks.",
+      "expected_output": "A plan decomposed across model/migration, route, template, and service layers with proper task ordering, file structure map, and TDD steps",
+      "assertions": [
+        {"text": "Plan has a document header with Goal, Architecture, and Tech Stack fields", "type": "structural"},
+        {"text": "Plan includes a file structure map (table or list) showing files to create/modify with responsibilities", "type": "structural"},
+        {"text": "Tasks follow TDD cycle: write failing test -> verify it fails -> implement -> verify pass -> commit", "type": "process"},
+        {"text": "Code blocks contain complete implementation code, not placeholders", "type": "quality"},
+        {"text": "Uses real project file paths from the CourierFlow codebase", "type": "quality"},
+        {"text": "Includes pytest commands targeting specific test files and functions", "type": "quality"},
+        {"text": "Has explicit In Scope and Out of Scope sections", "type": "structural"},
+        {"text": "Does NOT invoke superpowers:writing-plans as a separate skill", "type": "integration"},
+        {"text": "Decomposes work across model/migration, route, template, and service layers in separate tasks", "type": "domain"}
+      ]
+    },
+    {
+      "id": 2,
+      "name": "eval-token-dropdown",
+      "prompt": "I have an approved design for fixing the token dropdown in the workflow builder. The design specifies: the TokenDropdown component in builder.html doesn't close when clicking outside because the click-outside listener isn't registered. Fix: add a document-level click listener that checks if the click target is outside the dropdown, and close it if so. Clean up the listener on dropdown destroy. CSS goes in timeline-list-builder.css. Scope — In Scope: click-outside handler, listener cleanup. Out of Scope: dropdown positioning, keyboard navigation, search filtering. Please write the implementation plan.",
+      "expected_output": "A focused plan with 1-2 tasks, not over-engineered, with exact file paths (builder.html, timeline-list-builder.css), complete JS code for the click handler",
+      "assertions": [
+        {"text": "Plan has a document header with Goal, Architecture, and Tech Stack fields", "type": "structural"},
+        {"text": "Plan includes a file structure map showing files to modify", "type": "structural"},
+        {"text": "Tasks follow TDD cycle or at minimum include test verification steps", "type": "process"},
+        {"text": "Code blocks contain complete JavaScript implementation for click-outside handler", "type": "quality"},
+        {"text": "References builder.html and timeline-list-builder.css by correct file paths", "type": "quality"},
+        {"text": "Has explicit In Scope and Out of Scope sections", "type": "structural"},
+        {"text": "Does NOT invoke superpowers:writing-plans as a separate skill", "type": "integration"},
+        {"text": "Plan is appropriately scoped — 1-3 tasks, not over-engineered for a small bug fix", "type": "domain"}
+      ]
+    }
+  ]
+}

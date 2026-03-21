@@ -45,6 +45,10 @@ Route URLs, handler names, and template filenames do not always match:
 | URL | Route File | Handler | Template |
 |-----|-----------|---------|----------|
 | `/home` | `landing.py` | `home_page` | `dashboard.html` |
+| `/workflows/builder` | `workflows.py` | `workflow_builder_page` | `workflows/builder.html` |
+| `/workflows/builder/{id}` | `workflows.py` | `workflow_builder_edit_page` | `workflows/builder.html` |
+
+**Builder context variables:** Both builder routes must pass `template_state` (defaults to `"draft"`) for the page header status badge. When adding new template context data to builder routes, update BOTH the new-workflow and edit-workflow handlers.
 
 **Always check the route handler** before editing templates:
 ```bash

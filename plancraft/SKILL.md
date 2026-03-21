@@ -1,6 +1,6 @@
 ---
 name: plancraft
-description: Use when creating implementation plans for features or complex changes that benefit from multi-model AI review with scope-creep prevention
+description: Use when creating implementation plans for features or complex changes that benefit from multi-model AI review with scope-creep prevention. Includes built-in TDD task decomposition with bite-sized steps, exact file paths, and complete code — no need to invoke writing-plans separately.
 ---
 
 # PlanCraft
@@ -9,7 +9,7 @@ description: Use when creating implementation plans for features or complex chan
 
 Multi-agent planning skill that chains six phases:
 1. **Brainstorming** — Requirements exploration and design approval
-2. **Writing-Plans** — Detailed TDD implementation plan with bite-sized tasks
+2. **Plan Writing** — Detailed TDD implementation plan with bite-sized tasks (built-in)
 3. **AI Review** — DeepSeek (security/architecture) + OpenAI (code quality/efficiency) review
 4. **Review & Confirm** — Summarize agent updates and get user confirmation before executing
 5. **Execution** — Invokes `superpowers:executing-plans` after user confirms
@@ -47,25 +47,24 @@ Check: `python3 ~/.claude/scripts/plancraft_review.py --reviewer deepseek --plan
 digraph plancraft {
     node [shape=box];
     brainstorm [label="Phase 1: Brainstorming\n(requirements + design)"];
-    writing [label="Phase 2: Writing-Plans\n(TDD tasks + file paths)"];
+    writing [label="Phase 2: Plan Writing\n(file map + TDD tasks)"];
+    quality [label="Quality Gate:\nplan-document review"];
     mode [label="Step 0: Select\ninvolvement mode"];
-    search [label="Step 1: Search\nexisting plans"];
-    analyze [label="Step 2: Analyze\ncodebase"];
-    enrich [label="Step 3: Enrich plan\n(security/efficiency/completeness)"];
-    ds1 [label="Step 4: DeepSeek\nreview + filter"];
-    cx1 [label="Step 5: Codex\nreview + filter"];
-    final_rev [label="Step 6: Final round\n(both reviewers)"];
-    present [label="Step 7: Present\nfinal plan"];
-    review_updates [label="Step 8: Review\nagent updates"];
+    enrich [label="Step 1: Enrich plan\n(security/efficiency/completeness)"];
+    ds1 [label="Step 2: DeepSeek\nreview + filter"];
+    cx1 [label="Step 3: Codex\nreview + filter"];
+    final_rev [label="Step 4: Final round\n(both reviewers)"];
+    present [label="Step 5: Present\nfinal plan"];
+    review_updates [label="Step 6: Review\nagent updates"];
     confirm [label="Confirm with user\nbefore executing" shape=diamond];
-    execute [label="Step 9: Execution\nhandoff"];
-    cleanup [label="Step 10: Docs\ncleanup" shape=doublecircle];
+    execute [label="Step 7: Execution\nhandoff"];
+    cleanup [label="Step 8: Docs\ncleanup" shape=doublecircle];
 
     brainstorm -> writing;
-    writing -> mode;
-    mode -> search;
-    search -> analyze;
-    analyze -> enrich;
+    writing -> quality;
+    quality -> mode [label="pass"];
+    quality -> writing [label="issues"];
+    mode -> enrich;
     enrich -> ds1;
     ds1 -> cx1;
     cx1 -> final_rev;
@@ -86,7 +85,7 @@ digraph plancraft {
 **Before any planning begins, run a brainstorming session.** This explores requirements and creates a validated design document.
 
 <HARD-GATE>
-Do NOT proceed to planning steps until brainstorming is complete and a design document has been approved by the user.
+Do NOT proceed to plan writing until brainstorming is complete and a design document has been approved by the user.
 </HARD-GATE>
 
 ### Brainstorming Checklist
@@ -123,37 +122,179 @@ Create a task for each item and complete in order:
 - Commit the design document to git
 - This design doc becomes the foundation for Phase 2
 
-## Phase 2: Writing-Plans
+## Phase 2: Plan Writing
 
-**After brainstorming is complete, invoke the `superpowers:writing-plans` skill** to create a detailed implementation plan with bite-sized TDD tasks.
+Write the implementation plan directly — this phase is self-contained. The goal is a plan so detailed that an engineer with zero codebase context can follow it step by step. Document everything: which files to touch, complete code, test commands with expected output.
+
+Assume the implementer is a skilled developer but knows nothing about your toolset or problem domain, and doesn't know good test design very well.
 
 <HARD-GATE>
-Do NOT proceed to AI review until writing-plans has created a complete implementation plan with exact file paths and test steps.
+Do NOT proceed to AI review until the plan has exact file paths, complete code, and TDD test steps for every task.
 </HARD-GATE>
 
-### What Writing-Plans Adds
+### Scope Check
 
-The writing-plans skill creates implementation plans with:
+If the design doc covers multiple independent subsystems, break it into separate plans — one per subsystem. Each plan should produce working, testable software on its own.
 
-- **Bite-sized tasks** (2-5 minutes each): test → verify fail → implement → verify pass → commit
-- **Exact file paths** with line numbers for modifications
-- **Complete code** in the plan (not vague instructions like "add validation")
-- **Exact test commands** with expected output
-- **TDD enforcement** throughout
+### File Structure Map
 
-### Writing-Plans Invocation
+Before defining tasks, map out which files will be created or modified and what each one is responsible for. This is where decomposition decisions get locked in.
 
-After brainstorming produces an approved design doc:
+- Design units with clear boundaries and well-defined interfaces. Each file should have one clear responsibility.
+- Prefer smaller, focused files over large ones that do too much — you reason best about code you can hold in context at once, and edits are more reliable when files are focused.
+- Files that change together should live together. Split by responsibility, not by technical layer.
+- In existing codebases, follow established patterns. If the codebase uses large files, don't unilaterally restructure — but if a file you're modifying has grown unwieldy, including a split in the plan is reasonable.
 
-1. **Invoke the skill:** Use the Skill tool with `skill: "superpowers:writing-plans"`
-2. **Provide context:** The design doc from Phase 1 is the input
-3. **Output:** A detailed plan saved to `docs/plans/YYYY-MM-DD-<feature-name>.md`
+This structure informs the task decomposition. Each task should produce self-contained changes that make sense independently.
 
-The plan from writing-plans then goes through AI review in Steps 4-6.
+### Task Granularity
+
+**Each step is one action (2-5 minutes):**
+- "Write the failing test" — step
+- "Run it to make sure it fails" — step
+- "Implement the minimal code to make the test pass" — step
+- "Run the tests and make sure they pass" — step
+- "Commit" — step
+
+### Plan Document Header
+
+Every plan starts with this header:
+
+```markdown
+# [Feature Name] Implementation Plan
+
+> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
+
+**Goal:** [One sentence describing what this builds]
+
+**Architecture:** [2-3 sentences about approach]
+
+**Tech Stack:** [Key technologies/libraries]
+
+**Design Document:** `docs/plans/YYYY-MM-DD-<topic>-design.md`
+
+## Scope
+### In Scope
+### Out of Scope
+
+---
+```
+
+### Task Structure Template
+
+````markdown
+### Task N: [Component Name]
+
+**Files:**
+- Create: `exact/path/to/file.py`
+- Modify: `exact/path/to/existing.py:123-145`
+- Test: `tests/exact/path/to/test.py`
+
+- [ ] **Step 1: Write the failing test**
+
+```python
+def test_specific_behavior():
+    result = function(input)
+    assert result == expected
+```
+
+- [ ] **Step 2: Run test to verify it fails**
+
+Run: `pytest tests/path/test.py::test_name -v`
+Expected: FAIL with "function not defined"
+
+- [ ] **Step 3: Write minimal implementation**
+
+```python
+def function(input):
+    return expected
+```
+
+- [ ] **Step 4: Run test to verify it passes**
+
+Run: `pytest tests/path/test.py::test_name -v`
+Expected: PASS
+
+- [ ] **Step 5: Commit**
+
+```bash
+git add tests/path/test.py src/path/file.py
+git commit -m "feat: add specific feature"
+```
+````
+
+### Plan Writing Checklist
+
+- Exact file paths always (with line numbers for modifications)
+- Complete code in plan (not "add validation" — show the actual code)
+- Exact commands with expected output
+- Reference relevant skills with @ syntax
+- DRY, YAGNI, TDD, frequent commits
+
+### Quality Gate: Plan Document Review
+
+After writing the complete plan, dispatch a single reviewer subagent to verify the plan is ready for AI review. This catches structural gaps before spending API calls on DeepSeek/Codex.
+
+Dispatch a general-purpose subagent with this prompt:
+
+```
+You are a plan document reviewer. Verify this plan is complete and ready for implementation.
+
+**Plan to review:** [PLAN_FILE_PATH]
+**Spec for reference:** [DESIGN_DOC_PATH]
+
+## What to Check
+
+| Category | What to Look For |
+|----------|------------------|
+| Completeness | TODOs, placeholders, incomplete tasks, missing steps |
+| Spec Alignment | Plan covers spec requirements, no major scope creep |
+| Task Decomposition | Tasks have clear boundaries, steps are actionable |
+| Buildability | Could an engineer follow this plan without getting stuck? |
+
+## Calibration
+
+Only flag issues that would cause real problems during implementation.
+An implementer building the wrong thing or getting stuck is an issue.
+Minor wording, stylistic preferences, and "nice to have" suggestions are not.
+
+Approve unless there are serious gaps — missing requirements from the spec,
+contradictory steps, placeholder content, or tasks so vague they can't be acted on.
+
+## Output Format
+
+## Plan Review
+
+**Status:** Approved | Issues Found
+
+**Issues (if any):**
+- [Task X, Step Y]: [specific issue] - [why it matters for implementation]
+
+**Recommendations (advisory, do not block approval):**
+- [suggestions for improvement]
+```
+
+- If **Issues Found**: fix the issues in the plan, re-dispatch reviewer
+- If **Approved**: proceed to Step 0 (involvement mode selection)
+- If loop exceeds 3 iterations, surface to human for guidance
+
+<NO-PAUSE>
+After gathering information and before writing, NEVER say:
+- "I have everything I need"
+- "Now I'm ready to write"
+- "Let me proceed to writing"
+- Or any similar announcement
+
+Just write. No announcements. No confirmations. Execute the write operation immediately.
+</NO-PAUSE>
+
+### Save the Plan
+
+Save to `docs/plans/YYYY-MM-DD-<feature-name>.md` and write to `/tmp/plancraft_plan.md` for reviewers.
 
 ## Involvement Modes
 
-Ask user at Step 0 (after brainstorming) via AskUserQuestion:
+Ask user at Step 0 (after plan writing) via AskUserQuestion:
 
 | Mode | Behavior |
 |------|----------|
@@ -202,7 +343,7 @@ python3 ~/.claude/scripts/plancraft_review.py \
 
 ### Running Both Reviewers in Parallel
 
-For Step 7 (final review), run both reviewers concurrently using two Bash calls in the same message. Both read from the same temp files.
+For Step 4 (final review), run both reviewers concurrently using two Bash calls in the same message. Both read from the same temp files.
 
 ## Step-by-Step Instructions
 
@@ -239,53 +380,22 @@ Complete the brainstorming checklist before proceeding:
    - Define explicit **Out of Scope** list (what was discussed but excluded)
    - Write scope to `/tmp/plancraft_scope.txt`
 
-### Phase 2 — Writing-Plans (REQUIRED)
+### Phase 2 — Plan Writing (REQUIRED)
 
 After brainstorming produces an approved design:
 
-1. **Invoke the writing-plans skill**
-   ```
-   Use Skill tool: skill: "superpowers:writing-plans"
-   ```
-
-2. **The writing-plans skill will:**
-   - Read the design doc from Phase 1
-   - Create bite-sized TDD tasks (2-5 min each)
-   - Include exact file paths and complete code
-   - Save to `docs/plans/YYYY-MM-DD-<feature-name>.md`
-
-3. **After writing-plans completes:**
-   - The implementation plan is ready for AI review
-   - Write the plan to `/tmp/plancraft_plan.md` for reviewers
-   - Proceed to Step 0
+1. **Map the file structure** — list every file to create/modify with its responsibility
+2. **Decompose into tasks** — each task targets one component or concern
+3. **Write bite-sized steps** — 2-5 min each, TDD cycle: test → verify fail → implement → verify pass → commit
+4. **Include complete code** — no placeholders, no "add validation here"
+5. **Include exact commands** — test commands with expected output
+6. **Save the plan** — to `docs/plans/YYYY-MM-DD-<feature-name>.md`
+7. **Run quality gate** — dispatch plan-document reviewer subagent
+8. **Fix any issues** — if reviewer finds gaps, fix and re-review (max 3 iterations)
+9. **Write plan to temp file** — `/tmp/plancraft_plan.md` for AI reviewers
 
 <NO-PAUSE>
-After gathering information and before writing, NEVER say:
-- "I have everything I need"
-- "Now I'm ready to write"
-- "Let me proceed to writing"
-- Or any similar announcement
-
-Just write. No announcements. No confirmations. Execute the write operation immediately.
-</NO-PAUSE>
-
-### Step 0 — Select Mode
-1. Ask involvement mode (Silent/Balanced/Consultative) via AskUserQuestion
-2. Confirm scope definition from brainstorming phase
-3. Proceed to AI review with the plan from writing-plans
-
-### Step 1 — Search Existing Plans
-1. `Glob` for `*.plan.md`, `*.design.md`, `docs/plans/*`
-2. `Read` discovered docs, merge prior decisions
-3. No pause unless scope fundamentally changes
-
-### Step 2 — Analyze Codebase
-1. `Grep` + `Glob` + `Read` for relevant source files
-2. `Task` (Explore subagent) for deep analysis if needed
-3. Update plan to align with actual code
-
-<NO-PAUSE>
-Steps 1–3 are continuous. After completing analysis, proceed DIRECTLY to enriching and writing the plan.
+Steps in Phase 2 are continuous. After completing the file structure map, proceed DIRECTLY to writing tasks.
 
 FORBIDDEN PHRASES — never output these:
 - "I have everything I need"
@@ -297,13 +407,18 @@ FORBIDDEN PHRASES — never output these:
 Just execute the next step immediately. No announcements.
 </NO-PAUSE>
 
-### Step 3 — Enrich Plan
-1. Synthesize steps 1-2 into detailed plan
+### Step 0 — Select Mode
+1. Ask involvement mode (Silent/Balanced/Consultative) via AskUserQuestion
+2. Confirm scope definition from brainstorming phase
+3. Proceed to AI review
+
+### Step 1 — Enrich Plan
+1. Synthesize codebase analysis into the plan (search existing plans, grep relevant source)
 2. Address: security, efficiency, completeness, error handling
-3. Write plan to `/tmp/plancraft_plan.md`
+3. Update `/tmp/plancraft_plan.md`
 4. Checkpoint (Consultative): enriched plan ready
 
-### Step 4 — DeepSeek Review
+### Step 2 — DeepSeek Review
 1. Call via Bash:
    ```bash
    python3 ~/.claude/scripts/plancraft_review.py \
@@ -315,11 +430,11 @@ Just execute the next step immediately. No announcements.
 3. If `error` key present and non-empty, log error and continue
 4. **Filter each recommendation:**
    - ACCEPT if improves security/efficiency/completeness AND marked IN_SCOPE
-   - REJECT if marked OUT_OF_SCOPE or expands scope → log as "scope creep"
+   - REJECT if marked OUT_OF_SCOPE or expands scope -> log as "scope creep"
 5. Notify per mode (Silent: log only; Balanced: if rejections; Consultative: full list)
 6. Apply accepted suggestions to plan, update `/tmp/plancraft_plan.md`
 
-### Step 5 — Codex Review
+### Step 3 — Codex Review
 1. Call via Bash:
    ```bash
    python3 ~/.claude/scripts/plancraft_review.py \
@@ -327,16 +442,16 @@ Just execute the next step immediately. No announcements.
        --plan-file /tmp/plancraft_plan.md \
        --scope-file /tmp/plancraft_scope.txt
    ```
-2. Same filter/log/notify logic as Step 4
+2. Same filter/log/notify logic as Step 2
 3. Apply accepted suggestions, update `/tmp/plancraft_plan.md`
 
-### Step 6 — Final Review Round
+### Step 4 — Final Review Round
 1. Send revised plan to **both** reviewers (run in parallel — two Bash calls in one message)
 2. Resolve conflicts: **Security > Efficiency > Code Style**
 3. Same filter/notify logic
 4. Apply final accepted suggestions
 
-### Step 7 — Finalize & Present
+### Step 5 — Finalize & Present
 1. Compile final plan with Review Log section:
    - Adopted suggestions (source + reason)
    - Rejected suggestions (source + reason)
@@ -349,7 +464,7 @@ Just execute the next step immediately. No announcements.
    rm -f /tmp/plancraft_plan.md /tmp/plancraft_scope.txt
    ```
 
-### Step 8 — Review Agent Updates
+### Step 6 — Review Agent Updates
 
 After plan approval but **before starting execution**, review all updates from other agents that contributed during the planning phase:
 
@@ -374,24 +489,27 @@ After plan approval but **before starting execution**, review all updates from o
 Do NOT begin execution without explicit user confirmation. Always summarize agent updates and ask before invoking `superpowers:executing-plans`.
 </HARD-GATE>
 
-### Step 9 — Execution Handoff
+### Step 7 — Execution Handoff
 
-After user confirms execution:
+After user confirms execution, offer the execution approach:
 
-1. **Announce:** "Starting execution with the executing-plans skill."
+**"Plan complete. Two execution options:**
 
-2. **Invoke the skill:**
-   ```
-   Use Skill tool: skill: "superpowers:executing-plans"
-   ```
+**1. Subagent-Driven (recommended)** — Fresh subagent per task, review between tasks, fast iteration
 
-3. **The executing-plans skill will:**
-   - Read the implementation plan from `docs/plans/`
-   - Execute tasks sequentially with TDD discipline
-   - Commit after each completed task
-   - Pause for review at checkpoints
+**2. Inline Execution** — Execute tasks in this session, batch execution with checkpoints
 
-### Step 10 — Documentation Cleanup
+**Which approach?"**
+
+**If Subagent-Driven chosen:**
+- Use `superpowers:subagent-driven-development`
+- Fresh subagent per task + two-stage review
+
+**If Inline Execution chosen:**
+- Use `superpowers:executing-plans`
+- Batch execution with checkpoints for review
+
+### Step 8 — Documentation Cleanup
 
 After execution completes, **automatically invoke the docs-cleanup skill** to clean up project documentation:
 
@@ -416,8 +534,8 @@ Do NOT skip documentation cleanup. Always invoke `docs-cleanup` after execution 
 
 - Every plan MUST have In Scope / Out of Scope section
 - Send scope definition with every review call
-- Suggestions adding unlisted functionality → REJECT as scope creep
-- If uncertain → flag for user decision in final summary
+- Suggestions adding unlisted functionality -> REJECT as scope creep
+- If uncertain -> flag for user decision in final summary
 - User can explicitly expand scope (logged as conscious decision)
 
 ## Decision Log Format
@@ -429,8 +547,16 @@ Do NOT skip documentation cleanup. Always invoke `docs-cleanup` after execution 
 
 ## Final Plan Output Template
 
-```markdown
-# Implementation Plan: [Feature Name]
+````markdown
+# [Feature Name] Implementation Plan
+
+> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
+
+**Goal:** [One sentence]
+
+**Architecture:** [2-3 sentences]
+
+**Tech Stack:** [Key technologies]
 
 **Design Document:** `docs/plans/YYYY-MM-DD-<topic>-design.md`
 
@@ -438,12 +564,47 @@ Do NOT skip documentation cleanup. Always invoke `docs-cleanup` after execution 
 ### In Scope
 ### Out of Scope
 
-## Technical Approach
-(Derived from approved design document)
+## File Structure
+| File | Action | Responsibility |
+|------|--------|---------------|
+| `path/to/file.py` | Create | [what it does] |
+| `path/to/existing.py` | Modify | [what changes] |
 
-## Implementation Steps
-1. Step with file references
-2. ...
+## Implementation Tasks
+
+### Task 1: [Component Name]
+
+**Files:**
+- Create: `exact/path/to/file.py`
+- Modify: `exact/path/to/existing.py:123-145`
+- Test: `tests/exact/path/to/test.py`
+
+- [ ] **Step 1: Write the failing test**
+```python
+def test_specific_behavior():
+    result = function(input)
+    assert result == expected
+```
+
+- [ ] **Step 2: Run test to verify it fails**
+Run: `pytest tests/path/test.py::test_name -v`
+Expected: FAIL with "function not defined"
+
+- [ ] **Step 3: Write minimal implementation**
+```python
+def function(input):
+    return expected
+```
+
+- [ ] **Step 4: Run test to verify it passes**
+Run: `pytest tests/path/test.py::test_name -v`
+Expected: PASS
+
+- [ ] **Step 5: Commit**
+```bash
+git add tests/path/test.py src/path/file.py
+git commit -m "feat: add specific feature"
+```
 
 ## Security Considerations
 ## Testing Strategy
@@ -453,14 +614,15 @@ Do NOT skip documentation cleanup. Always invoke `docs-cleanup` after execution 
 ### Rejected Suggestions
 ### Scope Maintenance
 ### Autonomous Decisions
-```
+````
 
 ## Common Mistakes
 
 | Mistake | Fix |
 |---------|-----|
 | **Skipping brainstorming** | ALWAYS complete Phase 1 first — no exceptions for "simple" projects |
-| **Skipping writing-plans** | ALWAYS invoke `superpowers:writing-plans` after brainstorming |
+| **Vague plan steps** | Every step needs exact file paths, complete code, and test commands |
+| **Missing file structure map** | Map all files before decomposing into tasks |
 | Jumping to planning without design approval | Get explicit user approval on design before proceeding |
 | Accepting all suggestions blindly | Filter every suggestion against scope definition |
 | Skipping scope section | Scope section is mandatory — reject plan without it |
@@ -470,14 +632,15 @@ Do NOT skip documentation cleanup. Always invoke `docs-cleanup` after execution 
 | Not cleaning up temp files | Always rm temp files after finalization |
 | Using MCP tools instead of Bash | This skill uses direct API calls via `plancraft_review.py` |
 | Asking multiple questions at once | One clarifying question per message during brainstorming |
-| Auto-executing without user confirmation | Always review agent updates and ask user before invoking `superpowers:executing-plans` |
-| Pausing between analysis and writing | Steps 1–3 are continuous — never say "I have everything I need" or announce intentions, just execute |
+| Auto-executing without user confirmation | Always review agent updates and ask user before execution |
+| Pausing between analysis and writing | Steps are continuous — never announce intentions, just execute |
 | Skipping docs cleanup | Always invoke `docs-cleanup` after execution completes |
+| Skipping quality gate | Always run plan-document reviewer before AI review |
 
 ## Error Handling
 
-- If `httpx` is not installed → tell user to run `pip install httpx`
-- If API key missing → script auto-sources shell config files; if still missing, result JSON will contain error message
-- If API call fails → script retries once, then returns error in JSON
-- If one reviewer fails → continue with the other; note gap in review log
-- If both fail → present plan without AI review, flag as "unreviewed"
+- If `httpx` is not installed -> tell user to run `pip install httpx`
+- If API key missing -> script auto-sources shell config files; if still missing, result JSON will contain error message
+- If API call fails -> script retries once, then returns error in JSON
+- If one reviewer fails -> continue with the other; note gap in review log
+- If both fail -> present plan without AI review, flag as "unreviewed"
