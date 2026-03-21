@@ -6,215 +6,111 @@ user-invocable: true
 
 # Code Creation Workflow
 
-<SUPERSEDES>
-This skill is the unified orchestrator for all feature development. When this skill is active, do NOT separately invoke:
-- superpowers:brainstorming (absorbed → Phases 1-3)
-- superpowers:writing-plans (absorbed → Phase 4)
-- superpowers:executing-plans (absorbed → Phase 5)
-- superpowers:test-driven-development (absorbed → Phase 5, per-step TDD)
-- superpowers:subagent-driven-development (absorbed → Phase 5, parallel dispatch)
-- plancraft (absorbed → Phase 4 optional AI review)
-- feature-dev:feature-dev (replaced entirely)
-
-These skills' behaviors are already embedded in the phases below. Invoking them separately causes duplicate work and broken flow.
-</SUPERSEDES>
-
-## Overview
-
-Agentic multi-phase workflow for building features. Uses parallel subagents for exploration and architecture, TDD for implementation, and parallel reviewers for quality. Replaces manual grep-and-plan with structured agent orchestration.
-
-**Announce:** "Running code-creation-workflow — loading context, exploring codebase, then building with you."
+**SUPERSEDES (do not invoke separately):** brainstorming → Phases 1-3, writing-plans → Phase 4, executing-plans → Phase 5, test-driven-development → Phase 5, plancraft → Phase 4 optional review, feature-dev:feature-dev → replaced entirely.
 
 ---
 
 ## Phase 0: Context Loading
 
-<HARD-GATE>
-Load project context before any exploration or coding.
-</HARD-GATE>
+**Announce:** "Running code-creation-workflow — loading context, then building."
 
-### Step 1: Load Project Identity
-
-Read the workspace `CLAUDE.md` (slim version — identity, terminology, boundaries, skill pointers).
-
-### Step 2: Load Core Skill
-
-If workspace has a core skill (e.g. `/courierflow-core`), load it for boundaries, terminology, and the trigger matrix.
-
-### Step 3: Classify Task → Load Contextual Skills
-
-Use the trigger matrix (from core skill or `skills/README.md`) to load **only** the skills relevant to this task:
-
-```
-Task touches templates/CSS/HTML?     → load UI skill
-Task touches routes/services?        → load API skill
-Task touches models/migrations?      → load data skill
-Task touches external APIs?          → load integrations skill
-Task involves git/deploy/PR?         → load git skill
-Task involves auth/security?         → load security skill
-```
-
-Load **only** what matches. Don't dump everything into context.
-
-### Step 4: Load Enforcement Skills (Always)
-
-- **coding-best-practices** — Always loaded as baseline reference
-- **Defensive skill** matching task type:
-  - UI work → `defensive-ui-flows`
-  - Backend work → `defensive-backend-flows`
-  - Both → load both
-
-### Step 5: Conditional Tools
-
-| Condition | Action |
-|-----------|--------|
-| Feature uses external API | `chub search <service>` → `chub get <doc-id>` |
-| Codebase >500 files or unfamiliar | Consider `repomix --compress` |
-| Need symbol-level precision | Activate Serena project, read relevant memories |
-| Small familiar codebase | Skip all three |
-
-### Step 6: Git Check
-
-Verify you're on a feature branch. If on main, create one before proceeding.
+1. Read workspace `CLAUDE.md` (identity, boundaries, terminology, skill pointers).
+2. Load core skill if present (e.g. `/courierflow-core`) for trigger matrix and boundaries.
+3. Load **only** the contextual skills that match the task:
+   - UI / templates / CSS → UI skill
+   - Routes / services → API skill
+   - Models / migrations → data skill
+   - External APIs → integrations skill
+   - Git / deploy / PR → git skill
+   - Auth / security → security skill
+4. Always load: `coding-best-practices` + the matching defensive skill (`defensive-ui-flows`, `defensive-backend-flows`, or both).
+5. Verify you're on a feature branch. If on main, create one before proceeding.
 
 ---
 
-## Phase 1: Discovery
+## Phase 1: Discovery — Choose Workflow Path
 
-Understand the request and decide the workflow path.
+Classify the request before doing any exploration:
 
-```
-User says "implement X"
-        │
-        ▼
-   ┌─────────────────────────────────────────────┐
-   │ Is this a SMALL change?                      │
-   │ (single file, no schema, no new endpoints)   │
-   │                                               │
-   │ YES → FAST PATH                               │
-   │   1. Load defensive skill                     │
-   │   2. Make the change                          │
-   │   3. Run tests                                │
-   │   4. Commit → done                            │
-   │                                               │
-   │ Has EXISTING PLAN file?                       │
-   │                                               │
-   │ YES → PLAN PATH                               │
-   │   1. Read the plan file                       │
-   │   2. Skip to Phase 5 (Implementation)         │
-   │   3. Execute the plan                         │
-   │                                               │
-   │ NO to both → FULL WORKFLOW (continue)         │
-   └─────────────────────────────────────────────┘
-```
+**FAST PATH** — single-file change, no schema change, no new endpoints, no ripple effects (typo, config tweak, one-liner). If all three are true: load the defensive skill, make the change, run tests, commit. Done.
 
-**Fast path criteria:** Typo fix, one-line change, config tweak, single-file edit with no ripple effects. If in doubt, use the full workflow.
+**PLAN PATH** — an existing plan file was provided. Read it, skip to Phase 5.
+
+**FULL WORKFLOW** — everything else. Continue through all phases below.
+
+When in doubt, use FULL WORKFLOW.
 
 ---
 
-## Phase 2: Exploration (Parallel Subagents)
+## Phase 2: Exploration
 
-Launch 2-3 **code-explorer** subagents in parallel to understand the codebase:
+Scale subagent count to task complexity:
+- Focused task (1 area of codebase) → 1 explorer
+- Broad task (multiple layers/areas) → 2 explorers
+- Unfamiliar area + broad task → 3 explorers
 
-```
-┌─────────────────────────────────────────────────────┐
-│ Explorer A: "Trace how similar features are         │
-│              implemented — find patterns, data flow" │
-│                                                      │
-│ Explorer B: "Map architecture for [feature area] —  │
-│              key files, layers, dependencies"        │
-│                                                      │
-│ Explorer C: "Analyze test patterns and UI patterns   │
-│              used in this area" (if relevant)        │
-└─────────────────────────────────────────────────────┘
-                    │
-                    ▼
-   Each agent returns key files + structured findings
-                    │
-                    ▼
-   Read ALL identified files to build deep context
-                    │
-                    ▼
-   Present summary of codebase understanding to user
-```
+Dispatch parallel `code-explorer` subagents using the Agent tool. Each gets a distinct, focused prompt:
 
-**Subagent dispatch:** Use the Task tool with `subagent_type` of `feature-dev:code-explorer` or `Explore`. Each agent gets a focused prompt describing what to find.
+- Explorer A: Trace how similar features are implemented — patterns, data flow, key files.
+- Explorer B (if needed): Map architecture for the feature area — layers, dependencies, entry points.
+- Explorer C (if needed): Analyze test patterns and UI conventions used in this area.
 
-**Serena integration:** When agents identify symbols to trace, use `find_symbol` / `find_referencing_symbols` instead of grep chains. Use `write_memory` to persist discoveries for cross-session continuity.
+After all agents return: read the identified key files yourself. **Cap at 10-15 files** — if explorers return more, prioritize the most relevant based on their summaries and read others on-demand during implementation. This prevents context window exhaustion.
 
-**Minimum output per explorer:** 5-10 key files, the patterns they follow, and any concerns or constraints discovered.
+Present a concise summary of findings to the user before proceeding.
+
+Minimum output per explorer: 5-10 key files, the patterns they follow, any constraints or concerns.
 
 ---
 
-## Phase 3: Clarification (Hard Gate)
+## Phase 3: Clarification
 
 <HARD-GATE>
 All ambiguities must be resolved before architecture work begins.
 </HARD-GATE>
 
-Review exploration findings against the original request. Identify **every** underspecified aspect:
+Review exploration findings against the request. Check for gaps in:
+- Edge cases (empty input, duplicates, malformed data)
+- Error handling (what does the user see on failure?)
+- Integration points (which existing systems are touched?)
+- Scope boundary (what is explicitly NOT included?)
+- Performance (large datasets, concurrency?) — if flagged, carry forward as a non-functional requirement for Phase 4
+- Backward compatibility (does this change existing behavior?)
 
-- **Edge cases** — What happens when input is empty, duplicated, or malformed?
-- **Error handling** — What should the user see when things fail?
-- **Integration points** — Which existing systems does this touch?
-- **Scope boundaries** — What is explicitly NOT included?
-- **Performance** — Will this hit large datasets or high concurrency?
-- **Backward compatibility** — Does this change existing behavior?
+**If the request is well-specified and exploration answered all gaps:** state that explicitly and proceed to Phase 4. Do not manufacture questions.
 
-Present questions **one at a time**. Ask the first question, wait for the answer, then ask the next. This prevents information overload and produces better answers. Group related context with each question so the user understands why you're asking.
-
-**If no ambiguities exist** (rare — usually means the request is very well-specified), state that explicitly and proceed to Phase 4.
+**If ambiguities exist:** Group questions by dependency. Ask independent questions together in one message (max 3). Only serialize when an answer materially changes what you ask next.
 
 ---
 
-## Phase 4: Architecture (Parallel Design + Optional AI Review)
+## Phase 4: Architecture
 
-Launch 2 **code-architect** subagents in parallel with different optimization targets:
+Scale to complexity:
+- Simple task (clear single approach) → propose one design, explain rationale, get approval.
+- Non-trivial task → dispatch 2 parallel `code-architect` subagents:
+  - Architect A: Optimize for **simplicity** — reuse existing patterns, minimal new files, fewest moving parts.
+  - Architect B: Optimize for **clean separation** — extensibility, testability, clear boundaries.
+
+Each architect returns: files to create/modify, component responsibilities, data flow, trade-offs.
+
+Present both designs to the user. User chooses A, B, or hybrid.
 
 ```
-┌──────────────────────────────────────────────────┐
-│ Architect A: "Design optimizing for SIMPLICITY — │
-│  reuse existing patterns, minimal new files,     │
-│  least moving parts"                             │
-│                                                   │
-│ Architect B: "Design optimizing for CLEAN        │
-│  SEPARATION — extensibility, testability,        │
-│  clear boundaries between concerns"              │
-└──────────────────────────────────────────────────┘
-                    │
-                    ▼
-   Present BOTH architectures to user:
-   - Files to create/modify (with line counts)
-   - Component designs and responsibilities
-   - Data flow (how data moves through the system)
-   - Trade-off analysis (what each approach sacrifices)
-                    │
-                    ▼
-   ◆ USER CHOOSES architecture (A, B, or hybrid) ◆
+◆ USER CHOOSES architecture ◆
 ```
-
-**Subagent dispatch:** Use the Task tool with `subagent_type` of `feature-dev:code-architect`. Each gets the exploration findings + clarification answers + a clear optimization directive.
 
 ### Write Implementation Plan
 
-After user chooses, write a structured plan using the `writing-plans` skill:
-- Numbered steps with specific files and changes
+After user chooses, write a structured plan directly (no separate skill invocation):
+- Numbered steps with specific files and line-level changes
 - Test requirements per step
 - Dependencies between steps marked clearly
 
-### Optional: PlanCraft AI Review
+### Optional AI Review (PlanCraft)
 
-Triggered when:
-- User says "review the plan" or "validate this"
-- Task is high-complexity (3+ layers, schema changes, external API integration)
+Trigger when: user requests it, OR task meets any two of: 3+ architectural layers, schema changes, external API integration.
 
-If triggered:
-1. Run `plancraft_review.py` (DeepSeek + Codex validation)
-2. Present critique and suggestions
-3. Revise plan if needed
-4. Get user re-approval
-
-If not triggered: Skip. The parallel architect approach already provides design validation through competing proposals.
+If triggered: run `plancraft_review.py`, present critique, revise plan if needed, get re-approval.
 
 ```
 ◆ USER APPROVES final plan before implementation ◆
@@ -222,173 +118,118 @@ If not triggered: Skip. The parallel architect approach already provides design 
 
 ---
 
-## Phase 5: Implementation (TDD + Defensive Patterns)
+## Phase 5: Implementation (TDD)
 
 <HARD-GATE>
 User must approve the plan before any implementation begins.
 </HARD-GATE>
 
-### Create TodoWrite Items
+Create TodoWrite items from the plan. Mark each complete as you finish.
 
-Break the plan into individual TodoWrite items. Mark each complete as you finish it.
+**For each step:**
+1. Write the test first — test expected behavior, not implementation. Include edge cases from Phase 3.
+2. Implement to make the test pass. Follow patterns from Phase 2. Apply defensive patterns:
+   - UI: guard clauses, loading/error/success states, no silent failures
+   - Backend: input validation, log or re-raise errors, no silent swallows
+3. Run tests → verify green before moving to the next step.
+4. Mark the TodoWrite item complete.
 
-### Execute Each Step
+**Parallel dispatch** (for 4+ independent steps with no shared state): Before dispatching, explicitly list each step's file inputs/outputs and confirm no overlap. If uncertain, default to sequential. Dispatch parallel implementation agents using the Agent tool — each follows the same TDD + defensive pattern. Merge results when all complete.
 
-For each plan step:
+Rationale for 4+ threshold: 3 steps is common for small features where agent coordination overhead exceeds the parallelism benefit.
 
-```
-1. Write test FIRST (test-driven-development skill)
-   - Test the expected behavior, not the implementation
-   - Include edge cases identified in Phase 3
-
-2. Implement to make the test pass
-   - Follow patterns discovered in Phase 2
-   - Apply defensive patterns throughout:
-     UI → guard clauses, feedback states, loading/error/success
-     Backend → input validation, error handling, no silent swallows
-
-3. Run test → verify green
-
-4. Mark TodoWrite item complete
-```
-
-### Parallel Subagent Dispatch (For Independent Steps)
-
-When the plan has 3+ steps with no dependencies between them:
-
-```
-Use subagent-driven-development skill:
-  → Dispatch parallel implementation agents
-  → Each follows the same TDD + defensive pattern
-  → Merge results when all complete
-```
-
-Only parallelize truly independent work — shared state or sequential dependencies must stay sequential.
-
-### Best Practices Applied Throughout
+**Best practices throughout:**
 
 | When | Apply |
 |------|-------|
 | Writing code | Type hints, async patterns, service layer |
-| Changing schema | Migration checklist, foreign keys |
+| Changing schema | Migration checklist, foreign keys, backfill paired with forward fix |
 | Adding endpoints | Route naming, HTTP methods, rate limiting |
 | Modifying JS | Null checks, event handlers, cache bust |
 | UI flows | defensive-ui-flows: guard feedback, state flags, overlay inline |
-| Backend error handling | defensive-backend-flows: no silent swallows, log or re-raise |
+| Backend errors | defensive-backend-flows: no silent swallows, log or re-raise |
 | Data migrations | defensive-backend-flows: copy before delete, reversible ops |
-| Cross-module calls | defensive-backend-flows: respect encapsulation, public wrappers |
 
 ---
 
-## Phase 6: Quality + Finish
+## Phase 6: Quality + Ship
 
 ### Parallel Review
 
-Launch 2 **code-reviewer** subagents in parallel:
+Scale to complexity:
+- Small/targeted change → single reviewer pass (bugs + conventions combined)
+- Full feature → 2 parallel `code-reviewer` subagents:
+  - Reviewer A: Bugs, logic errors, security vulnerabilities, race conditions.
+  - Reviewer B: Adherence to project conventions, patterns, style, and the plan.
 
-```
-┌──────────────────────────────────────────────────┐
-│ Reviewer A: "Check for bugs, logic errors,       │
-│  security vulnerabilities, race conditions"      │
-│                                                   │
-│ Reviewer B: "Check adherence to project          │
-│  conventions, patterns, style, and the plan"     │
-└──────────────────────────────────────────────────┘
-                    │
-                    ▼
-   Fix any issues found (including pre-existing bugs)
-```
-
-**Subagent dispatch:** Use the Task tool with `subagent_type` of `feature-dev:code-reviewer`. Each gets the diff + the plan + project conventions.
-
-**Fix-what-you-find:** If reviewers or tests surface bugs — even pre-existing ones your code didn't introduce — fix them. The same applies to CI failures: fix the root cause, don't work around it.
+Each reviewer gets: the diff + the plan + project conventions. Fix all issues found, including pre-existing bugs (fix-what-you-find policy).
 
 ### Verification Gate
 
-Invoke `verification-before-completion` skill:
-- All tests pass (including pre-existing failures)?
-- CI passes clean (no `--no-verify` workarounds)?
-- No unintended file changes?
-- Implementation matches the original request?
-- No regressions in existing functionality?
+Run `verification-before-completion` skill. All must be true before proceeding:
+- All tests pass (including pre-existing failures fixed)
+- CI passes clean (no `--no-verify` workarounds)
+- No unintended file changes
+- Implementation matches the original request
+- No regressions in existing functionality
 
-### Auto-Ship
+### Ship (With User Confirmation)
 
-After verification passes, invoke `/ship` directly — do NOT go through `finishing-a-development-branch`'s option menu. The user chose to implement; shipping is the expected outcome.
+After verification passes, ask: "Verification clean. Ready to ship — shall I run `/ship`?"
 
-`/ship` handles:
+When confirmed, invoke `/ship` directly (not `finishing-a-development-branch` menu). `/ship` handles:
 1. Commit with conventional message
 2. Push and create PR
-3. Launch background review agent (CodeRabbit + defensive patterns + CI + cherry-pick to main)
+3. Launch background review agent
 4. Session learnings capture
 
-**No user prompt needed** — verification passing IS the gate. Ship runs automatically.
+**Why confirmation instead of auto-ship:** Verification confirms correctness, not intent. The user may want to review the diff, adjust the PR description, or batch changes. One question is low ceremony and preserves control.
 
 ### Capture Learnings
 
 Invoke `session-learnings` skill:
 - What patterns were discovered?
 - What defensive rules were applied or should be added?
-- Any Serena memories to persist?
+- Any gotchas to persist in MEMORY.md?
 
 ---
 
-## Quick Reference: All Phases
+## Quick Reference
 
 | Phase | Name | Key Pattern | Gate |
 |-------|------|-------------|------|
-| 0 | Context | Trigger matrix → load relevant skills only | None |
-| 1 | Discovery | Fast-path escape for small changes | Auto |
-| 2 | Exploration | 2-3 parallel code-explorer subagents | None |
-| 3 | Clarification | Surface all ambiguities | **User answers** |
-| 4 | Architecture | 2 parallel code-architect subagents | **User chooses + approves plan** |
-| 5 | Implementation | TDD per step + parallel dispatch | Tests pass |
-| 6 | Quality + Auto-Ship | Parallel reviewers → verify → `/ship` (no menu) | **Verification** |
-
-## Skills Invoked Within This Workflow
-
-| Skill | Where Used |
-|-------|-----------|
-| coding-best-practices | Phase 0 (loaded), Phase 5 (applied) |
-| defensive-ui-flows | Phase 0 (loaded), Phase 5 (applied) |
-| defensive-backend-flows | Phase 0 (loaded), Phase 5 (applied) |
-| writing-plans | Phase 4 (plan creation) |
-| executing-plans | Phase 5 (plan execution) |
-| test-driven-development | Phase 5 (TDD per step) |
-| subagent-driven-development | Phase 5 (parallel independent steps) |
-| verification-before-completion | Phase 6 (pre-finish check) |
-| `/ship` (direct, no menu) | Phase 6 (auto-ship after verification → review → merge) |
-| session-learnings | Phase 6 (capture discoveries) |
-
-## Skills Eliminated (Absorbed)
-
-| Former Skill | Absorbed Into |
-|-------------|---------------|
-| plancraft brainstorming | Phases 1-3 (discovery + exploration + clarification) |
-| brainstorming skill | Phases 1-3 (interactive exploration replaces separate brainstorm) |
-| PlanCraft full pipeline | Phase 4 optional AI review only (DeepSeek + Codex) |
+| 0 | Context | Load CLAUDE.md + relevant skills only | None |
+| 1 | Discovery | Fast-path / plan-path / full-workflow | Auto |
+| 2 | Exploration | 1-3 parallel explorers (scaled to complexity) | None |
+| 3 | Clarification | Batch independent questions; fast-track if well-specified | User answers |
+| 4 | Architecture | 1 or 2 architects (scaled); user chooses; plan written | User approves plan |
+| 5 | Implementation | TDD per step; parallel dispatch at 4+ independent steps | Tests pass |
+| 6 | Quality + Ship | Scaled reviewers; verify; confirm with user; `/ship` | User confirms |
 
 ## Error Recovery
 
 | Situation | Action |
 |-----------|--------|
-| Explorer agent returns poor results | Re-dispatch with more specific prompt, or explore manually |
-| Architecture options both rejected | Ask user what they want different, re-run architects |
-| Tests fail during implementation | Fix immediately, don't proceed to next step |
+| Explorer returns poor results | Re-dispatch with narrower prompt, or explore manually with Grep/Glob/Read |
+| Both architectures rejected | Ask what's missing or wrong, re-run with new constraints |
+| Tests fail during implementation | Fix immediately — do not proceed to the next step |
 | Reviewer finds critical issue | Fix before finishing, re-run verification |
-| User wants to stop mid-workflow | Stop. Summarize state (phase, what's done, what's left). |
-| Wrong architecture chosen | Revert to plan, re-architect with new constraints |
+| User wants to stop mid-workflow | Stop. Summarize: current phase, what's done, what remains, next step to resume |
+| Wrong architecture chosen | Revert uncommitted work, re-architect with new constraints |
+| Subagent task fails or times out | Re-dispatch with a more constrained prompt; fall back to manual if it fails again |
+| Context window pressure mid-workflow | Compress completed phases into a structured summary (key patterns, files, decisions); keep plan + current step only |
+| Plan references missing files | Grep for actual file paths before assuming the plan is wrong |
 
 ## Common Mistakes
 
 | Mistake | Fix |
 |---------|-----|
 | Skipping Phase 0 context loading | Always load project context first |
-| Exploring sequentially instead of parallel | Use 2-3 explorer subagents |
+| Exploring sequentially | Use parallel explorer subagents |
 | Coding before clarification | Phase 3 is a hard gate — resolve ambiguities first |
-| Single architecture proposal | Always present 2 options (simplicity vs separation) |
+| Single architecture for non-trivial tasks | Present 2 options (simplicity vs separation) |
 | Writing tests after code | TDD — test first, then implement |
 | Not finishing the branch | Always run Phase 6 to completion |
-| Guessing external API patterns | Fetch docs: `chub get <api-id>` |
-| Multiple grep iterations for a symbol | Use Serena `find_symbol` or `find_referencing_symbols` |
-| Re-discovering context each session | Use Serena `write_memory` / `read_memory` |
+| Spinning 7 subagents for a small change | Scale agent count to complexity — fast-path and small tasks need 0-1 agents |
+| Manufacturing clarification questions | Skip clarification entirely if the request is well-specified |
+| Auto-shipping without user review | Always confirm before invoking `/ship` |

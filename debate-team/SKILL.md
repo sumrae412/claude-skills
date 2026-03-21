@@ -31,7 +31,7 @@ Cross-model adversarial review for plans and PRs. Three different "training DNAs
 |------|-------|------|------|
 | Generator | Sonnet (teammate) | Agent Teams | Always |
 | Bug-Hunter | DeepSeek (API) | External | Always |
-| Architecture | GPT-4o (API) | External | Always |
+| Architecture | GPT-4o via `--reviewer codex` (API) | External | Always |
 | Style/UI | Haiku (teammate) | Agent Teams | Frontend changes only |
 | Lead/Judge | Opus (you) | Lead | Always |
 
@@ -74,15 +74,13 @@ Run ALL applicable critics in parallel (one message, multiple tool calls):
 ```bash
 # DeepSeek Bug-Hunter
 python3 ~/.claude/scripts/plancraft_review.py \
-  --mode bug-hunter \
-  --input-type [plan|diff] \
+  --reviewer deepseek \
   --plan-file /tmp/debate_artifact.md \
   --scope-file /tmp/debate_scope.md
 
 # GPT-4o Architecture (parallel)
 python3 ~/.claude/scripts/plancraft_review.py \
-  --mode architecture \
-  --input-type [plan|diff] \
+  --reviewer codex \
   --plan-file /tmp/debate_artifact.md \
   --scope-file /tmp/debate_scope.md
 ```
