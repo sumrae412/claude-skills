@@ -216,3 +216,5 @@ Before committing UI code:
 - [ ] Using Slate palette (not gray)?
 - [ ] Spark color (Indigo) only for checkboxes/focus rings?
 - [ ] Correct layout pattern (Sidebar+Canvas vs Split vs Slide-over)?
+- [ ] Any `repeat(N, 1fr)` grid? Switch to `repeat(N, minmax(0, 1fr))` to prevent content-driven column inflation.
+- [ ] Grid used for tabular/calendar layout? Ensure `grid-auto-rows` is set to prevent uneven row heights.

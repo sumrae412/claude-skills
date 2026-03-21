@@ -40,6 +40,9 @@ description: CSS architecture, design system, templates, UI standards. Load when
 
 Variables file: `app/static/css/design-system/_variables.css`
 
+**Page headers in hybrid pages (Vue/Alpine + Jinja):**
+When the page uses a JS framework that mounts in a sub-container, the `.page-header-standard` must be placed OUTSIDE the framework mount point so it renders immediately (no FOUC). The JS app then bridges to header elements via `getElementById`. See `builder.html` for the canonical example.
+
 ## "Quiet Elegance" Principles
 
 - **Monochrome First** — Slate palette dominates; color for sparing semantic emphasis
@@ -75,6 +78,11 @@ When changing CSS/JS:
 - Extend `landing_base.html`, NOT `base.html`
 - Load their own CSS independently
 - Design-system layers do not apply
+
+## CSS Grid Patterns
+
+- **Equal-width columns:** Always use `repeat(N, minmax(0, 1fr))` instead of `repeat(N, 1fr)`. Plain `1fr` allows content (long text, images) to inflate individual columns beyond their fair share. `minmax(0, 1fr)` constrains the minimum to 0, forcing truly equal widths.
+- **Equal-height rows:** For grids that need uniform row heights (calendars, dashboards), set `grid-auto-rows: minmax(<min>, 1fr)` so rows do not size to content. Without this, rows with more content appear taller than empty rows.
 
 ## Before Creating New CSS
 
