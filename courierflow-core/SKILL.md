@@ -33,14 +33,17 @@ Both share: FastAPI (async), PostgreSQL, SQLAlchemy 2.0, Jinja2/Bootstrap 5.
 1. Do not modify `_archived/` files
 2. Do not import from `_archived/`
 3. Do not add features not in the current task
-4. Do not refactor working code unless task requires it
-5. Do not skip tests
-6. Do not change schema without Alembic migration (`/new-migration`)
-7. Do not use `db.commit()` in services — routes own transactions
-8. Do not remove type hints or docstrings
-9. Do not deploy without `/pre-deploy`
-10. Do not deploy without pulling main first
-11. Do not commit directly on main — use feature branches
+4. Do not skip tests
+5. Do not change schema without Alembic migration (`/new-migration`)
+6. Do not use `db.commit()` in services — routes own transactions
+7. Do not remove type hints or docstrings
+8. Do not deploy without `/pre-deploy`
+9. Do not deploy without pulling main first
+10. Do not commit directly on main — use feature branches
+
+## Fix-What-You-Find Rule
+
+If you discover a bug during development, code review, or testing — **fix it**, even if your code didn't introduce it. Pre-existing bugs are still bugs. The same applies to CI failures: if a pre-existing issue causes CI or pre-commit hooks to fail, fix the root cause rather than using `--no-verify` or ignoring it. Pattern-class bugs require a codebase-wide grep to fix ALL instances (see `/defensive-backend-flows` Rule 28).
 
 ## Trigger Matrix — Load Skills As Needed
 

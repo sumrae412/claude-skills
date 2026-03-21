@@ -70,4 +70,4 @@ python scripts/vulnerability_scan.py --severity-threshold critical --create-issu
 
 **Severity inference:** pip-audit doesn't provide severity directly. Infer from CVE/GHSA identifiers or use conservative defaults.
 
-**Pre-commit gotcha:** Pre-existing bandit issues may cause hooks to fail. Use `--no-verify` to bypass temporarily, but fix issues before merging.
+**Pre-commit gotcha:** Pre-existing bandit issues may cause hooks to fail. **Fix the root cause** — resolve the bandit finding or add a targeted `# nosec` annotation with justification. Do not use `--no-verify` to bypass fixable code issues, even if pre-existing.

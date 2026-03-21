@@ -35,6 +35,8 @@ Check deletions: `git diff --diff-filter=D --name-only origin/main..origin/<pr-b
 
 **If all files are already on main or regressive:** Recommend closing the PR; post a comment and stop.
 
+**Why this step matters:** Skipping the staleness check can lead to merge conflicts at Step 10 that are harder to resolve. In one session, main had diverged (same file modified on both branches) and the merge failed. Running Step 2 early surfaces these conflicts before the full review runs, saving significant rework.
+
 ### Step 3: Broad Code Review Sweep
 
 - Run code review tool if available (e.g. CodeRabbit: `coderabbit review --plain`).
@@ -68,7 +70,7 @@ Run 0–2 focused analyses based on Step 4. Can run in parallel.
 
 | Score | Meaning |
 |-------|---------|
-| 0 | False positive or pre-existing |
+| 0 | False positive (not a real bug) |
 | 25 | Might be real, not verified |
 | 50 | Real but nitpick |
 | 75 | Likely real, impacts functionality |
@@ -104,6 +106,12 @@ git cherry-pick <fix-commit-sha>
 git push origin main
 ```
 
+**Worktree caveat:** If the review agent runs in a worktree, `git checkout main` will fail with "already used by worktree." Instead, merge via the GitHub API:
+```bash
+gh api -X PUT repos/{owner}/{repo}/pulls/{number}/merge -f merge_method=squash
+```
+Then pull main in the parent repo separately if needed.
+
 Post PR comment:
 
 **If issues were found/fixed:**
@@ -138,11 +146,13 @@ Generated with [AI Agent]
 
 Do **not** flag:
 
-- Pre-existing issues not introduced by the PR
 - Linter/typechecker-catchable issues
 - General code quality without project-rule basis
-- Issues on lines the PR did not modify
 - Intentional functionality changes related to the PR purpose
+
+## Fix-What-You-Find Rule
+
+If you discover a bug during review — even if it was **not introduced by this PR** — flag it and fix it. Pre-existing bugs are still bugs. The same applies to CI failures: if a pre-existing issue causes CI to fail, fix the root cause rather than working around it or ignoring it.
 
 ---
 

@@ -131,7 +131,11 @@ git branch -D <feature-branch>
 
 Then: Cleanup worktree (Step 5)
 
-### Step 5: Cleanup Worktree
+### Step 5: Session Learnings
+
+After shipping (Options 1 or 2), invoke the `session-learnings` skill to capture patterns, gotchas, and corrections discovered during development. This is not optional — every shipped branch should capture what was learned. Runs in the background.
+
+### Step 6: Cleanup Worktree
 
 **For Options 1, 2, 4:**
 

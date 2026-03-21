@@ -5,7 +5,7 @@ description: End-to-end code shipping pipeline — commit (conventional), push, 
 
 # Shipping Workflow
 
-Automated ship-and-review pipeline: commit → push → PR → 10-step review → fix → CI → merge. Run when tests already pass and the user indicates they want to ship.
+Automated ship-and-review pipeline: commit → push → PR → 10-step review → fix → CI → merge → session-learnings. Run when tests already pass and the user indicates they want to ship.
 
 ## When to Use
 
@@ -29,7 +29,6 @@ Before starting:
 1. Run `git status` and `git diff HEAD` to see changes.
 2. Commit message: [Conventional Commits](https://www.conventionalcommits.org/) — `fix:`, `feat:`, `docs:`, `refactor:`, `test:`.
 3. Stage **by file name** (never `git add -A` or `git add .`).
-4. End message with: `Co-Authored-By: <Agent Name> <noreply@example.com>`.
 
 ### Stage 2: Push
 
@@ -71,6 +70,15 @@ Run the **10-step review process** on the PR. Prefer running this in the backgro
 
 **Full procedure:** See [reference.md](reference.md) for the 10 steps (eligibility → staleness → sweep → deep-dive triggers → conditional analysis → merge findings → re-check → fix → CI gate → ship), scoring rubric, false positive filters, and project-level customization (CI command, defensive patterns, deep-dive triggers).
 
+### Stage 5: Session Learnings
+
+After merge (or after review if merge is deferred), invoke the `session-learnings` skill to capture what was learned:
+- New patterns, defensive rules, or gotchas discovered
+- Skill or CLAUDE.md updates needed
+- Memories to persist
+
+This runs in the background and does not block the user.
+
 ## Key Principles
 
 1. **Never ship without review** — Review runs automatically; no manual skip.
@@ -80,6 +88,8 @@ Run the **10-step review process** on the PR. Prefer running this in the backgro
 5. **Score and filter** — Report only meaningful issues (e.g. score ≥ 60).
 6. **Cherry-pick to main** — Push fixes to PR branch, then cherry-pick to main and push.
 7. **Document** — Post a review comment on the PR (issues found/fixed or "No issues found").
+8. **Always capture learnings** — Run `session-learnings` after every ship. No silent skips.
+9. **Skills are contracts** — Follow every step as written. If you need to deviate (skip a step, substitute a lighter tool, reduce scope), pause and tell the user: (a) which step, (b) why skipping, (c) what you would miss. Let the user decide. No silent shortcuts.
 
 ## Integration with Finishing Options
 

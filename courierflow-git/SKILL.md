@@ -80,7 +80,7 @@ git push origin <tag-name>
 ## CI and pre-commit gotchas
 
 - **quick_ci.sh:** Must be run from the repository root. Running from a worktree subdirectory or wrong cwd causes `FileNotFoundError`, "App directory not found", or `ModuleNotFoundError: No module named 'app'`. Always `cd` to repo root (or use absolute path) before `./scripts/quick_ci.sh`.
-- **Pre-commit:** Hooks run against the full codebase. A commit can fail due to pyright or other errors in unrelated files. Use `--no-verify` only when the failure is confirmed pre-existing or environment-related, not to bypass fixable issues.
+- **Pre-commit:** Hooks run against the full codebase. A commit can fail due to pyright or other errors in unrelated files. **Fix the root cause** — pre-existing bugs are still bugs. Use `--no-verify` only for confirmed environment-related failures (e.g. missing local tool, DB not running), never to skip fixable code issues.
 - **Worktrees:** A worktree's `.git` is a file pointing at the main repo. Hooks live in the main repo's `.git/hooks`; the worktree uses those hooks when you commit from the worktree.
 - **CodeRabbit file limit:** If the PR has more than 150 files (e.g. from main), CodeRabbit may not run. Run the review from a worktree where the diff vs main is only the PR branch files (e.g. 3 files), so the review succeeds.
 - **Merge not cleanly createable:** If `gh pr merge <n>` fails with "merge commit cannot be cleanly created", merge main into the branch locally (`git merge origin/main`), push, then retry. If GitHub still reports not mergeable, use `gh pr merge <n> --squash --auto` so the merge runs when checks pass.

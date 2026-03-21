@@ -41,6 +41,8 @@ SESSION CONTEXT:
 - New components built: [UI components, utilities, patterns that others should reuse]
 - Spec review catches: [things spec reviewer found missing before implementation]
 - Code quality catches: [N+1 queries, race conditions, duplicate code found in review]
+- Cross-cutting changes: [same rule applied to 3+ files = policy; needs memory entry]
+- Skills modified: [which skills were edited and why — triggers cross-reference audit]
 ```
 
 ### Step 2: Dispatch Background Agent
@@ -90,6 +92,27 @@ Task tool:
     Also check CLAUDE.md:
     6. Are there new bash commands, env quirks, or conventions for CLAUDE.md?
 
+    ## Cross-Reference Audit (REQUIRED when skills were modified)
+    When ANY skill was edited this session, run these checks:
+
+    7. **Parallel entry points:** For each modified skill, grep other skills
+       for references to the same outcome (e.g., "merge", "ship", "finish").
+       If another skill reaches the same outcome via a different path, does
+       it also include the change? Example: shipping-workflow and
+       finishing-a-development-branch both ship code — a stage added to
+       one must be checked against the other.
+
+    8. **Contradictory guidance:** Grep all skills for terms related to the
+       change (e.g., "pre-existing", "--no-verify", "out of scope"). Flag
+       any skill that still contradicts the new rule.
+
+    ## Policy Detection (REQUIRED when 3+ files changed for the same reason)
+    9. **Cross-cutting policy:** If the same rule/correction was applied to
+       3 or more files, this is a policy decision. Propose a memory entry
+       documenting: what the policy is, why it was established, and which
+       files were updated. Future sessions need this context immediately,
+       not buried across individual skill files.
+
     ## Output Format
     For EACH proposed update, write:
 
@@ -131,6 +154,8 @@ For each approved proposal:
 | "I'll remember this for next time" | You won't. Next session starts fresh. Document it now. |
 | "This is too minor to document" | Minor gotchas (security hooks, worktree quirks) save the most time |
 | "I already updated skills manually" | Run the agent anyway — it may catch things you missed |
+| "I only changed one skill" | Other skills may reach the same outcome via a different path. Cross-reference audit catches these. |
+| "The change is self-documenting" | If 3+ files changed for the same reason, it's a policy. Future sessions won't read all those files — they need a memory entry. |
 | "I'll run multiple agents in parallel for speed" | Parallel subagents doing git commits in the same worktree cause conflicts. Serialize commits or use separate worktrees per agent. |
 
 ## Example Session Context

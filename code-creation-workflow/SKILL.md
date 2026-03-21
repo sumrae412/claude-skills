@@ -161,7 +161,7 @@ Review exploration findings against the original request. Identify **every** und
 - **Performance** — Will this hit large datasets or high concurrency?
 - **Backward compatibility** — Does this change existing behavior?
 
-Present an organized question list to the user. Group questions by category. Wait for answers before proceeding.
+Present questions **one at a time**. Ask the first question, wait for the answer, then ask the next. This prevents information overload and produces better answers. Group related context with each question so the user understands why you're asking.
 
 **If no ambiguities exist** (rare — usually means the request is very well-specified), state that explicitly and proceed to Phase 4.
 
@@ -296,15 +296,18 @@ Launch 2 **code-reviewer** subagents in parallel:
 └──────────────────────────────────────────────────┘
                     │
                     ▼
-   Fix any HIGH-priority issues found
+   Fix any issues found (including pre-existing bugs)
 ```
 
 **Subagent dispatch:** Use the Task tool with `subagent_type` of `feature-dev:code-reviewer`. Each gets the diff + the plan + project conventions.
 
+**Fix-what-you-find:** If reviewers or tests surface bugs — even pre-existing ones your code didn't introduce — fix them. The same applies to CI failures: fix the root cause, don't work around it.
+
 ### Verification Gate
 
 Invoke `verification-before-completion` skill:
-- All tests pass?
+- All tests pass (including pre-existing failures)?
+- CI passes clean (no `--no-verify` workarounds)?
 - No unintended file changes?
 - Implementation matches the original request?
 - No regressions in existing functionality?

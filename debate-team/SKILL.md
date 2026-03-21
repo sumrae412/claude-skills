@@ -107,8 +107,8 @@ Read all critic outputs. For EACH finding:
 | Decision | When |
 |----------|------|
 | **ADOPT** | Finding is valid, actionable, in-scope |
-| **REJECT** | False positive, out of scope, or already addressed |
-| **DEFER** | Valid but needs user decision (trade-off, preference) |
+| **REJECT** | False positive or already addressed |
+| **DEFER** | Valid but needs user decision (trade-off, preference, or pre-existing fix that would significantly expand the PR) |
 
 Produce a **Changelog table**:
 ```
