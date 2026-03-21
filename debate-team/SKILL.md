@@ -35,6 +35,8 @@ Cross-model adversarial review for plans and PRs. Three different "training DNAs
 | Style/UI | Haiku (teammate) | Agent Teams | Frontend changes only |
 | Lead/Judge | Opus (you) | Lead | Always |
 
+**Effectiveness note:** GPT-4o Architecture critic (`--reviewer codex`) is high-signal for code reviews but low-signal for non-code artifacts (skill files, docs, process design). For non-code reviews, consider skipping Architecture and using DeepSeek Bug-Hunter + Haiku Style/UI only.
+
 ## Protocol
 
 ### Step 1: Assess Complexity

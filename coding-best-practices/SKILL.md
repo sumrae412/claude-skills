@@ -22,8 +22,8 @@ Apply these principles when writing, reviewing, or debugging code across any pro
 | Add index? | When queries slow or tables > 1000 rows |
 | Add rate limiting? | **Always** for new endpoints |
 | Use circuit breaker? | **Always** for external API calls |
-| Renaming symbol? | Use Serena `rename_symbol` for safe refactoring |
-| Finding all usages? | Use Serena `find_referencing_symbols` |
+| Renaming symbol? | Grep all usages, rename carefully across files |
+| Finding all usages? | Use Grep tool to find all references |
 
 ## Risk Levels for Changes
 
