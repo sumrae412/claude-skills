@@ -22,6 +22,10 @@ Before starting:
 3. **GitHub CLI** — `gh` installed and authenticated.
 4. **CodeRabbit CLI** (optional) — `coderabbit --version`. Install: `curl -fsSL https://cli.coderabbit.ai/install.sh | sh`.
 
+## Integration with Upstream Orchestrators
+
+**When invoked from code-creation-workflow Phase 6B:** The quality gate (6A) has already run — severity-classified review, deep-dives, CI retry. The shipping-workflow's own 10-step review provides a second pass. This is intentional redundancy for high-stakes changes.
+
 ## The 4-Stage Pipeline
 
 ### Stage 1: Commit

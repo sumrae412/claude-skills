@@ -13,6 +13,12 @@ Guide completion of development work by presenting clear options and handling ch
 
 **Announce at start:** "I'm using the finishing-a-development-branch skill to complete this work."
 
+## Relationship to Other Skills
+
+- **code-creation-workflow Phase 6B** delegates Options 2-4 to this skill. Option 1 ("Ship it") goes to `/ship` instead.
+- **shipping-workflow / ship.md** handle the full pipeline (commit, push, PR, review, merge). This skill handles non-ship finishing (PR without auto-merge, keep branch, discard).
+- Do NOT run this skill for Option 1 when invoked from code-creation-workflow — that path belongs to `/ship`.
+
 ## The Process
 
 ### Step 1: Verify Tests
@@ -54,6 +60,8 @@ Which option?
 ### Step 4: Execute Choice
 
 #### Option 1: Merge and Push to Origin
+
+**Note:** If invoked from code-creation-workflow Phase 6B, Option 1 should not reach this skill — it routes to `/ship` for the full review pipeline. If a user selects "merge and push" directly (bypassing code-creation-workflow), this path skips automated review. Consider suggesting `/ship` instead.
 
 ```bash
 # Get worktree path before switching

@@ -106,6 +106,12 @@ Task tool:
        change (e.g., "pre-existing", "--no-verify", "out of scope"). Flag
        any skill that still contradicts the new rule.
 
+    8b. **Specific patterns to check:** For each modified skill, grep ALL
+        other skills for the skill's name (e.g., "debate-team",
+        "code-creation-workflow"). Verify: `--mode` vs `--reviewer` flags,
+        option numbering (finishing options 1-4), delegation targets
+        (which skill handles which option).
+
     ## Policy Detection (REQUIRED when 3+ files changed for the same reason)
     9. **Cross-cutting policy:** If the same rule/correction was applied to
        3 or more files, this is a policy decision. Propose a memory entry
