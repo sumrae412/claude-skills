@@ -55,6 +55,16 @@ EOF
 
 Capture the PR number for Stage 4.
 
+### Optional: Monitor CI with `/loop`
+
+After pushing, use `/loop` to poll CI without context-switching:
+
+```text
+/loop 5m check the GitHub Actions status on PR #<number>
+```
+
+Fires in the background and reports when CI passes or fails. Session-scoped — stops when you exit.
+
 ### Stage 4: Automated Code Review
 
 Run the **10-step review process** on the PR. Prefer running this in the background or in an isolated workspace (e.g. git worktree) so the user can keep working.

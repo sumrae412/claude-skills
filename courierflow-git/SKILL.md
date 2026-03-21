@@ -105,6 +105,23 @@ git rebase --onto origin/main HEAD~1
 
 **When to use:** Your branch was based on a feature branch that got squash-merged. `git log` shows the original feature commits plus your fix commits, but main only has the single squash commit.
 
+## Dev Session Monitoring with `/loop`
+
+Use Claude Code scheduled tasks to poll long-running ops without leaving your session:
+
+```text
+# Watch a Railway deploy
+/loop 2m check if the Railway deploy finished and report status
+
+# Monitor CI after push
+/loop 5m check the GitHub Actions status on PR #<number>
+
+# One-time reminder
+remind me in 30 minutes to review the migration
+```
+
+Tasks are session-scoped (gone when you exit). Use for deploy watching, CI babysitting, and time-boxed reminders — not for app-level scheduling.
+
 ## Railway Commands
 
 ```bash
