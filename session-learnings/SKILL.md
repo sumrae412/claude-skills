@@ -99,7 +99,7 @@ Task tool:
        for references to the same outcome (e.g., "merge", "ship", "finish").
        If another skill reaches the same outcome via a different path, does
        it also include the change? Example: shipping-workflow and
-       finishing-a-development-branch both ship code — a stage added to
+       cleanup both ship code — a stage added to
        one must be checked against the other.
 
     8. **Contradictory guidance:** Grep all skills for terms related to the

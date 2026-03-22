@@ -22,7 +22,7 @@ This skill handles all three in one flow, using the native `ExitWorktree` tool f
 
 - **`/ship` (shipping-workflow):** Handles the full pipeline: commit, push, PR, review, merge. If the user says "ship it", use `/ship` — not this skill. However, `/ship` delegates its final cleanup stage to `/cleanup`.
 - **code-creation-workflow Phase 6B:** Options 2-4 delegate here. Option 1 ("Ship it") goes to `/ship`.
-- **session-learnings:** This skill triggers session-learnings automatically after Options 1 or 2 (work was integrated). No need to invoke it separately.
+- **session-learnings:** This skill triggers session-learnings automatically after Options 1 or 2 (work was integrated). No need to invoke it separately. Note: code-creation-workflow v2 ensures session-learnings fires for ALL paths including FAST PATH (orchestrator fires directly if /cleanup is not invoked).
 
 **When to use which:**
 | User says | Use |
