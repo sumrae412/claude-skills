@@ -111,6 +111,10 @@ async def get_user(db: AsyncSession, user_id: UUID) -> Optional[User]:
         .options(selectinload(User.teams))
     )
     return result.scalar_one_or_none()
+    # Caveat: scalar_one_or_none() is only safe when the query's WHERE clause
+    # is backed by a unique DB constraint (PK, unique index). For non-unique
+    # columns (email, phone, name), use scalars().first() instead —
+    # scalar_one_or_none() raises MultipleResultsFound when duplicates appear.
 
 # GOOD - async for external API calls
 async def fetch_calendar_events(client: httpx.AsyncClient, token: str):

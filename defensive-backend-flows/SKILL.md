@@ -753,6 +753,8 @@ await household_service.ensure_client_for_member(
 
 **Learned from:** `sync_service.py` and `contact_import_service.py` — both needed to call `_sync_client_for_member()` to enforce the HouseholdMember → Client invariant. Added `ensure_client_for_member()` as a public wrapper.
 
+**Tiered lookup for cross-property sync:** When syncing records that may exist under a specific parent (e.g., Client per Property), first query with the exact parent match (`household_id`), then fall back to an unlinked record (`household_id IS NULL`). This avoids both duplicate creation and incorrect cross-property matching.
+
 ### 30. Dedup Must Cover All Contact Identifiers
 
 When syncing or creating records that deduplicate by contact info, the lookup must check **all** identifier types — not just one. If dedup only checks email, phone-only records create duplicates silently.
@@ -772,6 +774,29 @@ elif member_data.phone:
 ```
 
 **Learned from:** `_sync_client_for_member()` — only checked email for dedup. CRM contacts with phone but no email created duplicate Clients on every sync.
+
+### 31. Use `scalars().first()` for Non-Unique Column Lookups
+
+`scalar_one_or_none()` raises `MultipleResultsFound` when the query matches more than one row. This is correct for primary-key or unique-column lookups, but crashes on non-unique columns (email, phone, name) as soon as duplicates appear in production.
+
+```python
+# ❌ BAD — works until two clients share an email, then crashes
+result = await db.execute(
+    select(Client).where(Client.email == email, Client.user_id == user_id)
+)
+existing = result.scalar_one_or_none()  # MultipleResultsFound!
+
+# ✅ GOOD — returns first match, safe with duplicates
+result = await db.execute(
+    select(Client).where(Client.email == email, Client.user_id == user_id)
+)
+existing = result.scalars().first()
+```
+
+**Decision tree:**
+- Querying by **primary key or unique constraint** → `scalar_one_or_none()` is correct
+- Querying by **non-unique column** (email, phone, name) → `scalars().first()`
+- Need to **assert uniqueness** as a business rule → use `scalar_one_or_none()` but handle `MultipleResultsFound` explicitly
 
 ## Quick Reference
 
@@ -807,6 +832,7 @@ elif member_data.phone:
 | DB fallback filters | Bare path returns different set than primary | Fallback path applies same filters as primary? Catch only SQLAlchemyError? |
 | No BaseHTTPMiddleware | "Session is closed" / greenlet errors | `grep -r "BaseHTTPMiddleware" app/` returns zero? |
 | Audit ALL Pattern Instances | Same bug reported twice, different file | Codebase-wide grep for pattern before shipping fix? |
+| `scalar_one_or_none` on non-unique col | `MultipleResultsFound` crash months later | WHERE clause backed by unique DB constraint? If no, use `scalars().first()` |
 
 ## Red Flags — STOP and Fix
 
@@ -847,6 +873,7 @@ elif member_data.phone:
 - `except Exception` in a DB fallback — use `except SQLAlchemyError` so non-DB errors propagate
 - `from starlette.middleware.base import BaseHTTPMiddleware` — use pure ASGI middleware instead
 - A pattern-class bug fix that only fixes the reported instance without grepping for all occurrences
+- `scalar_one_or_none()` on a query filtering by a non-unique column (email, phone, name) — use `scalars().first()` instead
 
 ## When NOT to Use
 

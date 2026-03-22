@@ -87,6 +87,13 @@ END
 
 **Learned from:** `scripts/run_migration_manual.py` backfill for `preferred_contact_method`; CodeRabbit review.
 
+### Backfill: Iterative Fix for Broken Sync
+
+When a sync bug left orphaned records (e.g., HouseholdMembers without Clients), and a previous backfill already ran but was incomplete due to the same bug, write a targeted backfill that:
+1. Uses `NOT EXISTS` to find only still-orphaned records
+2. Matches by the **parent relationship** (`household_id`) not just the contact field (`email`)
+3. Handles both email and name-based matching for records without email
+
 ## Performance Patterns
 
 1. **Cursor-based pagination** — No offset pagination in new code
