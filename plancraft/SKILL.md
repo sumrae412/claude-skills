@@ -16,6 +16,6 @@ This skill has been absorbed into `/debate-team` with complexity-based auto-tier
 
 **Scope-check filtering:** Preserved. `OUT_OF_SCOPE` rejection runs on every DeepSeek call at all tiers.
 
-**PlanCraft's workflow phases** (brainstorming, plan writing, quality gate, involvement modes, execution handoff, docs cleanup) were already superseded by `code-creation-workflow` Phases 1-5.
+**PlanCraft's workflow phases** (brainstorming, plan writing, quality gate, involvement modes, execution handoff, docs cleanup) were already superseded by `code-creation-workflow` Phases 1-5 (Phase 3 now split into 3A Requirements Discovery + 3B Edge Cases & Test Planning).
 
 See: `docs/superpowers/specs/2026-03-21-unified-review-skill-design.md`
