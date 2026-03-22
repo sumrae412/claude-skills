@@ -948,6 +948,28 @@ setTemplate(template) {
 
 ---
 
+## 32. Jinja Template Attribute Names Must Match Model Columns
+
+Jinja2 templates accessing model attributes (e.g., `member.is_primary`) render as falsy/empty when the attribute does not exist on the model, rather than raising an error. This means a wrong column name silently breaks conditional rendering.
+
+```html
+<!-- ❌ BAD — is_primary doesn't exist on HouseholdMember; condition always false -->
+{% if member.is_primary %}
+<i class="fas fa-star" title="Primary Contact"></i>
+{% endif %}
+
+<!-- ✅ GOOD — matches the actual column name -->
+{% if member.is_primary_contact %}
+<i class="fas fa-star" title="Primary Contact"></i>
+{% endif %}
+```
+
+**Check:** When referencing model attributes in Jinja templates, verify the attribute name against the model class. Do not copy attribute names from other templates without checking.
+
+**Learned from:** `sync_service.py` / template audit — `is_primary` vs `is_primary_contact` mismatch silently broke primary contact badge rendering across multiple templates.
+
+---
+
 ## Checklist for New UI Code
 
 - [ ] Every guard clause shows feedback (toast, inline, or console)

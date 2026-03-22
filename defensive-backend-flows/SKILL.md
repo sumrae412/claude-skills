@@ -261,6 +261,22 @@ status_date = (
 
 **Learned from:** `client.py` — status date calculation referenced `document.signed_at` which doesn't exist on the `Document` model. Fixed by using `viewed_at` as fallback.
 
+### 8a. SQLAlchemy Filters on Nonexistent Attributes Fail Silently
+
+SQLAlchemy Python-side filter expressions (e.g., `m.is_primary` in a generator/list comprehension) do NOT raise `AttributeError` the way direct attribute access does. Instead, the expression evaluates against `None` or a descriptor and silently matches nothing. This is worse than a crash — it returns empty results with no error.
+
+```python
+# ❌ BAD — `is_primary` doesn't exist; silently returns None for every member
+primary = next((m for m in members if m.is_primary), None)
+
+# ✅ GOOD — use the actual column name
+primary = next((m for m in members if m.is_primary_contact), None)
+```
+
+**Check:** When filtering model objects in Python (not SQL WHERE), verify the attribute name against the model class definition. Grep the model file for the column — do not assume names.
+
+**Learned from:** `sync_service.py` — 4 occurrences of `is_primary` (wrong) instead of `is_primary_contact` silently matched nothing, causing primary contact detection to always fail.
+
 ### 9. Auxiliary Side-Effects Must Not Abort Primary Flow
 
 When a primary operation (disconnect, deploy, cleanup) has auxiliary side-effects (send notification, log analytics, update cache), wrap each auxiliary call in its own try-catch. A notification failure must never abort the core operation.
@@ -754,6 +770,8 @@ await household_service.ensure_client_for_member(
 **Learned from:** `sync_service.py` and `contact_import_service.py` — both needed to call `_sync_client_for_member()` to enforce the HouseholdMember → Client invariant. Added `ensure_client_for_member()` as a public wrapper.
 
 **Tiered lookup for cross-property sync:** When syncing records that may exist under a specific parent (e.g., Client per Property), first query with the exact parent match (`household_id`), then fall back to an unlinked record (`household_id IS NULL`). This avoids both duplicate creation and incorrect cross-property matching.
+
+**Inline creation variant:** When creating a Client directly (not via `ensure_client_for_member`), always: (1) flush the parent `HouseholdMember` first so `member.id` is available, (2) check for existing Client by email before insert (duplicate guard), (3) call `client.normalize_contact_info()` before adding.
 
 ### 30. Dedup Must Cover All Contact Identifiers
 
