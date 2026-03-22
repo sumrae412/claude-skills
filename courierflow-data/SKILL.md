@@ -93,6 +93,7 @@ When a sync bug left orphaned records (e.g., HouseholdMembers without Clients), 
 1. Uses `NOT EXISTS` to find only still-orphaned records
 2. Matches by the **parent relationship** (`household_id`) not just the contact field (`email`)
 3. Handles both email and name-based matching for records without email
+4. Guards against empty-string normalized fields — use `NULLIF` or Python guard (`value if value else None`) to store `NULL` instead of `''` for normalized fields derived from optional source columns
 
 ## Performance Patterns
 

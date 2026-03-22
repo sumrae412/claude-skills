@@ -42,7 +42,7 @@ description: External API patterns — Calendar, Twilio, OpenAI, webhooks. Load 
 
 ## Integration Data Sync Invariant
 
-Any integration code path that creates a `HouseholdMember` (e.g., `sync_service.py`, `contact_import_service.py`) **must** call `household_service.ensure_client_for_member()` after creation. The Tenants page queries `Client` exclusively via `search_clients_grouped` — a member without a corresponding Client is invisible in the UI.
+Any integration code path that creates a `HouseholdMember` (e.g., `sync_service.py`, `contact_import_service.py`) **must** call `ensure_client_for_member()` (module-level in `app/services/household_service.py`, import directly) after creation. The Tenants page queries `Client` exclusively via `search_clients_grouped` — a member without a corresponding Client is invisible in the UI.
 
 ## Column Name Gotcha: `is_primary_contact`
 
