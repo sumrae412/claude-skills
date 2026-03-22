@@ -80,15 +80,9 @@ Task tool:
 
 **Important:** The review agent runs in the background so the user can continue working.
 
-## Stage 5: Session Learnings
+## Stage 5: Report Status
 
-After launching the review agent, invoke the `/session-learnings` skill. This runs a background agent that analyzes the session's code changes, user corrections, and investigation findings, then proposes updates to skills and project docs.
-
-**This is not optional.** Every ship should capture what was learned.
-
-## Stage 6: Report Status
-
-After launching the review agent and session learnings:
+After launching the review agent:
 
 1. Report to user:
    ```
@@ -98,25 +92,15 @@ After launching the review agent and session learnings:
    - Fix any issues found
    - Run CI (hard gate)
    - Cherry-pick to main and post review comment
-   Session learnings agent also launched — will propose skill/doc updates.
    ```
 
-2. **Wait for session-learnings resolution.** The session-learnings skill presents proposals that require user input (apply all / select / skip). Do NOT proceed to worktree cleanup until the user has responded and proposals are resolved. The worktree directory must remain intact for any edits.
+2. **Delegate cleanup to `/cleanup`.** Invoke the `/cleanup` skill, which handles the remaining steps in order:
+   - Session learnings (background agent for skill/doc updates)
+   - Wait for session-learnings proposals to resolve (user input required)
+   - Sync config/skills/memory repos (commit+push any changes from session-learnings)
+   - Worktree teardown via `ExitWorktree` tool
 
-## Stage 7: Clean Up Worktree
-
-**Only after session-learnings proposals are resolved** (applied or skipped):
-
-```bash
-# Check if in a worktree
-WORKTREE_PATH=$(pwd)
-git worktree list | grep "$(git branch --show-current)"
-# If yes, navigate to main repo and remove
-cd <main-repo-path>
-git worktree remove <worktree-path> --force
-```
-
-**IMPORTANT:** Cleaning up the worktree before session-learnings are resolved causes a "folder no longer exists" error that kills the session. The user loses the ability to apply proposals.
+**IMPORTANT:** Do not manually clean up the worktree or run session-learnings separately. `/cleanup` handles the correct ordering to avoid the "folder no longer exists" error.
 
 ## Error Handling
 

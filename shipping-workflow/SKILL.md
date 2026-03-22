@@ -76,14 +76,15 @@ Run the **10-step review process** on the PR. Prefer running this in the backgro
 
 **Full procedure:** See [reference.md](reference.md) for the 10 steps (eligibility → staleness → sweep → deep-dive triggers → conditional analysis → merge findings → re-check → fix → CI gate → ship), scoring rubric, false positive filters, and project-level customization (CI command, defensive patterns, deep-dive triggers).
 
-### Stage 5: Session Learnings
+### Stage 5: Cleanup
 
-After merge (or after review if merge is deferred), invoke the `session-learnings` skill to capture what was learned:
-- New patterns, defensive rules, or gotchas discovered
-- Skill or CLAUDE.md updates needed
-- Memories to persist
+After the review agent is launched (or after merge if merge is deferred), delegate to `/cleanup` which handles the remaining steps in the correct order:
+- Session learnings (captures patterns, gotchas, skill/CLAUDE.md updates)
+- Wait for session-learnings proposals to resolve
+- Sync config/skills/memory repos (commit+push changes from session-learnings)
+- Worktree teardown via `ExitWorktree` tool
 
-This runs in the background and does not block the user.
+Do not manually run session-learnings, sync repos, or remove worktrees — `/cleanup` handles all of this.
 
 ## Key Principles
 
@@ -94,16 +95,16 @@ This runs in the background and does not block the user.
 5. **Score and filter** — Report only meaningful issues (e.g. score ≥ 60).
 6. **Cherry-pick to main** — Push fixes to PR branch, then cherry-pick to main and push.
 7. **Document** — Post a review comment on the PR (issues found/fixed or "No issues found").
-8. **Always capture learnings** — Run `session-learnings` after every ship. No silent skips.
+8. **Always capture learnings** — `/cleanup` runs `session-learnings` automatically. No silent skips.
 9. **Skills are contracts** — Follow every step as written. If you need to deviate (skip a step, substitute a lighter tool, reduce scope), pause and tell the user: (a) which step, (b) why skipping, (c) what you would miss. Let the user decide. No silent shortcuts.
 
 ## Integration with Finishing Options
 
 When implementation is complete, present:
 
-1. **Ship it** (default) → Run this full pipeline.
-2. **Keep branch** — No commit/PR/ship.
-3. **Discard** — Revert or abandon work.
+1. **Ship it** (default) → Run this full pipeline (cleanup delegated to `/cleanup`).
+2. **Keep branch** → Use `/cleanup` (Option 3).
+3. **Discard** → Use `/cleanup` (Option 4).
 
 Only run the pipeline after the user chooses "Ship it" (or equivalent).
 
