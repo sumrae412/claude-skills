@@ -39,6 +39,17 @@ Apply these principles when writing, reviewing, or debugging code across any pro
 4. **DRY** - Extract repeated patterns (but don't over-abstract)
 5. **Single Responsibility** - Each function does one thing well
 
+## Single-Roundtrip Aggregate Counts
+
+When a page needs multiple independent count queries, combine them into a single SELECT using `scalar_subquery()`:
+```python
+q1 = select(func.count(M1.id)).where(...).scalar_subquery()
+q2 = select(func.count(M2.id)).where(...).scalar_subquery()
+result = await db.execute(select(q1.label("c1"), q2.label("c2")))
+row = result.one()
+```
+This avoids N+1 roundtrips. See `app/services/counts_service.py` for a 7-subquery example.
+
 ## Detailed Guidelines
 
 For specific patterns and examples, see:

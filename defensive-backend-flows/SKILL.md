@@ -416,6 +416,25 @@ except Exception:
 
 **Learned from:** `auth.py` — OAuth callback leaked raw exception strings (including file paths and tracebacks) in redirect URL query params. Also contained `print()` debug statements.
 
+### 14. Domain-Level Error Isolation
+
+When an endpoint aggregates data from multiple independent sources, isolate each source with its own try/except. One failing domain must not take down the entire response.
+
+```python
+for domain in requested:
+    try:
+        results[domain] = await self._compute(db, user_id, domain)
+    except SQLAlchemyError:
+        logger.exception("domain=%s failed", domain)
+        results[domain] = None  # graceful degradation
+```
+
+Combine with per-domain caching (independent TTLs) so a cache miss in one domain doesn't force recomputation of all. See `CountsService.get_counts()`.
+
+**Check:** If an endpoint fetches 3+ independent data sources, ask: "Does a failure in source A prevent source B from returning?" If yes, wrap each independently.
+
+**Learned from:** `counts_service.py` — unified counts endpoint serves 7 domains; each independently cached and independently error-isolated.
+
 ### 14. Never Compare Datetimes as Strings
 
 String comparison of ISO timestamps breaks with timezone offsets, variable-length fractional seconds, and `Z` vs `+00:00` differences. Always parse to `datetime` objects and compare with timezone-aware values.
