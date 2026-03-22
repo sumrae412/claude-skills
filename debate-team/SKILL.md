@@ -1,11 +1,13 @@
 ---
 name: debate-team
-description: Tri-Model Debate Team — cross-model adversarial review using DeepSeek Bug-Hunter, GPT-4o Architecture, and conditional Haiku Style critics
+description: Unified review skill with auto-tiering — absorbs PlanCraft. Tier 1 (DeepSeek scope check), Tier 2 (DeepSeek + GPT-4o dual critic), Tier 3 (full tri-model debate with Sonnet Generator + Opus Lead). Conditional Haiku Style critic for frontend.
 ---
 
-# Tri-Model Debate Team
+# Unified Review — Debate Team
 
-Cross-model adversarial review for plans and PRs. Three different "training DNAs" (Anthropic, OpenAI, DeepSeek) critique every artifact from different angles.
+Cross-model adversarial review for plans and code. Three tiers auto-selected by complexity gate. Plans always get full debate (Tier 3). Code reviews scale from scope check to full debate based on file count, schema changes, and security sensitivity.
+
+> **Absorbed PlanCraft:** Scope-check filtering (`OUT_OF_SCOPE` rejection) runs on every DeepSeek call at all tiers. PlanCraft as a standalone skill is archived.
 
 ## Setup
 
@@ -14,16 +16,18 @@ Cross-model adversarial review for plans and PRs. Three different "training DNAs
 
 ## When to Use
 
-- **Planning phases 4-5**: Architecture proposals, implementation plans
-- **PR review**: Code diffs ready for review
-- **User says "debate this"**: Manual override to force debate on any artifact
+- **All plan/architecture reviews** → Tier 3 (full debate, always)
+- **Bug fix plans** touching 3+ files or crossing service boundaries → Tier 3
+- **Code reviews** with 3+ files or cross-cutting concerns → Tier 2 (dual critic)
+- **Simple code reviews** (1-2 files, no schema/security) → Tier 1 (scope check)
+- **User says "debate this"** → forces Tier 3
+- **User says "quick review"** → forces Tier 1
 
 ## When NOT to Use
 
-- Simple 1-2 file changes (use standard review-pr skill)
+- User says "skip debate" — bypasses entirely
 - Brainstorming phase (stays interactive with user)
 - Implementation phase (TDD provides its own feedback loop)
-- User says "skip debate"
 
 ## Team Composition
 
@@ -39,19 +43,40 @@ Cross-model adversarial review for plans and PRs. Three different "training DNAs
 
 ## Protocol
 
-### Step 1: Assess Complexity
+### Step 1: Complexity Gate (Auto-Tiered)
 
-Decide if this artifact warrants a full debate:
+Assess the artifact and select tier:
 
 ```
-Is this worth debating?
-├─ PLANNING: Task touches 3+ files OR cross-cutting concerns? → debate
-├─ PR REVIEW: Diff touches 3+ files OR security-sensitive code? → debate
-├─ User override: "debate this" → debate, "skip debate" → skip
-└─ Otherwise → use traditional review (plancraft_review.py with --reviewer)
+IS_PLAN = artifact path matches docs/plans/*.md OR caller passes --type plan
+IS_BUG_FIX_PLAN = IS_PLAN AND artifact describes a bug fix
+FILE_COUNT = number of files touched/proposed
+HAS_SCHEMA = touches models or migrations
+HAS_SECURITY = touches auth, tokens, permissions
+HAS_FRONTEND = touches templates, CSS, JS
+HAS_BACKEND = touches routes, services
+
+Tier 3 (Full Debate) if:
+  IS_PLAN
+  OR (IS_BUG_FIX_PLAN AND (FILE_COUNT >= 3 OR cross-service))
+  OR (HAS_SCHEMA AND HAS_SECURITY)
+  OR (HAS_FRONTEND AND HAS_BACKEND)
+  OR user says "full debate"
+
+Tier 2 (Dual Critic) if:
+  FILE_COUNT >= 3
+  OR cross-cutting concerns
+  OR external API integration
+
+Tier 1 otherwise (or user says "quick review")
 ```
 
-If skipping debate, announce: "Skipping debate — [reason]. Using standard review."
+**Tier routing:**
+- **Tier 1:** Skip to Step 3 (DeepSeek only, no Generator, no GPT-4o, no synthesis). Run DeepSeek Bug-Hunter with `OUT_OF_SCOPE` filtering. Output: Pass/flag list.
+- **Tier 2:** Skip to Step 3 (DeepSeek + GPT-4o in parallel, no Generator). Output: Adopt/Reject/Defer per finding via Step 4.
+- **Tier 3:** Full protocol — Step 2 (Generator) → Step 3 (all critics) → Step 4 (synthesis) → Step 5 (present).
+
+Announce: "Running debate-team Tier [N] — [reason]."
 
 ### Step 2: Generate Proposal
 
@@ -86,6 +111,23 @@ python3 ~/.claude/scripts/plancraft_review.py \
   --plan-file /tmp/debate_artifact.md \
   --scope-file /tmp/debate_scope.md
 ```
+
+**Claude Batch Reviewer (Tiers 2-3 only):**
+
+**Prerequisite:** `python3 -c "import anthropic"` succeeds and `ANTHROPIC_API_KEY` is set.
+
+Run in parallel with DeepSeek + GPT-4o:
+```bash
+python3 ~/.claude/scripts/batch_review.py \
+  --mode plan-review \
+  --artifact-file /tmp/debate_artifact.md \
+  --scope-file /tmp/debate_scope.md \
+  --timeout 300
+```
+
+If batch completes before synthesis step: merge findings into Step 4.
+If batch times out or errors: proceed without (graceful degradation).
+User says `"skip batch"`: omit the Claude batch reviewer (keeps DeepSeek + GPT-4o only).
 
 **Conditionally run — Haiku Style/UI (if frontend changes detected):**
 
@@ -137,13 +179,22 @@ If reviewing a PR and CRITICAL findings were adopted:
 
 ## Cost Budget
 
-- Per debate round: ~$0.08-0.10 (based on ~10k prompt + ~1k completion tokens per critic at current DeepSeek/OpenAI pricing).
-- Max per feature (3 rounds): ~$0.30
-- Token cap per critic call: 15,000 tokens
+| Tier | Critics | Cost per round | With Claude batch | Token cap |
+|------|---------|---------------|-------------------|-----------|
+| 1 (Scope Check) | DeepSeek only | ~$0.03 | ~$0.03 (no batch) | 15,000 |
+| 2 (Dual Critic) | DeepSeek + GPT-4o | ~$0.08 | ~$0.13 (+Claude batch) | 15,000 per critic |
+| 3 (Full Debate) | DeepSeek + GPT-4o + Haiku (conditional) + Sonnet Generator + Opus Lead | ~$0.15-0.35 | ~$0.22-0.40 (+Claude batch) | 15,000 per external critic |
+
+Claude batch adds ~$0.05 per round (2 Sonnet reviews at 50% batch discount).
+Net cost increase per round is modest; provides a third independent model perspective.
+
+- Max per feature (3 full debate rounds): ~$1.20
+- Tier 1 drops Codex/GPT-4o — acceptable for 1-2 file changes where architectural review adds minimal value
 
 ## Debugging
 
 - If a critic run fails: re-run the same `plancraft_review.py` command with the same `--plan-file` and `--scope-file`, then inspect the JSON output. The `error` key (if present) explains the failure (e.g. missing API key, API timeout).
+- If a batch review fails: re-run `batch_review.py` with the same `--artifact-file` and `--scope-file`. Check the JSON `error` key. Common causes: `anthropic` not installed, `ANTHROPIC_API_KEY` not set (check shell profile sourcing), batch timeout (increase `--timeout`).
 
 ## Extending: Adding New Critics
 

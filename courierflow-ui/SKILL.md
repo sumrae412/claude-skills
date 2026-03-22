@@ -67,6 +67,8 @@ When changing CSS/JS:
 1. Bump `?v=` param on all `<link>`/`<script>` tags referencing the file
 2. Bump `CACHE_NAME` in `app/static/sw.js`
 
+**Verification after deploy:** If CSS changes do not appear on the live site after deploy, first check that the `?v=` param was bumped, then check Railway build status (builds may be failing silently). Use `WebFetch` against the live URL to compare deployed CSS with the repo version.
+
 ## Service Worker
 
 - **Network-first for CSS/JS** — Cache is offline fallback only

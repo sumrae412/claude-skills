@@ -26,6 +26,8 @@ Before starting:
 
 **When invoked from code-creation-workflow Phase 6B:** The quality gate (6A) has already run — severity-classified review, deep-dives, CI retry. The shipping-workflow's own 10-step review provides a second pass. This is intentional redundancy for high-stakes changes.
 
+**Batch review context:** When invoked from code-creation-workflow Phase 6B, a Batch API review may have already run during Phase 6A. If batch results are available in the session, include them in the Stage 4 review context to avoid re-reviewing the same issues.
+
 ## The 4-Stage Pipeline
 
 ### Stage 1: Commit

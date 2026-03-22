@@ -48,6 +48,8 @@ Run the `/pre-deploy` skill to validate the codebase. This runs:
 - Pre-deployment validation script
 - Quick CI checks
 
+**Manual check:** If `requirements.txt` was modified, run `pip install --dry-run -r requirements.txt` locally to verify dependency resolution succeeds. Pip conflicts are not caught by `quick_ci.sh` but will fail the Railway build.
+
 ### 4. Deploy to Railway
 
 ```bash
@@ -95,3 +97,11 @@ railway deployments
 1. Visit the web URL and verify the app loads
 2. Check the logs for any startup errors
 3. Test critical functionality (login, dashboard, workflows)
+
+## Debugging "Code Not Updating"
+
+If deployed code does not match the repo after push:
+1. **Check build status** — Use Railway MCP `list-deployments` tool or `railway logs --build` to see if recent builds FAILED.
+2. **Railway serves last success** — Failed builds do not replace the running deployment. "Redeploy" re-serves the old image.
+3. **Common cause: dependency conflicts** — `pip install` failures in `requirements.txt` (version incompatibilities). Check build logs for pip resolution errors.
+4. **Fix and push** — Resolve the conflict, push a new commit. Do not rely on the Redeploy button when builds are failing.

@@ -1,12 +1,12 @@
 ---
 name: code-creation-workflow
-description: PRIMARY workflow for ALL feature development and implementation. SUPERSEDES brainstorming, writing-plans, executing-plans, test-driven-development, plancraft, and feature-dev — do NOT use those individually when this skill is available. Trigger on any request to build, implement, add, create, or fix features. Includes parallel exploration, architecture, TDD, and review as unified phases.
+description: PRIMARY workflow for ALL feature development and implementation. SUPERSEDES brainstorming, writing-plans, executing-plans, test-driven-development, and feature-dev — do NOT use those individually when this skill is available. Uses debate-team for auto-tiered review. Trigger on any request to build, implement, add, create, or fix features. Includes parallel exploration, architecture, TDD, and review as unified phases.
 user-invocable: true
 ---
 
 # Code Creation Workflow
 
-**SUPERSEDES (do not invoke separately):** brainstorming → Phases 1-3, writing-plans → Phase 4, executing-plans → Phase 5, test-driven-development → Phase 5, plancraft → Phase 4 optional review, feature-dev:feature-dev → replaced entirely.
+**SUPERSEDES (do not invoke separately):** brainstorming → Phases 1-3, writing-plans → Phase 4, executing-plans → Phase 5, test-driven-development → Phase 5, feature-dev:feature-dev → replaced entirely. **Uses:** debate-team (auto-tiered review in Phase 4).
 
 ---
 
@@ -16,15 +16,16 @@ user-invocable: true
 
 1. Read workspace `CLAUDE.md` (identity, boundaries, terminology, skill pointers).
 2. Load core skill if present (e.g. `/courierflow-core`) for trigger matrix and boundaries.
-3. Load **only** the contextual skills that match the task:
+3. Load `/active-files` registry — all file modifications must target registered files or register new ones first.
+4. Load **only** the contextual skills that match the task:
    - UI / templates / CSS → UI skill
    - Routes / services → API skill
    - Models / migrations → data skill
    - External APIs → integrations skill
    - Git / deploy / PR → git skill
    - Auth / security → security skill
-4. Always load: `coding-best-practices` + the matching defensive skill (`defensive-ui-flows`, `defensive-backend-flows`, or both).
-5. Verify you're on a feature branch. If on main, create one before proceeding.
+5. Always load: `coding-best-practices` + the matching defensive skill (`defensive-ui-flows`, `defensive-backend-flows`, or both).
+6. Verify you're on a feature branch. If on main, create one before proceeding.
 
 ---
 
@@ -71,6 +72,8 @@ Dispatch parallel `code-explorer` subagents using the Agent tool. Specialize pro
 **Unknown/unclassifiable:** Fall back to generic prompts — patterns, architecture, tests.
 
 After all agents return: read the identified key files yourself. **Cap at 10-15 files** — if explorers return more, prioritize the most relevant based on their summaries and read others on-demand during implementation. This prevents context window exhaustion.
+
+**File governance check:** Cross-reference explored files against the `/active-files` registry. Flag any files that need work but aren't registered — they must be added to the registry before implementation begins in Phase 5.
 
 Present a concise summary of findings to the user before proceeding.
 
@@ -140,35 +143,21 @@ After user chooses, write a structured plan directly (no separate skill invocati
 - Test requirements per step
 - Dependencies between steps marked clearly
 
-### AI Review (PlanCraft)
+### AI Review (debate-team, auto-tiered)
 
-**Always triggered when ANY of these apply:**
-- Schema changes (new/modified models, migrations)
-- External API integration (new service connections, webhook handlers)
-- Cross-cutting concerns (auth changes, middleware, shared utilities)
-- 3+ files modified across 2+ architectural layers
+Invoke `/debate-team` which auto-selects the appropriate tier:
 
-**Also triggered when:** user requests it ("review the plan", "validate this").
+- **Tier 3 (Full Debate)** — all plans, bug fix plans (3+ files or cross-service), schema+security, frontend+backend, or user says "full debate"
+- **Tier 2 (Dual Critic)** — 3+ files, cross-cutting concerns, external API integration
+- **Tier 1 (Scope Check)** — simple 1-2 file changes
 
 **Prerequisite check:** `python3 -c "import httpx" && test -f ~/.claude/scripts/plancraft_review.py`. If missing: warn user, skip review, note gap as "unreviewed."
 
-If triggered: run `plancraft_review.py` (DeepSeek + Codex in parallel), filter suggestions against scope (ACCEPT in-scope improvements, REJECT scope creep), revise plan, get re-approval.
+**Overrides:** `"full debate"` forces Tier 3, `"quick review"` forces Tier 1, `"skip debate"` bypasses entirely.
 
-**When NOT triggered:** Skip. Log: "PlanCraft skipped — single-layer, no schema/API/cross-cutting."
+Filter all findings against scope (ACCEPT in-scope, REJECT scope creep). Revise plan with adopted findings, get user re-approval.
 
-### Optional: Debate-Team Review
-
-```
-Plan written → PlanCraft triggers?
-  ├─ YES → Run PlanCraft → debate-team triggers?
-  │                           ├─ YES → Run debate-team AFTER PlanCraft
-  │                           └─ NO → Done
-  └─ NO → Skip both
-```
-
-Trigger: user says "debate this" OR task touches 3+ files with security-sensitive code (`password`, `token`, `secret`, `credit_card`, auth/middleware patterns).
-
-If triggered: Generator (Sonnet) produces proposal, DeepSeek Bug-Hunter + GPT-4o Architecture run in parallel, optional Haiku Style/UI for frontend. Synthesize as ADOPT/REJECT/DEFER.
+**When complexity gate selects Tier 1:** Log: "Debate-team Tier 1 — scope check only, no schema/API/cross-cutting."
 
 ```
 ◆ USER APPROVES final plan before implementation ◆
@@ -213,7 +202,7 @@ Rationale for 4+ threshold: 3 steps is common for small features where agent coo
 ## Phase 6: Quality + Ship
 
 ```
-Flow: Pre-Review → Review → Deep-Dives → Deduplicate → Verify (CI retry) → Finish → Document → Learn
+Flow: Pre-Review → Review (subagents + batch) → Deep-Dives → Deduplicate → Verify (CI retry) → Finish → Document → Learn
 ```
 
 ### 6A: Quality Gate
@@ -229,6 +218,22 @@ Flow: Pre-Review → Review → Deep-Dives → Deduplicate → Verify (CI retry)
 - Full feature → 2 parallel `code-reviewer` subagents:
   - Bug & Security Reviewer: bugs, logic errors, security vulnerabilities, race conditions. Classify as CRITICAL/WARNING/INFO.
   - Conventions Reviewer: project conventions, patterns, style, plan adherence. Verify defensive rules checklist from Phase 2. Classify as CRITICAL/WARNING/INFO.
+
+**Batch Review (background, full features only):**
+
+For full features (not small/targeted changes), launch `batch_review.py` in background during pre-review checks:
+
+```bash
+# Launch in background before subagent reviewers
+python3 ~/.claude/scripts/batch_review.py \
+    --mode code-review \
+    --artifact-file <diff-file> \
+    --scope-file <scope-file> \
+    --timeout 300 &
+```
+
+**Prerequisite:** `python3 -c "import anthropic"` succeeds and `ANTHROPIC_API_KEY` is set.
+Merge batch findings with subagent reviewer findings in the deduplication step. If batch hasn't completed by deduplication: skip (graceful degradation). This adds a Claude model perspective at 50% batch discount without blocking the review pipeline.
 
 | Severity | Meaning | Action |
 |----------|---------|--------|
@@ -288,7 +293,7 @@ Option 1: invoke `/ship`. Options 2-4: delegate to `finishing-a-development-bran
 | 1 | Discovery | Fast-path / plan-path / full-workflow | Auto |
 | 2 | Exploration | Specialized explorers + defensive rule checklist | None |
 | 3 | Clarification | Ambiguities + test case enumeration | User answers + confirms tests |
-| 4 | Architecture | Architects + PlanCraft (always-on for schema/API) + optional debate-team | User approves plan |
+| 4 | Architecture | Architects + debate-team (auto-tiered review) | User approves plan |
 | 5 | Implementation | TDD per step; parallel dispatch at 4+ independent steps | Tests pass |
 | 6A | Quality Gate | Severity review + deep-dive triggers + CI retry (3 attempts) | Verification |
 | 6B | Finish & Ship | Finishing options + doc checklist + session learnings | User choice |
@@ -317,10 +322,11 @@ Option 1: invoke `/ship`. Options 2-4: delegate to `finishing-a-development-bran
 | CI passes locally, fails in PR | PAUSE | Check env-specific issues. Fix root cause, don't `--no-verify` |
 | User wants to stop | PAUSE | Summarize: phase, what's done, what remains, next step to resume |
 | Wrong architecture chosen | RETRY | Revert uncommitted work, re-architect with new constraints |
-| PlanCraft/debate-team API fails | DEGRADE | Continue with available reviewers. Note gap. If both fail → "unreviewed" |
+| debate-team API fails | DEGRADE | Continue with available reviewers. Note gap. If all fail → "unreviewed" |
 | Subagent produces conflicting results | DEGRADE | Evaluate each finding against codebase evidence. ADOPT only verified |
 | Context window pressure | DEGRADE | Compress completed phases into structured summary; keep plan + current step |
 | Plan references missing files | RETRY | Grep for actual paths before assuming the plan is wrong |
+| Batch review times out or fails | DEGRADE | Proceed with subagent reviewers only. Note "batch unavailable" in deduplication. No blocking |
 
 **Resolution types:** RETRY = fix and re-run. PAUSE = stop and ask user. DEGRADE = continue with reduced capability.
 
