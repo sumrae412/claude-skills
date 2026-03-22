@@ -93,30 +93,40 @@ Create a numbered checklist of 5-10 applicable rules (not all 31/30). This check
 
 ---
 
-## Phase 3: Clarification
+## Phase 3: Requirements & Clarification
 
 <HARD-GATE>
-All ambiguities must be resolved before architecture work begins.
+Requirements must be understood and ambiguities resolved before architecture work begins.
 </HARD-GATE>
 
-Review exploration findings against the request. Check for gaps in:
+### 3A: Requirements Discovery
+
+Before checking for gaps, confirm you understand what you're building:
+- **Purpose** — what problem does this solve? What triggers the need?
+- **Success criteria** — how will we know it works? What does "done" look like?
+- **Constraints** — performance, compatibility, security, or UX requirements?
+- **Scope boundary** — what is explicitly NOT included?
+
+Ask clarifying questions **one at a time**. Prefer multiple-choice when possible. Only move on when you understand the user's intent.
+
+**If the request is well-specified and exploration answered all gaps:** state that explicitly and skip to 3B. Do not manufacture questions.
+
+### 3B: Edge Cases & Test Planning
+
+Review exploration findings against requirements. Check for gaps in:
 - Edge cases (empty input, duplicates, malformed data)
 - Error handling (what does the user see on failure?)
 - Integration points (which existing systems are touched?)
-- Scope boundary (what is explicitly NOT included?)
-- Performance (large datasets, concurrency?) — if flagged, carry forward as a non-functional requirement for Phase 4
+- Performance (large datasets, concurrency?) — carry forward as a non-functional requirement for Phase 4
 - Backward compatibility (does this change existing behavior?)
-- Test cases — enumerate specific scenarios to test:
-  - Happy path (expected inputs → expected outputs)
-  - Edge cases (empty, duplicate, malformed)
-  - Error scenarios (network failure, invalid state, permission denied)
-  - Regression scenarios (existing behavior that must not break)
+
+Enumerate test scenarios:
+- Happy path (expected inputs → expected outputs)
+- Edge cases (empty, duplicate, malformed)
+- Error scenarios (network failure, invalid state, permission denied)
+- Regression scenarios (existing behavior that must not break)
 
 Present the test case list to the user for confirmation. These become the "Test Requirements" section in the Phase 4 plan — Phase 5 consumes this list directly for TDD.
-
-**If the request is well-specified and exploration answered all gaps:** state that explicitly and proceed to Phase 4. Do not manufacture questions.
-
-**If ambiguities exist:** Group questions by dependency. Ask independent questions together in one message (max 3). Only serialize when an answer materially changes what you ask next.
 
 ---
 
@@ -136,9 +146,16 @@ Present both designs to the user. User chooses A, B, or hybrid.
 ◆ USER CHOOSES architecture ◆
 ```
 
-### Write Implementation Plan
+### Write Design & Implementation Plan
 
 After user chooses, write a structured plan directly (no separate skill invocation):
+
+**Design doc** (full workflow only, skip for simple tasks):
+- Save to `docs/superpowers/specs/YYYY-MM-DD-<topic>-design.md`
+- Cover: purpose, chosen approach with rationale, data flow, error handling, scope boundary
+- Commit the design doc before proceeding
+
+**Implementation plan** (always):
 - Numbered steps with specific files and line-level changes
 - Test requirements per step
 - Dependencies between steps marked clearly
