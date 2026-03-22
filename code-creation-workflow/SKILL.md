@@ -140,6 +140,20 @@ Scale to complexity:
 
 Each architect returns: files to create/modify, component responsibilities, data flow, trade-offs.
 
+### Hypothesis-Driven Presentation (from systematic-debugging)
+
+Present each architecture as a testable hypothesis, not just a design:
+
+- **Approach A hypothesis:** "If we optimize for simplicity by [specific choice], then [predicted outcome]. This will be validated when [concrete test]."
+- **Approach B hypothesis:** "If we optimize for separation by [specific choice], then [predicted outcome]. This will be validated when [concrete test]."
+
+For each, state:
+1. **Prediction:** What should be true if this design is correct? (e.g., "Adding a new message type requires changing only 1 file")
+2. **Risk signal:** What would indicate this design is wrong? (e.g., "If we need to pass data through 3+ layers, the abstraction is fighting us")
+3. **Falsification point:** At what Phase 5 step would we know this isn't working? (Connects to the 3-Strike Rule — if we hit strike 3 on a step, we revisit these predictions.)
+
+This makes the user's choice informed by consequences, not just aesthetics. It also gives Phase 5 clear criteria for when to escalate vs. keep iterating.
+
 Present both designs to the user. User chooses A, B, or hybrid.
 
 ```
@@ -198,6 +212,20 @@ Create TodoWrite items from the plan. Mark each complete as you finish.
 3. Run tests → verify green before moving to the next step.
 4. Mark the TodoWrite item complete.
 
+### 3-Strike Rule (from systematic-debugging)
+
+If implementation of a single step fails 3 times, the problem is architectural, not implementational.
+
+1. **Strike 1:** Fix fails → form a new hypothesis about why. Test minimally.
+2. **Strike 2:** Fix fails again → gather evidence. Add diagnostic logging/instrumentation at component boundaries. Run once to see WHERE it breaks, not just THAT it breaks.
+3. **Strike 3:** Fix fails a third time → **STOP. Question the architecture.**
+   - Is the Phase 4 design fundamentally sound for this step?
+   - Are we fighting the existing codebase's grain?
+   - Would a different approach from Phase 4 (the unchosen architecture) solve this more naturally?
+   - **Discuss with user before attempting Fix #4.** This is NOT a failed implementation — it's a wrong design.
+
+**Each strike must use the scientific method:** state the hypothesis ("I think X is the root cause because Y"), make the smallest possible change to test it, verify before continuing. Do NOT stack multiple fixes hoping one works.
+
 **Parallel dispatch** (for 4+ independent steps with no shared state): Before dispatching, explicitly list each step's file inputs/outputs and confirm no overlap. If uncertain, default to sequential. Dispatch parallel implementation agents using the Agent tool — each follows the same TDD + defensive pattern. Merge results when all complete.
 
 Rationale for 4+ threshold: 3 steps is common for small features where agent coordination overhead exceeds the parallelism benefit.
@@ -223,6 +251,21 @@ Flow: Pre-Review → Review (subagents + batch) → Deep-Dives → Deduplicate �
 ```
 
 ### 6A: Quality Gate
+
+**Evidence Gathering (before review, not after):**
+
+Gather structured evidence BEFORE dispatching reviewers. Reviewers assess evidence, not assumptions.
+
+1. **Diff analysis:** `git diff main..HEAD --stat` — what files changed, how many lines, what categories (test, source, config, migration)?
+2. **Dependency graph:** For each changed file, what imports it? What does it import? Are callers affected?
+3. **Test coverage delta:** Which changed lines are covered by tests? Which aren't? (Use test output + grep, not assumptions.)
+4. **Component boundary check:** For multi-layer changes, verify data flows correctly at each boundary:
+   - Route → Service: correct args passed?
+   - Service → Model: correct queries, eager-loads?
+   - Template → JS: correct data attributes, event bindings?
+5. **Before/after state:** For behavioral changes, capture concrete before/after (test output, API response shape, UI state).
+
+This evidence is passed to reviewers as context. Reviewers who see evidence catch real bugs; reviewers who see only code catch style issues.
 
 **Pre-Review Checks:**
 - All tests pass locally
@@ -319,6 +362,7 @@ Option 1: invoke `/ship`. Options 2-4: delegate to `finishing-a-development-bran
 
 | Skill | Where used |
 |-------|-----------|
+| systematic-debugging | Phase 4 (hypothesis-driven architecture), Phase 5 (3-Strike Rule), Phase 6A (evidence-before-action). Red Flags + User Signals tables. |
 | debate-team | Phase 4 (optional architecture review), Phase 6A (high-complexity review) |
 | finishing-a-development-branch | Phase 6B (Options 2-4 execution) |
 | shipping-workflow reference | Phase 6A (scoring, deep-dives, CI retry patterns) |
@@ -331,8 +375,8 @@ Option 1: invoke `/ship`. Options 2-4: delegate to `finishing-a-development-bran
 | Explorer times out | RETRY | Re-dispatch with narrower scope (single concern) |
 | Both architectures rejected | PAUSE | Ask user what's missing, re-run with new constraints |
 | Only one viable architecture (3+ files or cross-cutting) | PAUSE | Present with trade-offs, ask if user wants a second option |
-| Tests fail during implementation | RETRY | Fix immediately — do not proceed to next step |
-| Tests fail 3+ times on same step | PAUSE | Stop TDD loop. Read test + impl together. Ask user: test wrong or approach wrong? |
+| Tests fail during implementation | RETRY | Fix immediately — do not proceed to next step. Use scientific method: hypothesis → minimal test → verify. |
+| Tests fail 3+ times on same step | PAUSE | **3-Strike Rule.** Stop. Question the Phase 4 architecture, not the code. Ask user: design wrong or test wrong? |
 | Reviewer finds critical issue | RETRY | Fix before finishing, re-run verification |
 | Reviewer finds pre-existing bug | RETRY | Fix it (fix-what-you-find). Log as pre-existing in commit |
 | CI fails after fix | RETRY | Check `git status` between attempts (ruff may modify files). Re-run up to 3 attempts. Same error twice → escalate immediately |
@@ -346,6 +390,38 @@ Option 1: invoke `/ship`. Options 2-4: delegate to `finishing-a-development-bran
 | Batch review times out or fails | DEGRADE | Proceed with subagent reviewers only. Note "batch unavailable" in deduplication. No blocking |
 
 **Resolution types:** RETRY = fix and re-run. PAUSE = stop and ask user. DEGRADE = continue with reduced capability.
+
+## Red Flags — STOP and Check Yourself
+
+If you catch yourself thinking any of these, you're rationalizing. STOP and follow the process.
+
+| Thought | Reality |
+|---------|---------|
+| "This is basically a fast-path" | If you're justifying it, it's not. Use full workflow. |
+| "I don't need 2 architects for this" | Complexity hides behind familiarity. Do the scale check. |
+| "Tests can come after, I know this works" | TDD is Phase 5's hard gate. No exceptions. |
+| "User seems impatient, skip clarification" | Phase 3 exists because skipping costs more time later. |
+| "I'll just start coding and figure it out" | That's Phase 5 without Phase 2-4. You'll rework it. |
+| "The exploration was enough, skip requirements" | Exploration answers WHAT exists. Phase 3 answers WHAT to build. Different questions. |
+| "One more implementation attempt" (after 2+ failures) | 3 failures = wrong architecture, not wrong code. See 3-Strike Rule. |
+| "I'll fix the review findings later" | CRITICAL/WARNING findings block shipping. Fix now or escalate. |
+| "Skip the evidence gathering, I can see the problem" | Seeing symptoms ≠ understanding root cause. Gather evidence first. |
+
+## User Signals You're Off Track
+
+Watch for these signals — they mean your approach needs correction, not just your code.
+
+| Signal | Meaning | Action |
+|--------|---------|--------|
+| "Can you just..." | User wants simpler. You're over-engineering. | Revisit Phase 4, pick the simpler architecture. |
+| "What about X?" | Missed requirement. Phase 3 was incomplete. | Return to Phase 3A, address the gap. |
+| "That's not what I meant" | Intent mismatch. Requirements misunderstood. | Restart Phase 3A from scratch. Restate what you think they want. |
+| "This is taking too long" | Process overhead exceeding value. | Check: are you on full workflow when fast-path applies? Scale down. |
+| "Stop, let me think" | You're moving faster than the user's decision pace. | PAUSE. Wait for explicit direction before next action. |
+| "Is that not happening?" | You assumed without verifying. | Return to evidence gathering. Don't assume — check. |
+| "We're stuck" (frustrated tone) | Your approach isn't working. | STOP. Question the architecture (3-Strike Rule), don't add more fixes. |
+
+**When you see any of these:** acknowledge the signal, name what went wrong, adjust approach. Do NOT continue on the same path.
 
 ## Common Mistakes
 
