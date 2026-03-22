@@ -217,6 +217,14 @@ fi
 
 **Only if currently in a worktree.** If on a regular branch, skip this step entirely.
 
+**When all prior steps are complete and nothing remains to be done, ask the user:**
+
+```
+All cleanup is finished. Would you like me to delete the branch and worktree?
+```
+
+Wait for the user's answer before proceeding. If they say yes, use `ExitWorktree` with the appropriate action. If they say no, leave everything in place.
+
 Use the `ExitWorktree` tool — it handles directory switching and cleanup correctly:
 
 | Option chosen | ExitWorktree action |

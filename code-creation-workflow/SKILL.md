@@ -6,7 +6,7 @@ user-invocable: true
 
 # Code Creation Workflow
 
-**SUPERSEDES (do not invoke separately):** brainstorming → Phases 1-3, writing-plans → Phase 4, executing-plans → Phase 5, test-driven-development → Phase 5, feature-dev:feature-dev → replaced entirely. **Uses:** debate-team (auto-tiered review in Phase 4).
+**SUPERSEDES (do not invoke separately):** brainstorming → Phase 3A (requirements discovery, one-Q-at-a-time) + Phase 4 (approaches, design doc), writing-plans → Phase 4, executing-plans → Phase 5, test-driven-development → Phase 5, feature-dev:feature-dev → replaced entirely. **Uses:** debate-team (auto-tiered review in Phase 4).
 
 ---
 
@@ -309,7 +309,7 @@ Option 1: invoke `/ship`. Options 2-4: delegate to `finishing-a-development-bran
 | 0 | Context | Load CLAUDE.md + relevant skills only | None |
 | 1 | Discovery | Fast-path / plan-path / full-workflow | Auto |
 | 2 | Exploration | Specialized explorers + defensive rule checklist | None |
-| 3 | Clarification | Ambiguities + test case enumeration | User answers + confirms tests |
+| 3 | Requirements & Clarification | 3A: intent/success criteria (one Q at a time) → 3B: edge cases + test plan | User answers + confirms tests |
 | 4 | Architecture | Architects + debate-team (auto-tiered review) | User approves plan |
 | 5 | Implementation | TDD per step; parallel dispatch at 4+ independent steps | Tests pass |
 | 6A | Quality Gate | Severity review + deep-dive triggers + CI retry (3 attempts) | Verification |
