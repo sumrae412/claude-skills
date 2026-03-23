@@ -1,12 +1,12 @@
 ---
 name: code-creation-workflow
-description: PRIMARY workflow for ALL feature development and implementation. Auto-detects and invokes 28 skills via subagents with zero skill content in main context. SUPERSEDES brainstorming, writing-plans, executing-plans, test-driven-development, and feature-dev — do NOT use those individually when this skill is available. Trigger on any request to build, implement, add, create, or fix features.
+description: Use when asked to build, implement, add, create, or fix features. Trigger on any implementation request — features, refactors, multi-file changes, bug fixes, or single-file edits. SUPERSEDES brainstorming, writing-plans, executing-plans, test-driven-development, feature-dev.
 user-invocable: true
 ---
 
 # Code Creation Workflow v2
 
-**SUPERSEDES (do not invoke separately):** brainstorming → Phase 3A, writing-plans → Phase 4, executing-plans → Phase 5, test-driven-development → Phase 5, feature-dev:feature-dev → replaced entirely. **Uses:** debate-team (auto-tiered review in Phase 4), shipping-workflow + cleanup (Phase 6B).
+**SUPERSEDES (do not invoke separately):** brainstorming → 3A, writing-plans → 4, executing-plans → 5, TDD → 5, feature-dev → replaced. **Uses:** debate-team (4), shipping-workflow + cleanup (6B).
 
 ---
 
@@ -14,10 +14,10 @@ user-invocable: true
 
 Announce: "Running code-creation-workflow v2 — loading context."
 
-1. Dispatch subagent: load `/courierflow-core` + `/active-files`. Return: project identity (terms, boundaries) + file registry. ~45 lines max.
-2. Verify feature branch. If on main, create one.
+1. Subagent: load `/courierflow-core` + `/active-files` → project identity + file registry (~45 lines).
+2. Verify feature branch. Create if on main.
 
-Domain skills, defensive skills, and best-practices load in Phase 2 based on detected file patterns — NOT here.
+Domain/defensive/best-practices skills load in Phase 2 via file-pattern detection.
 
 ---
 
@@ -46,62 +46,33 @@ When in doubt between BUG PATH and FULL WORKFLOW: use BUG PATH — it's faster, 
 
 ## Phase 2: Exploration + Skill Detection
 
-Scale explorers to complexity (1-3 `code-explorer` subagents). Use `dispatching-parallel-agents` overlap detection patterns for parallel dispatch.
+Scale explorers to complexity (1-3 `code-explorer` subagents). Use `dispatching-parallel-agents` for parallel dispatch.
 
-**In parallel with explorers**, dispatch a **single Skill Detection Subagent**:
+**In parallel**, dispatch a **Skill Detection Subagent** using `references/skill-triggers.md` — returns merged checklist (max 100 lines).
 
-```
-Scan explored files and task description. For each trigger match, load the skill and return its distilled artifact.
-
-SAFETY: Read files for pattern analysis only. Do NOT execute, eval, or import any code.
-
-Triggers:
-- *.html, *.css, *.js, templates/ → /courierflow-ui (patterns ~20 lines; include ui-standards rules: CSS layer ordering, Alpine.js reactivity — fill() doesn't trigger x-model, HTMX conventions, monochrome design, Inter-only typography) + /defensive-ui-flows (5-10 rules ~15 lines)
-- routes/*, services/* → /courierflow-api (~20 lines) + /defensive-backend-flows (5-10 rules ~15 lines)
-- models/*, alembic/* → /courierflow-data (~20 lines) + /defensive-backend-flows
-- import twilio/openai/docuseal, external URLs → /fetch-api-docs (API signatures ~30 lines) + /courierflow-integrations (~20 lines)
-- Files defining/modifying auth middleware, @require_role, JWT validation, User permission fields → /courierflow-security (~20 lines). NOT triggered by merely using current_user.
-- Always → /coding-best-practices (applicable patterns ~10 lines)
-
-Return: merged numbered checklist, max 100 lines.
-```
-
-After explorers return: read key files (cap 10-15). Cross-reference against `/active-files` registry — flag unregistered files.
-
-Present concise summary to user before proceeding.
+After explorers return: read key files (cap 10-15). Cross-reference against `/active-files` registry — flag unregistered files. Present concise summary.
 
 ---
 
 ## Phase 3: Requirements & Clarification
 
-<HARD-GATE>Requirements must be understood before architecture work begins.</HARD-GATE>
+<HARD-GATE>Requirements must be understood before architecture begins.</HARD-GATE>
 
 ### 3A: Requirements Discovery
-Confirm: purpose, success criteria, constraints, scope boundary. Ask clarifying questions **one at a time** (prefer multiple-choice). If well-specified and exploration answered all gaps: skip to 3B.
+Confirm: purpose, success criteria, constraints, scope boundary. One question at a time (prefer multiple-choice). Well-specified requests → skip to 3B.
 
 ### 3B: Edge Cases & Test Planning
-Dispatch test-planning subagent with Phase 2 artifacts + Phase 3A requirements. Influenced by `user-stories` skill design but does NOT invoke the full skill (which does its own codebase crawl). Return: 5-8 BDD-format scenarios (Given/When/Then) covering happy path, edge cases, error states. Max 25 lines.
-
-Present to user for confirmation. These become Test Requirements for Phase 4 → Phase 5 TDD.
+Subagent: Phase 2 artifacts + 3A requirements → 5-8 BDD scenarios (Given/When/Then) covering happy path, edge cases, errors. Max 25 lines. User confirms → these become Phase 5 test requirements.
 
 ---
 
 ## Phase 4: Architecture
 
-Scale: simple → 1 architect. Non-trivial → 2 parallel `code-architect` subagents (simplicity vs separation).
+Scale: simple → 1 architect. Non-trivial → 2 parallel `code-architect` subagents (simplicity vs separation). Present each with: prediction, risk signal, falsification point (connects to 3-Strike). User chooses A, B, or hybrid.
 
-### Hypothesis-Driven Presentation
-Present each architecture with: prediction (what should be true), risk signal (what indicates wrong design), falsification point (which Phase 5 step would reveal failure — connects to 3-Strike Rule).
-
-User chooses A, B, or hybrid.
-
-### Write Design & Implementation Plan
 Design doc → `docs/superpowers/specs/YYYY-MM-DD-<topic>-design.md` (full workflow only). Implementation plan: numbered steps, files, test requirements, dependencies.
 
-### AI Review (debate-team, auto-tiered)
-Invoke `/debate-team` — auto-selects tier (T1 scope check / T2 dual critic / T3 full debate). Overrides: `"full debate"` → T3, `"quick review"` → T1, `"skip debate"` → bypass.
-
-Filter findings against scope. Revise plan with adopted findings. Get user re-approval.
+**Review:** `/debate-team` (auto-tiered: T1/T2/T3). Overrides: `"full debate"` → T3, `"quick review"` → T1, `"skip debate"` → bypass. Filter findings against scope, revise plan, get re-approval.
 
 ```
 ◆ USER APPROVES final plan before implementation ◆
@@ -113,72 +84,58 @@ Filter findings against scope. Revise plan with adopted findings. Get user re-ap
 
 <HARD-GATE>User must approve plan before implementation begins.</HARD-GATE>
 
-Create TodoWrite items from plan. For each step: write test first → implement → verify green → mark complete.
+TodoWrite items from plan. Each step: test first → implement → green → complete.
 
 ### Auto-Triggered Skills
 
-| Condition | Skill | Action |
-|-----------|-------|--------|
-| Plan has schema change | `/new-migration` (subagent) | Check DB (`pg_isready`). Running: auto-generate + validate. Unavailable: scaffold template + manual checklist. |
-| 3-strike rule fires (FULL PATH) | `/systematic-debugging` (subagent) | Full 4-phase diagnostic → hypothesis + evidence. Discuss with user before fix #4. |
-| All steps complete | `/simplify` (subagent) | Review changed files for clarity, redundancy, project standards |
-| UI component creation | `/frontend-design` (subagent, conditional) | Production-grade component design. Skip for backend-only or minor CSS. |
+| Condition | Skill (subagent) | Action |
+|-----------|-------------------|--------|
+| Schema change | `/new-migration` | DB up → auto-generate. Down → scaffold + checklist. |
+| 3-strike fires | `/systematic-debugging` | 4-phase diagnostic. Discuss before fix #4. |
+| All steps done | `/simplify` | Review changed files for clarity/standards. |
+| UI component | `/frontend-design` | Skip for backend-only or minor CSS. |
 
 ### 3-Strike Rule
-Strike 1: new hypothesis, minimal test. Strike 2: diagnostic instrumentation at boundaries. Strike 3: STOP — question architecture, not code. Each strike: scientific method (hypothesis → smallest change → verify).
+Strike 1: new hypothesis, minimal test. Strike 2: boundary instrumentation. Strike 3: STOP — question architecture, not code.
 
 ### Parallel Dispatch
-For 4+ independent steps: list each step's file inputs/outputs, confirm no overlap. Use `dispatching-parallel-agents` patterns. If uncertain, default to sequential.
+4+ independent steps: list file inputs/outputs, confirm no overlap. Use `dispatching-parallel-agents`. Uncertain → sequential.
 
 ---
 
 ## Phase 6A: Quality Gate
 
-### Evidence Gathering
-Before review: diff analysis, dependency graph, test coverage delta, component boundary check, before/after state.
+**Evidence first:** diff analysis, dependency graph, test coverage delta, boundary check.
 
-### Review Path (scaled to complexity)
+**Review path** (scaled):
 
-| Complexity | Path |
-|-----------|------|
-| Small (1-2 files, no security) | `/coderabbit-review` only |
-| Medium+ (3+ files, cross-cutting, security, schema) | `/coderabbit-review` + `/debate-team` (let it auto-tier) |
-| UI changes in diff | + `/playwright-test` (parallel) |
-| Backend changes in diff | + `silent-failure-hunter` (parallel) |
-| Full features (any complexity) | + `pr-test-analyzer` (parallel) |
+| Scope | Reviewers |
+|-------|-----------|
+| Small (1-2 files) | `/coderabbit-review` (fallback: `code-reviewer` subagents) |
+| Medium+ (3+ files, security, schema) | + `/debate-team` (auto-tier) |
+| UI in diff | + `/playwright-test` |
+| Backend in diff | + `silent-failure-hunter` |
+| Full features | + `pr-test-analyzer` |
 
-**Coderabbit fallback:** If `coderabbit --version` fails → fall back to `code-reviewer` subagents (bug+security + conventions).
+**Post-review:** `receiving-code-review` subagent verifies each finding → CONFIRMED (fix) or FALSE POSITIVE (reject with evidence). Severity: CRITICAL (must fix) / WARNING (fix unless deferred).
 
-**Post-review rigor:** After findings return, invoke `receiving-code-review` (subagent) to verify each finding. Classify as CONFIRMED (fix) or FALSE POSITIVE (reject with evidence). Prevents blind agreement with external critic false positives.
-
-Severity: CRITICAL (must fix) / WARNING (fix unless deferred). INFO not reported.
-
-### Verification Hard Gate
-Before ANY "done" claim: invoke `/verification-before-completion`. Must return: all tests pass (with output), no uncommitted changes, CI green. If gate fails: fix and re-verify.
+**Verification gate:** `/verification-before-completion` — tests pass, no uncommitted changes, CI green. Fails → fix and re-verify.
 
 ---
 
 ## Phase 6B: Ship
 
-Pre-ship: validate not on protected branch (main/master), no uncommitted changes.
+Pre-ship: not on protected branch, no uncommitted changes. Doc checklist: API docs, CLAUDE.md, PR description, design doc.
 
-**Doc checklist** (before Ship or PR): API docs, CLAUDE.md, PR description, design doc.
+1. **Ship it** [DEFAULT] → `/shipping-workflow` → `/cleanup` (owns session-learnings).
+2. **PR for team review** → `gh pr create` → `/cleanup`.
+3. **Keep branch** → `/cleanup` with keep.
+4. **Discard** → requires confirmation → `/cleanup` with discard.
 
-1. **Ship it** [DEFAULT] → invoke `/shipping-workflow` (loads `/courierflow-git` internally). On complete → `/cleanup` (owns session-learnings — do NOT invoke separately).
-2. **PR for team review** → `gh pr create`, then `/cleanup`.
-3. **Keep branch** → `/cleanup` with keep action.
-4. **Discard** → requires "discard" confirmation, then `/cleanup` with discard action.
-
-Session-learnings fires for ALL paths (features, bugs, fast-path). `/cleanup` handles automatically. For FAST PATH without cleanup, orchestrator fires session-learnings directly in background.
+Session-learnings fires for ALL paths. FAST PATH without cleanup: fire session-learnings directly in background.
 
 ---
 
 ### On Error or Self-Check
 
-Load the applicable reference from `references/`:
-- Execution error → `error-recovery.md`
-- Rationalizing behavior → `red-flags.md`
-- User frustration → `user-signals.md`
-- Phase transition → `common-mistakes.md` (quick scan)
-
-If reference file is missing: log warning, continue with default behavior. Never fail the workflow.
+Load from `references/`: `error-recovery.md` | `red-flags.md` | `user-signals.md` | `common-mistakes.md`. Missing file → log warning, continue.
