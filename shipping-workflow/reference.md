@@ -97,6 +97,27 @@ git commit -m "fix: address PR review findings"
 
 Run project CI (e.g. `./scripts/quick_ci.sh`). **Hard gate:** must pass. If failures, fix and re-run; loop up to 3 attempts, then escalate to user.
 
+### Step 9.5: Verify Behavior (not just code)
+
+After CI passes, verify the changed feature actually produces correct output. Reading code and concluding "it looks right" is not evidence — silent error handling (try/except, empty catch) means correct-looking code can fail at runtime.
+
+**What to verify depends on what changed:**
+
+| Change type | Verification |
+|-------------|-------------|
+| API endpoint (new or modified) | Call it, check the response contains expected values (not null/empty/zero) |
+| Count/aggregation query | Compare the returned numbers against the source data or the UI that consumes them |
+| UI data binding | Confirm the UI element renders the endpoint's actual values, not placeholder/default |
+| Error handling change | Trigger the error path, confirm it surfaces (not silently swallowed) |
+| Filter/query logic | Verify the result set matches the filter criteria — compare against an unfiltered query |
+
+**How to verify:**
+- If tests exist that exercise the endpoint/feature end-to-end, CI covers this. Move on.
+- If no end-to-end test exists, note it as a gap in the PR comment. For data-layer changes (queries, aggregations, counts), a smoke test that executes the query is strongly recommended before merge.
+- After deploy, if the project has a staging/production URL: spot-check the endpoint or page. Check deploy logs for errors (`@level:error`).
+
+**Skip when:** Pure refactors with no behavior change, documentation-only PRs, test-only PRs.
+
 ### Step 10: Ship to Main
 
 ```bash

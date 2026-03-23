@@ -99,6 +99,7 @@ Do not manually run session-learnings, sync repos, or remove worktrees — `/cle
 7. **Document** — Post a review comment on the PR (issues found/fixed or "No issues found").
 8. **Always capture learnings** — `/cleanup` runs `session-learnings` automatically. No silent skips.
 9. **Skills are contracts** — Follow every step as written. If you need to deviate (skip a step, substitute a lighter tool, reduce scope), pause and tell the user: (a) which step, (b) why skipping, (c) what you would miss. Let the user decide. No silent shortcuts.
+10. **Verify behavior, not just code** — After CI passes (Step 9), verify the feature actually works (Step 9.5). Call the endpoint, check the values, compare against the UI. "Code looks correct" is not evidence — silent error handling means correct-looking code can fail at runtime. See reference.md Step 9.5 for the full checklist.
 
 ## Integration with Finishing Options
 
