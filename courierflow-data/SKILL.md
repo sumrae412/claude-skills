@@ -87,6 +87,25 @@ END
 
 **Learned from:** `scripts/run_migration_manual.py` backfill for `preferred_contact_method`; CodeRabbit review.
 
+### Multiple Heads from Parallel PRs
+
+When two feature branches both set `down_revision` to the same migration (a common race condition during parallel development), merging both creates two Alembic heads. Alembic will refuse to run `upgrade head` when multiple heads exist.
+
+**Diagnosis:**
+```bash
+alembic heads  # Shows 2+ head revisions
+```
+
+**Fix:**
+```bash
+alembic merge <head1_rev> <head2_rev> -m "merge <branch1> with <branch2>"
+# Generates a new migration file with both revisions as down_revision tuple
+```
+
+**Guard:** Add `# pragma: allowlist secret` to the merge migration's revision lines if hex IDs trigger detect-secrets.
+
+**Pattern:** In a cleanup session merging 3+ PRs that share the same base migration, you may need to run `alembic merge` multiple times — once per competing pair of heads. Always run `alembic heads` after each merge migration is added.
+
 ### Backfill: Iterative Fix for Broken Sync
 
 When a sync bug left orphaned records (e.g., HouseholdMembers without Clients), and a previous backfill already ran but was incomplete due to the same bug, write a targeted backfill that:

@@ -835,6 +835,27 @@ existing = result.scalars().first()
 - Querying by **non-unique column** (email, phone, name) → `scalars().first()`
 - Need to **assert uniqueness** as a business rule → use `scalar_one_or_none()` but handle `MultipleResultsFound` explicitly
 
+### 32. Post-Merge: Verify No Duplicate Side-Effect Calls
+
+After resolving merge conflicts in service files, scan the resolved file for consecutive duplicate calls. When both branches add a call to the same utility function, the merged file can end up calling it twice in the same code path.
+
+```python
+# ❌ BAD — merge conflict left two back-to-back calls
+await ensure_client_for_member(db, user_id, household_id, ...)
+await ensure_client_for_member(db, user_id, household_id, ...)  # duplicate
+
+# ✅ GOOD — single call
+await ensure_client_for_member(db, user_id, household_id, ...)
+```
+
+**Check:** After resolving any conflict in a service file, grep for repeated adjacent calls:
+```bash
+grep -n 'ensure_client_for_member\|_sync_client' FILE | head -20
+```
+If the same call appears on consecutive lines with no intervening logic, remove the duplicate.
+
+**Learned from:** PR #240 merge — both the PR branch and main had added `ensure_client_for_member()` calls; conflict resolution left both in `contact_import_service.py` and `sync_service.py`.
+
 ## Quick Reference
 
 | Rule | Symptom | Check |
