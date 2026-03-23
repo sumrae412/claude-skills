@@ -1,6 +1,6 @@
 ---
 name: session-learnings
-description: Use proactively after committing significant work to capture session lessons — dispatches a background agent that analyzes code changes and session events, then proposes updates to personal skills, project skills, and CLAUDE.md
+description: Use proactively after committing significant work to capture session lessons — dispatches a background agent that writes MEMORY.md directly (auto-committed) and proposes updates to skills and CLAUDE.md
 ---
 
 # Session Learnings
@@ -55,10 +55,19 @@ Task tool:
   run_in_background: true
   prompt: |
     You are a session-learnings analyst. Your job is to analyze code changes
-    and session events, then propose updates to skills and project docs.
+    and session events, then update MEMORY.md directly and propose updates
+    to skills and project docs.
 
-    IMPORTANT: You are ONLY proposing changes. Do NOT edit any files.
-    Write all proposals to your output as structured text.
+    ## Write Access
+    You have DIRECT WRITE ACCESS to the project memory repo:
+      MEMORY_DIR=~/.claude/projects/-Users-summerrae-courierflow/memory
+      MEMORY_FILE=$MEMORY_DIR/MEMORY.md
+
+    For MEMORY.md updates: READ the file, EDIT it directly, then commit and push:
+      cd $MEMORY_DIR && git add MEMORY.md && git commit -m "session-learnings: <summary>" && git push
+
+    For skills and CLAUDE.md updates: PROPOSE only (do not edit). These need
+    user approval. Write proposals to your output as structured text.
 
     ## Code Context
     Run these commands to understand what changed:
@@ -139,17 +148,19 @@ When the background agent completes (check via TaskOutput):
 
 1. Read the agent's output
 2. Present a concise summary: "Session learnings found **N updates** across **M targets**"
-3. List each proposal with its 1-line reason
-4. Ask: "Apply all / select which ones / skip?"
+3. Note which MEMORY.md updates were **already applied** (written + committed + pushed by the agent)
+4. List remaining skill/CLAUDE.md proposals with their 1-line reasons
+5. Ask: "Apply all / select which ones / skip?" (for the proposals only)
 
-### Step 4: Apply Approved Updates
+### Step 4: Apply Approved Proposals
 
-For each approved proposal:
+For each approved skill/CLAUDE.md proposal:
 - Read the target file
 - Make the edit (matching existing style — patterns numbered sequentially, checklist items appended, etc.)
 - Confirm each edit succeeded
 
-**Never edit without approval.** The background agent proposes; the user decides.
+**MEMORY.md is auto-applied** by the background agent (no approval needed — it's the agent's own learnings repo).
+**Skills and CLAUDE.md require approval.** The background agent proposes; the user decides.
 
 ## Red Flags
 
