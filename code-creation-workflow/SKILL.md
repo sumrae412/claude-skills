@@ -44,13 +44,15 @@ When in doubt between BUG PATH and FULL WORKFLOW: use BUG PATH — it's faster, 
 
 ---
 
-## Phase 2: Exploration + Skill Detection
+## Phase 2: Exploration + Skill Detection + Memory Injection
 
 Scale explorers to complexity (1-3 `code-explorer` subagents). Use `dispatching-parallel-agents` for parallel dispatch.
 
 **In parallel**, dispatch a **Skill Detection Subagent** using `references/skill-triggers.md` — returns merged checklist (max 100 lines).
 
 After explorers return: read key files (cap 10-15). Cross-reference against `/active-files` registry — flag unregistered files. Present concise summary.
+
+**Memory injection:** After exploration, extract domain-relevant gotchas from MEMORY.md using `references/memory-injection.md`. Match explored file patterns → domain tags → gotcha semantic keys. Include matching entries (max ~10 lines) as `PROJECT GOTCHAS` in all subsequent subagent prompts. If no domains match, omit the section entirely.
 
 ---
 
