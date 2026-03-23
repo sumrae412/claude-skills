@@ -35,11 +35,14 @@ Cross-model adversarial review for plans and code. Three tiers auto-selected by 
 |------|-------|------|------|
 | Generator | Sonnet (teammate) | Agent Teams | Always |
 | Bug-Hunter | DeepSeek (API) | External | Always |
-| Architecture | GPT-4o via `--reviewer codex` (API) | External | Always |
+| Architecture | GPT-4o via `--reviewer codex` (API) | External | Code artifacts only |
+| Completeness | GPT-4o via `--reviewer codex-docs` (API) | External | Non-code artifacts only |
 | Style/UI | Haiku (teammate) | Agent Teams | Frontend changes only |
 | Lead/Judge | Opus (you) | Lead | Always |
 
-**Effectiveness note:** GPT-4o Architecture critic (`--reviewer codex`) is high-signal for code reviews but low-signal for non-code artifacts (skill files, docs, process design). For non-code reviews, consider skipping Architecture and using DeepSeek Bug-Hunter + Haiku Style/UI only.
+**GPT-4o role routing:** The artifact type determines which GPT-4o critic role runs (never both):
+- **Code artifacts** (touches `app/`, `tests/`, `*.py`, `*.js`, `*.css`, `*.html`) → Architecture critic (`--reviewer codex`): separation of concerns, abstraction quality, pattern consistency.
+- **Non-code artifacts** (skills, docs, CLAUDE.md, MEMORY.md, process specs) → Completeness critic (`--reviewer codex-docs`): missing steps, contradictions, stale references, term consistency.
 
 ## Protocol
 
@@ -50,6 +53,8 @@ Assess the artifact and select tier:
 ```
 IS_PLAN = artifact path matches docs/plans/*.md OR caller passes --type plan
 IS_BUG_FIX_PLAN = IS_PLAN AND artifact describes a bug fix
+IS_CODE = artifact touches app/**, tests/**, *.py, *.js, *.css, *.html (code files)
+IS_NON_CODE = NOT IS_CODE (skills, docs, CLAUDE.md, MEMORY.md, process specs)
 FILE_COUNT = number of files touched/proposed
 HAS_SCHEMA = touches models or migrations
 HAS_SECURITY = touches auth, tokens, permissions
@@ -96,18 +101,26 @@ Wait for Generator to complete. Read the artifact.
 
 Run ALL applicable critics in parallel (one message, multiple tool calls):
 
-**Always run — DeepSeek Bug-Hunter + GPT-4o Architecture (parallel Bash calls):**
+**Always run — DeepSeek Bug-Hunter + GPT-4o (role varies by artifact type, parallel Bash calls):**
 
 ```bash
-# DeepSeek Bug-Hunter
+# DeepSeek Bug-Hunter (always)
 python3 ~/.claude/scripts/plancraft_review.py \
   --reviewer deepseek \
   --plan-file /tmp/debate_artifact.md \
   --scope-file /tmp/debate_scope.md
 
-# GPT-4o Architecture (parallel)
+# GPT-4o — pick ONE based on IS_CODE / IS_NON_CODE:
+
+# If IS_CODE → Architecture critic (parallel)
 python3 ~/.claude/scripts/plancraft_review.py \
   --reviewer codex \
+  --plan-file /tmp/debate_artifact.md \
+  --scope-file /tmp/debate_scope.md
+
+# If IS_NON_CODE → Completeness/Consistency critic (parallel)
+python3 ~/.claude/scripts/plancraft_review.py \
+  --reviewer codex-docs \
   --plan-file /tmp/debate_artifact.md \
   --scope-file /tmp/debate_scope.md
 ```
@@ -182,14 +195,15 @@ If reviewing a PR and CRITICAL findings were adopted:
 | Tier | Critics | Cost per round | With Claude batch | Token cap |
 |------|---------|---------------|-------------------|-----------|
 | 1 (Scope Check) | DeepSeek only | ~$0.03 | ~$0.03 (no batch) | 15,000 |
-| 2 (Dual Critic) | DeepSeek + GPT-4o | ~$0.08 | ~$0.13 (+Claude batch) | 15,000 per critic |
-| 3 (Full Debate) | DeepSeek + GPT-4o + Haiku (conditional) + Sonnet Generator + Opus Lead | ~$0.15-0.35 | ~$0.22-0.40 (+Claude batch) | 15,000 per external critic |
+| 2 (Dual Critic) | DeepSeek + GPT-4o (Architecture OR Completeness) | ~$0.08 | ~$0.13 (+Claude batch) | 15,000 per critic |
+| 3 (Full Debate) | DeepSeek + GPT-4o (role-routed) + Haiku (conditional) + Sonnet Generator + Opus Lead | ~$0.15-0.35 | ~$0.22-0.40 (+Claude batch) | 15,000 per external critic |
 
 Claude batch adds ~$0.05 per round (2 Sonnet reviews at 50% batch discount).
 Net cost increase per round is modest; provides a third independent model perspective.
 
 - Max per feature (3 full debate rounds): ~$1.20
-- Tier 1 drops Codex/GPT-4o — acceptable for 1-2 file changes where architectural review adds minimal value
+- Tier 1 drops GPT-4o entirely — acceptable for 1-2 file changes
+- GPT-4o cost is the same regardless of role (Architecture vs Completeness) — the routing only changes the prompt, not the model or token cap
 
 ## Debugging
 
