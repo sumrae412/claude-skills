@@ -1005,3 +1005,5 @@ Jinja2 templates accessing model attributes (e.g., `member.is_primary`) render a
 - [ ] Visibility toggling uses ONE mechanism per file (`style.display` OR `classList.add/remove('hidden')`, not both); `grep -c` both patterns to verify
 - [ ] Vue apps with header/toolbar elements outside the mount point have explicit DOM bridging (`getElementById` + `$watch` in `mounted()`)
 - [ ] Store setters that accept external data normalize legacy field formats to the current schema (e.g., `delay_days` → `timing_config`)
+- [ ] Modules with multiple `addEventListener` calls use an `AbortController` + `{ signal }` option for bulk cleanup on teardown/reinit; call `controller.abort()` before re-attaching (ref: `email-compose-modal.js`)
+- [ ] Inline `<script>` blocks in Jinja templates that do NOT reference `{{ }}` variables are extracted to external `.js` files with `defer` for browser caching (ref: `base.html` → `app-init.js`, 1,779 lines extracted)
