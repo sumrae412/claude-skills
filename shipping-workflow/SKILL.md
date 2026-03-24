@@ -78,9 +78,29 @@ Run the **10-step review process** on the PR. Prefer running this in the backgro
 
 **Full procedure:** See [reference.md](reference.md) for the 10 steps (eligibility → staleness → sweep → deep-dive triggers → conditional analysis → merge findings → re-check → fix → CI gate → ship), scoring rubric, false positive filters, and project-level customization (CI command, defensive patterns, deep-dive triggers).
 
+### Stage 4.5: Merge Verification Gate
+
+<HARD-GATE>Do not proceed to cleanup until the PR is confirmed merged or the user explicitly acknowledges it is unmerged.</HARD-GATE>
+
+After review completes and CI passes, verify the PR was actually merged:
+
+```bash
+gh pr view <number> --json state --jq '.state'
+```
+
+- **MERGED** → proceed to Stage 5.
+- **OPEN** → The PR was created and reviewed but never merged. This is the exact scenario that causes orphaned PRs. You MUST either:
+  1. Merge it now: `gh api -X PUT repos/{owner}/{repo}/pulls/{number}/merge -f merge_method=squash`
+  2. Or explicitly warn the user: "PR #N is still open and unmerged. If this session ends now, the fix will be orphaned. Merge now or acknowledge you'll handle it later."
+
+  **Do not silently proceed to cleanup with an unmerged PR.** Wait for the user's decision.
+- **CLOSED** → Warn: PR was closed without merging. Ask if this was intentional.
+
+**Why this gate exists:** PR #286 was created, reviewed, but never merged. The session ended, the worktree was cleaned up, and the fix was orphaned for days. This gate prevents that.
+
 ### Stage 5: Cleanup
 
-After the review agent is launched (or after merge if merge is deferred), delegate to `/cleanup` which handles the remaining steps in the correct order:
+After the PR is confirmed merged (or the user explicitly acknowledges unmerged status), delegate to `/cleanup` which handles the remaining steps in the correct order:
 - Session learnings (captures patterns, gotchas, skill/CLAUDE.md updates)
 - Wait for session-learnings proposals to resolve
 - Sync config/skills/memory repos (commit+push changes from session-learnings)

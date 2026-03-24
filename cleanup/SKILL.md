@@ -166,7 +166,28 @@ git push origin --delete "$CURRENT_BRANCH" 2>/dev/null || true
 
 Proceed to **Step 7** (worktree cleanup). **Skip session-learnings and repo sync.**
 
-## Step 4.5: Build Verification (Options 1 & 2 only)
+## Step 4.5: PR Merge Verification (Options 1 & 2 only)
+
+<HARD-GATE>Before tearing down a worktree, verify any associated PR was actually merged — not just created.</HARD-GATE>
+
+After executing Option 1 or 2, check if the current branch has an open PR:
+
+```bash
+# Check for open PR on this branch
+BRANCH=$(git branch --show-current)
+PR_STATE=$(gh pr view "$BRANCH" --json state --jq '.state' 2>/dev/null || echo "NONE")
+```
+
+- **MERGED** → safe to proceed with build verification and teardown.
+- **OPEN** (Option 1 — was supposed to merge) → Something went wrong. Attempt merge or warn user.
+- **OPEN** (Option 2 — PR was just created) → **Warn explicitly:**
+  "PR #N is open but unmerged. If this session ends, the work may be orphaned. The session-start hook will flag it, but consider merging now if ready."
+  Wait for user acknowledgment before proceeding to worktree teardown.
+- **NONE** → No PR exists (e.g., direct merge). Proceed normally.
+
+**Why this exists:** PR #286 was created via Option 2, the worktree was torn down, and the session ended. The PR sat unmerged for days because no one checked. This gate ensures cleanup never silently walks away from unmerged work.
+
+## Step 4.6: Build Verification (Options 1 & 2 only)
 
 After pushing code, verify the build succeeds before proceeding to cleanup:
 
@@ -285,7 +306,8 @@ This skill works for regular branches too — it just skips Step 7. The git clea
 ## Common Mistakes to Avoid
 
 - **Skipping build verification** — always confirm CI/deploy passes before tearing down the worktree
-- **Pausing between steps after shipping** — Steps 4.5→5→6→7 should flow continuously after the user picks an option. Only Step 7 (worktree removal) needs explicit confirmation
+- **Pausing between steps after shipping** — Steps 4.5→4.6→5→6→7 should flow continuously after the user picks an option. Only Step 7 (worktree removal) needs explicit confirmation
+- **Tearing down worktree with unmerged PR** — Always check PR state before removing the worktree. An open PR + removed worktree = orphaned work that no one remembers to merge
 - **Skipping cleanup for non-project work** — even if the worktree has no project repo changes (e.g., work was in skills or config repos), still run session-learnings, sync repos, and tear down the worktree
 - **Skipping test verification** — always verify before offering options
 - **Manual `git worktree remove`** — use `ExitWorktree` tool instead, it handles session state correctly
