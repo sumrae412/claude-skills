@@ -105,6 +105,21 @@ Strike 1: new hypothesis, minimal test. Strike 2: boundary instrumentation. Stri
 
 ---
 
+## Phase 5B: Fix-What-You-Find Checkpoint
+
+<HARD-GATE>Before committing or proceeding to review, address all discovered issues.</HARD-GATE>
+
+Before moving to Phase 6A, enumerate and address issues found during this session:
+
+1. **List** all warnings, lint errors, test failures, deprecation notices, or code smells encountered during Phases 2-5 — even pre-existing ones unrelated to the current task.
+2. **Triage** each: FIX (can resolve now) or DEFER (out of scope — requires separate PR). Justify each DEFER.
+3. **Fix** all FIX items before proceeding. Run `./scripts/quick_ci.sh` to confirm clean.
+4. **Log** any DEFER items as a TodoWrite reminder for follow-up.
+
+Skip only if FAST PATH and `quick_ci.sh` already passed inline.
+
+---
+
 ## Phase 6A: Quality Gate
 
 **Evidence first:** diff analysis, dependency graph, test coverage delta, boundary check.
