@@ -285,6 +285,8 @@ This skill works for regular branches too — it just skips Step 7. The git clea
 ## Common Mistakes to Avoid
 
 - **Skipping build verification** — always confirm CI/deploy passes before tearing down the worktree
+- **Pausing between steps after shipping** — Steps 4.5→5→6→7 should flow continuously after the user picks an option. Only Step 7 (worktree removal) needs explicit confirmation
+- **Skipping cleanup for non-project work** — even if the worktree has no project repo changes (e.g., work was in skills or config repos), still run session-learnings, sync repos, and tear down the worktree
 - **Skipping test verification** — always verify before offering options
 - **Manual `git worktree remove`** — use `ExitWorktree` tool instead, it handles session state correctly
 - **Forgetting to push before removing worktree** — Option 2 must push first or the branch is lost
