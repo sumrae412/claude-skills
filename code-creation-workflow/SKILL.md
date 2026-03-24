@@ -149,6 +149,8 @@ Pre-ship: not on protected branch, no uncommitted changes. Doc checklist: API do
 3. **Keep branch** → `/cleanup` with keep.
 4. **Discard** → requires confirmation → `/cleanup` with discard.
 
+**Build gate:** `/cleanup` verifies CI/deploy success before worktree teardown. If build fails, cleanup halts — worktree stays alive for fixes.
+
 Session-learnings fires for ALL paths. FAST PATH without cleanup: fire session-learnings directly in background.
 
 ---

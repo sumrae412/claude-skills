@@ -166,6 +166,32 @@ git push origin --delete "$CURRENT_BRANCH" 2>/dev/null || true
 
 Proceed to **Step 7** (worktree cleanup). **Skip session-learnings and repo sync.**
 
+## Step 4.5: Build Verification (Options 1 & 2 only)
+
+After pushing code, verify the build succeeds before proceeding to cleanup:
+
+1. **CI pipeline:** If the project has CI (GitHub Actions), check it:
+   ```bash
+   # Check latest workflow run on the branch
+   gh run list --branch "<branch>" --limit 1 --json status,conclusion
+   # If status is "in_progress", wait and re-check (up to 2 minutes)
+   ```
+
+2. **Railway deploy** (if applicable):
+   ```bash
+   # Use Railway MCP: list-deployments tool
+   # Check latest deployment status for FAILED vs SUCCESS
+   ```
+
+3. **Gate logic:**
+   - **Build passes** → proceed to Step 5
+   - **Build fails** → **STOP.** Report the failure with logs/error details. Do NOT proceed to session-learnings or worktree teardown. The user needs the worktree to fix the issue. Offer to help diagnose.
+   - **Build pending (>2 min)** → Ask user: wait longer, proceed anyway, or keep worktree until build confirms.
+
+**Why this matters:** Tearing down the worktree before confirming a successful build means you lose the local environment needed to iterate on fixes. A failed deploy with no worktree forces a full context rebuild.
+
+---
+
 ## Step 5: Session Learnings
 
 **After Options 1 or 2 only** (work was shipped or PR'd):
@@ -258,6 +284,7 @@ This skill works for regular branches too — it just skips Step 7. The git clea
 
 ## Common Mistakes to Avoid
 
+- **Skipping build verification** — always confirm CI/deploy passes before tearing down the worktree
 - **Skipping test verification** — always verify before offering options
 - **Manual `git worktree remove`** — use `ExitWorktree` tool instead, it handles session state correctly
 - **Forgetting to push before removing worktree** — Option 2 must push first or the branch is lost
