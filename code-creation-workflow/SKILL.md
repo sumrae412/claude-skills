@@ -23,6 +23,8 @@ These skills' behaviors are already embedded in the phases below. Invoking them 
 
 Agentic multi-phase workflow for building features. Uses parallel subagents for exploration and architecture, TDD for implementation, and parallel reviewers for quality. Replaces manual grep-and-plan with structured agent orchestration.
 
+**This workflow is project-agnostic.** It works for any codebase or greenfield project, not just CourierFlow. Phase 0 adapts to whatever project context exists (CLAUDE.md, core skills, etc.). For greenfield projects with no existing codebase, skip Phase 2 exploration and go straight to clarification and architecture. All phases (discovery, competing architectures, TDD, review) apply universally.
+
 **Announce:** "Running code-creation-workflow — loading context, exploring codebase, then building with you."
 
 ---
