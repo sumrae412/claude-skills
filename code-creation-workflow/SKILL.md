@@ -513,7 +513,7 @@ MEDIUM/LOW findings defer to Phase 6 review. Agents that ran in Phase 5 are **sk
 
 ## Phase 6: Quality + Finish
 
-### 4-Tier Cascading Review
+### 5-Tier Cascading Review
 
 Reviews are structured as a cascade: CodeRabbit runs first (broad, fast), then specialized agents fill gaps CodeRabbit can't cover. This replaces the previous all-parallel approach — fewer agents, fewer tokens, same coverage.
 
@@ -645,7 +645,6 @@ Invoke `session-learnings` skill:
 | 0 | Context | — | Trigger matrix → load relevant skills only | None |
 | 1 | Discovery | — | 4-path triage (fast/clone/lite/full) | Auto |
 | 2 | Exploration | **opus** | 2-3 parallel code-explorer subagents + repomix + context hydration | **Context hydration** |
-| — | Context Pruning | — | Strip accumulated context before execution phases | Auto |
 | 3 | Clarification | — | Surface all ambiguities + optional PRP export | **User answers** |
 | 4 | Architecture | **opus** | 2 parallel code-architect subagents | **User chooses** |
 | 4b | Debate Review | **sonnet** | Tri-model adversarial plan review (required) | **Debate-team passes** |
