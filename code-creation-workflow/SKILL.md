@@ -556,7 +556,7 @@ Invoke `session-learnings` skill:
 |-------|------|-------|-------------|------|
 | 0 | Context | — | Trigger matrix → load relevant skills only | None |
 | 1 | Discovery | — | Fast-path escape for small changes | Auto |
-| 2 | Exploration | **opus** | 2-3 parallel code-explorer subagents | None |
+| 2 | Exploration | **opus** | 2-3 parallel code-explorer subagents + context hydration | **Context hydration** |
 | 3 | Clarification | — | Surface all ambiguities + optional PRP export | **User answers** |
 | 4 | Architecture | **opus** | 2 parallel code-architect subagents | **User chooses + approves plan** |
 | 5 | Implementation | **sonnet** | TDD per step + parallel dispatch | Tests pass |
@@ -632,6 +632,7 @@ Invoke `session-learnings` skill:
 |---------|-----|
 | Skipping Phase 0 context loading | Always load project context first |
 | Exploring sequentially instead of parallel | Use 2-3 explorer subagents |
+| Proceeding to clarification with only explorer summaries | Context hydration is a hard gate — main session must read top 5-10 files firsthand before Phase 3 |
 | Coding before clarification | Phase 3 is a hard gate — resolve ambiguities first |
 | Single architecture proposal | Always present 2 options (simplicity vs separation) |
 | Writing tests after code | TDD — test first, then implement |
