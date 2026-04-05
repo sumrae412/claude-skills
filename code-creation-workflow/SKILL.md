@@ -1,23 +1,10 @@
 ---
 name: code-creation-workflow
-description: PRIMARY workflow for ALL feature development and implementation. SUPERSEDES brainstorming, writing-plans, executing-plans, test-driven-development, plancraft, and feature-dev — do NOT use those individually when this skill is available. Trigger on any request to build, implement, add, create, or fix features. Includes parallel exploration, architecture, TDD, and review as unified phases.
+description: Use when creating new features, implementing complex changes, or executing implementation plans. Agentic workflow with parallel subagents for exploration, architecture, implementation, and review.
 user-invocable: true
 ---
 
 # Code Creation Workflow
-
-<SUPERSEDES>
-This skill is the unified orchestrator for all feature development. When this skill is active, do NOT separately invoke:
-- superpowers:brainstorming (absorbed → Phases 1-3)
-- superpowers:writing-plans (absorbed → Phase 4)
-- superpowers:executing-plans (absorbed → Phase 5)
-- superpowers:test-driven-development (absorbed → Phase 5, per-step TDD)
-- superpowers:subagent-driven-development (absorbed → Phase 5, parallel dispatch)
-- plancraft (absorbed → Phase 4 optional AI review)
-- feature-dev:feature-dev (replaced entirely)
-
-These skills' behaviors are already embedded in the phases below. Invoking them separately causes duplicate work and broken flow.
-</SUPERSEDES>
 
 ## Overview
 
@@ -26,6 +13,24 @@ Agentic multi-phase workflow for building features. Uses parallel subagents for 
 **This workflow is project-agnostic.** It works for any codebase or greenfield project, not just CourierFlow. Phase 0 adapts to whatever project context exists (CLAUDE.md, core skills, etc.). For greenfield projects with no existing codebase, skip Phase 2 exploration and go straight to clarification and architecture. All phases (discovery, competing architectures, TDD, review) apply universally.
 
 **Announce:** "Running code-creation-workflow — loading context, exploring codebase, then building with you."
+
+---
+
+## Model Strategy
+
+Use **Opus** for thinking-heavy phases (exploration, architecture, planning) and **Sonnet** for execution-heavy phases (implementation, review). This optimizes for deep reasoning where it matters and fast throughput where speed wins.
+
+| Phase | Model | Why |
+|-------|-------|-----|
+| 0 Context | (main session) | Lightweight loading |
+| 1 Discovery | (main session) | Quick triage decision |
+| 2 Exploration | **opus** | Deep codebase analysis needs reasoning |
+| 3 Clarification | (main session) | Interactive with user |
+| 4 Architecture | **opus** | Architectural decisions need deep reasoning |
+| 5 Implementation | **sonnet** | Execution speed — patterns are known by now |
+| 6 Review | **sonnet** | Pattern-matching against conventions |
+
+When dispatching subagents, pass `model: "opus"` or `model: "sonnet"` on the Agent tool call to enforce this.
 
 ---
 
@@ -70,10 +75,11 @@ Load **only** what matches. Don't dump everything into context.
 
 | Condition | Action |
 |-----------|--------|
-| Feature uses external API | `chub search <service>` → `chub get <doc-id>` |
-| Codebase >500 files or unfamiliar | Run `python scripts/generate_repo_outline.py app/` for token-efficient context |
+| Feature uses external API | **REQUIRED:** Invoke `/fetch-api-docs` skill to get current API docs from Context Hub before any implementation. Do NOT code against external APIs from memory — formats change. |
+| Codebase >500 files or unfamiliar | Run `python scripts/generate_repo_outline.py app/` for token-efficient context, or `repomix --compress` |
 | Need symbol-level precision | Activate Serena project, read relevant memories |
-| Small familiar codebase | Skip context tools |
+| MCP-heavy exploration (DB queries, Figma imports) | Set `MAX_MCP_OUTPUT_TOKENS=50000` to prevent truncated MCP responses that degrade exploration quality |
+| Small familiar codebase | Skip all |
 
 **Token-saving tools available:**
 - `generate_repo_outline.py` — Extracts function/class signatures without bodies (use for AI context)
@@ -104,7 +110,7 @@ Check for signal files/dirs per the `references/hook-templates.md` reference. Bu
 ### Step 2: Generate hooks.json
 
 Using the template library:
-- **Always** include Tier 1 (universal) hooks — session context, pre-compaction, post-commit memory, worktree guard
+- **Always** include Tier 1 (universal) hooks — session context, **pre-compaction transcript backup**, post-commit memory, worktree guard
 - Include Tier 2 hooks where stack tags match conditions (e.g., `has-env` → .env blocker, `ruff` → linter-on-save)
 - Write to `$PROJECT/.claude/hooks.json`
 
@@ -194,7 +200,7 @@ Launch 2-3 **code-explorer** subagents in parallel to understand the codebase:
    Present summary of codebase understanding to user
 ```
 
-**Subagent dispatch:** Use the Task tool with `subagent_type` of `feature-dev:code-explorer` or `Explore`. Each agent gets a focused prompt describing what to find.
+**Subagent dispatch:** Use the Agent tool with `subagent_type: "feature-dev:code-explorer"` or `"Explore"` and **`model: "opus"`**. Each agent gets a focused prompt describing what to find.
 
 **Serena integration:** When agents identify symbols to trace, use `find_symbol` / `find_referencing_symbols` instead of grep chains. Use `write_memory` to persist discoveries for cross-session continuity.
 
@@ -220,6 +226,45 @@ Review exploration findings against the original request. Identify **every** und
 Present an organized question list to the user. Group questions by category. Wait for answers before proceeding.
 
 **If no ambiguities exist** (rare — usually means the request is very well-specified), state that explicitly and proceed to Phase 4.
+
+### Optional: Export Context Packet (PRP)
+
+After clarification is complete, optionally save a **Product Requirement Prompt (PRP)** — a reusable context packet that survives across sessions. A PRP is the minimum viable packet an AI needs to ship production-ready code on the first pass: requirements + curated codebase intelligence + implementation constraints.
+
+**Trigger conditions** (export if ANY apply):
+- Feature is complex enough to span multiple sessions
+- User says "save context", "export this", or "I'll continue later"
+- Task involves 3+ integration points or schema changes
+
+**PRP format** — write to `plans/PRP-<feature-slug>.md`:
+
+```markdown
+# PRP: <Feature Name>
+**Created:** <date> | **Status:** ready-for-implementation
+
+## Requirements
+- <resolved requirements from clarification>
+- <scope boundaries — what's explicitly OUT>
+
+## Codebase Intelligence
+- **Key files:** <5-10 files from exploration with their roles>
+- **Patterns to follow:** <discovered conventions from Phase 2>
+- **Integration points:** <systems this touches>
+
+## Constraints & Edge Cases
+- <resolved edge cases from Phase 3>
+- <performance considerations>
+- <backward compatibility notes>
+
+## Implementation Notes
+- <API docs fetched (if applicable)>
+- <defensive patterns required>
+- <test strategy hints>
+```
+
+**How it's consumed:** Phase 1 Discovery detects PRP files via the PLAN PATH branch. A PRP provides richer context than a bare plan — it includes the codebase intelligence that would otherwise require re-running Phase 2 exploration.
+
+If not triggered, skip — most single-session features don't need this.
 
 ---
 
@@ -249,7 +294,7 @@ Launch 2 **code-architect** subagents in parallel with different optimization ta
    ◆ USER CHOOSES architecture (A, B, or hybrid) ◆
 ```
 
-**Subagent dispatch:** Use the Task tool with `subagent_type` of `feature-dev:code-architect`. Each gets the exploration findings + clarification answers + a clear optimization directive.
+**Subagent dispatch:** Use the Agent tool with `subagent_type: "feature-dev:code-architect"` and **`model: "opus"`**. Each gets the exploration findings + clarification answers + a clear optimization directive.
 
 ### Write Implementation Plan
 
@@ -283,6 +328,21 @@ If not triggered: Skip. The parallel architect approach already provides design 
 <HARD-GATE>
 User must approve the plan before any implementation begins.
 </HARD-GATE>
+
+### Pre-Implementation: Fetch External API Docs
+
+<HARD-GATE>
+If ANY plan step involves calling an external API (Google Calendar, Twilio, OpenAI, DocuSeal, Stripe, etc.), invoke `/fetch-api-docs` BEFORE writing code. Do NOT code against external APIs from memory — endpoints, request formats, and auth patterns change between versions. This gate applies even if you loaded the integrations skill in Phase 0.
+</HARD-GATE>
+
+```
+Plan step touches external API?
+  YES → Invoke /fetch-api-docs skill
+      → Fetch current docs from Context Hub (or web if unavailable)
+      → Verify: endpoints, auth method, request/response shapes, rate limits
+      → Pass verified API contract to implementation subagents
+  NO  → Skip, proceed to implementation
+```
 
 ### Create TodoWrite Items
 
@@ -320,12 +380,24 @@ When the plan has 3+ steps with no dependencies between them:
 
 ```
 Use subagent-driven-development skill:
-  → Dispatch parallel implementation agents
+  → Dispatch parallel implementation agents with model: "sonnet"
   → Each follows the same TDD + defensive pattern
   → Merge results when all complete
 ```
 
 Only parallelize truly independent work — shared state or sequential dependencies must stay sequential.
+
+### Conditional Specialist Reviews (During Implementation)
+
+When a plan step produces code matching a specialist's domain, dispatch the specialist immediately (**sonnet**, background) before proceeding to the next step:
+
+| Trigger | Agent | Action on CRITICAL |
+|---------|-------|--------------------|
+| Alembic migration file created/modified | `migration-reviewer` | Fix before next step |
+| Google Calendar/Drive/Gmail API code | `google-api-reviewer` | Fix before next step |
+| `async def` with I/O operations | `async-reviewer` | Fix before next step |
+
+MEDIUM/LOW findings defer to Phase 6 review. Agents that ran in Phase 5 are **skipped** in Phase 6 (no double review).
 
 ### Best Practices Applied Throughout
 
@@ -344,24 +416,74 @@ Only parallelize truly independent work — shared state or sequential dependenc
 
 ## Phase 6: Quality + Finish
 
-### Parallel Review
+### 4-Tier Parallel Review
 
-Launch 2 **code-reviewer** subagents in parallel:
+Dispatch all applicable agents in a single parallel batch with **`model: "sonnet"`**. Each gets the diff + the plan + project conventions.
 
-```
-┌──────────────────────────────────────────────────┐
-│ Reviewer A: "Check for bugs, logic errors,       │
-│  security vulnerabilities, race conditions"      │
-│                                                   │
-│ Reviewer B: "Check adherence to project          │
-│  conventions, patterns, style, and the plan"     │
-└──────────────────────────────────────────────────┘
-                    │
-                    ▼
-   Fix any HIGH-priority issues found
-```
+**Tier 1 — Core (always run):**
 
-**Subagent dispatch:** Use the Task tool with `subagent_type` of `feature-dev:code-reviewer`. Each gets the diff + the plan + project conventions.
+| Agent | `subagent_type` | Focus |
+|-------|-----------------|-------|
+| Reviewer A | `feature-dev:code-reviewer` | Bugs, logic errors, race conditions |
+| Reviewer B | `feature-dev:code-reviewer` | Conventions, patterns, plan adherence |
+| Silent Failure Hunter | `pr-review-toolkit:silent-failure-hunter` | Swallowed errors, empty catches, hidden failures |
+| Security Reviewer | `security-reviewer` | Auth, data exposure, injection, OWASP |
+| QA Edge-Case Reviewer | `pr-review-toolkit:pr-test-analyzer` | Test coverage gaps, missing edge cases, untested error paths |
+
+**Tier 2 — Conditional (skip if already ran in Phase 5):**
+
+| Condition | Agent | `subagent_type` |
+|-----------|-------|-----------------|
+| New/modified Alembic migrations | Migration Reviewer | `migration-reviewer` |
+| Google API integration code | Google API Reviewer | `google-api-reviewer` |
+| Async code paths | Async Reviewer | `async-reviewer` |
+| New types/models/Pydantic schemas | Type Design Analyzer | `pr-review-toolkit:type-design-analyzer` |
+| New/modified API routes | API Doc Auditor | `api-doc-auditor` |
+
+**Tier 3 — Domain (always for CourierFlow projects):**
+
+| Agent | `subagent_type` | Focus |
+|-------|-----------------|-------|
+| Invariant Checker | `courierflow-invariant-checker` | Client sync, column names, query safety, eager loading |
+| Defensive Verifier | `defensive-pattern-verifier` | Guard clauses, error handling, UI state management |
+
+**Tier 4 — Design Review (when UI was modified):**
+
+<SKIP-CONDITION>
+Skip if no templates, CSS, HTML, or JS files were modified in this feature.
+</SKIP-CONDITION>
+
+Dispatch a design-review agent that tests the **live rendered UI**, not just the code. Uses Claude Preview or Playwright MCP to interact with the running application.
+
+| Agent | `subagent_type` | Focus |
+|-------|-----------------|-------|
+| Design Reviewer | `general-purpose` | Visual consistency, responsiveness, accessibility, interaction quality |
+
+**Design Reviewer prompt must include these 5 checks:**
+
+1. **Interaction & User Flow** — Execute the primary user flow. Test hover/active/disabled states. Verify destructive action confirmations. Assess perceived performance.
+2. **Responsiveness** — Test at desktop (1440px), tablet (768px), and mobile (375px) viewports. Verify no overflow, no horizontal scroll, touch targets adequate.
+3. **Visual Polish** — Layout alignment, spacing consistency, typography hierarchy, color palette adherence, visual hierarchy guides attention correctly.
+4. **Accessibility (WCAG 2.1 AA)** — Keyboard navigation (Tab order), visible focus states, Enter/Space activation, semantic HTML, form labels, alt text, color contrast (4.5:1 minimum).
+5. **Robustness** — Form validation with invalid inputs, content overflow, loading/empty/error states rendered correctly.
+
+**Design Review triage levels:**
+- **[Blocker]** — Critical failures (broken flow, inaccessible, overflow at standard viewport)
+- **[High-Priority]** — Fix before merge (contrast failure, missing focus state, broken responsive layout)
+- **[Medium-Priority]** — Follow-up task (minor spacing inconsistency, polish items)
+- **[Nitpick]** — Aesthetic preference (prefix with "Nit:")
+
+**Prerequisites:** The dev server must be running for the design reviewer to work. If using Claude Preview, ensure `preview_start` is configured in `.claude/launch.json`. If the server can't be started, fall back to code-only review and note that visual testing was skipped.
+
+**Merge & fix:** Collect all findings across all tiers, deduplicate, fix HIGH+ issues (including Design Review Blockers and High-Priority). Post summary of findings to user.
+
+### Post-Review Simplifier
+
+After fixing review issues, run a single code-simplifier pass before the verification gate:
+- Dispatch `code-simplifier:code-simplifier` (inherits **opus** per plugin spec)
+- Scope: only files modified during this feature
+- Accept changes only if tests still pass afterward
+- Skip for trivial changes (single-file edits, config tweaks)
 
 ### Static Analysis Gate
 
@@ -389,17 +511,16 @@ Invoke `verification-before-completion` skill:
 - No regressions in existing functionality?
 - Static analysis passes (no ERROR-level issues)?
 
-### Auto-Ship
+**Optional: Headless CI validation** — If the project has a CI pipeline (GitHub Actions, etc.), run `claude -p "Review the diff on this branch for issues"` as a headless smoke check before creating the PR. This catches issues that local tests miss (linting configs, CI-specific checks). Skip if no CI is configured.
 
-After verification passes, invoke `/ship` directly — do NOT go through `finishing-a-development-branch`'s option menu. The user chose to implement; shipping is the expected outcome.
+### Finish Branch
 
-`/ship` handles:
-1. Commit with conventional message
-2. Push and create PR
-3. Launch background review agent (CodeRabbit + defensive patterns + CI + cherry-pick to main)
-4. Session learnings capture
-
-**No user prompt needed** — verification passing IS the gate. Ship runs automatically.
+Invoke `finishing-a-development-branch` skill:
+1. Run full test suite (`pytest tests/ -v` or project equivalent)
+2. **CourierFlow:** Run `./scripts/quick_ci.sh` or `just ci`
+3. Commit with conventional message
+4. Present options: merge, PR, keep branch, discard
+5. Execute user's choice
 
 ### Capture Learnings
 
@@ -412,20 +533,41 @@ Invoke `session-learnings` skill:
 
 ## Quick Reference: All Phases
 
-| Phase | Name | Key Pattern | Gate |
-|-------|------|-------------|------|
-| 0 | Context | Trigger matrix → load relevant skills only | None |
-| 1 | Discovery | Fast-path escape for small changes | Auto |
-| 2 | Exploration | 2-3 parallel code-explorer subagents | None |
-| 3 | Clarification | Surface all ambiguities | **User answers** |
-| 4 | Architecture | 2 parallel code-architect subagents | **User chooses + approves plan** |
-| 5 | Implementation | TDD per step + parallel dispatch | Tests pass |
-| 6 | Quality + Auto-Ship | Parallel reviewers → verify → `/ship` (no menu) | **Verification** |
+| Phase | Name | Model | Key Pattern | Gate |
+|-------|------|-------|-------------|------|
+| 0 | Context | — | Trigger matrix → load relevant skills only | None |
+| 1 | Discovery | — | Fast-path escape for small changes | Auto |
+| 2 | Exploration | **opus** | 2-3 parallel code-explorer subagents | None |
+| 3 | Clarification | — | Surface all ambiguities + optional PRP export | **User answers** |
+| 4 | Architecture | **opus** | 2 parallel code-architect subagents | **User chooses + approves plan** |
+| 5 | Implementation | **sonnet** | TDD per step + parallel dispatch | Tests pass |
+| 6 | Quality + Finish | **sonnet** | 4-tier parallel reviewers → verify → commit | **Verification** |
+
+## Agents Used Within This Workflow
+
+| Agent | `subagent_type` | Phase | Trigger | Model |
+|-------|-----------------|-------|---------|-------|
+| Code Explorer (x2-3) | `feature-dev:code-explorer` | 2 | Always | opus |
+| Code Architect (x2) | `feature-dev:code-architect` | 4 | Always | opus |
+| Migration Reviewer | `migration-reviewer` | 5, 6 | Alembic files | sonnet |
+| Google API Reviewer | `google-api-reviewer` | 5, 6 | Google API code | sonnet |
+| Async Reviewer | `async-reviewer` | 5, 6 | async I/O code | sonnet |
+| Code Reviewer (x2) | `feature-dev:code-reviewer` | 6 | Always | sonnet |
+| Silent Failure Hunter | `pr-review-toolkit:silent-failure-hunter` | 6 | Always | sonnet |
+| Security Reviewer | `security-reviewer` | 6 | Always | sonnet |
+| QA Edge-Case Reviewer | `pr-review-toolkit:pr-test-analyzer` | 6 | Always | sonnet |
+| Design Reviewer | `general-purpose` | 6 | UI files modified | sonnet |
+| Type Design Analyzer | `pr-review-toolkit:type-design-analyzer` | 6 | New types/models | sonnet |
+| API Doc Auditor | `api-doc-auditor` | 6 | New/modified routes | sonnet |
+| Invariant Checker | `courierflow-invariant-checker` | 6 | Always (CF projects) | sonnet |
+| Defensive Verifier | `defensive-pattern-verifier` | 6 | Always (CF projects) | sonnet |
+| Code Simplifier | `code-simplifier:code-simplifier` | 6 | After review fixes | opus |
 
 ## Skills Invoked Within This Workflow
 
 | Skill | Where Used |
 |-------|-----------|
+| fetch-api-docs | Phase 5 (pre-implementation gate for external APIs) |
 | coding-best-practices | Phase 0 (loaded), Phase 5 (applied) |
 | defensive-ui-flows | Phase 0 (loaded), Phase 5 (applied) |
 | defensive-backend-flows | Phase 0 (loaded), Phase 5 (applied) |
@@ -434,7 +576,7 @@ Invoke `session-learnings` skill:
 | test-driven-development | Phase 5 (TDD per step) |
 | subagent-driven-development | Phase 5 (parallel independent steps) |
 | verification-before-completion | Phase 6 (pre-finish check) |
-| `/ship` (direct, no menu) | Phase 6 (auto-ship after verification → review → merge) |
+| finishing-a-development-branch | Phase 6 (branch completion) |
 | session-learnings | Phase 6 (capture discoveries) |
 
 ## Static Analysis Tools (Automatic)
@@ -475,6 +617,6 @@ Invoke `session-learnings` skill:
 | Single architecture proposal | Always present 2 options (simplicity vs separation) |
 | Writing tests after code | TDD — test first, then implement |
 | Not finishing the branch | Always run Phase 6 to completion |
-| Guessing external API patterns | Fetch docs: `chub get <api-id>` |
+| Guessing external API patterns | **Hard gate:** Invoke `/fetch-api-docs` before any API implementation — never code from memory |
 | Multiple grep iterations for a symbol | Use Serena `find_symbol` or `find_referencing_symbols` |
 | Re-discovering context each session | Use Serena `write_memory` / `read_memory` |
