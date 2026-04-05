@@ -18,7 +18,7 @@ Agentic multi-phase workflow for building features. Uses parallel subagents for 
 
 ## Model Strategy
 
-Use **Opus** for thinking-heavy phases (exploration, architecture, planning) and **Sonnet** for execution-heavy phases (implementation, review). This optimizes for deep reasoning where it matters and fast throughput where speed wins.
+Three-tier model routing: **Opus** for thinking-heavy phases, **Sonnet** for execution, **Haiku** for lightweight pattern-matching reviews. This optimizes cost and speed — deep reasoning where it matters, fast throughput for implementation, and cheap passes for convention checks.
 
 | Phase | Model | Why |
 |-------|-------|-----|
@@ -27,10 +27,13 @@ Use **Opus** for thinking-heavy phases (exploration, architecture, planning) and
 | 2 Exploration | **opus** | Deep codebase analysis needs reasoning |
 | 3 Clarification | (main session) | Interactive with user |
 | 4 Architecture | **opus** | Architectural decisions need deep reasoning |
+| 4 Debate Review | **sonnet** | Multi-model plan validation (debate-team dispatches its own models) |
 | 5 Implementation | **sonnet** | Execution speed — patterns are known by now |
-| 6 Review | **sonnet** | Pattern-matching against conventions |
+| 6 CodeRabbit Pass | **sonnet** | Consolidated first-pass review |
+| 6 Deep Review | **sonnet** | Security, silent failures, test coverage |
+| 6 Light Review | **haiku** | Convention checks, defensive patterns, invariants |
 
-When dispatching subagents, pass `model: "opus"` or `model: "sonnet"` on the Agent tool call to enforce this.
+When dispatching subagents, pass `model: "opus"`, `model: "sonnet"`, or `model: "haiku"` on the Agent tool call to enforce this.
 
 ---
 
@@ -76,7 +79,7 @@ Load **only** what matches. Don't dump everything into context.
 | Condition | Action |
 |-----------|--------|
 | Feature uses external API | **REQUIRED:** Invoke `/fetch-api-docs` skill to get current API docs from Context Hub before any implementation. Do NOT code against external APIs from memory — formats change. |
-| Codebase >500 files or unfamiliar | Run `python scripts/generate_repo_outline.py app/` for token-efficient context, or `repomix --compress` |
+| Codebase >500 files or unfamiliar | Run `python scripts/generate_repo_outline.py app/` for signatures + `repomix --compress` for full compressed context |
 | Need symbol-level precision | Activate Serena project, read relevant memories |
 | MCP-heavy exploration (DB queries, Figma imports) | Set `MAX_MCP_OUTPUT_TOKENS=50000` to prevent truncated MCP responses that degrade exploration quality |
 | Small familiar codebase | Skip all |
@@ -147,32 +150,62 @@ User says "implement X"
    │   3. Run tests                                │
    │   4. Commit → done                            │
    │                                               │
-   │ Has EXISTING PLAN file?                       │
+   │ Has EXISTING PLAN file or PRP?                │
    │                                               │
    │ YES → PLAN PATH                               │
-   │   1. Read the plan file                       │
+   │   1. Read the plan/PRP file                   │
    │   2. Skip to Phase 5 (Implementation)         │
    │   3. Execute the plan                         │
    │                                               │
-   │ NO to both → FULL WORKFLOW (continue)         │
+   │ Is there a NEAR-IDENTICAL existing feature?   │
+   │ (quick grep/glob check — 2-3 searches max)    │
+   │                                               │
+   │ YES → CLONE PATH                              │
+   │   1. Read the existing feature code           │
+   │   2. Clone + adapt (skip Phases 2-4)          │
+   │   3. TDD the differences                      │
+   │   4. Run Phase 6 review → done                │
+   │                                               │
+   │ Does this touch ONLY 1-2 files?               │
+   │ (no new endpoints, no schema, no new models)  │
+   │                                               │
+   │ YES → LITE PATH                               │
+   │   1. Read the files directly (skip Phase 2    │
+   │      parallel explorers)                      │
+   │   2. Inline architecture (skip Phase 4        │
+   │      parallel architects — write plan inline) │
+   │   3. TDD implementation                       │
+   │   4. Run Phase 6 review → done                │
+   │                                               │
+   │ NO to all → FULL WORKFLOW (continue)           │
    └─────────────────────────────────────────────┘
 ```
 
-**Fast path criteria:** Typo fix, one-line change, config tweak, single-file edit with no ripple effects. If in doubt, use the full workflow.
+**Path criteria:**
+- **Fast path:** Typo fix, one-line change, config tweak, single-file edit with no ripple effects
+- **Clone path:** Feature X already exists and you're building Feature X' (e.g., "add a delete endpoint" when create/update endpoints already exist)
+- **Lite path:** Contained change touching 1-2 files — doesn't justify 5+ parallel subagents
+- **Full workflow:** Everything else. If in doubt, use the full workflow.
 
 ---
 
 ## Phase 2: Exploration (Parallel Subagents)
 
-### Pre-Exploration: Generate Repo Outline (Token Saver)
+### Pre-Exploration: Compressed Codebase Context (Token Saver)
 
-Before launching explorers, generate a token-efficient codebase map:
+Before launching explorers, generate token-efficient codebase maps using **both** tools:
 
 ```bash
+# Signatures only — function/class headers without bodies
 python scripts/generate_repo_outline.py app/services/ --max-depth 2
+
+# Full compressed context — entire codebase packed into minimal tokens
+repomix --compress --output .repomix-output.txt
 ```
 
-This provides function/class signatures WITHOUT implementation bodies — dramatically reduces tokens while preserving structure awareness. Share this outline with explorer agents.
+**`generate_repo_outline.py`** gives precise signatures for targeted areas. **`repomix --compress`** gives broad codebase awareness in minimal tokens — useful when explorers need to understand cross-cutting concerns or unfamiliar areas. Share both outputs with explorer agents.
+
+For small/familiar codebases, `generate_repo_outline.py` alone is sufficient. For large or unfamiliar codebases, always run both.
 
 ### Launch Explorers
 
@@ -322,23 +355,68 @@ After user chooses, write a structured plan using the `writing-plans` skill:
 - Test requirements per step
 - Dependencies between steps marked clearly
 
-### Optional: PlanCraft AI Review
+### Debate Team Review (Required)
 
-Triggered when:
-- User says "review the plan" or "validate this"
-- Task is high-complexity (3+ layers, schema changes, external API integration)
+<HARD-GATE>
+Every implementation plan must pass debate-team review before user approval. This catches architectural flaws, scope creep, and blind spots that competing proposals alone miss.
+</HARD-GATE>
 
-If triggered:
-1. Run `plancraft_review.py` (DeepSeek + Codex validation)
-2. Present critique and suggestions
-3. Revise plan if needed
-4. Get user re-approval
+After writing the plan, invoke the `debate-team` skill:
 
-If not triggered: Skip. The parallel architect approach already provides design validation through competing proposals.
+1. **DeepSeek Bug-Hunter** — Probes for logic errors, missing edge cases, integration risks
+2. **GPT-4o Architecture Critic** — Challenges structural decisions, separation of concerns, scalability
+3. **Haiku Style Critic** (conditional) — Fires only if DeepSeek and GPT-4o disagree, breaks ties on convention adherence
+
+**Process:**
+1. Pass the implementation plan + chosen architecture + key file context to debate-team
+2. Collect critiques from all models
+3. Present consolidated findings to user alongside the plan
+4. Revise plan to address HIGH+ critiques
+5. If revisions are substantial, re-run debate-team on the revised plan (max 2 iterations)
+
+**What debate-team receives (context-pruned):**
+- The implementation plan
+- The chosen architecture summary (not both options)
+- Key file paths and patterns (from exploration)
+- Resolved requirements (from clarification)
+
+**Triage:**
+- **CRITICAL** — Must fix before approval (architectural flaw, missing requirement, security gap)
+- **HIGH** — Should fix before approval (scope creep, untested edge case, fragile integration)
+- **MEDIUM** — Note for implementation phase (style preference, minor optimization)
+- **LOW** — Informational only (alternative approaches, future considerations)
 
 ```
-◆ USER APPROVES final plan before implementation ◆
+◆ USER APPROVES final plan (post-debate-team) before implementation ◆
 ```
+
+---
+
+## Context Pruning Between Phases
+
+<IMPORTANT>
+Phases 0-4 accumulate significant context (exploration findings, architecture discussions, clarification Q&A). Phases 5-6 don't need all of it. Prune aggressively when dispatching implementation and review subagents.
+</IMPORTANT>
+
+**What to pass to Phase 5 subagents:**
+- The approved implementation plan (numbered steps)
+- Key file paths and their roles (from exploration)
+- Resolved requirements and edge cases (from clarification)
+- Defensive patterns to apply
+- API docs fetched (if applicable)
+
+**What to NOT pass:**
+- Full exploration agent transcripts
+- Rejected architecture option details
+- Phase 0 skill loading decisions
+- Raw clarification Q&A (pass resolved answers only)
+
+**What to pass to Phase 6 reviewers:**
+- The git diff (primary input)
+- The plan (for adherence checking)
+- Project conventions summary (from CLAUDE.md / loaded skills)
+
+**Why this matters:** A subagent dispatched with 50K tokens of pruned context is faster, cheaper, and more focused than one with 150K tokens of accumulated conversation. The plan is the contract — everything else is noise for execution agents.
 
 ---
 
@@ -435,38 +513,48 @@ MEDIUM/LOW findings defer to Phase 6 review. Agents that ran in Phase 5 are **sk
 
 ## Phase 6: Quality + Finish
 
-### 4-Tier Parallel Review
+### 5-Tier Cascading Review
 
-Dispatch all applicable agents in a single parallel batch with **`model: "sonnet"`**. Each gets the diff + the plan + project conventions.
+Reviews are structured as a cascade: CodeRabbit runs first (broad, fast), then specialized agents fill gaps CodeRabbit can't cover. This replaces the previous all-parallel approach — fewer agents, fewer tokens, same coverage.
 
-**Tier 1 — Core (always run):**
+**Tier 1 — CodeRabbit First Pass (always run):**
 
-| Agent | `subagent_type` | Focus |
-|-------|-----------------|-------|
-| Reviewer A | `feature-dev:code-reviewer` | Bugs, logic errors, race conditions |
-| Reviewer B | `feature-dev:code-reviewer` | Conventions, patterns, plan adherence |
-| Silent Failure Hunter | `pr-review-toolkit:silent-failure-hunter` | Swallowed errors, empty catches, hidden failures |
-| Security Reviewer | `security-reviewer` | Auth, data exposure, injection, OWASP |
-| QA Edge-Case Reviewer | `pr-review-toolkit:pr-test-analyzer` | Test coverage gaps, missing edge cases, untested error paths |
+| Agent | `subagent_type` | Model | Focus |
+|-------|-----------------|-------|-------|
+| CodeRabbit | `coderabbit:code-reviewer` | **sonnet** | Consolidated review: bugs, logic errors, conventions, patterns, plan adherence, code quality |
 
-**Tier 2 — Conditional (skip if already ran in Phase 5):**
+CodeRabbit replaces the previous dual `feature-dev:code-reviewer` agents (Reviewer A + B). It covers bugs, conventions, and patterns in a single pass. Wait for CodeRabbit results before dispatching Tier 2.
 
-| Condition | Agent | `subagent_type` |
-|-----------|-------|-----------------|
-| New/modified Alembic migrations | Migration Reviewer | `migration-reviewer` |
-| Google API integration code | Google API Reviewer | `google-api-reviewer` |
-| Async code paths | Async Reviewer | `async-reviewer` |
-| New types/models/Pydantic schemas | Type Design Analyzer | `pr-review-toolkit:type-design-analyzer` |
-| New/modified API routes | API Doc Auditor | `api-doc-auditor` |
+**Tier 2 — Deep Specialists (parallel, always run):**
 
-**Tier 3 — Domain (always for CourierFlow projects):**
+These catch what CodeRabbit doesn't specialize in — dispatch in parallel after Tier 1 completes:
 
-| Agent | `subagent_type` | Focus |
-|-------|-----------------|-------|
-| Invariant Checker | `courierflow-invariant-checker` | Client sync, column names, query safety, eager loading |
-| Defensive Verifier | `defensive-pattern-verifier` | Guard clauses, error handling, UI state management |
+| Agent | `subagent_type` | Model | Focus |
+|-------|-----------------|-------|-------|
+| Silent Failure Hunter | `pr-review-toolkit:silent-failure-hunter` | **sonnet** | Swallowed errors, empty catches, hidden failures |
+| Security Reviewer | `security-reviewer` | **sonnet** | Auth, data exposure, injection, OWASP |
+| QA Edge-Case Reviewer | `pr-review-toolkit:pr-test-analyzer` | **sonnet** | Test coverage gaps, missing edge cases, untested error paths |
 
-**Tier 4 — Design Review (when UI was modified):**
+**Tier 3 — Conditional Specialists (parallel, skip if already ran in Phase 5):**
+
+| Condition | Agent | `subagent_type` | Model |
+|-----------|-------|-----------------|-------|
+| New/modified Alembic migrations | Migration Reviewer | `migration-reviewer` | **sonnet** |
+| Google API integration code | Google API Reviewer | `google-api-reviewer` | **sonnet** |
+| Async code paths | Async Reviewer | `async-reviewer` | **sonnet** |
+| New types/models/Pydantic schemas | Type Design Analyzer | `pr-review-toolkit:type-design-analyzer` | **haiku** |
+| New/modified API routes | API Doc Auditor | `api-doc-auditor` | **haiku** |
+
+**Tier 4 — Lightweight Checks (parallel, haiku):**
+
+Pattern-matching checks that don't need deep reasoning — run on **haiku** for cost efficiency:
+
+| Agent | `subagent_type` | Model | Focus |
+|-------|-----------------|-------|-------|
+| Invariant Checker | `courierflow-invariant-checker` | **haiku** | Client sync, column names, query safety, eager loading (CF projects only) |
+| Defensive Verifier | `defensive-pattern-verifier` | **haiku** | Guard clauses, error handling, UI state management |
+
+**Tier 5 — Design Review (when UI was modified):**
 
 <SKIP-CONDITION>
 Skip if no templates, CSS, HTML, or JS files were modified in this feature.
@@ -494,7 +582,7 @@ Dispatch a design-review agent that tests the **live rendered UI**, not just the
 
 **Prerequisites:** The dev server must be running for the design reviewer to work. If using Claude Preview, ensure `preview_start` is configured in `.claude/launch.json`. If the server can't be started, fall back to code-only review and note that visual testing was skipped.
 
-**Merge & fix:** Collect all findings across all tiers, deduplicate, fix HIGH+ issues (including Design Review Blockers and High-Priority). Post summary of findings to user.
+**Merge & fix:** Collect all findings across all tiers (CodeRabbit + specialists + lightweight + design), deduplicate, fix HIGH+ issues (including Design Review Blockers and High-Priority). Post summary of findings to user.
 
 ### Post-Review Simplifier
 
@@ -555,31 +643,34 @@ Invoke `session-learnings` skill:
 | Phase | Name | Model | Key Pattern | Gate |
 |-------|------|-------|-------------|------|
 | 0 | Context | — | Trigger matrix → load relevant skills only | None |
-| 1 | Discovery | — | Fast-path escape for small changes | Auto |
-| 2 | Exploration | **opus** | 2-3 parallel code-explorer subagents + context hydration | **Context hydration** |
+| 1 | Discovery | — | 4-path triage (fast/clone/lite/full) | Auto |
+| 2 | Exploration | **opus** | 2-3 parallel code-explorer subagents + repomix + context hydration | **Context hydration** |
 | 3 | Clarification | — | Surface all ambiguities + optional PRP export | **User answers** |
-| 4 | Architecture | **opus** | 2 parallel code-architect subagents | **User chooses + approves plan** |
+| 4 | Architecture | **opus** | 2 parallel code-architect subagents | **User chooses** |
+| 4b | Debate Review | **sonnet** | Tri-model adversarial plan review (required) | **Debate-team passes** |
+| — | Context Pruning | — | Pass only plan + key files to execution phases | Auto |
 | 5 | Implementation | **sonnet** | TDD per step + parallel dispatch | Tests pass |
-| 6 | Quality + Finish | **sonnet** | 4-tier parallel reviewers → verify → commit | **Verification** |
+| 6 | Quality + Finish | **sonnet/haiku** | CodeRabbit first pass → cascading specialists → verify → commit | **Verification** |
 
 ## Agents Used Within This Workflow
 
 | Agent | `subagent_type` | Phase | Trigger | Model |
 |-------|-----------------|-------|---------|-------|
-| Code Explorer (x2-3) | `feature-dev:code-explorer` | 2 | Always | opus |
-| Code Architect (x2) | `feature-dev:code-architect` | 4 | Always | opus |
+| Code Explorer (x2-3) | `feature-dev:code-explorer` | 2 | Always (full workflow) | opus |
+| Code Architect (x2) | `feature-dev:code-architect` | 4 | Always (full workflow) | opus |
+| Debate Team | `debate-team` (skill) | 4b | **Always (required)** | sonnet (dispatches own models) |
 | Migration Reviewer | `migration-reviewer` | 5, 6 | Alembic files | sonnet |
 | Google API Reviewer | `google-api-reviewer` | 5, 6 | Google API code | sonnet |
 | Async Reviewer | `async-reviewer` | 5, 6 | async I/O code | sonnet |
-| Code Reviewer (x2) | `feature-dev:code-reviewer` | 6 | Always | sonnet |
-| Silent Failure Hunter | `pr-review-toolkit:silent-failure-hunter` | 6 | Always | sonnet |
-| Security Reviewer | `security-reviewer` | 6 | Always | sonnet |
-| QA Edge-Case Reviewer | `pr-review-toolkit:pr-test-analyzer` | 6 | Always | sonnet |
-| Design Reviewer | `general-purpose` | 6 | UI files modified | sonnet |
-| Type Design Analyzer | `pr-review-toolkit:type-design-analyzer` | 6 | New types/models | sonnet |
-| API Doc Auditor | `api-doc-auditor` | 6 | New/modified routes | sonnet |
-| Invariant Checker | `courierflow-invariant-checker` | 6 | Always (CF projects) | sonnet |
-| Defensive Verifier | `defensive-pattern-verifier` | 6 | Always (CF projects) | sonnet |
+| CodeRabbit | `coderabbit:code-reviewer` | 6 (T1) | Always | sonnet |
+| Silent Failure Hunter | `pr-review-toolkit:silent-failure-hunter` | 6 (T2) | Always | sonnet |
+| Security Reviewer | `security-reviewer` | 6 (T2) | Always | sonnet |
+| QA Edge-Case Reviewer | `pr-review-toolkit:pr-test-analyzer` | 6 (T2) | Always | sonnet |
+| Type Design Analyzer | `pr-review-toolkit:type-design-analyzer` | 6 (T3) | New types/models | haiku |
+| API Doc Auditor | `api-doc-auditor` | 6 (T3) | New/modified routes | haiku |
+| Invariant Checker | `courierflow-invariant-checker` | 6 (T4) | Always (CF projects) | haiku |
+| Defensive Verifier | `defensive-pattern-verifier` | 6 (T4) | Always | haiku |
+| Design Reviewer | `general-purpose` | 6 (T5) | UI files modified | sonnet |
 | Code Simplifier | `code-simplifier:code-simplifier` | 6 | After review fixes | opus |
 
 ## Skills Invoked Within This Workflow
@@ -591,18 +682,21 @@ Invoke `session-learnings` skill:
 | defensive-ui-flows | Phase 0 (loaded), Phase 5 (applied) |
 | defensive-backend-flows | Phase 0 (loaded), Phase 5 (applied) |
 | writing-plans | Phase 4 (plan creation) |
+| **debate-team** | **Phase 4b (required — tri-model adversarial plan review)** |
 | executing-plans | Phase 5 (plan execution) |
 | test-driven-development | Phase 5 (TDD per step) |
 | subagent-driven-development | Phase 5 (parallel independent steps) |
+| **coderabbit:review** | **Phase 6 Tier 1 (consolidated first-pass code review)** |
 | verification-before-completion | Phase 6 (pre-finish check) |
 | finishing-a-development-branch | Phase 6 (branch completion) |
 | session-learnings | Phase 6 (capture discoveries) |
 
-## Static Analysis Tools (Automatic)
+## Static Analysis & Context Tools (Automatic)
 
 | Tool | Where Used | Purpose |
 |------|------------|---------|
-| `generate_repo_outline.py` | Phase 2 (pre-exploration) | Token-efficient codebase context |
+| `generate_repo_outline.py` | Phase 2 (pre-exploration) | Token-efficient signatures (targeted areas) |
+| `repomix --compress` | Phase 2 (pre-exploration) | Full codebase compressed context (broad awareness) |
 | `semgrep` | Phase 5 (per-step), Phase 6 (gate) | Semantic analysis, security checks |
 | `ast-grep` | Phase 5 (per-step), Phase 6 (gate) | Structural anti-pattern detection |
 | `pyright` | Phase 6 (gate) | Fast type checking |
@@ -613,7 +707,8 @@ Invoke `session-learnings` skill:
 |-------------|---------------|
 | plancraft brainstorming | Phases 1-3 (discovery + exploration + clarification) |
 | brainstorming skill | Phases 1-3 (interactive exploration replaces separate brainstorm) |
-| PlanCraft full pipeline | Phase 4 optional AI review only (DeepSeek + Codex) |
+| PlanCraft full pipeline | Replaced by **debate-team** (required Phase 4b) — tri-model adversarial review is more rigorous |
+| Dual code-reviewer agents | Replaced by **CodeRabbit** (Phase 6 Tier 1) — single consolidated pass |
 
 ## Error Recovery
 
@@ -632,9 +727,16 @@ Invoke `session-learnings` skill:
 |---------|-----|
 | Skipping Phase 0 context loading | Always load project context first |
 | Exploring sequentially instead of parallel | Use 2-3 explorer subagents |
+| Skipping `repomix --compress` for large codebases | Always run both repo outline + repomix for unfamiliar codebases |
 | Proceeding to clarification with only explorer summaries | Context hydration is a hard gate — main session must read top 5-10 files firsthand before Phase 3 |
 | Coding before clarification | Phase 3 is a hard gate — resolve ambiguities first |
 | Single architecture proposal | Always present 2 options (simplicity vs separation) |
+| Skipping debate-team review | **Hard gate:** Every plan must pass debate-team before user approval |
+| Passing full conversation to Phase 5-6 subagents | **Context prune:** Pass only plan + key files + resolved requirements |
+| Using full workflow for 1-2 file changes | Use Lite path — skip parallel explorers/architects |
+| Using full workflow when cloning existing feature | Use Clone path — skip Phases 2-4 |
+| Running all Phase 6 reviewers on Sonnet | Convention checks and pattern matching use **haiku** |
+| Running dual code-reviewers in Phase 6 | CodeRabbit replaces both — single consolidated pass |
 | Writing tests after code | TDD — test first, then implement |
 | Not finishing the branch | Always run Phase 6 to completion |
 | Guessing external API patterns | **Hard gate:** Invoke `/fetch-api-docs` before any API implementation — never code from memory |
