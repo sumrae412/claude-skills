@@ -194,7 +194,7 @@ Launch 2-3 **code-explorer** subagents in parallel to understand the codebase:
    Each agent returns key files + structured findings
                     │
                     ▼
-   Read ALL identified files to build deep context
+   ◆ CONTEXT HYDRATION (see below) ◆
                     │
                     ▼
    Present summary of codebase understanding to user
@@ -205,6 +205,25 @@ Launch 2-3 **code-explorer** subagents in parallel to understand the codebase:
 **Serena integration:** When agents identify symbols to trace, use `find_symbol` / `find_referencing_symbols` instead of grep chains. Use `write_memory` to persist discoveries for cross-session continuity.
 
 **Minimum output per explorer:** 5-10 key files, the patterns they follow, and any concerns or constraints discovered.
+
+### Post-Exploration: Context Hydration
+
+<HARD-GATE>
+The main session must read key files firsthand before Phases 3-4. Explorer summaries alone are not enough — the orchestrator needs the actual code in context to ask good clarification questions and evaluate architectures.
+</HARD-GATE>
+
+After explorers return, the **main session** (not a subagent) must:
+
+1. **Deduplicate** — Merge file lists from all explorers, remove duplicates
+2. **Prioritize** — Rank files by how many explorers flagged them (mentioned by 2+ explorers = highest priority)
+3. **Read the top 5-10 files** directly using the Read tool — these are the files that will anchor Phases 3, 4, and 5
+4. **Skim the next 5-10** — Read just the first 50-100 lines (signatures, imports, class structure) for supporting files
+
+**Why this matters:** Subagent findings are summaries — they compress away the details the orchestrator needs for clarification questions (Phase 3) and architecture evaluation (Phase 4). Reading the actual files gives the main session firsthand knowledge of naming conventions, error patterns, data shapes, and integration seams that summaries miss.
+
+**Token budget:** Aim for ~5,000-10,000 lines of firsthand file context. If the feature area is large, prefer reading complete files for the top 5 over skimming 20 files superficially.
+
+**What to pass forward:** The hydrated file contents stay in the main session's context and naturally inform Phases 3 and 4. When dispatching architect subagents in Phase 4, reference specific file paths and patterns you observed — don't just forward explorer summaries.
 
 ---
 
