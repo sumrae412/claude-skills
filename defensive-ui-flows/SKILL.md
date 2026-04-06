@@ -970,6 +970,27 @@ Jinja2 templates accessing model attributes (e.g., `member.is_primary`) render a
 
 ---
 
+## 33. Shadow DOM Event Isolation Must Be on the Host Element
+
+When building UI inside a Shadow DOM (open or closed), keyboard and mouse events still leak to the host page because `composed: true` events (keydown, click, input, etc.) retarget across the shadow boundary. Calling `stopPropagation()` inside the shadow root does NOT prevent the host page from receiving these events.
+
+```javascript
+// BAD — stopPropagation inside shadow root has no effect on composed events
+const shadow = host.attachShadow({ mode: "closed" });
+const drawer = shadow.querySelector(".drawer");
+drawer.addEventListener("keydown", (e) => e.stopPropagation());  // Host page still gets the event
+
+// GOOD — stopPropagation on the host element in the main DOM tree
+document.body.appendChild(host);
+for (const evt of ["mousedown", "click", "keydown", "keypress", "keyup", "input"]) {
+  host.addEventListener(evt, (e) => e.stopPropagation());
+}
+```
+
+**Learned from:** ToneGuard overlay.js — typing in shadow DOM inputs sent keystrokes to Slack's composer. Initial fix inside shadow root failed; had to move to host element.
+
+---
+
 ## Checklist for New UI Code
 
 - [ ] Every guard clause shows feedback (toast, inline, or console)
@@ -1007,3 +1028,5 @@ Jinja2 templates accessing model attributes (e.g., `member.is_primary`) render a
 - [ ] Store setters that accept external data normalize legacy field formats to the current schema (e.g., `delay_days` → `timing_config`)
 - [ ] Modules with multiple `addEventListener` calls use an `AbortController` + `{ signal }` option for bulk cleanup on teardown/reinit; call `controller.abort()` before re-attaching (ref: `email-compose-modal.js`)
 - [ ] Inline `<script>` blocks in Jinja templates that do NOT reference `{{ }}` variables are extracted to external `.js` files with `defer` for browser caching (ref: `base.html` → `app-init.js`, 1,779 lines extracted)
+- [ ] Dark mode overrides include explicit `color` for ALL text elements — never rely on light-mode inherited colors (invisible text on dark backgrounds)
+- [ ] Shadow DOM UIs attach `stopPropagation` on the HOST element (not inside shadow root) to isolate composed keyboard/mouse events from the host page
