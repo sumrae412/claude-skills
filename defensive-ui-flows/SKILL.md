@@ -991,6 +991,84 @@ for (const evt of ["mousedown", "click", "keydown", "keypress", "keyup", "input"
 
 ---
 
+## 34. Rich Text Editor Text Replacement Needs Multi-Tier Fallback
+
+`document.execCommand("insertText")` fails silently in modern rich text editors (Slack's Quill, Draft.js, ProseMirror). The command may return `true` but the editor's internal model is not updated, causing the original text to persist. Raw DOM manipulation (`removeChild` + `appendChild`) is worse — it desyncs the framework's model entirely.
+
+```javascript
+// BAD - execCommand fails silently in Quill, sends original text
+document.execCommand("selectAll", false, null);
+document.execCommand("insertText", false, newText);
+
+// BAD - raw DOM manipulation desyncs Quill's Delta model
+while (el.firstChild) el.removeChild(el.firstChild);
+el.appendChild(document.createElement("p"));
+
+// GOOD - multi-tier fallback with verification
+// Strategy 1: select + delete + insert (stays in undo stack)
+const sel = window.getSelection();
+const range = document.createRange();
+range.selectNodeContents(el);
+sel.removeAllRanges();
+sel.addRange(range);
+document.execCommand("delete", false, null);
+document.execCommand("insertText", false, text);
+
+// Verify (normalize whitespace for <p> wrapping)
+const normalize = s => s.replace(/\s+/g, " ").trim();
+if (normalize(el.innerText) !== normalize(text)) {
+  // Strategy 2: framework API
+  const quill = el.__quill;
+  if (quill) { quill.setText(text); }
+  else {
+    // Strategy 3: clipboard paste emulation
+    const dt = new DataTransfer();
+    dt.setData("text/plain", text);
+    el.dispatchEvent(new ClipboardEvent("paste", {
+      clipboardData: dt, bubbles: true, cancelable: true
+    }));
+  }
+}
+```
+
+**Key insight:** Always verify the replacement actually worked. `innerText` comparison must normalize whitespace because rich editors wrap lines in block elements that add newlines.
+
+**Learned from:** ToneGuard `content.js` — suggestion replacement silently failed on Slack's Quill editor, sending original text instead of the rewrite. Commit cb8b61e.
+
+---
+
+## 35. Shadow DOM Event Detection Must Use composedPath()
+
+When detecting whether a keyboard/mouse event originated inside a Shadow DOM component, `e.target` is unreliable — closed Shadow DOMs retarget it to the host element. Use `e.composedPath()` which crosses shadow boundaries regardless of mode.
+
+```javascript
+// BAD - fragile, only works for closed shadow DOM
+function isFromOverlay(e) {
+  return e.target === host;
+}
+
+// BAD - guard condition breaks for open shadow DOMs
+function isFromOverlay(e) {
+  if (e.composedPath && e.composedPath()[0] !== e.target) {
+    return e.composedPath().some(n => n === host);
+  }
+  return e.target === host;
+}
+
+// GOOD - works for both open and closed shadow DOMs
+function isFromOverlay(e) {
+  if (e.target === host) return true;
+  if (e.composedPath) {
+    return e.composedPath().some(n => n === host);
+  }
+  return false;
+}
+```
+
+**Learned from:** ToneGuard `content.js` — capture-phase keydown listener intercepted Enter from Shadow DOM inputs because the composedPath guard was fragile. Commit cb8b61e.
+
+---
+
 ## Checklist for New UI Code
 
 - [ ] Every guard clause shows feedback (toast, inline, or console)
@@ -1030,3 +1108,5 @@ for (const evt of ["mousedown", "click", "keydown", "keypress", "keyup", "input"
 - [ ] Inline `<script>` blocks in Jinja templates that do NOT reference `{{ }}` variables are extracted to external `.js` files with `defer` for browser caching (ref: `base.html` → `app-init.js`, 1,779 lines extracted)
 - [ ] Dark mode overrides include explicit `color` for ALL text elements — never rely on light-mode inherited colors (invisible text on dark backgrounds)
 - [ ] Shadow DOM UIs attach `stopPropagation` on the HOST element (not inside shadow root) to isolate composed keyboard/mouse events from the host page
+- [ ] Keyboard event interceptors check for open autocomplete/mention dropdowns before suppressing keystrokes (scope dropdown selectors to the correct platform)
+- [ ] Platform-specific DOM selectors are guarded by a platform check (don't query Slack selectors on LinkedIn)
