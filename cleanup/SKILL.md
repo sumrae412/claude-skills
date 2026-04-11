@@ -60,6 +60,10 @@ git rev-parse --abbrev-ref @{upstream} 2>/dev/null
 
 **If on main/master:** Don't proceed — there's nothing to clean up. Say so and stop.
 
+## Step 1.5: REVIEW.md Compliance Check
+
+If the project has a `REVIEW.md`, run a final check of session changes against its Must Check rules before marking the branch as ready to ship.
+
 ## Step 2: Run Tests
 
 ```bash

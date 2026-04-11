@@ -196,6 +196,10 @@ For each approved skill/CLAUDE.md proposal:
 | "The change is self-documenting" | If 3+ files changed for the same reason, it's a policy. Future sessions won't read all those files — they need a memory entry. |
 | "I'll run multiple agents in parallel for speed" | Parallel subagents doing git commits in the same worktree cause conflicts. Serialize commits or use separate worktrees per agent. |
 
+## REVIEW.md Check
+
+Check if the project has a `REVIEW.md`. If not, and the session established review standards or caught recurring quality issues, propose creating one. REVIEW.md structure: Must Check, Skip, Project Patterns, Common AI Mistakes.
+
 ## Example Session Context
 
 From a real session that built a bulk action bar:

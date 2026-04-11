@@ -50,6 +50,10 @@ row = result.one()
 ```
 This avoids N+1 roundtrips. See `app/services/counts_service.py` for a 7-subquery example.
 
+## scalar_one_or_none() Crash Risk
+
+Use `scalars().first()` for non-unique column lookups. `scalar_one_or_none()` raises `MultipleResultsFound` on non-unique columns — this is a production crash risk, not just a style issue.
+
 ## Detailed Guidelines
 
 For specific patterns and examples, see:
