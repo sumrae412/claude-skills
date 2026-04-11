@@ -267,6 +267,16 @@ Before exploring from scratch, check what's already known about this feature are
      the same feature area
    → Prior corrections, validated patterns, and gotchas
      are more valuable than fresh exploration
+
+5. WORKFLOW TRACE CHECK
+   → Grep MEMORY.md for workflow failure tags from prior runs
+     on similar feature types
+   → If prior runs flagged `exploration-gap` for this area,
+     allocate extra exploration passes
+   → If prior runs flagged `review-escape`, add the escaped
+     pattern to the Phase 6 review prompt
+   → Prior workflow failures are the eval signal — use them
+     to calibrate this run's effort allocation
 ```
 
 **Outcome:**
@@ -773,6 +783,7 @@ Invoke `verification-before-completion` skill:
 - Implementation matches the original request?
 - No regressions in existing functionality?
 - Static analysis passes (no ERROR-level issues)?
+- **Workflow regression check:** If this session modified the workflow skill itself (e.g., added a skip-condition, changed a reviewer tier, updated an advisor prompt), verify that existing passing behaviors are preserved — don't optimize for the current feature at the expense of the general case
 
 **Optional: Headless CI validation** — If the project has a CI pipeline (GitHub Actions, etc.), run `claude -p "Review the diff on this branch for issues"` as a headless smoke check before creating the PR. This catches issues that local tests miss (linting configs, CI-specific checks). Skip if no CI is configured.
 
@@ -791,6 +802,40 @@ Invoke `session-learnings` skill:
 - What patterns were discovered?
 - What defensive rules were applied or should be added?
 - Any Serena memories to persist?
+- **Workflow trace:** Which phases caught which issues? (from Workflow Retrospective)
+- **Failure tags:** What behavioral categories appeared? (from Workflow Failure Taxonomy)
+- **Workflow improvement proposal:** One scoped change to the workflow, if any emerged
+
+### Workflow Retrospective (Self-Improvement Signal)
+
+After completing a feature, capture structured workflow metrics. This is the "trace" that enables iterating on the workflow itself — not just the code.
+
+**Capture these metrics (mental model, not a file):**
+
+1. **Phase Effectiveness** — Which phase caught each issue?
+   - Issues caught in Phase 2 (exploration) → working as designed
+   - Issues caught in Phase 4b (plan stress-test) → advisor is earning its keep
+   - Issues caught in Phase 6 (review) → should Phase 3 or 4b have caught this earlier?
+   - Issues caught post-merge → review-escape, needs workflow fix
+
+2. **Failure Tags** — Apply taxonomy tags (from Workflow Failure Taxonomy) to every issue encountered during the run. Note which phase caught it.
+
+3. **Workflow-Level Questions** — Feed these into session-learnings:
+   - "Did any phase feel wasted for this type of feature?" → candidate for skip-condition
+   - "Did any phase miss something another phase caught?" → coverage gap
+   - "Did the advisor add value at each checkpoint?" → checkpoint tuning
+   - "Were review tiers appropriately scoped?" → reviewer calibration
+
+4. **One-Change Principle** — If this retrospective suggests a workflow improvement, scope it to ONE targeted change (inspired by Better-Harness's "one change at a time to avoid confounding"). Examples:
+   - Add a specific instruction to the advisor prompt template
+   - Add a skip-condition to a review tier
+   - Add an entry to the Common Mistakes table
+   Don't batch multiple workflow changes — each should be validated independently.
+
+**Pass to session-learnings:** When invoking the session-learnings skill, include:
+- The failure tags applied during this run
+- Which phase caught each issue (the "trace")
+- Any workflow-level improvement suggestion (scoped to one change)
 
 ---
 
@@ -807,6 +852,7 @@ Invoke `session-learnings` skill:
 | — | Context Pruning | — | Pass only plan + key files to execution phases | Auto |
 | 5 | Implementation | executor (+ **advisor** optional) | TDD per step, advisor at complex decision points | Tests pass |
 | 6 | Quality + Finish | **sonnet/haiku** | CodeRabbit first pass → cascading specialists → verify → commit | **Verification** |
+| 6b | Retrospective | executor | Tag failures → trace phases → propose one workflow change | Auto |
 
 ## Agents Used Within This Workflow
 
@@ -891,6 +937,23 @@ All advisor calls use `model: "opus"`, `subagent_type: "general-purpose"`.
 | User wants to stop mid-workflow | Stop. Summarize state (phase, what's done, what's left). |
 | Wrong architecture chosen | Revert to plan, re-architect with new constraints |
 
+## Workflow Failure Taxonomy
+
+Tag failures to behavioral categories when they occur. These tags feed into the Workflow Retrospective (Phase 6) and session-learnings to detect patterns across runs.
+
+| Tag | Description | Example |
+|-----|-------------|---------|
+| `exploration-gap` | Phase 2 missed a key file, pattern, or integration point | Didn't find the existing validation util → duplicated logic |
+| `architecture-miss` | Phase 4 options didn't account for a constraint | Neither option handled the existing caching layer |
+| `clarification-skip` | Ambiguity wasn't surfaced in Phase 3 | Edge case discovered during implementation that should have been asked |
+| `plan-gap` | Plan missing a step or misordering dependencies | Migration step listed after the code that depends on it |
+| `review-escape` | Bug/issue shipped past Phase 6 review tiers | Silent failure not caught by any reviewer tier |
+| `integration-failure` | Code works in isolation but breaks at integration points | Service call succeeds but caller doesn't handle new response shape |
+| `regression` | Change broke previously working behavior | New route handler shadowed existing route |
+| `tool-selection` | Wrong tool or pattern chosen for the job | Used raw SQL when the ORM had a built-in method |
+| `over-engineering` | Built more than was needed | Added abstraction layer for a one-time operation |
+| `under-specification` | Requirements were technically met but user intent was missed | Implemented delete but user wanted soft-delete |
+
 ## Common Mistakes
 
 | Mistake | Fix |
@@ -913,3 +976,7 @@ All advisor calls use `model: "opus"`, `subagent_type: "general-purpose"`.
 | Guessing external API patterns | **Hard gate:** Invoke `/fetch-api-docs` before any API implementation — never code from memory |
 | Multiple grep iterations for a symbol | Use Serena `find_symbol` or `find_referencing_symbols` |
 | Re-discovering context each session | Use Serena `write_memory` / `read_memory` |
+| Not tagging workflow failures | Apply failure taxonomy tags to every issue — untagged failures can't feed back into workflow improvement |
+| Batching multiple workflow changes | One change at a time — each workflow edit should be validated independently before stacking |
+| Ignoring workflow regression | When modifying the workflow skill, verify existing behaviors still work — don't overfit to the current feature |
+| Skipping Workflow Retrospective | Always run the retrospective — it's the trace data that makes the workflow self-improving |
