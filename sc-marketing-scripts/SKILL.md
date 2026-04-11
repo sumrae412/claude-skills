@@ -103,7 +103,7 @@ The Lesson 1 preview at the end of L0 should tease the content of *both* Lesson 
 > "In Lesson 1, [specific thing you'll do/learn]. By the end, you'll understand [key insight], and you'll be ready to [what Lesson 2 builds on that]."
 
 ❌ "Before you start optimizing, it's important to understand where the bottlenecks are." — generic, could apply to any course
-✅ "In Lesson 1, we'll walk through how a model processes a single request — from input tokens to the final generated response. By the end, you'll understand exactly why inference gets expensive, and you'll be ready to dive into the optimization that makes large-scale LLM serving viable."
+✅ "In Lesson 1, we'll walk through how a model processes a single request — from input tokens to the final generated response. By the end, you'll understand exactly why inference gets expensive, and you'll be ready to tackle the optimization that makes large-scale LLM serving viable."
 
 ### Don't Condescend
 Avoid framing that implies the learner doesn't know something obvious or that concepts "won't make sense" without the course.
@@ -247,7 +247,7 @@ Before finalizing any script:
 - [ ] Course map slide script explains why the current lesson matters — not just what's on the list
 - [ ] Lesson TH intros are ~20 seconds — one sentence of context, one sentence of what's new
 - [ ] Sentences end on specific facts, not vague editorial payoffs
-- [ ] No AI-giveaway phrases: "dive into," "unleash," "game-changing," "revolutionary," "leverage," "delve"
+- [ ] No AI-giveaway phrases: "dive into," "unleash," "game-changing," "revolutionary," "transform," "delve," "it's worth noting," "in conclusion," "leverage" (as a verb)
 - [ ] No marketing hype or forced enthusiasm
 - [ ] No unnecessary adjectives or adverbs
 - [ ] Learner is always addressed directly — "you will learn/build/understand," never "we will cover"
@@ -281,7 +281,7 @@ If the session produced a finalized or near-final script, add it to `references/
 
 | Pattern | Problem | Fix |
 |---|---|---|
-| "Whether you're deploying or just curious..." | Salesy opener, awkward to deliver | "If you're deploying models or just curious about what happens under the hood, let's dive in." |
+| "Whether you're deploying or just curious..." | Salesy opener, awkward to deliver | "If you're deploying models or just curious about what happens under the hood — this course will get you there." |
 | "Great point—" filler from Andrew | Padding; kills pacing | Cut it; let Andrew's line stand on its own |
 | "That foundation sets up everything that follows" | Generic, uninspiring | Name specifically what the learner unlocks next |
 | "Once you see X, Y will make more sense" | Subtly condescending | "Once you see X, Y will click into place" |
