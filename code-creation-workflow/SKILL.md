@@ -82,6 +82,24 @@ The advisor is called at these specific decision points, each with a focused que
 
 The advisor returns guidance — the executor acts on it.
 
+### Extended Thinking for Critical Checkpoints
+
+The Architecture Critique (Phase 4) and Plan Stress-Test (Phase 4b) checkpoints benefit from deeper reasoning. These are the highest-stakes decision points — a missed blind spot here propagates through all of implementation.
+
+**When to request extended thinking in advisor prompts:**
+
+| Checkpoint | Extended Thinking? | Rationale |
+|------------|-------------------|-----------|
+| Exploration Review (Phase 2) | No | Broad gap-finding, not deep analysis |
+| **Architecture Critique (Phase 4)** | **Yes** | Trade-off analysis requires weighing multiple competing factors |
+| **Plan Stress-Test (Phase 4b)** | **Yes** | Finding logic errors and edge cases in a multi-step plan requires systematic reasoning |
+| Mid-Implementation (Phase 5) | No | Focused decision, speed matters more |
+| Strategic Pre-Review (Phase 6) | No | High-level check, not deep reasoning |
+
+**How to request it:** Add to the advisor prompt: "Think through this step by step before responding. Consider each constraint independently, then look for interactions between constraints."
+
+This is a prompt-level technique — not the API-level `thinking` parameter (which applies to direct API calls). In Claude Code, the advisor subagent benefits from explicit "think step by step" instructions for complex architectural reasoning.
+
 ---
 
 ## Phase 0: Context Loading
@@ -540,11 +558,69 @@ Revise plan to address HIGH+ findings. Present consolidated findings to user alo
 
 ---
 
-## Context Pruning Between Phases
+## Context Management Strategy
 
-<IMPORTANT>
-The executor/advisor pattern naturally reduces context bloat — no explorer/architect transcripts to merge. But Phases 5-6 still benefit from pruned context when dispatching parallel implementation or review subagents.
-</IMPORTANT>
+The full workflow (Phases 0-6) is a long-running agentic session that reads 8-15+ files, dispatches advisor calls, and runs multi-tier reviews. Without active context management, the session will hit limits. This section defines three composable strategies (from the Claude Cookbook's context engineering patterns) plus pruning rules for subagent dispatch.
+
+### Strategy 1: Tool-Result Clearing (Automatic, Zero-Cost)
+
+Phase 2 reads 8-15 files. By Phase 5, those old file reads are stale context bloat — the executor already synthesized the relevant patterns. Tool-result clearing drops old Read/Grep results while keeping the tool_use records (so the model remembers *what* it read and *why*).
+
+**When to apply:** Automatically during Phases 4-6 when context grows.
+
+**Configuration (mental model for executor behavior):**
+```
+Trigger:     Context exceeds ~50K tokens (roughly end of Phase 2)
+Keep:        4 most recent tool results (active working set)
+Exclude:     Memory tool results (MEMORY.md reads must survive)
+Clear:       At least 10K tokens per clearing event (avoid thrashing)
+```
+
+**What gets cleared vs retained:**
+- **Cleared:** Content of old file reads, grep results, API responses (replaced with `[cleared — re-read if needed]`)
+- **Retained:** The tool_use records (model knows it read the file and what input it used), all agent reasoning, user messages, advisor responses
+
+**Why this works:** Phase 2 file reads are re-fetchable — if Phase 5 needs a file again, it can re-read it. The executor's synthesis of those files (patterns documented, concerns identified) persists naturally in the conversation.
+
+### Strategy 2: Phase-Aware Compaction (At Threshold)
+
+When dialogue and reasoning accumulate beyond what clearing handles, compact the conversation with phase-specific preservation instructions.
+
+**When to apply:** When context exceeds ~80% capacity despite clearing (typically mid-Phase 5 on large features).
+
+**Soft threshold (proactive):** At ~60% capacity, mentally prepare a session summary in the background — note current phase, completed steps, key decisions, active working files.
+
+**Hard threshold (swap):** At ~80% capacity, compact the conversation using phase-specific instructions:
+
+```
+After Phase 2 (exploration complete):
+  Preserve: key file paths + their roles, discovered patterns,
+            integration points, concerns identified
+  Drop:     raw file contents, grep output, repomix output
+
+After Phase 4 (plan approved):
+  Preserve: approved plan (numbered steps), chosen architecture,
+            resolved requirements, edge cases, API contracts
+  Drop:     rejected architecture details, advisor conversation
+            transcripts, exploration file reads
+
+During Phase 5 (mid-implementation):
+  Preserve: plan with completion status per step, test results,
+            files modified so far, current step context,
+            any advisor guidance received
+  Drop:     completed step details (code is in git), old test output
+
+During Phase 6 (review):
+  Preserve: git diff summary, plan, reviewer findings (HIGH+),
+            fix actions taken
+  Drop:     PASS findings, Tier 4 haiku output (low signal)
+```
+
+**The key insight:** Different phases have different "what must survive" profiles. A generic compaction prompt loses critical details; phase-specific prompts preserve exactly what the next phase needs.
+
+### Strategy 3: Subagent Context Pruning (Manual, Per-Dispatch)
+
+When dispatching parallel subagents for implementation or review, pass only what they need.
 
 **What to pass to Phase 5 subagents (if parallelizing):**
 - The approved implementation plan (numbered steps)
@@ -564,7 +640,31 @@ The executor/advisor pattern naturally reduces context bloat — no explorer/arc
 - The plan (for adherence checking)
 - Project conventions summary (from CLAUDE.md / loaded skills)
 
-**Why this matters:** The executor already has lean context from doing the work firsthand. But when dispatching parallel subagents for implementation or review, prune to just the plan + key files. The plan is the contract — everything else is noise for execution agents.
+**Why this matters:** The executor already has lean context from doing the work firsthand. But when dispatching parallel subagents, the plan is the contract — everything else is noise for execution agents.
+
+### Composing the Strategies
+
+The three strategies compose naturally across the workflow:
+
+```
+Phase 0-2:  Context grows as files are read
+            → Tool-result clearing fires at ~50K tokens
+            → Old file reads cleared, patterns retained
+
+Phase 3-4:  Advisor calls add context
+            → Tool-result clearing continues
+            → If approaching 80%, compact with Phase 4 instructions
+
+Phase 5:    Implementation generates code + test output
+            → Tool-result clearing drops old test runs
+            → Subagent pruning for parallel dispatch
+            → If approaching 80%, compact with Phase 5 instructions
+
+Phase 6:    Reviewers generate findings
+            → Subagent pruning for reviewer dispatch
+            → Tool-result clearing drops old reviewer outputs
+            → Compact only if needed (Phase 6 is usually the end)
+```
 
 ---
 
@@ -711,9 +811,30 @@ These catch what CodeRabbit doesn't specialize in — dispatch in parallel after
 | New types/models/Pydantic schemas | Type Design Analyzer | `pr-review-toolkit:type-design-analyzer` | **haiku** |
 | New/modified API routes | API Doc Auditor | `api-doc-auditor` | **haiku** |
 
-**Tier 4 — Lightweight Checks (parallel, haiku):**
+**Tier 4 — Lightweight Checks (parallel, haiku with dynamic prompts):**
 
-Pattern-matching checks that don't need deep reasoning — run on **haiku** for cost efficiency:
+Pattern-matching checks that don't need deep reasoning — run on **haiku** for cost efficiency. However, instead of static generic prompts, the executor generates **context-specific review prompts** based on what was actually changed (inspired by the Claude Cookbook's Haiku sub-agent pattern where Opus generates targeted extraction prompts for Haiku).
+
+**Dynamic prompt generation:** Before dispatching Tier 4 agents, the executor (Sonnet) generates a focused prompt for each based on the actual diff:
+
+```
+For Defensive Verifier:
+  "This feature added [3 new route handlers and a modal form].
+   Check specifically for:
+   - Guard clauses on the [route parameter validation]
+   - Try-catch with user feedback in the [modal submit handler]
+   - Loading/error/success states in the [form component]
+   Skip checking: [unchanged utility files, test files]"
+
+For Invariant Checker (CF projects):
+  "This feature modified [the appointment model and calendar service].
+   Check specifically for:
+   - Column name consistency between [appointment table] and [calendar queries]
+   - Eager loading on the [new relationship added in models.py]
+   Skip checking: [frontend files, migration boilerplate]"
+```
+
+**Why dynamic prompts:** Static prompts make Haiku scan the entire diff for every possible pattern. Dynamic prompts focus Haiku on the 2-3 specific patterns most likely to appear in *this* diff, reducing false positives and improving signal quality.
 
 | Agent | `subagent_type` | Model | Focus |
 |-------|-----------------|-------|-------|
@@ -748,7 +869,74 @@ Dispatch a design-review agent that tests the **live rendered UI**, not just the
 
 **Prerequisites:** The dev server must be running for the design reviewer to work. If using Claude Preview, ensure `preview_start` is configured in `.claude/launch.json`. If the server can't be started, fall back to code-only review and note that visual testing was skipped.
 
-**Merge & fix:** Collect all findings across all tiers (CodeRabbit + specialists + lightweight + design), deduplicate, fix HIGH+ issues (including Design Review Blockers and High-Priority). Post summary of findings to user.
+### Review-Fix-Recheck Loop (Evaluator-Optimizer Pattern)
+
+Findings from all tiers are collected, deduplicated, and triaged. But **fixing is not a single pass** — it follows an iterative evaluate→fix→re-evaluate loop inspired by the Claude Cookbook's evaluator-optimizer pattern.
+
+```
+Collect all findings across tiers
+        │
+        ▼
+  Deduplicate + triage (CRITICAL / HIGH / MEDIUM / LOW)
+        │
+        ▼
+  ┌─────────────────────────────────────────┐
+  │ For each HIGH+ finding:                  │
+  │                                          │
+  │   1. Fix the issue                       │
+  │   2. Re-run the SPECIFIC reviewer        │
+  │      that flagged it (not all reviewers) │
+  │   3. Did it pass?                        │
+  │      YES → mark resolved, next finding   │
+  │      NO  → fix again (max 3 iterations)  │
+  │      3 failures → escalate to user       │
+  │                                          │
+  │ Design Review Blockers and High-Priority │
+  │ follow the same loop.                    │
+  └─────────────────────────────────────────┘
+        │
+        ▼
+  Post summary to user:
+    - Findings by tier and severity
+    - Fixes applied + verification status
+    - Any escalated items needing user decision
+```
+
+**Why re-run the specific reviewer:** A fix for a security issue might introduce a silent failure. Re-running only the flagging reviewer keeps the loop fast (seconds, not minutes) while confirming the fix actually resolved the issue. Cross-cutting regressions are caught by the verification gate later.
+
+**Iteration limit:** Max 3 fix attempts per finding. If a fix doesn't resolve the issue after 3 tries, escalate to the user with the finding, the attempted fixes, and why they didn't work. Don't loop forever.
+
+**MEDIUM/LOW findings:** Log for awareness but don't fix automatically. Present to user in the summary for their judgment.
+
+### Cross-Cutting Synthesis (Orchestrator Pattern)
+
+After all review tiers complete and fixes are applied, run a single synthesis pass. Individual reviewers catch domain-specific issues but can miss cross-cutting concerns that span multiple reviewers' domains.
+
+Dispatch a **sonnet** general-purpose agent with this prompt:
+
+```
+You are reviewing the consolidated findings from a multi-tier code review.
+Here are the findings from each reviewer tier:
+
+[Tier 1 - CodeRabbit]: [findings summary]
+[Tier 2 - Specialists]: [findings summary]
+[Tier 3 - Conditional]: [findings summary]
+[Tier 4 - Lightweight]: [findings summary]
+[Tier 5 - Design]: [findings summary]
+
+And the git diff being reviewed: [diff summary]
+
+Identify cross-cutting issues that individual reviewers may have missed:
+1. Are there contradictory findings between reviewers?
+2. Do the fixes for one finding create issues in another domain?
+3. Is there an architectural-level concern that no single reviewer would catch?
+4. Overall health assessment: is this feature ready to ship?
+
+Be concise. Only report issues not already covered by individual reviewers.
+If everything looks clean, say so in one sentence.
+```
+
+**Skip condition:** If all tiers returned clean (no HIGH+ findings), skip synthesis — there's nothing to cross-reference.
 
 ### Post-Review Simplifier
 
@@ -849,7 +1037,7 @@ After completing a feature, capture structured workflow metrics. This is the "tr
 | 3 | Clarification | executor | Surface all ambiguities + optional PRP export | **User answers** |
 | 4 | Architecture | executor + **advisor** | Executor drafts 2 options → advisor critiques | **User chooses** |
 | 4b | Plan Stress-Test | **advisor** | Advisor reviews implementation plan for risks | **Advisor passes** |
-| — | Context Pruning | — | Pass only plan + key files to execution phases | Auto |
+| — | Context Management | — | Tool-result clearing → phase-aware compaction → subagent pruning | Auto |
 | 5 | Implementation | executor (+ **advisor** optional) | TDD per step, advisor at complex decision points | Tests pass |
 | 6 | Quality + Finish | **sonnet/haiku** | CodeRabbit first pass → cascading specialists → verify → commit | **Verification** |
 | 6b | Retrospective | executor | Tag failures → trace phases → propose one workflow change | Auto |
@@ -884,6 +1072,7 @@ All advisor calls use `model: "opus"`, `subagent_type: "general-purpose"`.
 | Invariant Checker | `courierflow-invariant-checker` | 6 (T4) | Always (CF projects) | haiku |
 | Defensive Verifier | `defensive-pattern-verifier` | 6 (T4) | Always | haiku |
 | Design Reviewer | `general-purpose` | 6 (T5) | UI files modified | sonnet |
+| Cross-Cutting Synthesizer | `general-purpose` | 6 (post-tiers) | If any HIGH+ findings | sonnet |
 | Code Simplifier | `code-simplifier:code-simplifier` | 6 | After review fixes | opus |
 
 ## Skills Invoked Within This Workflow
@@ -933,7 +1122,7 @@ All advisor calls use `model: "opus"`, `subagent_type: "general-purpose"`.
 | Advisor identifies critical gap | Investigate the gap before proceeding |
 | Architecture options both rejected | Ask user what they want different, executor re-drafts |
 | Tests fail during implementation | Fix immediately, don't proceed to next step |
-| Reviewer finds critical issue | Fix before finishing, re-run verification |
+| Reviewer finds critical issue | Fix → re-run that specific reviewer → repeat (max 3x) → escalate to user if still failing |
 | User wants to stop mid-workflow | Stop. Summarize state (phase, what's done, what's left). |
 | Wrong architecture chosen | Revert to plan, re-architect with new constraints |
 
@@ -967,7 +1156,7 @@ Tag failures to behavioral categories when they occur. These tags feed into the 
 | Skipping `repomix --compress` for large codebases | Always run both repo outline + repomix for unfamiliar codebases |
 | Coding before clarification | Phase 3 is a hard gate — resolve ambiguities first |
 | Single architecture proposal | Always present 2 options (simplicity vs separation) |
-| Passing full conversation to Phase 5-6 subagents | **Context prune:** Pass only plan + key files + resolved requirements |
+| Passing full conversation to Phase 5-6 subagents | **Context management:** Tool-result clearing + phase-aware compaction + subagent pruning (see Context Management Strategy section) |
 | Using full workflow for 1-2 file changes | Use Lite path — skip exploration/architecture |
 | Using full workflow when cloning existing feature | Use Clone path — skip Phases 2-4 |
 | Running all Phase 6 reviewers on Sonnet | Convention checks and pattern matching use **haiku** |
@@ -980,3 +1169,8 @@ Tag failures to behavioral categories when they occur. These tags feed into the 
 | Batching multiple workflow changes | One change at a time — each workflow edit should be validated independently before stacking |
 | Ignoring workflow regression | When modifying the workflow skill, verify existing behaviors still work — don't overfit to the current feature |
 | Skipping Workflow Retrospective | Always run the retrospective — it's the trace data that makes the workflow self-improving |
+| Fixing review findings without re-checking | **Evaluator-optimizer loop:** After fixing a HIGH+ finding, re-run the specific reviewer that flagged it. Max 3 iterations, then escalate to user |
+| Letting context grow unbounded | **Context management:** Tool-result clearing at ~50K tokens, phase-aware compaction at ~80%. Don't wait for context to break — manage it proactively |
+| Using generic prompts for Haiku reviewers | **Dynamic prompts:** Generate context-specific review prompts for Tier 4 based on the actual diff, not static catch-all instructions |
+| Skipping cross-cutting synthesis after reviews | Run the synthesizer when any HIGH+ findings exist — individual reviewers catch domain issues, synthesis catches cross-domain interactions |
+| Using flat reasoning for architecture critique | **Extended thinking:** Ask the advisor to "think step by step" for Phase 4 and 4b checkpoints — trade-off analysis and plan stress-testing benefit from systematic reasoning |
