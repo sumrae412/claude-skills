@@ -1,6 +1,6 @@
 ---
 name: code-creation-workflow
-description: Use when creating new features, implementing complex changes, or executing implementation plans. Agentic workflow with parallel subagents for exploration, architecture, implementation, and review.
+description: Use when creating new features, implementing complex changes, or executing implementation plans. Agentic workflow using the Executor/Advisor strategy — Sonnet executes, Opus advises at key decision points.
 user-invocable: true
 ---
 
@@ -8,7 +8,7 @@ user-invocable: true
 
 ## Overview
 
-Agentic multi-phase workflow for building features. Uses parallel subagents for exploration and architecture, TDD for implementation, and parallel reviewers for quality. Replaces manual grep-and-plan with structured agent orchestration.
+Agentic multi-phase workflow for building features using the **Executor/Advisor strategy**. A Sonnet executor runs the main loop — exploring code, drafting architectures, implementing features. An Opus advisor is called on-demand at key decision points to review the shared context and provide strategic guidance. TDD for implementation, cascading reviewers for quality.
 
 **This workflow is project-agnostic.** It works for any codebase or greenfield project, not just CourierFlow. Phase 0 adapts to whatever project context exists (CLAUDE.md, core skills, etc.). For greenfield projects with no existing codebase, skip Phase 2 exploration and go straight to clarification and architecture. All phases (discovery, competing architectures, TDD, review) apply universally.
 
@@ -16,24 +16,71 @@ Agentic multi-phase workflow for building features. Uses parallel subagents for 
 
 ---
 
-## Model Strategy
+## Model Strategy: Executor/Advisor
 
-Three-tier model routing: **Opus** for thinking-heavy phases, **Sonnet** for execution, **Haiku** for lightweight pattern-matching reviews. This optimizes cost and speed — deep reasoning where it matters, fast throughput for implementation, and cheap passes for convention checks.
+```
+┌───────────────────────────────────────────────────────────────┐
+│                                                               │
+│   ┌─────────────────────┐         ┌─────────────────────┐    │
+│   │     Executor         │  Tool   │      Advisor         │    │
+│   │     Sonnet           │  call   │      Opus            │    │
+│   │                      │ ──────► │                      │    │
+│   │  Runs every turn     │         │  On-demand           │    │
+│   │  Explores, drafts,   │         │  Reviews context,    │    │
+│   │  implements          │ ◄────── │  sends advice        │    │
+│   └──────────┬───────────┘         └──────────▲───────────┘    │
+│              │                                │               │
+│         Read / write                   Reviews context        │
+│              │                                │               │
+│              ▼                                │               │
+│   ┌──────────────────────────────────────────┘               │
+│   │     Shared context                                        │
+│   │     Conversation · tools · history · files read           │
+│   └──────────────────────────────────────────────────────────┘│
+│                                                               │
+│   Advisor reads the same context as Executor                  │
+└───────────────────────────────────────────────────────────────┘
+```
 
-| Phase | Model | Why |
-|-------|-------|-----|
-| 0 Context | (main session) | Lightweight loading |
-| 1 Discovery | (main session) | Quick triage decision |
-| 2 Exploration | **opus** | Deep codebase analysis needs reasoning |
-| 3 Clarification | (main session) | Interactive with user |
-| 4 Architecture | **opus** | Architectural decisions need deep reasoning |
-| 4 Debate Review | **sonnet** | Multi-model plan validation (debate-team dispatches its own models) |
-| 5 Implementation | **sonnet** | Execution speed — patterns are known by now |
-| 6 CodeRabbit Pass | **sonnet** | Consolidated first-pass review |
-| 6 Deep Review | **sonnet** | Security, silent failures, test coverage |
-| 6 Light Review | **haiku** | Convention checks, defensive patterns, invariants |
+**The core principle:** Sonnet does the legwork (file reads, greps, code writing). Opus provides strategic guidance at checkpoints. Opus never executes — it advises.
 
-When dispatching subagents, pass `model: "opus"`, `model: "sonnet"`, or `model: "haiku"` on the Agent tool call to enforce this.
+**Why this beats parallel Opus subagents:**
+
+| Old Problem | Advisor Fix |
+|---|---|
+| Context hydration gate — main session had to re-read files that explorer subagents already found | Eliminated — Sonnet reads files directly, context accumulates naturally |
+| Explorer summaries "compress away details" | No summaries needed — Opus advisor sees the same files Sonnet read |
+| Architect subagents lack cross-phase knowledge | Opus advisor sees full conversation history including exploration |
+| Expensive — Opus ran entire exploration and architecture phases | Cheaper — Opus fires only at 3-5 decision points, Sonnet does the legwork |
+
+### Model Assignments
+
+| Role | Model | When |
+|------|-------|------|
+| **Executor** | **sonnet** | Every turn — exploration, drafting, implementation, all file I/O |
+| **Advisor** | **opus** | On-demand at checkpoints — reviews shared context, returns strategic guidance |
+| **Light reviewers** | **haiku** | Phase 6 — convention checks, defensive patterns, invariants |
+| **Specialist reviewers** | **sonnet** | Phase 6 — security, silent failures, test coverage |
+
+### Advisor Checkpoints (3-5 per workflow)
+
+The advisor is called at these specific decision points, each with a focused question:
+
+| Checkpoint | Phase | Advisor Question |
+|------------|-------|-----------------|
+| **Exploration Review** | End of Phase 2 | "Here's what I found about the codebase for this feature. What am I missing? What should I investigate deeper?" |
+| **Architecture Critique** | Phase 4 | "Review these two architecture options against the exploration findings. What are the blind spots? Which trade-offs am I underweighting?" |
+| **Plan Stress-Test** | Phase 4b | "Review this implementation plan. Find logic errors, missing edge cases, integration risks, and scope creep." |
+| **Mid-Implementation** | Phase 5 (optional) | "I'm at a complex decision point in step N. Here's the context — which pattern should I follow and why?" |
+| **Strategic Pre-Review** | Phase 6 (optional) | "Before code-level review, does this implementation fulfill the original requirements? Any architectural-level issues?" |
+
+**How to dispatch the advisor:** Use the Agent tool with `model: "opus"` and `subagent_type: "general-purpose"`. The advisor prompt must include:
+1. The specific question (from the table above)
+2. A summary of what the executor has done so far
+3. Key file paths and patterns discovered
+4. The decision or artifact being reviewed
+
+The advisor returns guidance — the executor acts on it.
 
 ---
 
@@ -189,11 +236,13 @@ User says "implement X"
 
 ---
 
-## Phase 2: Exploration (Parallel Subagents)
+## Phase 2: Exploration (Executor + Advisor)
 
-### Pre-Exploration: Compressed Codebase Context (Token Saver)
+The **executor (Sonnet)** explores the codebase directly — reading files, tracing patterns, mapping architecture. No parallel explorer subagents. The executor builds firsthand context that persists naturally through Phases 3-5, eliminating the old context hydration gate.
 
-Before launching explorers, generate token-efficient codebase maps using **both** tools:
+### Step 1: Compressed Codebase Context (Token Saver)
+
+Generate token-efficient codebase maps before deep exploration:
 
 ```bash
 # Signatures only — function/class headers without bodies
@@ -203,60 +252,69 @@ python scripts/generate_repo_outline.py app/services/ --max-depth 2
 repomix --compress --output .repomix-output.txt
 ```
 
-**`generate_repo_outline.py`** gives precise signatures for targeted areas. **`repomix --compress`** gives broad codebase awareness in minimal tokens — useful when explorers need to understand cross-cutting concerns or unfamiliar areas. Share both outputs with explorer agents.
-
 For small/familiar codebases, `generate_repo_outline.py` alone is sufficient. For large or unfamiliar codebases, always run both.
 
-### Launch Explorers
+### Step 2: Executor Explores Directly
 
-Launch 2-3 **code-explorer** subagents in parallel to understand the codebase:
+The executor (main session, Sonnet) explores the codebase in 3 focused passes:
 
 ```
-┌─────────────────────────────────────────────────────┐
-│ Explorer A: "Trace how similar features are         │
-│              implemented — find patterns, data flow" │
-│                                                      │
-│ Explorer B: "Map architecture for [feature area] —  │
-│              key files, layers, dependencies"        │
-│                                                      │
-│ Explorer C: "Analyze test patterns and UI patterns   │
-│              used in this area" (if relevant)        │
-└─────────────────────────────────────────────────────┘
-                    │
-                    ▼
-   Each agent returns key files + structured findings
-                    │
-                    ▼
-   ◆ CONTEXT HYDRATION (see below) ◆
-                    │
-                    ▼
-   Present summary of codebase understanding to user
+Pass 1: SIMILAR FEATURES
+  → Trace how analogous features are implemented
+  → Read 3-5 files showing the established pattern
+  → Note: data flow, naming conventions, error handling
+
+Pass 2: FEATURE AREA ARCHITECTURE
+  → Map the layers this feature will touch
+  → Read key files at each layer (route → service → model)
+  → Note: integration points, shared utilities, constraints
+
+Pass 3: TEST + UI PATTERNS (if relevant)
+  → Read existing test files for the area
+  → Read UI templates/components if UI work is involved
+  → Note: test setup patterns, fixture usage, rendering conventions
 ```
 
-**Subagent dispatch:** Use the Agent tool with `subagent_type: "feature-dev:code-explorer"` or `"Explore"` and **`model: "opus"`**. Each agent gets a focused prompt describing what to find.
+**Minimum output:** 8-15 key files read firsthand, patterns documented, concerns identified.
 
-**Serena integration:** When agents identify symbols to trace, use `find_symbol` / `find_referencing_symbols` instead of grep chains. Use `write_memory` to persist discoveries for cross-session continuity.
+**Serena integration:** Use `find_symbol` / `find_referencing_symbols` instead of grep chains. Use `write_memory` to persist discoveries for cross-session continuity.
 
-**Minimum output per explorer:** 5-10 key files, the patterns they follow, and any concerns or constraints discovered.
+### Step 3: Advisor Checkpoint — Exploration Review
 
-### Post-Exploration: Context Hydration
+<ADVISOR-CHECKPOINT>
+After the executor finishes exploring, call the **Opus advisor** to review what was found and identify gaps.
+</ADVISOR-CHECKPOINT>
 
-<HARD-GATE>
-The main session must read key files firsthand before Phases 3-4. Explorer summaries alone are not enough — the orchestrator needs the actual code in context to ask good clarification questions and evaluate architectures.
-</HARD-GATE>
+Dispatch an Opus advisor with `model: "opus"`, `subagent_type: "general-purpose"`:
 
-After explorers return, the **main session** (not a subagent) must:
+**Advisor prompt template:**
+```
+I'm building [feature description]. I've explored the codebase and found:
 
-1. **Deduplicate** — Merge file lists from all explorers, remove duplicates
-2. **Prioritize** — Rank files by how many explorers flagged them (mentioned by 2+ explorers = highest priority)
-3. **Read the top 5-10 files** directly using the Read tool — these are the files that will anchor Phases 3, 4, and 5
-4. **Skim the next 5-10** — Read just the first 50-100 lines (signatures, imports, class structure) for supporting files
+**Key files read:**
+- [file1] — [role/pattern observed]
+- [file2] — [role/pattern observed]
+- ...
 
-**Why this matters:** Subagent findings are summaries — they compress away the details the orchestrator needs for clarification questions (Phase 3) and architecture evaluation (Phase 4). Reading the actual files gives the main session firsthand knowledge of naming conventions, error patterns, data shapes, and integration seams that summaries miss.
+**Patterns discovered:**
+- [pattern 1]
+- [pattern 2]
 
-**Token budget:** Aim for ~5,000-10,000 lines of firsthand file context. If the feature area is large, prefer reading complete files for the top 5 over skimming 20 files superficially.
+**Integration points:**
+- [system 1]
+- [system 2]
 
-**What to pass forward:** The hydrated file contents stay in the main session's context and naturally inform Phases 3 and 4. When dispatching architect subagents in Phase 4, reference specific file paths and patterns you observed — don't just forward explorer summaries.
+**My concerns:**
+- [concern 1]
+- [concern 2]
+
+QUESTION: What am I missing? What should I investigate deeper
+before moving to clarification and architecture?
+```
+
+**Act on advisor response:** If the advisor identifies gaps, explore those areas before proceeding. If the advisor confirms coverage is sufficient, move to Phase 3.
+
+**Why this works better than parallel explorers:** The executor has firsthand knowledge of every file it read — naming conventions, error patterns, data shapes, integration seams. This context persists naturally into Phases 3 and 4 without any hydration step. The Opus advisor adds strategic depth without requiring Opus to do the expensive file I/O work.
 
 ---
 
@@ -320,74 +378,118 @@ If not triggered, skip — most single-session features don't need this.
 
 ---
 
-## Phase 4: Architecture (Parallel Design + Optional AI Review)
+## Phase 4: Architecture (Executor Drafts + Advisor Critiques)
 
-Launch 2 **code-architect** subagents in parallel with different optimization targets:
+The **executor (Sonnet)** drafts two competing architecture options. It has full context from Phase 2 exploration — it read the files firsthand, knows the patterns, understands the integration points. No architect subagents needed.
+
+### Step 1: Executor Drafts Two Options
+
+The executor writes two architecture proposals with different optimization targets:
 
 ```
-┌──────────────────────────────────────────────────┐
-│ Architect A: "Design optimizing for SIMPLICITY — │
-│  reuse existing patterns, minimal new files,     │
-│  least moving parts"                             │
-│                                                   │
-│ Architect B: "Design optimizing for CLEAN        │
-│  SEPARATION — extensibility, testability,        │
-│  clear boundaries between concerns"              │
-└──────────────────────────────────────────────────┘
-                    │
-                    ▼
-   Present BOTH architectures to user:
-   - Files to create/modify (with line counts)
-   - Component designs and responsibilities
-   - Data flow (how data moves through the system)
-   - Trade-off analysis (what each approach sacrifices)
-                    │
-                    ▼
-   ◆ USER CHOOSES architecture (A, B, or hybrid) ◆
+Option A: SIMPLICITY
+  → Reuse existing patterns, minimal new files
+  → Least moving parts, smallest diff
+  → Trade-off: may sacrifice extensibility
+
+Option B: CLEAN SEPARATION
+  → Clear boundaries between concerns
+  → Extensible, independently testable
+  → Trade-off: more files, more indirection
 ```
 
-**Subagent dispatch:** Use the Agent tool with `subagent_type: "feature-dev:code-architect"` and **`model: "opus"`**. Each gets the exploration findings + clarification answers + a clear optimization directive.
+**Each option includes:**
+- Files to create/modify (with line counts)
+- Component designs and responsibilities
+- Data flow (how data moves through the system)
+- What this approach sacrifices
 
-### Write Implementation Plan
+### Step 2: Advisor Checkpoint — Architecture Critique
+
+<ADVISOR-CHECKPOINT>
+Before presenting architectures to the user, call the **Opus advisor** to stress-test both options.
+</ADVISOR-CHECKPOINT>
+
+Dispatch an Opus advisor with `model: "opus"`, `subagent_type: "general-purpose"`:
+
+**Advisor prompt template:**
+```
+I'm designing architecture for [feature]. I have two options:
+
+**Option A (Simplicity):**
+[summary of option A with files and trade-offs]
+
+**Option B (Clean Separation):**
+[summary of option B with files and trade-offs]
+
+**Codebase context:**
+- Key patterns from exploration: [patterns]
+- Integration points: [systems]
+- Resolved requirements: [from Phase 3]
+
+QUESTIONS:
+1. What blind spots exist in each option?
+2. Which trade-offs am I underweighting?
+3. Is there a hybrid approach that captures the best of both?
+4. Any architectural risks I'm not seeing?
+```
+
+**Act on advisor response:** Revise the options based on advisor critique. If the advisor identifies a clear winner or a superior hybrid, note that in the presentation.
+
+### Step 3: Present to User
+
+Present both options (post-advisor-refinement) to the user with the advisor's analysis included:
+- The two options with trade-offs
+- Advisor's critique and any identified risks
+- Advisor's recommendation (if any)
+
+```
+◆ USER CHOOSES architecture (A, B, or hybrid) ◆
+```
+
+### Step 4: Write Implementation Plan
 
 After user chooses, write a structured plan using the `writing-plans` skill:
 - Numbered steps with specific files and changes
 - Test requirements per step
 - Dependencies between steps marked clearly
 
-### Debate Team Review (Required)
+### Step 5: Advisor Checkpoint — Plan Stress-Test
 
-<HARD-GATE>
-Every implementation plan must pass debate-team review before user approval. This catches architectural flaws, scope creep, and blind spots that competing proposals alone miss.
-</HARD-GATE>
+<ADVISOR-CHECKPOINT>
+Every implementation plan must pass Opus advisor review before user approval. This catches logic errors, missing edge cases, and scope creep that the executor's own drafting might miss.
+</ADVISOR-CHECKPOINT>
 
-After writing the plan, invoke the `debate-team` skill:
+Dispatch an Opus advisor with `model: "opus"`, `subagent_type: "general-purpose"`:
 
-1. **DeepSeek Bug-Hunter** — Probes for logic errors, missing edge cases, integration risks
-2. **GPT-4o Architecture Critic** — Challenges structural decisions, separation of concerns, scalability
-3. **Haiku Style Critic** (conditional) — Fires only if DeepSeek and GPT-4o disagree, breaks ties on convention adherence
+**Advisor prompt template:**
+```
+Review this implementation plan for [feature]:
 
-**Process:**
-1. Pass the implementation plan + chosen architecture + key file context to debate-team
-2. Collect critiques from all models
-3. Present consolidated findings to user alongside the plan
-4. Revise plan to address HIGH+ critiques
-5. If revisions are substantial, re-run debate-team on the revised plan (max 2 iterations)
+[the full plan]
 
-**What debate-team receives (context-pruned):**
-- The implementation plan
-- The chosen architecture summary (not both options)
-- Key file paths and patterns (from exploration)
-- Resolved requirements (from clarification)
+**Chosen architecture:** [summary]
+**Key codebase patterns:** [from exploration]
+**Resolved requirements:** [from Phase 3]
 
-**Triage:**
+Find:
+1. Logic errors or impossible steps
+2. Missing edge cases from requirements
+3. Integration risks with existing systems
+4. Scope creep beyond what was asked
+5. Steps that should be reordered for safety
+```
+
+**Triage advisor findings:**
 - **CRITICAL** — Must fix before approval (architectural flaw, missing requirement, security gap)
 - **HIGH** — Should fix before approval (scope creep, untested edge case, fragile integration)
 - **MEDIUM** — Note for implementation phase (style preference, minor optimization)
 - **LOW** — Informational only (alternative approaches, future considerations)
 
+Revise plan to address HIGH+ findings. Present consolidated findings to user alongside the plan.
+
 ```
-◆ USER APPROVES final plan (post-debate-team) before implementation ◆
+◆ USER APPROVES final plan (post-advisor-review) before implementation ◆
 ```
 
 ---
@@ -395,10 +497,10 @@ After writing the plan, invoke the `debate-team` skill:
 ## Context Pruning Between Phases
 
 <IMPORTANT>
-Phases 0-4 accumulate significant context (exploration findings, architecture discussions, clarification Q&A). Phases 5-6 don't need all of it. Prune aggressively when dispatching implementation and review subagents.
+The executor/advisor pattern naturally reduces context bloat — no explorer/architect transcripts to merge. But Phases 5-6 still benefit from pruned context when dispatching parallel implementation or review subagents.
 </IMPORTANT>
 
-**What to pass to Phase 5 subagents:**
+**What to pass to Phase 5 subagents (if parallelizing):**
 - The approved implementation plan (numbered steps)
 - Key file paths and their roles (from exploration)
 - Resolved requirements and edge cases (from clarification)
@@ -406,7 +508,7 @@ Phases 0-4 accumulate significant context (exploration findings, architecture di
 - API docs fetched (if applicable)
 
 **What to NOT pass:**
-- Full exploration agent transcripts
+- Advisor conversation transcripts
 - Rejected architecture option details
 - Phase 0 skill loading decisions
 - Raw clarification Q&A (pass resolved answers only)
@@ -416,7 +518,7 @@ Phases 0-4 accumulate significant context (exploration findings, architecture di
 - The plan (for adherence checking)
 - Project conventions summary (from CLAUDE.md / loaded skills)
 
-**Why this matters:** A subagent dispatched with 50K tokens of pruned context is faster, cheaper, and more focused than one with 150K tokens of accumulated conversation. The plan is the contract — everything else is noise for execution agents.
+**Why this matters:** The executor already has lean context from doing the work firsthand. But when dispatching parallel subagents for implementation or review, prune to just the plan + key files. The plan is the contract — everything else is noise for execution agents.
 
 ---
 
@@ -470,6 +572,24 @@ For each plan step:
 
 5. Mark TodoWrite item complete
 ```
+
+### Optional: Advisor Checkpoint — Mid-Implementation
+
+<ADVISOR-CHECKPOINT>
+Call the Opus advisor during implementation only when the executor hits a **genuinely ambiguous decision point** — not every step.
+</ADVISOR-CHECKPOINT>
+
+**When to call:**
+- A step involves a non-obvious integration pattern (multiple valid approaches)
+- The executor isn't sure which existing pattern to follow (conflicting precedents)
+- A step's implementation diverges from the plan in a way that might affect later steps
+
+**When NOT to call:**
+- Routine implementation following established patterns
+- Standard TDD cycles with clear requirements
+- Steps where the plan is unambiguous
+
+**Advisor prompt:** Keep it focused — state the specific decision, the options considered, and why it's ambiguous. The advisor returns a recommendation; the executor acts on it.
 
 ### Parallel Subagent Dispatch (For Independent Steps)
 
@@ -642,23 +762,34 @@ Invoke `session-learnings` skill:
 
 | Phase | Name | Model | Key Pattern | Gate |
 |-------|------|-------|-------------|------|
-| 0 | Context | — | Trigger matrix → load relevant skills only | None |
-| 1 | Discovery | — | 4-path triage (fast/clone/lite/full) | Auto |
-| 2 | Exploration | **opus** | 2-3 parallel code-explorer subagents + repomix + context hydration | **Context hydration** |
-| 3 | Clarification | — | Surface all ambiguities + optional PRP export | **User answers** |
-| 4 | Architecture | **opus** | 2 parallel code-architect subagents | **User chooses** |
-| 4b | Debate Review | **sonnet** | Tri-model adversarial plan review (required) | **Debate-team passes** |
+| 0 | Context | executor | Trigger matrix → load relevant skills only | None |
+| 1 | Discovery | executor | 4-path triage (fast/clone/lite/full) | Auto |
+| 2 | Exploration | executor + **advisor** | Executor explores directly → advisor reviews gaps | **Advisor confirms coverage** |
+| 3 | Clarification | executor | Surface all ambiguities + optional PRP export | **User answers** |
+| 4 | Architecture | executor + **advisor** | Executor drafts 2 options → advisor critiques | **User chooses** |
+| 4b | Plan Stress-Test | **advisor** | Advisor reviews implementation plan for risks | **Advisor passes** |
 | — | Context Pruning | — | Pass only plan + key files to execution phases | Auto |
-| 5 | Implementation | **sonnet** | TDD per step + parallel dispatch | Tests pass |
+| 5 | Implementation | executor (+ **advisor** optional) | TDD per step, advisor at complex decision points | Tests pass |
 | 6 | Quality + Finish | **sonnet/haiku** | CodeRabbit first pass → cascading specialists → verify → commit | **Verification** |
 
 ## Agents Used Within This Workflow
 
+### Advisor (Opus, On-Demand)
+
+| Checkpoint | Phase | Question Focus | Required? |
+|------------|-------|----------------|-----------|
+| Exploration Review | 2 | "What am I missing?" | Yes |
+| Architecture Critique | 4 | "What are the blind spots?" | Yes |
+| Plan Stress-Test | 4b | "Find logic errors, scope creep" | Yes |
+| Mid-Implementation | 5 | "Which pattern at this decision point?" | Optional |
+| Strategic Pre-Review | 6 | "Does this fulfill requirements?" | Optional |
+
+All advisor calls use `model: "opus"`, `subagent_type: "general-purpose"`.
+
+### Review Agents (Phase 5-6)
+
 | Agent | `subagent_type` | Phase | Trigger | Model |
 |-------|-----------------|-------|---------|-------|
-| Code Explorer (x2-3) | `feature-dev:code-explorer` | 2 | Always (full workflow) | opus |
-| Code Architect (x2) | `feature-dev:code-architect` | 4 | Always (full workflow) | opus |
-| Debate Team | `debate-team` (skill) | 4b | **Always (required)** | sonnet (dispatches own models) |
 | Migration Reviewer | `migration-reviewer` | 5, 6 | Alembic files | sonnet |
 | Google API Reviewer | `google-api-reviewer` | 5, 6 | Google API code | sonnet |
 | Async Reviewer | `async-reviewer` | 5, 6 | async I/O code | sonnet |
@@ -682,7 +813,6 @@ Invoke `session-learnings` skill:
 | defensive-ui-flows | Phase 0 (loaded), Phase 5 (applied) |
 | defensive-backend-flows | Phase 0 (loaded), Phase 5 (applied) |
 | writing-plans | Phase 4 (plan creation) |
-| **debate-team** | **Phase 4b (required — tri-model adversarial plan review)** |
 | executing-plans | Phase 5 (plan execution) |
 | test-driven-development | Phase 5 (TDD per step) |
 | subagent-driven-development | Phase 5 (parallel independent steps) |
@@ -703,19 +833,23 @@ Invoke `session-learnings` skill:
 
 ## Skills Eliminated (Absorbed)
 
-| Former Skill | Absorbed Into |
-|-------------|---------------|
+| Former Skill/Pattern | Absorbed Into |
+|---------------------|---------------|
+| Parallel Opus explorer subagents (x2-3) | **Executor explores directly** — Sonnet reads files firsthand, Opus advisor reviews at the end |
+| Parallel Opus architect subagents (x2) | **Executor drafts architectures** — Sonnet proposes options, Opus advisor critiques them |
+| Context hydration gate | **Eliminated** — executor already has firsthand context from doing the exploration |
+| debate-team (Phase 4b) | **Replaced by Opus advisor plan stress-test** — same rigor, fewer moving parts |
 | plancraft brainstorming | Phases 1-3 (discovery + exploration + clarification) |
 | brainstorming skill | Phases 1-3 (interactive exploration replaces separate brainstorm) |
-| PlanCraft full pipeline | Replaced by **debate-team** (required Phase 4b) — tri-model adversarial review is more rigorous |
 | Dual code-reviewer agents | Replaced by **CodeRabbit** (Phase 6 Tier 1) — single consolidated pass |
 
 ## Error Recovery
 
 | Situation | Action |
 |-----------|--------|
-| Explorer agent returns poor results | Re-dispatch with more specific prompt, or explore manually |
-| Architecture options both rejected | Ask user what they want different, re-run architects |
+| Exploration misses key area | Re-explore; call advisor again with "I also found X, reassess" |
+| Advisor identifies critical gap | Investigate the gap before proceeding |
+| Architecture options both rejected | Ask user what they want different, executor re-drafts |
 | Tests fail during implementation | Fix immediately, don't proceed to next step |
 | Reviewer finds critical issue | Fix before finishing, re-run verification |
 | User wants to stop mid-workflow | Stop. Summarize state (phase, what's done, what's left). |
@@ -726,17 +860,17 @@ Invoke `session-learnings` skill:
 | Mistake | Fix |
 |---------|-----|
 | Skipping Phase 0 context loading | Always load project context first |
-| Exploring sequentially instead of parallel | Use 2-3 explorer subagents |
+| Dispatching parallel Opus explorer subagents | **Executor/Advisor pattern:** Sonnet explores directly, Opus advises at the end |
+| Dispatching parallel Opus architect subagents | **Executor/Advisor pattern:** Sonnet drafts architectures, Opus critiques |
+| Calling the advisor every turn | Advisor is **on-demand at checkpoints** — 3-5 calls per workflow, not every step |
+| Skipping the advisor at required checkpoints | Phases 2, 4, and 4b advisor checkpoints are required — don't skip |
 | Skipping `repomix --compress` for large codebases | Always run both repo outline + repomix for unfamiliar codebases |
-| Proceeding to clarification with only explorer summaries | Context hydration is a hard gate — main session must read top 5-10 files firsthand before Phase 3 |
 | Coding before clarification | Phase 3 is a hard gate — resolve ambiguities first |
 | Single architecture proposal | Always present 2 options (simplicity vs separation) |
-| Skipping debate-team review | **Hard gate:** Every plan must pass debate-team before user approval |
 | Passing full conversation to Phase 5-6 subagents | **Context prune:** Pass only plan + key files + resolved requirements |
-| Using full workflow for 1-2 file changes | Use Lite path — skip parallel explorers/architects |
+| Using full workflow for 1-2 file changes | Use Lite path — skip exploration/architecture |
 | Using full workflow when cloning existing feature | Use Clone path — skip Phases 2-4 |
 | Running all Phase 6 reviewers on Sonnet | Convention checks and pattern matching use **haiku** |
-| Running dual code-reviewers in Phase 6 | CodeRabbit replaces both — single consolidated pass |
 | Writing tests after code | TDD — test first, then implement |
 | Not finishing the branch | Always run Phase 6 to completion |
 | Guessing external API patterns | **Hard gate:** Invoke `/fetch-api-docs` before any API implementation — never code from memory |
