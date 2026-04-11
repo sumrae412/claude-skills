@@ -203,6 +203,41 @@ Vertical timeline format:
 
 ---
 
+## Avoiding Generic "AI Slop" Aesthetics
+
+When generating new UI (not modifying existing components), actively avoid the common patterns that make AI-generated interfaces look generic and undistinctive. These guidelines are adapted from Anthropic's [Prompting for Frontend Aesthetics](https://platform.claude.com/cookbook/coding-prompting-for-frontend-aesthetics) cookbook.
+
+**CourierFlow uses Inter intentionally** — it's a design system choice, not a default. But other AI-slop signals still apply:
+
+| AI Slop Signal | CourierFlow Fix |
+|----------------|-----------------|
+| Evenly-distributed timid palettes | Slate-dominant with sharp Indigo sparks — commit to the monochrome |
+| Predictable cookie-cutter layouts | Three distinct layout patterns (Sidebar+Canvas, Split View, Slide-Over) — pick the right one for the context |
+| Heavy containers competing with content | Content is king — `bg-white` cards recede, spacing does the work |
+| Scattered micro-interactions | Functional animations only, 150-300ms, consistent easing |
+| Solid flat backgrounds with no depth | Layer slate tints: `bg-slate-50` page → `bg-white` cards → `border-slate-100` separation |
+| Generic status indicators | Monochrome badges with weight/border variation, not traffic-light colors |
+
+### Typography Weight & Size Contrast
+
+AI defaults to timid weight differences (400 vs 600). CourierFlow uses decisive contrast:
+- **Page Titles:** `text-xl font-semibold` (bold, large)
+- **Section Headers:** `text-xs font-semibold uppercase tracking-wider` (tiny but commanding)
+- **Body Text:** `text-sm text-slate-600` (recedes)
+- **Helper Text:** `text-xs text-slate-400` (barely visible)
+
+The jump between section headers and page titles is 3x+ in size. This hierarchy guides attention without decoration.
+
+### Motion: Less is More
+
+- **One well-orchestrated transition** beats scattered animations
+- Slide-over panels: single smooth entrance (200ms ease-out)
+- Hover states: border color transition only (`transition-colors duration-150`)
+- Loading states: subtle pulse, not spinner → content swap
+- **Never animate** layout shifts, color changes on static elements, or decorative particles
+
+---
+
 ## Quick Checklist
 
 Before committing UI code:
@@ -218,3 +253,6 @@ Before committing UI code:
 - [ ] Correct layout pattern (Sidebar+Canvas vs Split vs Slide-over)?
 - [ ] Any `repeat(N, 1fr)` grid? Switch to `repeat(N, minmax(0, 1fr))` to prevent content-driven column inflation.
 - [ ] Grid used for tabular/calendar layout? Ensure `grid-auto-rows` is set to prevent uneven row heights.
+- [ ] Typography hierarchy uses 3x+ size jumps (not timid 1.5x increments)?
+- [ ] Animations are functional (150-300ms), not decorative?
+- [ ] New layouts avoid cookie-cutter patterns — is this the right layout type for the context?

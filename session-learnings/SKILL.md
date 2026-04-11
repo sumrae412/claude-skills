@@ -78,6 +78,27 @@ Task tool:
     ## Session Context
     [paste compiled session context from Step 1]
 
+    ## Cross-Session Failure Pattern Analysis
+    Before proposing updates, check for RECURRING patterns across sessions.
+    This is inspired by the Claude Cookbook's Tool Evaluation pattern — score
+    findings against ground truth to detect systematic issues.
+
+    1. Read MEMORY.md for prior workflow failure tags (exploration-gap,
+       review-escape, architecture-miss, etc.)
+    2. Compare this session's issues against prior sessions:
+       - Same failure tag appearing 3+ times → SYSTEMIC issue, needs skill fix
+       - Same file/area causing issues across sessions → Missing defensive pattern
+       - Same reviewer missing the same class of bug → Reviewer prompt needs tuning
+    3. For systemic patterns, propose a TARGETED fix:
+       - Recurring exploration-gap in area X → Add X to Phase 2 mandatory passes
+       - Recurring review-escape of type Y → Add Y to reviewer prompt checklist
+       - Recurring clarification-skip → Add specific question to Phase 3 template
+    4. Tag the memory entry with recurrence count:
+       "SYSTEMIC (3x): [pattern] — [proposed fix]"
+
+    This converts scattered session observations into actionable workflow
+    improvements. A single occurrence is noise; three occurrences is signal.
+
     ## Domain Mapping
     Map changed files to skill domains:
     - CSS/HTML/templates → defensive-ui-flows, project UI standards skill

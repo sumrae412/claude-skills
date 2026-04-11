@@ -1069,6 +1069,61 @@ function isFromOverlay(e) {
 
 ---
 
+## 36. CSS Animations Must Be Functional, Not Decorative
+
+Animations that run on page load, loop continuously, or animate layout properties cause performance issues, accessibility problems, and visual noise. Adapted from Anthropic's [Prompting for Frontend Aesthetics](https://platform.claude.com/cookbook/coding-prompting-for-frontend-aesthetics) cookbook.
+
+```css
+/* BAD - Decorative animation on a static element, loops forever */
+.card {
+  animation: pulse 2s infinite;
+}
+
+/* BAD - Animates layout property (triggers reflow) */
+.sidebar {
+  transition: width 300ms ease;
+}
+
+/* BAD - Multiple scattered micro-interactions that add visual noise */
+.btn { transition: all 0.3s; }
+.card { transition: all 0.3s; }
+.badge { transition: all 0.3s; }
+.icon { transition: all 0.3s; }
+
+/* GOOD - Single functional transition on interaction (150-300ms) */
+.card {
+  transition: border-color 150ms ease;
+}
+.card:hover {
+  border-color: var(--ds-border-hover);
+}
+
+/* GOOD - Slide-over panel entrance (one orchestrated moment) */
+.slide-over {
+  transform: translateX(100%);
+  transition: transform 200ms ease-out;
+}
+.slide-over.open {
+  transform: translateX(0);
+}
+
+/* GOOD - Staggered reveal on page load (animation-delay, not scattered) */
+.card:nth-child(1) { animation-delay: 0ms; }
+.card:nth-child(2) { animation-delay: 50ms; }
+.card:nth-child(3) { animation-delay: 100ms; }
+```
+
+**Rules:**
+- **150-300ms** for interactions (hover, focus, open/close). Never >500ms.
+- **Animate transforms and opacity only** — never animate `width`, `height`, `top`, `left`, or `margin` (triggers layout reflow)
+- **One orchestrated moment per page** beats many scattered animations
+- **`prefers-reduced-motion`**: Wrap all animations in `@media (prefers-reduced-motion: no-preference) { }` or provide instant fallbacks
+- **Never `animation: infinite`** on non-loading elements — only spinners/progress indicators should loop
+
+**Learned from:** Claude Cookbook "Prompting for Frontend Aesthetics" — AI-generated code defaults to scattered `transition: all 0.3s` on everything. One well-orchestrated animation creates more impact than twenty generic transitions.
+
+---
+
 ## Checklist for New UI Code
 
 - [ ] Every guard clause shows feedback (toast, inline, or console)
@@ -1110,3 +1165,4 @@ function isFromOverlay(e) {
 - [ ] Shadow DOM UIs attach `stopPropagation` on the HOST element (not inside shadow root) to isolate composed keyboard/mouse events from the host page
 - [ ] Keyboard event interceptors check for open autocomplete/mention dropdowns before suppressing keystrokes (scope dropdown selectors to the correct platform)
 - [ ] Platform-specific DOM selectors are guarded by a platform check (don't query Slack selectors on LinkedIn)
+- [ ] Animations are functional (150-300ms, transforms/opacity only), not decorative; wrapped in `prefers-reduced-motion` media query; no `animation: infinite` on non-loading elements
