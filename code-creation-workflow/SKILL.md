@@ -240,6 +240,42 @@ User says "implement X"
 
 The **executor (Sonnet)** explores the codebase directly — reading files, tracing patterns, mapping architecture. No parallel explorer subagents. The executor builds firsthand context that persists naturally through Phases 3-5, eliminating the old context hydration gate.
 
+### Step 0: Prior Knowledge Check (Token Saver)
+
+Before exploring from scratch, check what's already known about this feature area. Prior sessions may have already mapped the relevant architecture, patterns, and integration points.
+
+```
+1. MEMORY CHECK
+   → Read MEMORY.md index for relevant entries
+   → If any match the feature area, read the memory files
+   → Extract: key files, patterns, conventions, gotchas
+
+2. PRP CHECK
+   → Glob for plans/PRP-*.md files related to this feature
+   → If a PRP exists, it contains curated codebase intelligence
+     from a prior session's exploration (key files, patterns,
+     integration points, constraints)
+   → A PRP can replace most of Step 2 exploration
+
+3. SERENA MEMORY CHECK (if Serena is active)
+   → read_memory for the feature area
+   → Prior sessions may have persisted symbol mappings,
+     architectural notes, or decision rationale
+
+4. SESSION-LEARNINGS CHECK
+   → Grep MEMORY.md for learnings from prior work in
+     the same feature area
+   → Prior corrections, validated patterns, and gotchas
+     are more valuable than fresh exploration
+```
+
+**Outcome:**
+- **Rich prior knowledge exists** → Skip or reduce Step 2 exploration. Go straight to Step 3 advisor checkpoint with prior findings, asking "Is this still accurate? What's changed?"
+- **Partial prior knowledge** → Focus Step 2 exploration on gaps only. Don't re-explore what's already known.
+- **No prior knowledge** → Proceed to Step 1 normally.
+
+**Why this matters:** Re-exploring a codebase you've already mapped burns tokens for zero new information. A 30-second memory check can save 5-10 minutes of redundant file reads. Over multiple sessions on the same project, the savings compound — each session builds on prior knowledge instead of starting cold.
+
 ### Step 1: Compressed Codebase Context (Token Saver)
 
 Generate token-efficient codebase maps before deep exploration:
@@ -860,6 +896,7 @@ All advisor calls use `model: "opus"`, `subagent_type: "general-purpose"`.
 | Mistake | Fix |
 |---------|-----|
 | Skipping Phase 0 context loading | Always load project context first |
+| Exploring from scratch without checking prior knowledge | **Step 0:** Check MEMORY.md, PRPs, and Serena memories before exploring — prior sessions may have already mapped this area |
 | Dispatching parallel Opus explorer subagents | **Executor/Advisor pattern:** Sonnet explores directly, Opus advises at the end |
 | Dispatching parallel Opus architect subagents | **Executor/Advisor pattern:** Sonnet drafts architectures, Opus critiques |
 | Calling the advisor every turn | Advisor is **on-demand at checkpoints** — 3-5 calls per workflow, not every step |
