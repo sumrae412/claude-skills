@@ -18,6 +18,7 @@ Internal guide for writing introductory lessons (Lesson Zero / L0) and marketing
 - Use active voice: "You instruct the LLM" not "The LLM produces"
 - Avoid "Whether you..." openers — salesy, not Andrew's voice
 - Prefer direct declarative structure: "In this course, you'll..."
+- Always speak directly to the learner — use "you will learn," "you will build," "you will understand," not "we will cover" or "students will learn." The learner is always the subject of what happens in the course.
 
 ### Hook Immediately
 - First 15 seconds must state the course name and what learners will get from it
@@ -74,6 +75,16 @@ If a sentence ending doesn't add specific information, cut it rather than replac
 - When the user rewrites a sentence and keeps their version, accept it — do not re-suggest the same alternative in subsequent turns
 - Flag issues once; if the user declines the fix, move on
 - Only re-raise a concern if it creates a new problem downstream
+
+### Writing Like a Human
+- Simple language — short sentences, plain words
+- No AI-giveaway phrases — never use: "dive into," "unleash," "game-changing," "revolutionary," "transform," "delve," "it's worth noting," "in conclusion," "leverage" (as a verb)
+- Direct and concise — remove unnecessary words
+- Natural tone — starting with "And" or "But" is fine
+- No marketing hype — avoid promotional language
+- No forced friendliness — be honest and direct
+- No fluff — cut unnecessary adjectives and adverbs
+- Clarity first — if a sentence has to be read twice, rewrite it
 
 ### Speakability
 Scripts are read aloud on a teleprompter — test sentences by reading them out loud before finalizing.
@@ -137,37 +148,14 @@ These slides appear at the start of each lesson and show where the current lesso
 
 ### Structure
 
-1. **Andrew opens** — course name, partnership, instructor intro, hook
-2. **Instructor(s)** — highlights of what you'll learn (1 sentence each, concrete)
-3. **Andrew or Instructor closes** — brief energetic sign-off
+1. **Andrew opens** — course name + instructor credential woven in inline; 2–3 sentence problem hook; 1 sentence course overview
+2. **Instructor** — picks up from Andrew's problem framing; motivation/analogy; bridges to course
+3. **Andrew closes** — what the learner will do + concrete outcome + call to action
 
-### Template
-
-```
-[Andrew]:
-"I'm excited to introduce [Course Name], built in partnership with [Company]
-and taught by [Instructor Name(s)].
-
-[1–2 sentence hook: what becomes possible or what problem this solves.
-No buzzwords without explanation.]
-
-I'm delighted to introduce [Instructor Name], [Title at Company].
-[1–2 sentences on what they do / their connection to the developer community.]"
-
-[Instructor 1]:
-"Thanks Andrew! In this course, you'll learn to… [one concrete sentence]"
-
-[Instructor 2 (if applicable)]:
-"You'll also learn… [one concrete sentence]"
-
-[Andrew]:
-"[Optional: banter or quippy remark if it fits naturally]"
-
-[Instructor]:
-"I hope you enjoy the course!"
-
-(B-roll: relevant course screencasts)
-```
+**Key notes:**
+- Instructor does NOT self-introduce — Andrew carries the introduction inline
+- Andrew carries the CTA
+- 250–300 words total
 
 ### Marketing Script Anti-Patterns
 - Listing tool names without a one-line explanation of what they do — just buzzwords
@@ -185,52 +173,14 @@ I'm delighted to introduce [Instructor Name], [Title at Company].
 
 ### Structure
 
-1. **Andrew** — welcome + course name, motivating context with concrete example, what learners will gain (teach something early), introduces instructor
-2. **Instructor** — thanks Andrew, adds their perspective, expands on what will be covered
-3. **Andrew** — numbered list of course topics with explanations (slides); connects to instructor
-4. **Instructor** — genuine take on why this matters, especially during development
-5. **Andrew voiceover** — acknowledgments slide with pronunciation guide
-6. **Back to TH** — Instructor previews Lesson 1; Andrew closes with "Let's get started"
+1. **Andrew** — welcome, problem framing, high-level course overview in prose (NOT a numbered list on camera), introduces instructor
+2. **Instructor** — thanks Andrew, connects to problem, motivation/analogy, course arc
+3. **Andrew** — why this tool/framework was chosen; concrete outcome naming the specific thing built
+4. **Andrew voiceover** — acknowledgments
+5. **Instructor** — Lesson 1 preview + energetic closer
+6. **Andrew** — final call to action
 
-### Template
-
-```
-[Andrew]:
-"Welcome to [Course Name], built in partnership with [Company].
-
-[Motivating context: what's changing / what's now possible — 1–2 sentences]
-[Concrete example Andrew can relate to — a personal anecdote or specific scenario
-that makes the problem real, not abstract]
-
-[Teach something early: a key insight or small concept the learner can take away
-right now, before the course outline]
-
-I'm delighted that our instructor for this course is [Instructor Name], [Title]."
-
-[Instructor]:
-"Thanks Andrew! [Genuine enthusiasm — 1 sentence]"
-
-[Andrew — with slides]:
-"In this course, you'll learn how to:
-1. [Capability 1] — [plain-language explanation of what this means and why it helps]
-2. [Capability 2] — [plain-language explanation]
-3. [Capability 3] — [plain-language explanation]
-
-[Instructor name] will go through these concepts using [specific tools/libraries]."
-
-[Instructor]:
-"[Your genuine perspective on why this topic matters. Focus on development-time
-value — how these techniques help while building, not just after deployment.]"
-
-[Switch to acknowledgments slide — Andrew voiceover]:
-"Many people worked to make this course. From [Company]: [names — spell phonetically
-if pronunciation is unclear]. From DeepLearning.AI: [names]."
-
-[Switch back to TH — Instructor + Andrew]
-
-[Instructor]: "The first lesson will be about…"
-[Andrew]: "Sounds great! Let's get started."
-```
+**Note:** Andrew does NOT read a numbered list on camera. Course overview should be delivered in natural prose. Andrew delivers the final CTA.
 
 ### L0 Concept List Guidance
 - If covering 3–4 concepts: make it an **explicit numbered list with explanations** (slides)
@@ -246,6 +196,29 @@ When a slide contains a multi-panel or sequential diagram:
 - Don't summarize across all panels before walking them individually — the learner needs to know where to look first
 - Use the panel labels or visual cues ("in the first panel," "at the point of difference") to anchor the narration
 - Match the visual order; don't jump ahead or reorder for narrative convenience
+
+---
+
+## Lesson Talking Heads (THs)
+
+**Purpose:** 1–3 sentences max, spoken by the instructor (not Andrew).
+
+**Pattern:**
+- Connect to the prior lesson OR name the core tension
+- State what the learner will build
+- Close with an energetic line tied to the lesson theme
+
+**Anti-patterns:**
+- "Let's dive in" is banned
+- Don't repeat the lesson title verbatim
+- Don't open cold — always connect to what came before or name the tension
+- No more than 3 sentences
+
+**Conclusion TH:**
+- Recap the full arc of the course
+- Key takeaway — a principle, not a list
+- What's next for the learner
+- Genuine sign-off
 
 ---
 
@@ -274,6 +247,16 @@ Before finalizing any script:
 - [ ] Course map slide script explains why the current lesson matters — not just what's on the list
 - [ ] Lesson TH intros are ~20 seconds — one sentence of context, one sentence of what's new
 - [ ] Sentences end on specific facts, not vague editorial payoffs
+- [ ] No AI-giveaway phrases: "dive into," "unleash," "game-changing," "revolutionary," "leverage," "delve"
+- [ ] No marketing hype or forced enthusiasm
+- [ ] No unnecessary adjectives or adverbs
+- [ ] Learner is always addressed directly — "you will learn/build/understand," never "we will cover"
+- [ ] No "we will" — replace with "you will"
+- [ ] Instructor does not self-introduce in marketing script
+- [ ] Concrete outcome names the specific thing built — not just "a working app"
+- [ ] "In this course" used no more than once per speaker turn
+- [ ] Andrew does NOT read a numbered list on camera in L0
+- [ ] Instructor delivers the Lesson 1 preview and energetic closer in L0; Andrew delivers the final CTA
 
 ---
 
