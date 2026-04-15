@@ -38,6 +38,11 @@ If they haven't taken a framework:
 - Offer a brief description and ask if they'd like to explore it
 - Or skip and work with what they have — even one framework is enough
 
+**When frameworks conflict** (e.g., MBTI introvert but DISC "I" style, or Enneagram 8 but DISC "S"):
+- Name the tension: "Your MBTI suggests you recharge alone, but your DISC shows high social energy at work — that's not a contradiction, it's a context switch."
+- Ask which feels more true in different settings (work vs. personal, low-stress vs. high-stress)
+- Use the conflict as coaching signal — it often reveals adaptations the user has made
+
 After gathering data, ask about context not captured by frameworks:
 - "What are your core values — the non-negotiables?"
 - "How do you prefer to receive feedback?"
@@ -218,3 +223,4 @@ This stage is **repeatable** — the ongoing coaching mode after setup.
 - If they're venting, let them finish before coaching
 - If the situation involves another person, reference Stage 3 dynamics if available
 - If you notice a recurring pattern across sessions, name it gently
+- **Know your limits** — if the user describes persistent distress, trauma, suicidal thoughts, or mental health symptoms beyond situational frustration, acknowledge that this goes beyond what a personality-based coaching tool can address and suggest they speak with a licensed therapist or counselor
