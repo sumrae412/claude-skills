@@ -26,7 +26,8 @@ mkdir -p /Users/summerrae/claude_code/claude-skills/synthetic-persona/references
 This file contains:
 - Source categories (articles, podcasts, operating manuals, social media, framework data, industry context)
 - Data extraction checklist (for each source: priorities, communication style, decision patterns, domain expertise, frustrations, values)
-- Persona Card template (structured markdown for human reference)
+- Persona Card template (structured markdown for human reference) — includes JTBD statement and Empathy Map
+- Empathy Map guide (Says/Thinks/Does/Feels grid for organizing raw source material)
 - Meta-prompt template (the prompt Claude uses to generate its own persona instructions from gathered data)
 - Memory save format (how to persist the persona for reuse)
 
@@ -120,6 +121,28 @@ For each source, extract as much as possible:
 
 ---
 
+## Empathy Map
+
+Use this grid to organize raw source material before synthesizing the Persona Card. For each source, slot observations into the right quadrant:
+
+```
++-------------------------+-------------------------------+
+|         SAYS            |            THINKS             |
+| Direct quotes from      | Worries and concerns          |
+| talks, articles,        | Aspirations inferred from     |
+| interviews              | their content and choices      |
++-------------------------+-------------------------------+
+|         DOES            |            FEELS              |
+| Observable actions,     | Emotional patterns —          |
+| workarounds, tools      | frustrations, delights,       |
+| they use publicly       | anxieties expressed publicly  |
++-------------------------+-------------------------------+
+```
+
+This is a working tool, not a deliverable. Use it to spot patterns across sources before writing the card.
+
+---
+
 ## Persona Card Template
 
 After gathering data, synthesize into this structure:
@@ -150,6 +173,18 @@ After gathering data, synthesize into this structure:
 
 ### Personality Frameworks
 [Enneagram, DISC, MBTI, etc. — if known]
+
+### Jobs-to-Be-Done
+Primary: When [situation], I want to [motivation], so I can [expected outcome].
+- Functional: [practical task to accomplish]
+- Emotional: [how they want to feel]
+- Social: [how they want to be perceived]
+
+### Empathy Map
+- **Says**: [direct quotes from public sources — interviews, talks, articles]
+- **Thinks**: [worries, aspirations, concerns inferred from content]
+- **Does**: [observable behaviors, workarounds, tools they use]
+- **Feels**: [emotional patterns — frustrations, delights, anxieties]
 
 ### Sources
 [Links to public materials used to build this persona]
@@ -262,6 +297,26 @@ Organize findings by user experience area:
 ### Terminology
 [Key terms used in the UI — do they match the domain?]
 ```
+
+### Journey Map Option
+
+For deeper product reviews, optionally map the user's end-to-end experience across stages. This is more structured than the feature-by-feature product map above.
+
+```
+## Journey Map — [Persona Name] using [Product]
+
+### Stages: Awareness → Onboarding → Core Use → Advanced Use → Retention
+
+For each stage:
+- **Touchpoints:** [Where they interact with the product]
+- **Actions:** [What they do]
+- **Emotions:** [Satisfied / Neutral / Frustrated]
+- **Pain Points:** [Friction at this stage]
+- **Opportunities:** [How we could improve this stage]
+- **JTBD Alignment:** [Does this stage help them do their job?]
+```
+
+Use the journey map when reviewing a product end-to-end. Use the product map when reviewing specific feature areas. The persona reacts at each journey stage, not just feature-by-feature.
 
 ### Two-Pass Enrichment Prompt
 
@@ -394,9 +449,13 @@ model — include specific examples]
 [Features, information, or capabilities the persona would expect to
 exist — ranked by importance to this persona]
 
-### Priority Issues
-[Ranked list — what to fix/address first, based on persona's known
-priorities and decision patterns]
+### Priority Issues (Opportunity Scored)
+Ranked using Opportunity Score = Importance + (Importance - Satisfaction).
+Scores > 10 indicate high-priority gaps.
+
+| Issue | Importance (1-10) | Satisfaction (1-10) | Opp. Score | Action |
+|-------|-------------------|---------------------|------------|--------|
+| [gap] | [how much persona cares] | [how well product addresses it] | [calculated] | [fix/add/improve] |
 
 ### Key Reactions
 [Notable quotes or reactions from the interactive session worth
@@ -468,10 +527,10 @@ Build a "synthetic person" from public data, then use that persona to review you
 
 | Stage | Purpose | Output |
 |-------|---------|--------|
-| 1. Research & Build | Gather public data, generate persona | Persona Card + Persona Prompt (saved to memory) |
-| 2. Product Scan | Read codebase, build product map | Product Map + enriched persona lens |
+| 1. Research & Build | Gather public data, build empathy map, define JTBD, generate persona | Persona Card (w/ JTBD + Empathy Map) + Persona Prompt (saved to memory) |
+| 2. Product Scan | Read codebase, build product map + optional journey map | Product Map + Journey Map + enriched persona lens |
 | 3. Interactive Session | Review, brainstorm, rehearse, or analyze | Dialogue session |
-| 4. Findings Report | Synthesize session into actionable report | Markdown report in docs/persona-reviews/ |
+| 4. Findings Report | Synthesize with opportunity scoring | Scored report in docs/persona-reviews/ |
 
 Work through **one stage per session**. Stages 3-4 are repeatable with the same persona.
 
@@ -487,15 +546,19 @@ Work through **one stage per session**. Stages 3-4 are repeatable with the same 
 
 1. **Gather sources** — Ask what the user already has (articles, talks, docs). Then use web search to find additional public material. See `references/research-guide.md` for source categories.
 
-2. **Extract patterns** — For each source, extract: priorities, communication style, decision patterns, domain expertise, frustrations, values. Use the Data Extraction Checklist in the research guide.
+2. **Organize with Empathy Map** — As you process sources, slot observations into the Says/Thinks/Does/Feels grid (template in research guide). This surfaces patterns before you synthesize.
 
-3. **Ask about personality frameworks** — "Do you know their Enneagram type, MBTI, DISC, or other framework results?" Even partial data helps.
+3. **Extract patterns** — For each source, extract: priorities, communication style, decision patterns, domain expertise, frustrations, values. Use the Data Extraction Checklist in the research guide.
 
-4. **Build the Persona Card** — Synthesize into structured format (template in research guide). Present to user for validation: "Does this feel like them? What's off?"
+4. **Ask about personality frameworks** — "Do you know their Enneagram type, MBTI, DISC, or other framework results?" Even partial data helps.
 
-5. **Meta-prompt step** — Feed all gathered material to Claude and generate a Persona Prompt — the actual role-playing instructions written in second person. This produces richer behavior than the structured card alone. See meta-prompt template in research guide.
+5. **Define their JTBD** — Ask: "What job is this person hiring your product (or a product like yours) to do?" Frame as: "When [situation], I want to [motivation], so I can [expected outcome]." Capture functional, emotional, and social dimensions.
 
-6. **Save to memory** — Store both the Persona Card and Persona Prompt as memory files for reuse in future sessions.
+6. **Build the Persona Card** — Synthesize into structured format (template in research guide). Includes JTBD statement and Empathy Map summary. Present to user for validation: "Does this feel like them? What's off?"
+
+7. **Meta-prompt step** — Feed all gathered material to Claude and generate a Persona Prompt — the actual role-playing instructions written in second person. This produces richer behavior than the structured card alone. See meta-prompt template in research guide.
+
+8. **Save to memory** — Store both the Persona Card and Persona Prompt as memory files for reuse in future sessions.
 
 **Output format:**
 ```
@@ -531,9 +594,11 @@ Next stage: Stage 2 — Product/Context Scan (or Stage 3 if reviewing something 
 
 2. **Build the product map** — Organize findings by user-facing areas (not code architecture): Getting Started, Core Workflow, Secondary Features, Communication, Terminology.
 
-3. **Two-pass enrichment** — Feed the product map summary back into the persona: "Now that you know what this product does, what matters most to [Name]?" Refine the persona lens to be product-specific.
+3. **Optionally build a journey map** — For end-to-end reviews, map the user experience across stages: Awareness → Onboarding → Core Use → Advanced Use → Retention. Each stage tracks touchpoints, actions, emotions, pain points, and JTBD alignment. See journey map template in `references/review-prompts.md`.
 
-4. **Present the map** — Show the user the product map. Ask: "Is this a fair representation of the product? Anything missing?"
+4. **Two-pass enrichment** — Feed the product map summary back into the persona: "Now that you know what this product does, what matters most to [Name]?" Refine the persona lens to be product-specific.
+
+5. **Present the map** — Show the user the product map (and journey map if built). Ask: "Is this a fair representation of the product? Anything missing?"
 
 **Output format:**
 ```
@@ -602,9 +667,10 @@ Analyze the interpersonal dynamic between the user and [Name]:
 
 1. Review everything from the Stage 3 session
 2. Organize into the report template (see `references/review-prompts.md`)
-3. Assess confidence for each finding — strong, moderate, or speculative
-4. Identify what to validate with the real person
-5. Recommend 3-5 concrete next steps
+3. **Score priority issues** — For each gap or issue, calculate Opportunity Score: `Importance + (Importance - Satisfaction)`. Scores > 10 = high-priority. This uses the JTBD from Stage 1 to ground importance ratings.
+4. Assess confidence for each finding — strong, moderate, or speculative
+5. Identify what to validate with the real person
+6. Recommend 3-5 concrete next steps
 
 **Save to**: `docs/persona-reviews/YYYY-MM-DD-[name]-review.md`
 

@@ -81,6 +81,18 @@ synthetic-persona/
 ### Personality Frameworks
 [Enneagram, DISC, MBTI, etc. — if known]
 
+### Jobs-to-Be-Done
+Primary: When [situation], I want to [motivation], so I can [expected outcome].
+- Functional: [practical task to accomplish]
+- Emotional: [how they want to feel]
+- Social: [how they want to be perceived]
+
+### Empathy Map
+- **Says**: [direct quotes from public sources]
+- **Thinks**: [worries, aspirations inferred from content]
+- **Does**: [observable behaviors, workarounds]
+- **Feels**: [emotional patterns — frustrations, delights]
+
 ### Sources
 [Links to public materials used to build this persona]
 ```
@@ -104,6 +116,8 @@ synthetic-persona/
 - Onboarding flows — first-time user experience
 
 **Output**: A concise product summary organized by user-facing areas (not code architecture). Example sections: "Getting Started", "Core Workflow", "Settings & Configuration", "Notifications", "Error Handling".
+
+**Optional journey map**: For end-to-end reviews, map the user experience across stages (Awareness → Onboarding → Core Use → Advanced Use → Retention). Each stage tracks touchpoints, actions, emotions, pain points, and JTBD alignment. More structured than the feature-by-feature product map.
 
 **Two-pass enrichment**: After building the product map, feed a summary back into the persona: "Now that you know what [Product] does, refine your perspective on what matters most to [Name] about this product." This tightens reactions from generic to product-specific.
 
@@ -181,8 +195,12 @@ Requires: the user's own personality profile (from personal-coach or provided di
 ### What's Missing
 [Features, information, or capabilities the persona would expect to exist]
 
-### Priority Issues
-[Ranked list — what to fix/address first, based on persona's known priorities and decision patterns]
+### Priority Issues (Opportunity Scored)
+Ranked using Opportunity Score = Importance + (Importance - Satisfaction). Scores > 10 = high-priority gaps.
+
+| Issue | Importance (1-10) | Satisfaction (1-10) | Opp. Score | Action |
+|-------|-------------------|---------------------|------------|--------|
+| [gap] | [how much persona cares] | [how well product addresses it] | [calculated] | [fix/add/improve] |
 
 ### Key Reactions
 [Notable quotes or reactions from the interactive session worth preserving]
