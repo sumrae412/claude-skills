@@ -12,10 +12,11 @@ A guided 7-stage product sprint combining Marily Nika's AI-Enhanced PM Cycle wit
 ## Before Starting
 
 1. Read `references/debate-technique.md` for the Stage 1 debate framework
-2. Read `references/prd-template.md` for Stage 2 PRD structure
-3. Read `references/stakeholder-clone.md` for Stage 3 and Stage 5 stakeholder simulation
-4. Ask: "What's your product idea? Describe it in 1-2 sentences."
-5. Ask which stage to start from (default: Stage 1)
+2. Read `references/segmentation-matrix.md` for the Stage 1 customer segmentation framework
+3. Read `references/prd-template.md` for Stage 2 PRD structure
+4. Read `references/stakeholder-clone.md` for Stage 3 and Stage 5 stakeholder simulation
+5. Ask: "What's your product idea? Describe it in 1-2 sentences."
+6. Ask which stage to start from (default: Stage 1)
 
 ## Stage Flow
 
@@ -47,6 +48,13 @@ Each stage accepts external input — users can skip ahead if they bring their o
    - Track which arguments CON concedes vs. holds firm on
 5. Synthesize into the **Minimum Feature Set** — features that convinced the skeptic
 
+6. After the debate, build a **Customer Segmentation Matrix**:
+   - Read `references/segmentation-matrix.md` for the framework
+   - Choose two behavioral axes relevant to this product's users
+   - Build a 3x3 (or 2x2) grid with named segments
+   - Estimate percentage distribution across segments
+   - For each major segment (>10%), define: core need, discovery path, retention driver
+
 **Output**:
 ```
 ## Stage 1: Rapid User Research — COMPLETE
@@ -64,6 +72,19 @@ Each stage accepts external input — users can skip ahead if they bring their o
 
 ### Critical Concerns to Address
 - [Concern the skeptic never conceded]
+
+### Customer Segmentation Matrix
+**Axes**: [Axis 1] x [Axis 2]
+
+| | [Low] | [Mid] | [High] |
+|---|---|---|---|
+| **[Axis 2 High]** | [Segment] (~X%) | [Segment] (~X%) | [Segment] (~X%) |
+| **[Axis 2 Mid]** | [Segment] (~X%) | [Segment] (~X%) | [Segment] (~X%) |
+| **[Axis 2 Low]** | [Segment] (~X%) | [Segment] (~X%) | [Segment] (~X%) |
+
+**Primary segments** (>10%):
+- [Segment]: needs [X], discovers via [Y], retains because [Z]
+- [Segment]: needs [X], discovers via [Y], retains because [Z]
 ```
 
 **Deep-dive exits** (offer after completing):
@@ -92,10 +113,17 @@ Each stage accepts external input — users can skip ahead if they bring their o
    - "How will you know this succeeded? Give me one metric."
 4. Read `references/prd-template.md` and generate the PRD, incorporating absorbed frameworks
 
+5. If Stage 1 produced a segmentation matrix, add a **Service Design per Segment** section:
+   - For each major segment: map Must-Have features to that segment's core need
+   - Identify which features serve multiple segments (shared infrastructure)
+   - Design segment-specific touchpoints (onboarding flows, content, events, or tiers)
+   - Flag any segment that's underserved by the current feature set
+
 **Output**: Complete PRD with:
 - Problem Statement (tied to debate evidence from Stage 1)
-- Target Users (from question 1)
+- Target Users (from question 1, enriched by segmentation matrix if available)
 - Feature Prioritization (MoSCoW — Must/Should/Could/Won't)
+- Service Design per Segment (features mapped to segments, shared vs. segment-specific)
 - Success Metrics (from question 3)
 - Key Constraint (from question 2)
 - Domain Framework Alignment (if frameworks were provided)
@@ -343,6 +371,16 @@ Completed: [date]
 1. **Start**: "What's your product idea? Describe it in 1-2 sentences." Then: "Want to start from Stage 1, or jump to a specific stage?"
 2. **During**: Move through stages sequentially. After each stage, offer the deep-dive exit and ask "Ready for Stage [N+1]?"
 3. **End**: Summarize all outputs. Suggest next steps: "You now have research, a PRD, a stakeholder-tested pitch, and a prototype. Want to go deeper with `/startup-planner` for business model work?"
+
+### Cumulative Context Rule
+
+Each stage's output becomes input context for every subsequent stage. Maintain a running project brief — don't treat stages as isolated. Specifically:
+- Stage 2 PRD references Stage 1 debate evidence and segmentation matrix
+- Stage 3 stakeholder persona is informed by which segments matter most
+- Stage 4 prototype reflects PRD priorities shaped by segmentation
+- Stage 5 pitch uses debate evidence as proof points and addresses stakeholder concerns
+
+When the user provides additional context mid-sprint (documents, frameworks, competitor info), absorb it into the running brief — it informs all remaining stages, not just the current one.
 
 ## Output Format
 
