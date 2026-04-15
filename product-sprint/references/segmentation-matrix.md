@@ -44,7 +44,7 @@ Create a 3x3 grid (or 2x2 for simpler markets). For each cell:
 
 Assign percentages to each segment. These should:
 - Sum to 100%
-- Be informed by Stage 1 research (forum demographics, survey data, competitor user bases)
+- Be informed by debate evidence and web research gathered earlier in this stage
 - Identify which 2-3 segments represent the bulk of your market
 - Flag any segment that's <5% — consider whether it's worth designing for
 

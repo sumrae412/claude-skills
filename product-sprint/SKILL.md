@@ -12,8 +12,7 @@ A guided 7-stage product sprint combining Marily Nika's AI-Enhanced PM Cycle wit
 ## Before Starting
 
 1. Read `references/debate-technique.md` for the Stage 1 debate framework
-2. Read `references/segmentation-matrix.md` for the Stage 1 customer segmentation framework
-3. Read `references/prd-template.md` for Stage 2 PRD structure
+2. Read `references/prd-template.md` for Stage 2 PRD structure
 4. Read `references/stakeholder-clone.md` for Stage 3 and Stage 5 stakeholder simulation
 5. Ask: "What's your product idea? Describe it in 1-2 sentences."
 6. Ask which stage to start from (default: Stage 1)
@@ -50,10 +49,10 @@ Each stage accepts external input — users can skip ahead if they bring their o
 
 6. After the debate, build a **Customer Segmentation Matrix**:
    - Read `references/segmentation-matrix.md` for the framework
-   - Choose two behavioral axes relevant to this product's users
-   - Build a 3x3 (or 2x2) grid with named segments
-   - Estimate percentage distribution across segments
-   - For each major segment (>10%), define: core need, discovery path, retention driver
+   - Choose two behavioral axes relevant to this product's users (Observable, Actionable, Independent)
+   - Build a 3x3 grid with named segments (use 2x2 for simpler markets — adjust output template accordingly)
+   - Estimate percentage distribution informed by debate evidence and web research
+   - For each major segment (>10%), define: who they are, core offering, discovery path, upgrade trigger, churn risk
 
 **Output**:
 ```
@@ -74,17 +73,17 @@ Each stage accepts external input — users can skip ahead if they bring their o
 - [Concern the skeptic never conceded]
 
 ### Customer Segmentation Matrix
-**Axes**: [Axis 1] x [Axis 2]
+**Axes**: [Axis 1 name] x [Axis 2 name]
 
-| | [Low] | [Mid] | [High] |
+| | [Axis 1 low descriptor] | [Axis 1 mid descriptor] | [Axis 1 high descriptor] |
 |---|---|---|---|
-| **[Axis 2 High]** | [Segment] (~X%) | [Segment] (~X%) | [Segment] (~X%) |
-| **[Axis 2 Mid]** | [Segment] (~X%) | [Segment] (~X%) | [Segment] (~X%) |
-| **[Axis 2 Low]** | [Segment] (~X%) | [Segment] (~X%) | [Segment] (~X%) |
+| **[Axis 2 high descriptor]** | [Segment name] (~X%) | [Segment name] (~X%) | [Segment name] (~X%) |
+| **[Axis 2 mid descriptor]** | [Segment name] (~X%) | [Segment name] (~X%) | [Segment name] (~X%) |
+| **[Axis 2 low descriptor]** | [Segment name] (~X%) | [Segment name] (~X%) | [Segment name] (~X%) |
 
 **Primary segments** (>10%):
-- [Segment]: needs [X], discovers via [Y], retains because [Z]
-- [Segment]: needs [X], discovers via [Y], retains because [Z]
+- [Segment]: [who they are] — needs [core need], discovers via [channel], retains because [driver]
+- [Segment]: [who they are] — needs [core need], discovers via [channel], retains because [driver]
 ```
 
 **Deep-dive exits** (offer after completing):
@@ -117,17 +116,30 @@ Each stage accepts external input — users can skip ahead if they bring their o
    - For each major segment: map Must-Have features to that segment's core need
    - Identify which features serve multiple segments (shared infrastructure)
    - Design segment-specific touchpoints (onboarding flows, content, events, or tiers)
+   - Include upgrade triggers and churn risks per segment (from segmentation analysis)
    - Flag any segment that's underserved by the current feature set
 
 **Output**: Complete PRD with:
 - Problem Statement (tied to debate evidence from Stage 1)
 - Target Users (from question 1, enriched by segmentation matrix if available)
 - Feature Prioritization (MoSCoW — Must/Should/Could/Won't)
-- Service Design per Segment (features mapped to segments, shared vs. segment-specific)
+- Service Design per Segment (see template below)
 - Success Metrics (from question 3)
 - Key Constraint (from question 2)
 - Domain Framework Alignment (if frameworks were provided)
 - Risks (from Stage 1 skeptic's unresolved concerns)
+
+**Service Design per Segment template** (if segmentation matrix exists):
+```
+### Service Design per Segment
+
+| Segment | Core Need | Must-Have Features | Segment-Specific Touchpoints | Upgrade Trigger | Churn Risk | Underserved? |
+|---|---|---|---|---|---|---|
+| [Segment 1] | ... | ... | ... | ... | ... | Yes/No |
+| [Segment 2] | ... | ... | ... | ... | ... | Yes/No |
+
+**Shared infrastructure**: [features that serve 2+ segments with minor customization]
+```
 
 **Deep-dive exits** (offer after completing):
 - "Want Business Model Canvas, market sizing, and Go/NoGo?" → invoke `/startup-planner` starting at Stage 8
@@ -379,6 +391,8 @@ Each stage's output becomes input context for every subsequent stage. Maintain a
 - Stage 3 stakeholder persona is informed by which segments matter most
 - Stage 4 prototype reflects PRD priorities shaped by segmentation
 - Stage 5 pitch uses debate evidence as proof points and addresses stakeholder concerns
+- Stage 6 Personal OS checks for personality-driven blind spots in segment prioritization
+- Stage 7 Demo Judge evaluates pitches against the full accumulated context
 
 When the user provides additional context mid-sprint (documents, frameworks, competitor info), absorb it into the running brief — it informs all remaining stages, not just the current one.
 
