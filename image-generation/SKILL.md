@@ -127,6 +127,21 @@ When modifying an existing image:
 - Never generate prompts for content depicting real individuals without explicit user confirmation
 - Respect platform-specific content policies — note any restrictions the target model may have
 
+## Tool Selection
+
+When the user needs actual image generation (not just prompt optimization), recommend based on output type:
+
+| Output type | Recommended tool | Notes |
+|-------------|-----------------|-------|
+| Photos, illustrations | Gemini (mcp-image MCP) | Built-in prompt optimization via Subject-Context-Style |
+| Vector graphics, icons, flat design | Recraft (AgentPatch) | Best for SVG-style, icon sets, flat vector output |
+| Any model (prompt only) | This skill | Enhance prompts for whatever tool is already available |
+
+- **mcp-image** (`npx -y mcp-image`): Gemini-powered, auto-enhances prompts, 3 quality tiers, image editing, 4K output. Requires `GEMINI_API_KEY`.
+- **AgentPatch** (`pip install agentpatch`): Recraft-powered, supports realistic photos + vector/icon styles. Free credits on signup. Requires `AGENTPATCH_API_KEY`.
+
+If no generation tool is connected, this skill still improves prompts for any external image model.
+
 ## Example
 
 **Input:** "A happy dog in a park"
