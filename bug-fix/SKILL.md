@@ -59,6 +59,15 @@ A bug without a reproduction is a guess. Write the failing test before investiga
    - Check if the bug is environment-specific (local vs staging vs prod)
    - If still can't reproduce: tell the user and ask for more information. Don't guess.
 
+5. **Sub-path: user can reproduce, agent cannot** (browser extensions, mobile, user-specific DOM state, OS-specific races, auth'd sessions):
+   - Do NOT multi-hypothesize without evidence. That is the #1 time-sink in this sub-path.
+   - Identify the critical path (e.g. input → dispatch → parse → render → apply).
+   - Add short, labeled `console.log` (or equivalent) breadcrumbs at every decision/branch point. Use a stable grep-friendly prefix (e.g. `[tg:diag]`).
+   - Ship as a throwaway diagnostic build and tell the user it's instrumentation, not a fix.
+   - User reproduces, pastes console output. Pinpoint the failing branch with runtime evidence in hand.
+   - Fix with evidence. Strip or gate the logs before final ship.
+   - Anti-signal: three hypothetical fixes deep without a single log line from the user. Stop and instrument.
+
 ### Output: $bug_report
 
 ```

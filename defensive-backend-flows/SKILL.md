@@ -1111,6 +1111,51 @@ A reply text of `</Message><Redirect>https://attacker.example.com/twiml</Redirec
 
 **Learned from:** PR #342 — `app/routes/twilio_inbound.py` line 167.
 
+### 43. Sanitizers That Modify Parseable Text Must Track Context
+
+A global regex that mutates control chars, quotes, or whitespace in JSON/SQL/HTML/markdown will corrupt valid input by hitting structural positions as well as in-literal positions. The output looks plausible — one character off — but the downstream parser rejects it.
+
+```python
+# BAD — global regex escapes all control chars, including structural whitespace
+# between { and the first property name. Pretty-printed JSON breaks at position 1.
+sanitized = re.sub(r'[\x00-\x1F\x7F]', lambda m: {
+    '\n': r'\n', '\r': r'\r', '\t': r'\t'
+}.get(m.group(), ''), raw_json)
+return json.loads(sanitized)  # fails: "{\n  \"flagged\"" after sanitize → parse error
+
+# GOOD — state-machine walk. Only escape control chars inside "..." literals.
+def escape_control_chars_in_strings(s: str) -> str:
+    out, in_string, escaped = [], False, False
+    for ch in s:
+        if escaped:
+            out.append(ch); escaped = False; continue
+        if ch == '\\' and in_string:
+            out.append(ch); escaped = True; continue
+        if ch == '"':
+            in_string = not in_string; out.append(ch); continue
+        if in_string and ord(ch) < 0x20:
+            out.append({'\n': r'\n', '\r': r'\r', '\t': r'\t'}.get(
+                ch, f'\\u{ord(ch):04x}'))
+        else:
+            out.append(ch)
+    return ''.join(out)
+
+# Canonical parse pattern: fast-path → sanitizer fallback → surface error
+def parse_model_json(raw: str) -> dict | None:
+    try:
+        return json.loads(raw)
+    except json.JSONDecodeError:
+        pass
+    try:
+        return json.loads(escape_control_chars_in_strings(raw))
+    except json.JSONDecodeError:
+        return None  # caller MUST handle — no silent destructive fallback
+```
+
+**Paired anti-pattern:** silent `try/except` around the primary parse that falls through to a destructive default (send, publish, commit). Parse failures must surface to the user, not trigger irreversible actions under the guise of "fail open."
+
+**Learned from:** ToneGuard PR #20 — the service-worker's global-regex sanitizer escaped `\n` → `\\n` in structural positions once Claude Haiku 4.5 began pretty-printing JSON. `JSON.parse` rejected at "position 1 column 2"; the catch block fell through to `releaseSend()` and the user's unreviewed message was sent.
+
 ## Quick Reference
 
 | Rule | Symptom | Check |
@@ -1152,6 +1197,7 @@ A reply text of `</Message><Redirect>https://attacker.example.com/twiml</Redirec
 | State-Machine Exit Transitions | Status stuck in `PENDING_*` forever | Every exit action sets `status` explicitly, not just clears trigger field? |
 | Fail-Closed Webhook Validators | Public unauthenticated POST in prod | No-token branch hard-fails when `settings.is_production`? |
 | Escape XML/TwiML Substitutions | TwiML hijack via tag injection | AI/user content wrapped in `xml_escape()` before f-string? |
+| Context-Aware Sanitizers | "JSON.parse fails at position 1 after sanitize" | Sanitizer is a state-machine walk (tracks in-string vs structural), not a global regex? Fallback path doesn't silently release destructive action on parse failure? |
 
 ## Red Flags — STOP and Fix
 

@@ -1110,6 +1110,66 @@ Animations that run on page load, loop continuously, or animate layout propertie
 
 ---
 
+## 37. Optimistic UI Across Message Boundaries Needs Explicit Ack
+
+Any cross-frame, cross-process, or cross-service-worker UI that paints "success" before the action has been acknowledged will silently lie to the user if the action fails. `window.postMessage`, `chrome.runtime.sendMessage` without callback, fire-and-forget `BroadcastChannel` — all fall into this trap. The sender posts, the receiver hasn't run yet, and the success confirmation already painted.
+
+```javascript
+// BAD — fire and forget, paint success immediately
+useSuggestionBtn.addEventListener("click", () => {
+  window.parent.postMessage({ type: "use_suggestion", text }, "*");
+  showSent("Applied!");  // parent hasn't even received the message
+});
+
+// GOOD — each action carries an id, receiver ack's, sender paints on ok:true
+let nextId = 0;
+const pending = new Map();
+
+function send(type, payload) {
+  const id = ++nextId;
+  return new Promise((resolve, reject) => {
+    pending.set(id, { resolve, reject });
+    window.parent.postMessage({ type, id, ...payload }, "*");
+    setTimeout(() => {
+      if (pending.has(id)) {
+        pending.delete(id);
+        reject(new Error("ack timeout"));
+      }
+    }, 5000);
+  });
+}
+
+window.addEventListener("message", (e) => {
+  const { type, id, ok, error } = e.data || {};
+  if (type === "use_suggestion:ack" && pending.has(id)) {
+    const { resolve, reject } = pending.get(id);
+    pending.delete(id);
+    ok ? resolve() : reject(new Error(error));
+  }
+});
+
+useSuggestionBtn.addEventListener("click", async () => {
+  try {
+    await send("use_suggestion", { text });
+    showSent("Applied!");
+  } catch (err) {
+    showError("Couldn't apply — insert the rewrite manually.");
+  }
+});
+```
+
+**Correct shape:**
+1. Each action carries a unique id.
+2. Sender posts `{type, id, ...}` and registers a pending-promise keyed by id.
+3. Receiver acts, posts back `{type: "<action>:ack", id, ok: true|false, error?}`.
+4. Sender resolves/rejects. Paint success **only** on `ok:true`; paint a clear error on `ok:false`; time out after N seconds with a fallback error.
+
+**Check:** grep for `postMessage` / `sendMessage` followed within ~5 lines by a success paint (`show`, `toast`, `alert`, `render`) with no intervening `await` or callback. That's the smell.
+
+**Learned from:** ToneGuard's `overlay-frame.js` painted "Suggestion applied!" before the parent iframe had even received the `postMessage`. When Gmail's insertion silently failed, the user was told success anyway. This is the same failure mode as any silent-catch anti-pattern — the UI becomes a liar.
+
+---
+
 ## Checklist for New UI Code
 
 - [ ] Every guard clause shows feedback (toast, inline, or console)
@@ -1152,6 +1212,7 @@ Animations that run on page load, loop continuously, or animate layout propertie
 - [ ] Keyboard event interceptors check for open autocomplete/mention dropdowns before suppressing keystrokes (scope dropdown selectors to the correct platform)
 - [ ] Platform-specific DOM selectors are guarded by a platform check (don't query one platform's selectors inside another)
 - [ ] Animations are functional (150-300ms, transforms/opacity only), not decorative; wrapped in `prefers-reduced-motion` media query; no `animation: infinite` on non-loading elements
+- [ ] Cross-frame / cross-process actions use id-tagged request → `:ack` response with `{ok, error?}` — never paint success after a fire-and-forget `postMessage` or `chrome.runtime.sendMessage`
 
 ---
 
