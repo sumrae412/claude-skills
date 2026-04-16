@@ -21,7 +21,7 @@ Apply these principles when writing, reviewing, or debugging code across any pro
 | Create migration? | **Always** when changing DB schema |
 | Add type hints? | **Always** on function signatures |
 | Use service layer? | **Always** for business logic |
-| Using external API? | **Always** fetch docs first via your project's API docs tool |
+| Using external API? | **Always** fetch docs first: `chub get <api-id> --lang py\|js` |
 | Cache data? | When frequently accessed, rarely changed |
 | Add index? | When queries slow or tables > 1000 rows |
 | Add rate limiting? | **Always** for new endpoints |
@@ -52,22 +52,112 @@ q2 = select(func.count(M2.id)).where(...).scalar_subquery()
 result = await db.execute(select(q1.label("c1"), q2.label("c2")))
 row = result.one()
 ```
-This avoids N+1 roundtrips. See your project's aggregate counts service for a multi-subquery example.
+This avoids N+1 roundtrips. See `app/services/counts_service.py` for a 7-subquery example.
 
-## scalar_one_or_none() Crash Risk
+## Detailed Guidelines
 
-Use `scalars().first()` for non-unique column lookups. `scalar_one_or_none()` raises `MultipleResultsFound` on non-unique columns — this is a production crash risk, not just a style issue.
+For specific patterns and examples, see:
 
-## Reference Files
+- [Python Patterns](docs/python-patterns.md) - SQLAlchemy, async, transactions, migrations
+- [JavaScript Safety](docs/javascript-safety.md) - DOM, events, WebSocket
+- [API Design](docs/api-design.md) - REST, routing, HTTP methods
+- [Testing Guide](docs/testing.md) - Test types and when to use them
+- [Performance](docs/performance.md) - Caching, circuit breakers, optimization
+- [Security](docs/security.md) - OWASP top 10, input validation, secrets
 
-| File | Use for |
-|------|---------|
-| [Python Patterns](references/python-patterns.md) | SQLAlchemy relationships, async patterns, transactions, Alembic migrations |
-| [JavaScript Safety](references/javascript-safety.md) | DOM null-checks, event handlers, WebSocket alignment |
-| [API Design](references/api-design.md) | REST conventions, route naming, HTTP method matching |
-| [Testing Guide](references/testing.md) | Test types, factories, async setup, mocking patterns |
-| [Performance](references/performance.md) | Caching, circuit breakers, N+1 prevention, connection pooling |
-| [Security](references/security.md) | OWASP top 10, input validation, secrets management |
+## Shell Scripts That Call External LLM CLIs
+
+Three discipline rules for any bash script that shells out to an external LLM (Codex CLI, Gemini CLI, etc.) or passes user/LLM-generated content through shell:
+
+### 1. Put the prompt in a sibling `.txt` file, not an inline string
+
+Bash single-quoted strings break on apostrophes. A multi-line `PERSONA='You are a staff engineer. You have seen it all. Don\'t...'` appears to work until the next editor adds "don't" or "it's" somewhere and the string closes mid-sentence. Silently. Double-quoted strings break on `$`, `` ` ``, and `"`.
+
+```bash
+# BAD — one apostrophe away from silent breakage
+PERSONA='You are a staff engineer. You have seen it all. Do not praise. ...'
+
+# GOOD — persona lives in a sibling file, immune to bash quoting
+PERSONA_FILE="$SCRIPT_DIR/curmudgeon_persona.txt"
+```
+
+Pattern: any LLM prompt longer than a single line or likely to be edited should live in a sibling `.txt` file, `cat`'d into the prompt assembly.
+
+### 2. Pipe large prompts to stdin, not argv
+
+`codex exec "$(cat prompt.txt)"` passes the entire prompt as a single argv. `ARG_MAX` on macOS is ~128KB; large diffs blow past that silently and fail with `E2BIG` or truncate. If the external CLI accepts stdin, prefer it:
+
+```bash
+# BAD — prompt as argv; ARG_MAX risk on large diffs
+RAW=$(codex exec --quiet "$(cat "$PROMPT_FILE")")
+
+# GOOD — prompt on stdin; no ARG_MAX
+RAW=$(codex exec --quiet --output-format json < "$PROMPT_FILE")
+```
+
+If the CLI only accepts argv, log a warning and cap the prompt size before handoff.
+
+### 3. Cross the shell → Python boundary with env vars, not interpolation
+
+Passing CLI output into Python via heredoc interpolation (`raw = """$RAW"""`) is shell-injection-vulnerable: if RAW contains `"""`, `` ` ``, or `$(...)`, the shell sees it before Python does. Use a quoted heredoc (`<<'PY'`) and read the value from `os.environ`:
+
+```bash
+# BAD — unquoted heredoc interpolates $RAW; quote-bomb in RAW breaks it
+python3 <<PY
+raw = """$RAW"""
+data = json.loads(raw)
+PY
+
+# GOOD — quoted heredoc, Python reads from env; injection-safe
+RAW=$RAW python3 <<'PY'
+import os, json
+raw = os.environ.get("RAW", "")
+data = json.loads(raw)
+PY
+```
+
+Adversarial verification: pass a payload containing `"""`, `` `rm -rf /` ``, and `$(whoami)` through the boundary. It should land as literal JSON string content on the Python side.
+
+## Shell Script Cleanup Traps
+
+When a shell script creates a side effect that must be cleaned up (temp file, symlink, background process, PID file), register the `trap` BEFORE the side effect is created — not after.
+
+```bash
+# BAD — if ln -sf fails the trap never registers; if ln -sf succeeds but
+# a later assertion fails, the symlink leaks.
+ln -sf "$FIX/mock-codex" "$FIX/codex"
+trap 'rm -f "$FIX/codex"' EXIT
+
+# GOOD — trap registered first; side effect has an unconditional cleanup path
+trap 'rm -f "$FIX/codex"' EXIT
+ln -sf "$FIX/mock-codex" "$FIX/codex"
+```
+
+Same rule for `mktemp`, background `&` jobs, `lockfile`, and anything else that persists past the script's happy path. The invariant is: **from the moment the side effect exists, there is a registered cleanup for it.**
+
+## Path Traversal via `/` Operator
+
+When a script takes a relative path from LLM output, user input, or any untrusted source and joins it with a trusted project root, `project_root / user_rel` does NOT guard against `../` escape.
+
+```python
+# BAD — --files ../../etc/passwd reads outside the project root
+path = project_root / rel
+tree = ast.parse(path.read_text())
+
+# GOOD — resolve first, then verify containment
+def _safe_resolve(project: Path, rel: str) -> Path | None:
+    try:
+        candidate = (project / rel).resolve()
+    except (OSError, ValueError):
+        return None
+    try:
+        candidate.relative_to(project)
+    except ValueError:
+        return None
+    return candidate
+```
+
+The invariant: **any path derived from untrusted input must be resolved and verified to land inside the trusted root before being read, parsed, or globbed.** Silent `continue` on failure is usually the right call — don't error on traversal attempts, just ignore them. See memory: `path_traversal_project_root`.
 
 ## Type Hint Discipline
 
@@ -157,11 +247,4 @@ class DeployManager:
         self.timeout = timeout
 ```
 
-**Examples:** your project's CI/CD scripts (e.g. release, rollback, canary deploy scripts)
-
-## Guardrails
-
-- Do **not** apply these patterns to archived or deprecated code paths — fix forward, not sideways
-- Do **not** add type hints, tests, or service-layer refactors as part of an unrelated bug fix without explicit scope approval
-- Do **not** apply SQLAlchemy eager-load or migration rules to non-SQLAlchemy ORMs without verifying equivalents
-- Do **not** enforce `scalar_one_or_none()` replacement globally — only change it where non-unique lookups are confirmed
+**Examples:** scripts/release.py, scripts/rollback.py, scripts/canary_deploy.py

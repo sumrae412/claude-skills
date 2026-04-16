@@ -13,7 +13,23 @@ metadata:
 
 After major commits, dispatch a background agent to reflect on what was learned and propose updates to skills and project docs. The agent analyzes both **code diffs** and **session conversation** to find new patterns, bug lessons, user corrections, and conventions that should be documented.
 
+After writing individual memory files, the agent also runs a **compilation step** that consolidates related memories into concept articles under `memory/knowledge/concepts/`. This reduces fragmentation and creates cross-referenced knowledge. See Step 2b below.
+
 **Core principle:** The conversation is the richest source of learnings. Code diffs show *what* changed; session events show *why* and *what went wrong first*.
+
+## Memory File Convention: `## Related` Footer
+
+When writing a new memory file (topic-slug-named, one per learning), end it with an optional `## Related` section listing 2–4 neighbor memory files that share context. Plain markdown, one line per neighbor:
+
+```markdown
+## Related
+- [neighbor_slug] — one-line reason they relate
+- [other_slug] — ...
+```
+
+`slug` is the filename without `.md` (e.g. `fold_check_upstream` → `fold_check_upstream.md`).
+
+Why this matters: the `memory-injection` skill reads `## Related` footers for 1-hop relational retrieval (Step 4a). When a gotcha matches a subagent's file scope, co-cited neighbors get pulled in too — capped at 3 additions per injection, additive to Section 1's 10-entry cap, co-citation scored for tiebreak. Graceful no-op when the footer is absent, so adding it is strictly additive value. Add it only when genuine relationships exist; do not force-link.
 
 ## When to Use
 
@@ -47,6 +63,10 @@ SESSION CONTEXT:
 - Code quality catches: [N+1 queries, race conditions, duplicate code found in review]
 - Cross-cutting changes: [same rule applied to 3+ files = policy; needs memory entry]
 - Skills modified: [which skills were edited and why — triggers cross-reference audit]
+- Abandoned approaches: [check .claude/abandoned/ for records created this session —
+  ensure they are reflected in MEMORY.md entries so future sessions don't re-explore]
+- Failure events: [read memory/episodic/failure-events.jsonl for this session's events —
+  count by type, note any failure:unresolved, list novel patterns added to catalog]
 ```
 
 ### Step 2: Dispatch Background Agent
@@ -63,23 +83,127 @@ Task tool:
     to skills and project docs.
 
     ## Write Access
-    You have DIRECT WRITE ACCESS to the project memory repo. Detect the project
-    memory directory dynamically from the current working directory:
-
-      # Derive the project hash from the working directory path
-      PROJECT_PATH=$(pwd)
-      PROJECT_HASH=$(echo "$PROJECT_PATH" | sed 's|/|-|g' | sed 's|^-||')
-      MEMORY_DIR=~/.claude/projects/$PROJECT_HASH/memory
+    You have DIRECT WRITE ACCESS to the project memory repo:
+      MEMORY_DIR=$(find ~/.claude/projects/ -name "MEMORY.md" -maxdepth 3 | head -1 | xargs dirname 2>/dev/null)
+      # If not found, ask user for MEMORY_DIR before proceeding.
+      # Note: MEMORY.md should already exist — claude-flow Phase 0 Step 8 bootstraps it.
+      # Do not duplicate bootstrap logic here; if missing, it indicates the workflow was skipped.
       MEMORY_FILE=$MEMORY_DIR/MEMORY.md
 
-    If $MEMORY_DIR does not exist, fall back to checking ~/.claude/memory/ or
-    the project-local .claude/memory/ directory.
-
-    For MEMORY.md updates: READ the file, EDIT it directly, then commit and push:
-      cd $MEMORY_DIR && git add MEMORY.md && git commit -m "session-learnings: <summary>" && git push
+    For MEMORY.md updates: READ the file, EDIT it directly, then commit and push
+    (see commit sequencing below after Step 2b).
 
     For skills and CLAUDE.md updates: PROPOSE only (do not edit). These need
     user approval. Write proposals to your output as structured text.
+
+    ## Step 2b: Memory Compilation
+
+    After writing individual memory files (topic-slug-named, e.g. `compose_dont_replace.md`),
+    run this compilation step to consolidate related memories into concept articles.
+
+    ### 2b.0 Create directory
+    ```bash
+    mkdir -p "$MEMORY_DIR/knowledge/concepts"
+    ```
+
+    ### 2b.1 Inventory
+    Read all `*.md` files at the top level of $MEMORY_DIR (one level deep, not recursive).
+    Read existing `knowledge/concepts/*.md` articles.
+
+    Exclude from the top-level scan:
+    - `MEMORY.md` (it's the index, not a memory)
+    - `failure-catalog.md`, `prompt-variants.json` (runtime state, not learnings)
+    - Any `*.jsonl` or `*.json` files
+    - Anything under subdirectories (`knowledge/`, `episodic/`, `abandoned/`, etc.) — these have their own pipelines
+
+    This intentionally globs all topic-slug-named files (e.g. `compose_dont_replace.md`, `evidence_before_diagnosis.md`), not just `feedback_*.md` / `reference_*.md`. Memory files are named by topic, so the inventory must match reality.
+
+    **If zero memory files are found after exclusions, skip Steps 2b.2 through 2b.5.**
+
+    ### 2b.2 Cluster (LLM judgment)
+    Group memory files into topic clusters. Rules:
+    - One cluster per file max (no file in multiple clusters)
+    - Leave unclustered if no good fit (do not force)
+    - Prefer broader clusters over narrow ones
+    - Each cluster has a slug (kebab-case) and a human-readable title
+
+    Output as JSON:
+    ```json
+    {
+      "clusters": [
+        { "slug": "subagent-dispatch-patterns", "title": "Subagent Dispatch Patterns", "files": ["overshoot_prompt_scope.md", "general_purpose_reviewer_prompts.md", "batch_similar_agents.md"] },
+        { "slug": "phase-architecture", "title": "Phase Architecture Decisions", "files": ["fold_check_upstream.md", "skip_infra_simple_paths.md", "executor_vs_subagent_heuristic.md"] }
+      ],
+      "unclustered": ["grep_portability.md"]
+    }
+    ```
+
+    ### 2b.3 Merge or Update
+    For each cluster, check if `knowledge/concepts/<slug>.md` already exists.
+    - If exists: update it — merge new key points, update `sources` list, set `updated` date.
+    - If new: create `knowledge/concepts/<slug>.md` with this format:
+
+    ```markdown
+    ---
+    title: "<Title>"
+    sources:
+      - <file1.md>
+      - <file2.md>
+    compiled: <date>
+    updated: <date>
+    ---
+    # <Title>
+    ## Key Points
+    - ...
+    ## Related
+    - [[concepts/<other>]] — <why>
+    ```
+
+    Add cross-links (`## Related`) between articles that share sources or topics.
+
+    ### 2b.4 Quick Lint (Checks 1-2 only)
+    Before committing, scan for:
+    1. **Broken links:** Any `[[concepts/<slug>]]` that points to a non-existent file? Fix or remove.
+    2. **Orphan memories:** Any top-level memory `*.md` file not listed in any concept's `sources`? Note them but do not force-cluster.
+
+    ### 2b.5 Update MEMORY.md Index
+    For each compiled concept article, ensure MEMORY.md contains an index entry:
+    ```
+    **<slug>:** → See [knowledge/concepts/<slug>.md](knowledge/concepts/<slug>.md)
+    ```
+    If the entry already exists, leave it. If missing, append it.
+
+    ## Commit Sequencing
+    After writing raw memory files and running compilation:
+    1. Write raw memory files (existing behavior — topic-slug memory files, MEMORY.md edits)
+    2. Attempt compilation (Step 2b above)
+    3. If compilation succeeded:
+       ```bash
+       cd $MEMORY_DIR && git add . && git commit -m "session-learnings: <summary>"
+       ```
+    4. If compilation errored (partial write, lint failures, etc.):
+       ```bash
+       cd $MEMORY_DIR && git add MEMORY.md *.md && git commit -m "[partial] session-learnings: <summary>"
+       ```
+    5. Push regardless:
+       ```bash
+       git push || true
+       ```
+
+    ## Pre-Compaction Snapshot Processing
+    Before analyzing code, check for pre-compaction snapshots that captured
+    context from sessions that were about to compact:
+    1. Check for files: `ls $PROJECT/.claude/pre-compaction-*.md 2>/dev/null`
+       (The pre-compaction-backup hook writes snapshots to `$PROJECT/.claude/`)
+    2. For each snapshot found:
+       - Read the file to extract git state (branch, recent commits, dirty files)
+       - Extract any session context or learnings the prior session captured
+       - Incorporate this context into your knowledge extraction — these represent
+         work-in-progress that the prior session could not finish documenting
+    3. Delete consumed snapshots after extraction:
+       ```bash
+       rm -f $PROJECT/.claude/pre-compaction-*.md
+       ```
 
     ## Code Context
     Run these commands to understand what changed:
@@ -90,36 +214,16 @@ Task tool:
     ## Session Context
     [paste compiled session context from Step 1]
 
-    ## Cross-Session Failure Pattern Analysis
-    Before proposing updates, check for RECURRING patterns across sessions.
-    This is inspired by the Claude Cookbook's Tool Evaluation pattern — score
-    findings against ground truth to detect systematic issues.
-
-    1. Read MEMORY.md for prior workflow failure tags (exploration-gap,
-       review-escape, architecture-miss, etc.)
-    2. Compare this session's issues against prior sessions:
-       - Same failure tag appearing 3+ times → SYSTEMIC issue, needs skill fix
-       - Same file/area causing issues across sessions → Missing defensive pattern
-       - Same reviewer missing the same class of bug → Reviewer prompt needs tuning
-    3. For systemic patterns, propose a TARGETED fix:
-       - Recurring exploration-gap in area X → Add X to Phase 2 mandatory passes
-       - Recurring review-escape of type Y → Add Y to reviewer prompt checklist
-       - Recurring clarification-skip → Add specific question to Phase 3 template
-    4. Tag the memory entry with recurrence count:
-       "SYSTEMIC (3x): [pattern] — [proposed fix]"
-
-    This converts scattered session observations into actionable workflow
-    improvements. A single occurrence is noise; three occurrences is signal.
-
     ## Domain Mapping
-    Map changed files to skill domains using your project's skill set:
-    - CSS/HTML/templates → your project's defensive UI skills, UI standards skill
-    - routes/*.py, services/*.py, controllers/ → your project's defensive backend skills
-    - models/*.py, migrations/ → coding-best-practices
+    Map changed files to skill domains:
+    - CSS/HTML/templates → defensive-ui-flows, project UI standards skill
+    - routes/*.py, services/*.py → defensive-backend-flows
+    - models/*.py, alembic/ → coding-best-practices
     - tests/ → coding-best-practices (testing section)
     - .claude/skills/ → meta (skills changed directly)
+    - skills/*.md, claude_flow/** → meta (skill/workflow changes — check claude_flow repo, not active project)
 
-    Adapt file patterns to match your project's language and framework conventions.
+    Note: If changes were made to files under `~/.claude/skills/` or `claude_flow/`, the canonical repo is `claude_flow` at `/Users/summerrae/claude_code/claude_flow/`. Run git commands there, not in the active project repo.
 
     ## Available Skills
     Personal: ls ~/.claude/skills/
@@ -152,7 +256,7 @@ Task tool:
 
     8b. **Specific patterns to check:** For each modified skill, grep ALL
         other skills for the skill's name (e.g., "debate-team",
-        "code-creation-workflow"). Verify: `--mode` vs `--reviewer` flags,
+        "claude-flow"). Verify: `--mode` vs `--reviewer` flags,
         option numbering (finishing options 1-4), delegation targets
         (which skill handles which option).
 
@@ -162,6 +266,41 @@ Task tool:
        documenting: what the policy is, why it was established, and which
        files were updated. Future sessions need this context immediately,
        not buried across individual skill files.
+
+    ## Failure Event Analysis (REQUIRED when episodic/failure-events.jsonl has entries)
+
+    Read memory/episodic/failure-events.jsonl and analyze:
+
+    10. **Pattern frequency:** Which error_classes appear most? Should any become
+        a defensive pattern in the relevant skill (e.g., defensive-backend-flows)?
+        Threshold: 5+ occurrences across sessions → propose skill promotion.
+
+    11. **Catalog health:** Are there catalog entries that haven't been hit in
+        30+ days? Flag them for review (may be stale or too specific).
+
+    12. **Unresolved failures:** Any failure:unresolved events? These represent
+        gaps in the self-debugging system. Propose: new catalog entry with
+        the manual resolution the user applied, OR a skill update to prevent
+        the failure class entirely.
+
+    ## Prompt Optimization (REQUIRED when episodic/exploration-events.jsonl has entries)
+
+    Check if this session recorded exploration events:
+
+    13. **Update metrics:** Run `python3 ~/.claude/scripts/prompt-tracker.py update-metrics`
+        to recompute variant scores from all events.
+        Note: `prompt-tracker.py` lives at `~/.claude/scripts/prompt-tracker.py`.
+        If not found, check `~/claude_code/claude_flow/scripts/prompt-tracker.py`
+        (canonical source) and run `./install.sh` to install it.
+
+    14. **Check for promotions:** Run `python3 ~/.claude/scripts/prompt-tracker.py report`
+        and check if any variant pair is ready for promotion (10+ sessions each,
+        F1 gap > 0.05). If so, invoke the `prompt-optimization` skill to handle
+        promotion and challenger generation.
+
+    15. **Miss patterns:** Report the top 5 most commonly missed files. If a file
+        type appears 3+ times in misses (e.g., config files, test fixtures),
+        propose adding it as a hint to the relevant explorer prompt variant.
 
     ## Output Format
     For EACH proposed update, write:
@@ -197,6 +336,10 @@ For each approved skill/CLAUDE.md proposal:
 **MEMORY.md is auto-applied** by the background agent (no approval needed — it's the agent's own learnings repo).
 **Skills and CLAUDE.md require approval.** The background agent proposes; the user decides.
 
+## Gotchas
+
+**`projects/` gitignore + new memory files:** Memory files under `~/.claude/projects/<slug>/memory/` are covered by `projects/` in `~/.claude/.gitignore`. New memory entries must be added with `git add -f`. Bare `git add .` from the memory dir fails silently with "paths ignored" and does NOT stage the new file. Pre-existing tracked memory files update normally; only NEW files hit the ignore gate. The background agent must use `git add -f <file>` when creating new topic-slug memory files.
+
 ## Red Flags
 
 | Thought | Reality |
@@ -209,35 +352,25 @@ For each approved skill/CLAUDE.md proposal:
 | "I only changed one skill" | Other skills may reach the same outcome via a different path. Cross-reference audit catches these. |
 | "The change is self-documenting" | If 3+ files changed for the same reason, it's a policy. Future sessions won't read all those files — they need a memory entry. |
 | "I'll run multiple agents in parallel for speed" | Parallel subagents doing git commits in the same worktree cause conflicts. Serialize commits or use separate worktrees per agent. |
-
-## REVIEW.md Check
-
-Check if the project has a `REVIEW.md`. If not, and the session established review standards or caught recurring quality issues, propose creating one. REVIEW.md structure: Must Check, Skip, Project Patterns, Common AI Mistakes.
+| "I'll run session-learnings at the end" | "End" never comes if there are more commits. Run it after each significant commit cluster, not at session close. |
 
 ## Example Session Context
 
-From a session that built a modal overlay component:
+From a real session that built a bulk action bar:
 
 ```
 SESSION CONTEXT:
-- User corrections: "The modal overlay does not have the correct backdrop
-  opacity — make sure it matches the design spec"
-- Bugs investigated: User reported "modal overlay was removed from the
-  settings page" — systematic investigation showed the feature NEVER
-  existed in any git version. CSS classes existed but were used by a
-  different JS file for a tooltip.
+- User corrections: "The bulk options menu does not have rounded edges —
+  make sure it does" (user provided screenshot showing expected pill shape)
+- Bugs investigated: User reported "bulk select was removed from workflows
+  page" — systematic investigation showed feature NEVER existed in any
+  git version. CSS classes existed but were used by a different JS file.
 - Patterns established: "Update the UI skills to make this the default
-  style" — modal overlay with consistent backdrop is now standard.
-- Gotchas hit: Security hook blocked innerHTML assignment. Fixed by
-  using DOM API (createElement, textContent, append) instead.
-- New components built: Modal overlay (.modal-overlay),
-  focus trap with progressive disclosure (.modal-focus-trap)
+  style" — bulk action bar with rounded edges is now standard.
+- Gotchas hit: Security hook blocked innerHTML=''. Fixed with
+  while(el.firstChild) el.removeChild(el.firstChild).
+- New components built: Floating bulk action bar (.wf-bulk-bar),
+  card selection with progressive disclosure (.card-select-checkbox)
 ```
 
-This produced skill updates to the project's defensive UI flows and UI standards skill (modal overlay section).
-
-## Guardrails
-
-- **Memory entries must be useful in future sessions** — ephemeral task details (what file you edited, which specific line you fixed) belong in todos, not memory. Memory entries should encode reusable rules, recurring patterns, and durable conventions.
-- **Verify memory entries against current code state before acting on them** — a stale memory entry describing a pattern that was later refactored or deleted is worse than no entry. When a session starts, treat memory as a starting hypothesis, not ground truth.
-- **Do not save project-specific file paths or implementation details that will go stale** — absolute paths, function names, and line numbers change. Memory entries should name the principle or pattern, not the specific location. Link to files by relative path if needed, never by absolute path.
+This produced 3 skill updates (defensive-ui-flows patterns #23-25) and 1 project skill update (courierflow-ui-standards bulk action bar section).

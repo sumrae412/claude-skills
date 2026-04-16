@@ -157,6 +157,16 @@ Use Task tool:
 
 ### Step 4: Synthesize
 
+#### Anti-Sycophancy Protocol
+
+Before classifying findings, the Lead MUST:
+
+1. **Read each critic's output in isolation** — Form a preliminary ADOPT/REJECT per finding BEFORE reading the next critic's output. This prevents anchoring on the first opinion.
+2. **Weight lone dissent heavily** — If all critics flag the same issue, that's signal. If only ONE critic flags it, give it EXTRA attention (not less) — lone dissent often catches what groupthink misses.
+3. **Challenge your own ADOPTs** — For each ADOPT decision, ask: "Would I still adopt this if no critic had flagged it?" If no, downgrade to DEFER.
+
+#### Classification
+
 Read all critic outputs. For EACH finding:
 
 | Decision | When |
@@ -174,12 +184,50 @@ Produce a **Changelog table**:
 | Haiku | Hardcoded font-size | ADOPT | Use var(--ds-text-sm) |
 ```
 
+### Step 4.5: Devil's Advocate Challenge (Tier 3 Only)
+
+<SKIP-CONDITION>
+Skip for Tier 1 and Tier 2 reviews — the cost of an extra agent pass isn't justified for simple reviews.
+</SKIP-CONDITION>
+
+For Tier 3 (full debate), challenge the synthesis before presenting to the user. This catches false positives that survived synthesis — style preferences masquerading as bugs, fixes that introduce worse problems, or groupthink where multiple critics echo the same flawed reasoning.
+
+Dispatch a **haiku** agent:
+
+```
+Use Task tool:
+  subagent_type: general-purpose
+  model: haiku
+  prompt: |
+    You are a devil's advocate reviewer. Your job is to challenge these ADOPT decisions:
+
+    [list of ADOPT findings with reasoning from Step 4]
+
+    For each ADOPT, argue why it might be WRONG:
+    - Is this a false positive disguised as a real issue?
+    - Does the "fix" introduce worse problems than the original?
+    - Is this a style preference masquerading as a bug?
+    - Did multiple critics flag this for the same flawed reason (echo, not independent signal)?
+
+    Be adversarial. Only flag findings where you have >70% confidence the ADOPT is wrong.
+    Output format: one line per challenged finding with your counter-argument.
+    If all ADOPTs are solid, say "No challenges — findings are sound."
+```
+
+**Triage devil's advocate output:**
+- Challenge is convincing → downgrade ADOPT to DEFER (let user decide)
+- Challenge is weak → keep ADOPT (finding survived adversarial review)
+- **Max 2 downgrades per round** — prevents wholesale reversal of the synthesis
+
+**Cost:** ~$0.01 per haiku pass. Negligible relative to the Tier 3 cost of ~$0.15-0.35.
+
 ### Step 5: Present to User
 
 Show the user:
 1. **The final artifact** (with all ADOPT fixes applied)
 2. **The Changelog** (adopt/reject/defer with reasoning)
 3. **Any DEFER items** that need user decision
+4. **Devil's advocate challenges** (if any ADOPTs were downgraded, show the counter-argument)
 
 ### Step 6: Auto-Fix Loop (PR Review Only)
 
@@ -246,7 +294,7 @@ Don't tune after every round. Aggregate over 5+ debate rounds, then:
 1. Compute ADOPT/REJECT rates per critic
 2. Identify the noisiest critic (highest REJECT rate)
 3. Review its last 5 REJECTed findings — what pattern do they share?
-4. Make ONE prompt change (following code-creation-workflow's one-change principle)
+4. Make ONE prompt change (following claude-flow's one-change principle)
 5. Run 3+ rounds with the new prompt to verify improvement
 
 This is the evaluator-optimizer loop applied to the debate team's own critics.

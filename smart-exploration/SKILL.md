@@ -6,17 +6,19 @@ user-invocable: false
 
 # Smart Exploration
 
+**Used by:** claude-flow Phase 2 (direct), `/research` skill (task classification for researcher selection)
+
 ## Overview
 
-Classifies the task type, then selects targeted exploration prompts from the prompt library that are tuned for that category of work. Surfaces the exact context each task type needs — rather than broadly scanning the codebase and hoping the right patterns turn up.
+This skill is used internally by `claude-flow` during **Phase 2 (Exploration)**. Rather than dispatching generic explorer subagents, it first classifies the task type, then selects targeted prompts from the prompt library that are tuned for that category of work.
 
-Can be used standalone or invoked by any workflow that needs codebase exploration (brainstorming, writing-plans, executing-plans, etc.).
+The result is exploration that surfaces the exact context each task type needs — rather than broadly scanning the codebase and hoping the right patterns turn up.
 
 ---
 
-## How to Use This Skill
+## How Phase 2 Uses This Skill
 
-Any workflow that dispatches **2–3 explorer subagents** can consult this skill to tune its prompts. Before constructing subagent prompts:
+`claude-flow` dispatches **2–3 explorer subagents** in parallel during Phase 2. Before constructing those subagent prompts, consult this skill to:
 
 1. **Classify** the task into one of the categories below.
 2. **Select variants** using the prompt optimization system (see Variant Selection below). If the tracker is unavailable, fall back to `prompt-library.md` directly.
@@ -85,6 +87,7 @@ Registry lookups are read-only during variant selection. Record `dispatched` eve
 | `refactor` | Restructuring existing code without changing behavior — moving, renaming, abstracting |
 | `bugfix` | Debugging a defect — tracing an error, unexpected behavior, or regression |
 | `config` | Configuration, environment variables, infrastructure, deployment changes |
+| `exploration` | Spike, prototype, or proof-of-concept — validate a hypothesis with minimal overhead. Lighter prompts focused on feasibility and key risks rather than full production patterns |
 | `general` | Fallback when the task doesn't fit a specific category |
 
 ---
@@ -107,6 +110,8 @@ When both signals agree, classification is confident. When they conflict or the 
 - "Wire up the Stripe webhook handler" → `integration`
 - "Update the dashboard summary card component" → `ui`
 - "Move the DB connection string to an env var" → `config`
+- "Try out a different approach to caching" → `exploration`
+- "Spike whether we can use WebSockets for this" → `exploration`
 - "Help me understand how this feature works" → `general`
 
 ---

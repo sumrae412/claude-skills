@@ -74,8 +74,8 @@ Constants, limits, column definitions, and **configuration sets** (scopes, featu
 
 ```python
 # ❌ BAD — same limit defined differently in two files
-# your_messaging_service.py:  'per_user_daily': 2000
-# your_token_service.py:      daily_quota_limit = 500
+# email.py:       'per_user_daily': 2000
+# token_mgr.py:   daily_quota_limit = 500
 
 # ✅ GOOD — single definition, others reference it
 DAILY_QUOTA = 500  # defined once
@@ -84,36 +84,36 @@ DAILY_QUOTA = 500  # defined once
 This also applies to **configuration sets** like OAuth scopes, feature flags, or allowed values:
 
 ```python
-# ❌ BAD — scopes hardcoded in your calendar integration service
+# ❌ BAD — scopes hardcoded in calendar_service.py
 flow = Flow.from_client_config(
     config,
     scopes=["calendar", "drive.file", "gmail.send"],  # drifts
 )
 
 # ✅ GOOD — import from the canonical source
-from app.services.token_service import REQUIRED_OAUTH_SCOPES
+from app.services.token_manager import REQUIRED_GOOGLE_SCOPES
 flow = Flow.from_client_config(
     config,
-    scopes=sorted(REQUIRED_OAUTH_SCOPES),
+    scopes=sorted(REQUIRED_GOOGLE_SCOPES),
 )
 ```
 
-**Learned from a production bug where:** your calendar integration service hardcoded OAuth scopes instead of importing your OAuth scope constants from your token/auth service. Adding a new scope to the source of truth didn't propagate to the calendar service.
+**Learned from:** `calendar_service.py` — hardcoded Google OAuth scopes instead of importing `REQUIRED_GOOGLE_SCOPES` from `token_manager.py`. Adding `drive.file` scope to the source of truth didn't propagate to the calendar service.
 
 This also applies to **template file paths**: a template's directory should match the route module that owns it. A template in the wrong directory is a naming lie that confuses debugging.
 
 ```python
-# ❌ BAD — route renders a template from the wrong directory
-# your_routes_module/items.py
-return templates.TemplateResponse("products/list.html", ...)
-# Confusing: is this a products page or an items page?
+# ❌ BAD — tenants route renders a template from properties/
+# app/routes/tenants.py
+return templates.TemplateResponse("properties/list.html", ...)
+# Confusing: is this a properties page or a tenants page?
 
 # ✅ GOOD — template path matches the route module
-# your_routes_module/items.py
-return templates.TemplateResponse("items/list.html", ...)
+# app/routes/tenants.py
+return templates.TemplateResponse("tenants/list.html", ...)
 ```
 
-**Learned from a production bug where:** a route rendered a template from a directory that didn't match its module name. When debugging "tenants disappeared," the mismatched directory added confusion about which template was responsible.
+**Learned from:** `tenants.py` — route rendered `properties/list.html` which was 100% tenant content. When debugging "tenants disappeared," the wrong directory added confusion about which template was responsible.
 
 This also applies to **CSS variant classes**: when a base class (`.stat-card`) defines visual properties, variant classes (`.stat-card-button`, `.stat-card-link`) must NOT redeclare those same properties. The variant should only add what the base doesn't cover (e.g., browser resets for `<button>` elements). Redundant declarations drift out of sync and cause subtle visual inconsistencies.
 
@@ -127,7 +127,7 @@ This also applies to **CSS variant classes**: when a base class (`.stat-card`) d
 .stat-card-button { display: block; appearance: none; font: inherit; color: inherit; cursor: pointer; }
 ```
 
-**Learned from a production bug where:** your stat card component redeclared all properties from the base stat card class, creating a visual mismatch between `<button>`-based and `<a>`-based sibling cards in your dashboard styles.
+**Learned from:** `home-dashboard.css` — `.home-stat-card-button` redeclared all properties from `.home-stat-card`, creating a visual mismatch with the `<a>`-based sibling cards.
 
 ### 5. Respect Encapsulation
 
@@ -147,20 +147,20 @@ success, error = await token_manager.refresh_connection(db, conn)
 Every type referenced in a function signature, return annotation, or type hint must be imported. A missing import causes `NameError` at runtime when the function is called — not at module load — so it passes `import` checks but crashes in production.
 
 ```python
-# ❌ BAD — YourApiResponse used in return type but never imported
-from app.schemas.your_module import YourDocument, YourMember
+# ❌ BAD — TenantPanelResponse used in return type but never imported
+from app.schemas.tenant_panel import TenantPanelDocument, TenantPanelTenant
 
-async def get_panel_data(...) -> Optional[YourApiResponse]:
-    # NameError: name 'YourApiResponse' is not defined
+async def get_panel_data(...) -> Optional[TenantPanelResponse]:
+    # NameError: name 'TenantPanelResponse' is not defined
 
 # ✅ GOOD — all referenced types imported
-from app.schemas.your_module import (
-    YourDocument,
-    YourApiResponse,
-    YourMember,
+from app.schemas.tenant_panel import (
+    TenantPanelDocument,
+    TenantPanelResponse,
+    TenantPanelTenant,
 )
 
-async def get_panel_data(...) -> Optional[YourApiResponse]:
+async def get_panel_data(...) -> Optional[TenantPanelResponse]:
     ...
 ```
 
@@ -199,7 +199,7 @@ def _parse_state(
 
 **Check:** After writing any function, scan its signature and body for every type/object name and verify a matching import exists *above* first use. For string-quoted annotations, verify the type is imported at module level even though Python won't evaluate the string.
 
-**Learned from production bugs where:** return types were used without imports, causing `NameError` on first call. Singletons referenced before their late imports. Types used in hints before import. String annotations referencing types only imported inside the function body.
+**Learned from:** `client.py` — `TenantPanelResponse` in return type without import. `email.py` — `token_manager` referenced before its late import. `calendar.py` — `AsyncSession` used in type hint before import. `auth.py` — `UUID` in string annotation `"UUID | None"` but only imported inside the function body.
 
 ### 7. Test Queries Against PostgreSQL Semantics
 
@@ -241,14 +241,14 @@ if doc_ids:
     )
 ```
 
-**Learned from a production bug where:** your document model query used `DISTINCT` which broke on Postgres due to JSON column equality and ORDER BY mismatch.
+**Learned from:** `client.py` — tenant panel document query used `DISTINCT` which broke on Postgres due to JSON column equality and ORDER BY mismatch.
 
 ### 8. Verify Model Attributes Before Access
 
 When accessing model attributes — especially date/status fields for display — verify the attribute actually exists on the model. An `AttributeError` at runtime means you assumed a column that was never added or was named differently.
 
 ```python
-# ❌ BAD — document.signed_at doesn't exist on your document model
+# ❌ BAD — document.signed_at doesn't exist on Document model
 status_date = document.signed_at or document.created_at
 # AttributeError: 'Document' object has no attribute 'signed_at'
 
@@ -263,7 +263,7 @@ status_date = (
 
 **Check:** Before accessing `model.attribute`, confirm the attribute exists in the model class definition. Don't assume column names — check the schema.
 
-**Learned from a production bug where:** a status date calculation referenced an attribute that doesn't exist on your document model, causing `AttributeError` at runtime.
+**Learned from:** `client.py` — status date calculation referenced `document.signed_at` which doesn't exist on the `Document` model. Fixed by using `viewed_at` as fallback.
 
 ### 8a. SQLAlchemy Filters on Nonexistent Attributes Fail Silently
 
@@ -279,7 +279,7 @@ primary = next((m for m in members if m.is_primary_contact), None)
 
 **Check:** When filtering model objects in Python (not SQL WHERE), verify the attribute name against the model class definition. Grep the model file for the column — do not assume names.
 
-**Learned from a production bug where:** multiple occurrences of a wrong attribute name in your data sync service silently matched nothing, causing primary contact detection to always fail.
+**Learned from:** `sync_service.py` — 4 occurrences of `is_primary` (wrong) instead of `is_primary_contact` silently matched nothing, causing primary contact detection to always fail.
 
 ### 9. Auxiliary Side-Effects Must Not Abort Primary Flow
 
@@ -306,47 +306,47 @@ async def disconnect_google(self, db, user_id):
 
 **Check:** For each side-effect in a multi-step operation, ask: "If this fails, should the whole operation fail?" If no, wrap it in try-catch with logging.
 
-**Learned from a production bug where:** an SMS notification failure during `disconnect()` in your token/auth service aborted the entire disconnect flow, leaving the user in a broken state.
+**Learned from:** `token_manager.py` — SMS notification failure during `disconnect()` aborted the entire disconnect flow, leaving the user in a broken state.
 
 ### 10. User-Facing Actions Must Create Audit Trails
 
-When a service performs an action visible to the user (send document, update preferences, trigger workflow), it must create an audit log entry. Missing audit trails mean the action disappears from the dashboard — the user has no proof it happened.
+When a service performs an action visible to the user (send document, update preferences, trigger workflow), it must create an `ActionLog` entry. Missing audit trails mean the action disappears from the dashboard — the user has no proof it happened.
 
 ```python
-# ❌ BAD — document sent but no audit log, invisible in Recent Activity
-async def send_document(self, db, document, recipient):
-    await self._deliver(document, recipient)
+# ❌ BAD — document sent but no ActionLog, invisible in Recent Activity
+async def send_document(self, db, document, tenant):
+    await self._deliver(document, tenant)
     document.status = "sent"
     await db.flush()
-    # No audit log — user sees nothing on dashboard
+    # No ActionLog — landlord sees nothing on dashboard
 
-# ✅ GOOD — audit log entry makes the action visible
-async def send_document(self, db, document, recipient):
-    await self._deliver(document, recipient)
+# ✅ GOOD — ActionLog makes the action visible
+async def send_document(self, db, document, tenant):
+    await self._deliver(document, tenant)
     document.status = "sent"
-    db.add(AuditLog(
+    db.add(ActionLog(
         user_id=document.user_id,
-        action_type=AuditLogType.DOCUMENT_SENT,
-        title=f"Sent document to {recipient.full_name}",
-        level=AuditLogLevel.INFO,
+        action_type=ActionLogType.DOCUMENT_SENT,
+        title=f"Sent document to {tenant.full_name}",
+        level=ActionLogLevel.INFO,
     ))
     await db.flush()
 ```
 
-**Check:** After adding any state-changing endpoint, ask: "Will the user see this in Recent Activity?" If no, add an audit log entry.
+**Check:** After adding any state-changing endpoint, ask: "Will the landlord see this in Recent Activity?" If no, add an `ActionLog`.
 
-**Learned from production bugs where:** document sends and contact preference updates had no audit log entries, so they never appeared in the home feed.
+**Learned from:** `documents.py` — document sends had no ActionLog, so they never appeared in the home feed. `tenant_action_service.py` — tenant contact preference updates were invisible to the landlord.
 
 ### 11. Error-Level Logs Must Surface to Users
 
 When querying activity feeds or dashboards, never filter out ERROR-level logs by default. Errors are the most important thing a user needs to see. A default filter that hides errors violates "Fail Visible."
 
 ```python
-# ❌ BAD — errors excluded by default, user misses failures
+# ❌ BAD — errors excluded by default, landlord misses failures
 async def get_recent_activity(db, user_id, include_errors=False):
-    conditions = [AuditLog.user_id == user_id]
+    conditions = [ActionLog.user_id == user_id]
     if not include_errors:
-        conditions.append(AuditLog.level != AuditLogLevel.ERROR)
+        conditions.append(ActionLog.level != ActionLogLevel.ERROR)
 
 # dashboard calls without override → errors hidden
 activity = await get_recent_activity(db, user_id)
@@ -359,11 +359,11 @@ activity = await get_recent_activity(
 
 **Check:** If a query function has an `include_errors` or `min_level` parameter, verify the caller passes the right value. Dashboard feeds should always include errors.
 
-**Learned from a production bug where:** your aggregate counts service's `get_recent_activity()` defaulted `include_errors=False`, so ERROR-level workflow failures never showed on the home feed.
+**Learned from:** `logging_service.py` — `get_recent_activity()` defaulted `include_errors=False`, so ERROR-level workflow failures never showed on the home feed.
 
 ### 12. Never Depend on Ephemeral Local Storage
 
-Cloud platforms (Heroku, Render, Railway, Fly, etc.) destroy the local filesystem on every deploy. File uploads, temp files, and caches written to local disk vanish silently. Always use persistent storage (object storage, database BLOBs, or external file services).
+Cloud platforms (Railway, Heroku, Render) destroy the local filesystem on every deploy. File uploads, temp files, and caches written to local disk vanish silently. Always use persistent storage (Google Drive, S3, database BLOBs).
 
 ```python
 # ❌ BAD — file disappears after next deploy
@@ -372,23 +372,23 @@ async with aiofiles.open(file_path, "wb") as f:
     await f.write(content)
 doc.file_path = file_path  # DB points to a ghost file
 
-# ❌ BAD — silent fallback to local when external storage fails
-if not storage_result.success:
+# ❌ BAD — silent fallback to local when Drive fails
+if not drive_result.success:
     local_path = save_to_disk(content, filename)
     doc.file_path = local_path  # Works today, gone tomorrow
 
 # ✅ GOOD — persistent storage required, fail if unavailable
-result = await storage_service.upload(token, content, filename)
+result = await drive_service.upload(token, content, filename)
 if not result.success:
     raise ExternalServiceError(
-        "Upload failed. Please connect your storage provider."
+        "Upload failed. Please connect Google Drive."
     )
 doc.file_url = result.file_url  # Persistent URL
 ```
 
 **Check:** If code writes to the filesystem, ask: "Will this file exist after a deploy?" If no, use persistent storage or fail visibly. Never silently fall back to local disk.
 
-**Learned from a production bug where:** your file upload service used a local fallback that saved files to an `uploads/` directory which vanished on deploy to your cloud platform. Multiple code paths (attachment sends, bulk sends, file-availability checks) all assumed local files existed.
+**Learned from:** `document_upload_service.py` — local fallback saved files to `uploads/` which vanished on Railway redeploy. Also: `documents.py` — attachment sends, bulk sends, and file-availability checks all assumed local files existed.
 
 ### 13. Never Leak Internal Errors to Users
 
@@ -418,7 +418,7 @@ except Exception:
 
 **Check:** After writing any error handler, ask: "Does the HTTP response or redirect URL contain `str(e)`, `traceback`, or `exc_info`?" If yes, replace with a generic message.
 
-**Learned from a production bug where:** an OAuth callback route leaked raw exception strings (including file paths and tracebacks) in redirect URL query params. The code also contained `print()` debug statements.
+**Learned from:** `auth.py` — OAuth callback leaked raw exception strings (including file paths and tracebacks) in redirect URL query params. Also contained `print()` debug statements.
 
 ### 14. Domain-Level Error Isolation
 
@@ -433,11 +433,11 @@ for domain in requested:
         results[domain] = None  # graceful degradation
 ```
 
-Combine with per-domain caching (independent TTLs) so a cache miss in one domain doesn't force recomputation of all. See your aggregate counts service for a reference implementation.
+Combine with per-domain caching (independent TTLs) so a cache miss in one domain doesn't force recomputation of all. See `CountsService.get_counts()`.
 
 **Check:** If an endpoint fetches 3+ independent data sources, ask: "Does a failure in source A prevent source B from returning?" If yes, wrap each independently.
 
-**Learned from a production bug where:** your aggregate counts service served multiple independent domains; each needed its own cache TTL and error isolation to prevent one failure from zeroing out unrelated counts.
+**Learned from:** `counts_service.py` — unified counts endpoint serves 7 domains; each independently cached and independently error-isolated.
 
 ### 14. Never Compare Datetimes as Strings
 
@@ -482,7 +482,7 @@ remaining = deletes_at - now
 
 **Check:** Search for `.isoformat()` in comparisons or `>=`/`<=` with string timestamps. Every datetime comparison should use parsed `datetime` objects with explicit timezone. Any time a datetime from the database is used in arithmetic with `datetime.now(timezone.utc)`, verify the DB value has `tzinfo`.
 
-**Learned from production bugs where:** upcoming events were filtered using string comparison of ISO timestamps, which dropped future events when timezone offsets varied. A date field was naive while `now = datetime.now(timezone.utc)` was aware, causing `TypeError` on subtraction.
+**Learned from:** Home dashboard — upcoming events were filtered using string comparison of ISO timestamps, which dropped future events when timezone offsets varied. `documents.py` — `doc.archived_at` was naive while `now = datetime.now(timezone.utc)` was aware, causing `TypeError` on subtraction at line 486.
 
 ### 15. Use the Canonical Service for Connection State
 
@@ -493,7 +493,7 @@ When checking if an external service (Google, Twilio, Stripe) is connected, use 
 if not user.google_calendar_token:
     return {"google_connected": False}
 
-# ✅ GOOD — your token/auth service owns connection state
+# ✅ GOOD — token manager owns Google connection state
 connection = await token_manager.get_active_connection(
     db, user_id, "google"
 )
@@ -502,7 +502,7 @@ google_connected = connection is not None and connection.is_valid
 
 **Check:** When you see `user.some_token` or `user.is_connected_to_x` in a route, verify it's not a stale shortcut. The service that manages tokens/connections is the source of truth.
 
-**Learned from a production bug where:** the home dashboard used a stale user column to decide if an external service was connected, but the real connection state lived in your integration model via the token manager. The page skipped remote fetches even when the service was connected.
+**Learned from:** Home dashboard — used `user.google_calendar_token` to decide if Google was connected, but the real connection lived in `IntegrationConnection` via the token manager. Home skipped remote calendar fetches even when Google was connected.
 
 ### 16. Primary View Must Use the Live Data Source
 
@@ -511,7 +511,7 @@ When a page becomes the primary UI for a data domain (e.g., Home becomes the onl
 ```python
 # ❌ BAD — Home shows cached events only, but /calendar redirects here
 events = await get_cached_events(db, user_id)  # sparse, stale
-# User sees "1 event" when they have 15 on the external calendar
+# User sees "1 event" when they have 15 on Google Calendar
 
 # ✅ GOOD — try live source first, fall back to cache with warning
 try:
@@ -525,7 +525,7 @@ except ExternalServiceError:
 
 **Check:** If route A redirects to route B, verify route B fetches from the same data source route A used. A redirect that silently downgrades data quality is a bug.
 
-**Learned from a production bug where:** the home dashboard relied on a sparse DB cache while the calendar route redirected to it. Users saw far fewer events than expected with no explanation.
+**Learned from:** Home dashboard — relied on sparse DB cache while `/calendar` redirected to Home. Users saw far fewer events than expected with no explanation.
 
 ### 17. After Conflict Resolution, Re-Run Targeted Tests
 
@@ -541,11 +541,11 @@ git add . && git cherry-pick --continue && git push
 git cherry-pick abc123
 # ... resolve conflicts ...
 git add . && git cherry-pick --continue
-pytest tests/test_affected_module.py -v  # verify resolved behavior
+pytest tests/test_home_dashboard.py -v  # verify resolved behavior
 git push
 ```
 
-**Learned from a production bug where:** a cherry-pick of a datetime filter fix conflicted on main. The first resolution silently dropped the datetime-based filter, requiring a second fix.
+**Learned from:** Cherry-pick of datetime filter fix conflicted on main. The first resolution silently dropped the datetime-based filter, requiring a second fix.
 
 ### 18. Variables Don't Follow When Functions Split
 
@@ -574,7 +574,7 @@ async def get_home_data(db, user):
 
 **Check:** After splitting a function or copying a code block that references local variables, verify every variable used in the new function is either (a) a parameter, (b) defined locally, or (c) imported. Search for names used before assignment.
 
-**Learned from a production bug where:** a variable was defined in one function but referenced in a sibling function after a split. Caused `NameError` at runtime.
+**Learned from:** `chat.py` — `google_connected` was defined in `get_chat_context()` but referenced in `get_home_data()` where it was never defined. Caused `NameError` at runtime.
 
 ### 19. Static Asset Changes Must Include Cache-Busting Bumps
 
@@ -599,7 +599,7 @@ result = subprocess.run(
 )
 ```
 
-**Learned from:** CI/CD scripts (release, rollback, canary deploy) — all should use list-based subprocess calls with timeouts and security annotations.
+**Learned from:** CI/CD scripts (release.py, rollback.py, canary_deploy.py) — all use list-based subprocess calls with timeouts and security annotations.
 
 ### 21. Lock File Acquisition Has TOCTOU Risk
 
@@ -644,7 +644,7 @@ except FileExistsError:
 
 **Check:** After any commit that touches `.css` or `.js` files, verify the same commit (or a follow-up) also bumps the `?v=` parameters in all templates that reference those files. A CSS-only commit with no template changes is a red flag.
 
-**Learned from a production bug where:** several CSS commits were pushed and deployed but no visual changes appeared on the site. The CSS files were updated on disk, but multiple templates still had stale `?v=` parameters.
+**Learned from:** Four CSS commits (`09ee4b29` through `3d4b22a1`) were pushed and deployed but no visual changes appeared on the site. The CSS files were updated on disk, but `calendar.html`, `dashboard.html`, `home.html`, `tasks/list_modern.html`, and `properties/list_modern.html` all still had stale `?v=` parameters. Required a follow-up commit to bump all version strings.
 
 ### 22. Never Use eval() — Use ast.parse() for Expression Evaluation
 
@@ -680,7 +680,7 @@ def _safe_eval_bool(expr: str) -> bool:
 
 **Check:** Search for the eval built-in in the codebase. Every occurrence should be replaced with a purpose-built evaluator using `ast.parse()`.
 
-**Learned from a production bug where:** an automation engine used the eval built-in to evaluate composed boolean expressions. Replaced with a safe evaluator using `ast.parse(expr, mode="eval")`.
+**Learned from:** `automation_engine.py` — used the eval built-in to evaluate composed boolean expressions. Replaced with `_safe_eval_bool()` using `ast.parse(expr, mode="eval")`.
 
 ### 23. SQL Dynamic Table Names: Allowlist + Assert, Not F-Strings
 
@@ -693,7 +693,7 @@ query = text(f"""
 """)
 
 # GOOD — allowlist + replace + text()
-assert table_name in ("orders", "products"), "Invalid table name"
+assert table_name in ("households", "properties"), "Invalid table name"
 sql = """
     SELECT * FROM {table_name} WHERE user_id = :uid
 """
@@ -702,11 +702,11 @@ query = text(sql.replace("{table_name}", table_name))
 
 **Check:** Search for `text(f"` or `text(f'` in services. Every dynamic table/column name in SQL must use the allowlist pattern.
 
-**Learned from a production bug where:** your core domain service had SQL queries using f-string interpolation for table names. Fixed with assert-allowlist + `.replace()`.
+**Learned from:** `household_service.py` — three SQL queries used `text(f"...{households_table}...")`. Fixed with assert-allowlist + `.replace()`.
 
 ### 24. Retry Once on Transient DB OperationalError
 
-For operations that call the database through dynamic dispatch (tool executors, plugin systems), wrap in a single-retry loop for `sqlalchemy.exc.OperationalError`. Transient connection resets happen on cloud platforms and a single retry usually succeeds.
+For operations that call the database through dynamic dispatch (tool executors, plugin systems), wrap in a single-retry loop for `sqlalchemy.exc.OperationalError`. Transient connection resets happen on cloud platforms (Railway, Heroku) and a single retry usually succeeds.
 
 ```python
 # BAD — transient connection reset crashes the operation
@@ -728,7 +728,7 @@ for attempt in range(2):
 
 **Check:** For any operation that calls the DB through a plugin/dispatch layer, ask: "Will a transient connection reset crash this?" If yes, add a single-retry loop.
 
-**Learned from a production bug where:** a tool executor occasionally hit transient DB connection resets on your cloud platform. Added single-retry loop with `except OperationalError`.
+**Learned from:** `tool_executor.py` — `_execute_via_skill()` occasionally hit transient DB connection resets. Added single-retry loop with `except OperationalError`.
 
 ### 25. Handle None vs Empty String for Nullable Text Fields
 
@@ -749,7 +749,7 @@ else:
 
 **Check:** For every nullable text field update, ask: "Can the user clear this field by passing None/null?" If the service only has an `if value is not None` branch, it can't.
 
-**Learned from a production bug where:** a profile update service only handled non-None values. Passing `None` was silently ignored, so users couldn't clear the field.
+**Learned from:** `user_profile_service.py` — `update_tenant_opt_in_clause()` only handled non-None values. Passing `None` was silently ignored, so users couldn't clear the clause.
 
 ### 26. DB Fallback Paths: Narrow Catch and Preserve Filters
 
@@ -757,7 +757,7 @@ When a service uses a primary query, then a fallback query, then a "bare" query 
 
 **Check:** In layered DB fallbacks, does the bare path call the same filter helper as the primary? Does the `except` block catch only `SQLAlchemyError`?
 
-**Learned from a production bug where:** a grouped client search's fallback path skipped the status filter, returning different data than the primary path.
+**Learned from:** `client.py` — `search_clients_grouped` fallback skipped status filter in bare path; CodeRabbit review.
 
 ### 27. Never Use BaseHTTPMiddleware with Async SQLAlchemy
 
@@ -765,7 +765,7 @@ Starlette's `BaseHTTPMiddleware.call_next()` wraps the response body in an inter
 
 **Check:** `grep -r "BaseHTTPMiddleware" app/` returns zero hits? Any new middleware uses the `scope/receive/send` signature?
 
-**Learned from a production bug where:** multiple middleware classes using `BaseHTTPMiddleware` broke async SQLAlchemy sessions on several endpoints. A first fix caught only one instance; a second bug report was needed to fix the remaining instances — reinforcing Rule 28.
+**Learned from:** `app/main.py`, `app/middleware/audit.py`, `app/middleware/google_connection.py` — Four middleware classes using `BaseHTTPMiddleware` broke async SQLAlchemy sessions on `/api/copilot` and AI Insights endpoints. PR #223 fixed one; PR #226 fixed the remaining three only after a second bug report.
 
 ### 28. Audit ALL Instances When Fixing a Class of Bug
 
@@ -773,28 +773,28 @@ When a bug is caused by a **pattern** (e.g., using a deprecated base class, a wr
 
 **Check:** Before shipping a pattern-class fix, run a codebase-wide grep for the offending pattern. Are there zero remaining instances?
 
-**Learned from a production bug where:** one middleware was fixed but three others using the same broken base class were missed. A second PR was required to finish the job.
+**Learned from:** PR #223 fixed `CopilotAuthMiddleware` but missed `PerformanceMiddleware`, `AuditMiddleware`, and `GoogleConnectionMiddleware` — all using the same broken `BaseHTTPMiddleware` base class. PR #226 was needed to finish the job.
 
 ### 29. Expose Public Wrappers for Cross-Service Data Sync
 
-When a private service method needs to be called by other services, expose a public wrapper rather than making the private method public or calling it directly. This preserves encapsulation (rule 5) while enabling defensive sync from multiple code paths.
+When a private service method needs to be called by other services (e.g., `_sync_client_for_member()` needed by integration services), expose a public wrapper rather than making the private method public or calling it directly. This preserves encapsulation (rule 5) while enabling defensive sync from multiple code paths.
 
 ```python
-# ❌ BAD — your data sync service reaches into private internals
-await your_core_domain_service._sync_client_for_member(db, user_id, ...)
+# ❌ BAD — integration service reaches into private internals
+await household_service._sync_client_for_member(db, user_id, ...)
 
-# ✅ GOOD — public wrapper with simpler interface (your sync-enforcement method)
-await your_core_domain_service.ensure_synced_record(
-    db, user_id=user_id, parent_id=pid,
+# ✅ GOOD — public wrapper with simpler interface
+await household_service.ensure_client_for_member(
+    db, user_id=user_id, household_id=hid,
     first_name="Jane", last_name="Doe", email="jane@example.com",
 )
 ```
 
-**Learned from a production bug where:** your data sync service and contact import service both needed to call a private sync method to enforce a member → client invariant. A public wrapper (your sync-enforcement method) was added to enable safe cross-service calls.
+**Learned from:** `sync_service.py` and `contact_import_service.py` — both needed to call `_sync_client_for_member()` to enforce the HouseholdMember → Client invariant. Added `ensure_client_for_member()` as a public wrapper.
 
-**Tiered lookup for cross-property sync:** When syncing records that may exist under a specific parent, first query with the exact parent match, then fall back to an unlinked record. This avoids both duplicate creation and incorrect cross-property matching.
+**Tiered lookup for cross-property sync:** When syncing records that may exist under a specific parent (e.g., Client per Property), first query with the exact parent match (`household_id`), then fall back to an unlinked record (`household_id IS NULL`). This avoids both duplicate creation and incorrect cross-property matching.
 
-**Inline creation variant:** When creating a dependent record directly (not via the sync-enforcement method), always: (1) flush the parent first so its `id` is available, (2) check for existing record by identifier before insert (duplicate guard), (3) call `normalize_contact_info()` before adding.
+**Inline creation variant:** When creating a Client directly (not via `ensure_client_for_member`), always: (1) flush the parent `HouseholdMember` first so `member.id` is available, (2) check for existing Client by email before insert (duplicate guard), (3) call `client.normalize_contact_info()` before adding.
 
 ### 30. Dedup Must Cover All Contact Identifiers
 
@@ -814,7 +814,7 @@ elif member_data.phone:
     existing = await find_by_phone_normalized(db, user_id, phone_digits)
 ```
 
-**Learned from a production bug where:** your member sync method only checked email for dedup. Contacts with phone but no email created duplicates on every sync.
+**Learned from:** `_sync_client_for_member()` — only checked email for dedup. CRM contacts with phone but no email created duplicate Clients on every sync.
 
 ### 31. Use `scalars().first()` for Non-Unique Column Lookups
 
@@ -845,20 +845,115 @@ After resolving merge conflicts in service files, scan the resolved file for con
 
 ```python
 # ❌ BAD — merge conflict left two back-to-back calls
-await your_sync_enforcement_method(db, user_id, parent_id, ...)
-await your_sync_enforcement_method(db, user_id, parent_id, ...)  # duplicate
+await ensure_client_for_member(db, user_id, household_id, ...)
+await ensure_client_for_member(db, user_id, household_id, ...)  # duplicate
 
 # ✅ GOOD — single call
-await your_sync_enforcement_method(db, user_id, parent_id, ...)
+await ensure_client_for_member(db, user_id, household_id, ...)
 ```
 
 **Check:** After resolving any conflict in a service file, grep for repeated adjacent calls:
 ```bash
-grep -n 'your_sync_method\|_sync_client' FILE | head -20
+grep -n 'ensure_client_for_member\|_sync_client' FILE | head -20
 ```
 If the same call appears on consecutive lines with no intervening logic, remove the duplicate.
 
-**Learned from a production bug where:** both the PR branch and main had added sync calls; conflict resolution left both copies in two service files.
+**Learned from:** PR #240 merge — both the PR branch and main had added `ensure_client_for_member()` calls; conflict resolution left both in `contact_import_service.py` and `sync_service.py`.
+
+### 33. Dialect Portability for Shared SQL
+
+Production runs Postgres; tests run SQLite. Any `sqlalchemy.func.X` call where X is Postgres-specific crashes the test path while passing in prod, producing CI red that prod doesn't see.
+
+Postgres-only (partial list): `pg_*advisory_lock*`, `date_trunc`, `to_tsvector`, `plainto_tsquery`, `array_agg`/`string_agg` with ORDER BY, `jsonb_*`, `generate_series`, `distinct on`.
+
+```python
+# ❌ BAD — crashes SQLite tests with `no such function: date_trunc`
+daily_stmt = select(
+    func.date_trunc("day", ActionLog.created_at).label("day"),
+    func.count().label("cnt"),
+).where(...)
+
+# ✅ GOOD — branch on dialect; SQLite uses strftime
+if db.bind.dialect.name == "postgresql":
+    day_expr = func.date_trunc("day", ActionLog.created_at)
+else:
+    day_expr = func.strftime("%Y-%m-%d", ActionLog.created_at)
+daily_stmt = select(day_expr.label("day"), func.count().label("cnt")).where(...)
+```
+
+For advisory locks specifically, SQLite tests can skip the call entirely — single-connection per test means no cross-session race exists:
+
+```python
+if db.bind.dialect.name == "postgresql":
+    lock_result = await db.execute(text("SELECT pg_try_advisory_xact_lock(:id)"), {"id": lock_id})
+    if not lock_result.scalar():
+        return
+# else: SQLite path falls through, no lock
+```
+
+**Check:** Before committing any new `func.X` call, verify X exists in SQLite's function set. If Postgres-only, add the dialect branch.
+
+**Learned from:** Two CI-red sites in commit `66cf9b0e` (event_meta_service.py advisory lock + routes/logs.py date_trunc) — both shipped without crashing prod, both blocked the test suite for days. Hit in two separate sessions.
+
+### 34. Normalize DB-Readback Datetimes Before Arithmetic with Aware `now()`
+
+SQLite strips tzinfo on datetime-column read; Postgres TIMESTAMPTZ preserves it. Code that subtracts a DB-stored datetime from `datetime.now(timezone.utc)` works in prod but raises `TypeError: can't subtract offset-naive and offset-aware datetimes` in tests.
+
+```python
+# ❌ BAD — assumes paused_at is always aware
+pause_duration = datetime.now(timezone.utc) - instance.paused_at
+
+# ✅ GOOD — normalize the naive side
+paused_at = instance.paused_at
+if paused_at and paused_at.tzinfo is None:
+    paused_at = paused_at.replace(tzinfo=timezone.utc)
+pause_duration = datetime.now(timezone.utc) - paused_at
+```
+
+Same pattern applies on test assertions that compare a DB-readback datetime to an aware `expected`:
+
+```python
+# ❌ BAD — paused.resume_date is naive on SQLite
+assert paused.resume_date == resume_date  # TypeError or wrong tz
+
+# ✅ GOOD — normalize before compare
+actual = paused.resume_date
+if actual.tzinfo is None:
+    actual = actual.replace(tzinfo=timezone.utc)
+assert actual == resume_date
+```
+
+**Check:** Any `datetime.now(timezone.utc) - <something_from_db>` or comparison thereof needs the naive guard on the DB side.
+
+**Learned from:** 5 service sites in commit `66cf9b0e` (workflow.py, workflow_service.py, workflow_scheduler.py, calendar_sync_service.py × 2). Production was unaffected (Postgres TIMESTAMPTZ); tests were red until normalized.
+
+### 35. Get-or-Create Services Must Verify Parent Scope Before Insert
+
+If a service follows `SELECT ... on (parent_id, user_id); INSERT on miss`, **always look up the parent first** in a separate scoped query. Otherwise a route whose 404 path depends on `None` will 200 for any UUID — the service materializes a row for any identifier.
+
+```python
+# BAD: auto-creates TemplateMetrics for any template_id, masking 404
+metrics = get_or_create_metrics(template_id, user_id)
+
+# GOOD: verify the parent belongs to the user before materializing anything
+template = (
+    await db.execute(
+        select(WorkflowTemplate).where(
+            WorkflowTemplate.id == template_id,
+            WorkflowTemplate.user_id == user_id,
+        )
+    )
+).scalar_one_or_none()
+if template is None:
+    return None
+metrics = get_or_create_metrics(template_id, user_id)
+```
+
+Scope the parent lookup by `user_id` so the check doubles as authorization — don't leak cross-user existence through differing status codes.
+
+**Audit:** `rg -n 'def (get_or_create|refresh_|ensure_)' app/services/`.
+
+**Learned from:** `template_analytics_service.refresh_template_metrics` (`7066a568`) — `GET /api/analytics/templates/<bogus>/metrics` returned 200 (with empty stats) instead of 404, because the service happily created a metrics row for any UUID and the route's `if not metrics: 404` branch never fired.
 
 ## Quick Reference
 
@@ -873,7 +968,7 @@ If the same call appears on consecutive lines with no intervening logic, remove 
 | Real DB Semantics | Query works locally, crashes in prod | DISTINCT/JSON/ORDER BY safe for Postgres? |
 | Verify Model Attrs | `AttributeError` at runtime | Attribute exists on the model class? |
 | Auxiliary Side-Effects | Notification failure aborts core op | Each side-effect wrapped independently? |
-| Audit Trail | Action invisible in dashboard | State-changing endpoint creates audit log entry? |
+| Audit Trail | Action invisible in dashboard | State-changing endpoint creates ActionLog? |
 | Error Visibility | Errors hidden from user | Dashboard feed includes ERROR-level logs? |
 | Ephemeral Storage | Files vanish after deploy | All file I/O uses persistent storage? |
 | Error Leaking | Internal details in HTTP response | Error messages generic, no `str(e)`? |
@@ -911,9 +1006,9 @@ If the same call appears on consecutive lines with no intervening logic, remove 
 - `ORDER BY` column not in `SELECT DISTINCT` list
 - Accessing `model.attribute` without checking the model definition
 - An unwrapped notification/SMS/email call inside a critical operation
-- A state-changing endpoint with no audit log entry
+- A state-changing endpoint with no `ActionLog` entry
 - A dashboard query that filters out ERROR-level logs by default
-- Writing files to local disk on a cloud platform
+- Writing files to local disk on a cloud platform (Railway, Heroku)
 - Silent fallback to local storage when external storage fails
 - `str(e)` or `traceback.format_exc()` in an HTTP response or redirect URL
 - `print()` debug statements in production code
@@ -921,7 +1016,7 @@ If the same call appears on consecutive lines with no intervening logic, remove 
 - CSS variant class that redeclares properties already on the base class
 - Datetime comparison using string `>=`/`<=` instead of parsed objects
 - Datetime arithmetic between a DB column value and `datetime.now(timezone.utc)` without normalizing timezone awareness
-- Connection check using `user.some_token` instead of the token/connection manager
+- Connection check using `user.some_token` instead of the token manager
 - Primary view reading from local cache when it's the only UI for that data
 - Cherry-pick/merge pushed without re-running affected tests
 - Variable used in a function that was defined in a different function (split/copy artifact)
@@ -937,7 +1032,7 @@ If the same call appears on consecutive lines with no intervening logic, remove 
 - A pattern-class bug fix that only fixes the reported instance without grepping for all occurrences
 - `scalar_one_or_none()` on a query filtering by a non-unique column (email, phone, name) — use `scalars().first()` instead
 
-## Guardrails
+## When NOT to Use
 
 - Simple CRUD with no error handling complexity
 - Read-only queries with no side effects
