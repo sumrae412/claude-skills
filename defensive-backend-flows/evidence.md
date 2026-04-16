@@ -36,7 +36,7 @@
 
 **Symptom:** Deploying the migration would permanently delete all user OAuth tokens with no way to recover.
 
-**Root cause:** Alembic migration NULLed `users.google_calendar_refresh_token` without first INSERTing/UPDATEing into the new integration connections table. The `downgrade()` was a bare `pass`.
+**Root cause:** Alembic migration NULLed `users.google_calendar_refresh_token` without first INSERTing/UPDATEing into `integration_connections`. The `downgrade()` was a bare `pass`.
 
 **Which rule violated:** 3: Copy Before Delete
 
@@ -81,11 +81,11 @@ def downgrade() -> None:
 
 **Symptom:** Partial commits when a multi-step service operation fails halfway. Route-level transaction boundary violated.
 
-**Root cause:** Service files called `db.commit()` directly (5+ occurrences) instead of letting routes own transactions.
+**Root cause:** `token_refresh_service.py` and `email.py` called `db.commit()` directly (5+ occurrences) instead of letting routes own transactions.
 
-**Which rule violated:** Project-specific (transaction boundary policy). Not in generic skill.
+**Which rule violated:** Project-specific (CourierFlow Boundaries #7). Not in generic skill.
 
-**Pressure scenario prompt:** N/A — project-specific, covered by project CLAUDE.md.
+**Pressure scenario prompt:** N/A — project-specific, covered by CLAUDE.md.
 
 ---
 
@@ -93,21 +93,21 @@ def downgrade() -> None:
 
 **Symptom:** Double `record_error` on permanent token failure — the error count incremented twice per failure.
 
-**Root cause:** A downstream service called `token_manager._refresh_token()` directly instead of a public API. `_refresh_token` internally calls `record_error`, and the caller also called it, doubling the side effect.
+**Root cause:** `token_refresh_service` called `token_manager._refresh_token()` directly instead of a public API. `_refresh_token` internally calls `record_error`, and the caller also called it, doubling the side effect.
 
 **Which rule violated:** 5: Respect Encapsulation
 
 **Code (bad):**
 ```python
-# downstream_service.py
+# token_refresh_service.py
 await token_manager._refresh_token(db, connection)
 connection.record_success()
-connection.status = "connected"
+connection.status = IntegrationConnectionStatus.CONNECTED
 ```
 
 **Code (fix):**
 ```python
-# your token/auth service — new public method
+# token_manager.py — new public method
 async def refresh_connection(self, db, connection):
     try:
         await self._refresh_token(db, connection)
@@ -115,7 +115,7 @@ async def refresh_connection(self, db, connection):
     except TokenExpiredError as exc:
         return False, str(exc)
 
-# downstream_service.py — uses public API
+# token_refresh_service.py — uses public API
 success, error = await token_manager.refresh_connection(db, connection)
 ```
 
@@ -127,7 +127,7 @@ success, error = await token_manager.refresh_connection(db, connection)
 
 **Symptom:** SQLAlchemy model had 3 columns defined twice. Confusing for readers, risk of inconsistent defaults.
 
-**Root cause:** Copy-paste error in your integration model — `daily_quota_used`, `daily_quota_limit`, `quota_reset_at` appeared in two separate blocks.
+**Root cause:** Copy-paste error in `IntegrationConnection` model — `daily_quota_used`, `daily_quota_limit`, `quota_reset_at` appeared in two separate blocks.
 
 **Which rule violated:** 4: One Source of Truth
 
@@ -139,7 +139,7 @@ success, error = await token_manager.refresh_connection(db, connection)
 
 **Symptom:** Cache eviction (a write-side concern) ran on every status check (a read-side operation), adding unnecessary overhead and mixing concerns.
 
-**Root cause:** Cache eviction logic was placed in a read-only check function instead of the write operation that modifies the cache.
+**Root cause:** Cache eviction logic was placed in `_google_connected()` (read-only check) instead of `_set_cached_events()` (write operation).
 
 **Which rule violated:** Project-specific (misplaced side effect). Not in generic skill.
 
@@ -147,16 +147,16 @@ success, error = await token_manager.refresh_connection(db, connection)
 
 ## Bug 6: QuotaExceededError Not Caught (2026-03-03)
 
-**Symptom:** When a quota was exceeded, the send function raised an unhandled `QuotaExceededError` instead of falling back to the backup sender.
+**Symptom:** When Gmail quota was exceeded, `send_email()` raised an unhandled `QuotaExceededError` instead of falling back to SMTP.
 
-**Root cause:** The send function caught `TokenNotFoundError` and `TokenExpiredError` for the fallback but missed `QuotaExceededError`, which `check_quota()` also raises.
+**Root cause:** `send_simple_email()` caught `TokenNotFoundError` and `TokenExpiredError` for SMTP fallback but missed `QuotaExceededError`, which `check_gmail_quota()` also raises.
 
 **Which rule violated:** 2: Catch What You Raise
 
 **Code (bad):**
 ```python
 try:
-    await token_manager.check_quota(db, user.id)
+    await token_manager.check_gmail_quota(db, user.id)
 except (TokenNotFoundError, TokenExpiredError):
     return await self._send_via_smtp(...)
 # QuotaExceededError crashes here
@@ -165,7 +165,7 @@ except (TokenNotFoundError, TokenExpiredError):
 **Code (fix):**
 ```python
 try:
-    await token_manager.check_quota(db, user.id)
+    await token_manager.check_gmail_quota(db, user.id)
 except (TokenNotFoundError, TokenExpiredError, QuotaExceededError):
     return await self._send_via_smtp(...)
 ```
@@ -178,7 +178,7 @@ except (TokenNotFoundError, TokenExpiredError, QuotaExceededError):
 
 **Symptom:** Connection error counter incremented twice per failure, triggering circuit breaker prematurely.
 
-**Root cause:** The internal refresh method calls `record_error` on failure. The downstream caller also called `connection.record_error()` in its own `except` block.
+**Root cause:** `_refresh_token` internally calls `record_error` on failure. The caller (`token_refresh_service`) also called `connection.record_error()` in its own `except` block.
 
 **Which rule violated:** 5: Respect Encapsulation (same root cause as Bug 3)
 
@@ -186,9 +186,9 @@ except (TokenNotFoundError, TokenExpiredError, QuotaExceededError):
 
 ## Bug 8: ScopeMismatchError Silently Swallowed (2026-03-03)
 
-**Symptom:** Users logged in without required OAuth scopes. No log entry, no status update, no way to diagnose.
+**Symptom:** Users logged in without required Drive scopes. No log entry, no status update, no way to diagnose.
 
-**Root cause:** `except ScopeMismatchError: pass` in the OAuth callback route.
+**Root cause:** `except ScopeMismatchError: pass` in the Google OAuth callback route.
 
 **Which rule violated:** 1: No Silent Swallows
 
@@ -202,11 +202,11 @@ except ScopeMismatchError:
 ```python
 except ScopeMismatchError as scope_err:
     logger.warning(
-        "OAuth login missing scopes for user %s: %s",
+        "Google login missing scopes for user %s: %s",
         user.id, scope_err,
     )
-    user.auth_status = "scope_error"
-    await db.flush()
+    user.gmail_auth_status = "scope_error"
+    await db.commit()
 ```
 
 **Pressure scenario prompt:** "Write an OAuth callback handler that stores the access token and checks if the granted scopes include 'drive.file'. Handle the case where scopes are missing."
@@ -215,9 +215,9 @@ except ScopeMismatchError as scope_err:
 
 ## Bug 9: Missing Public API (2026-03-03)
 
-**Symptom:** External service had to call a `_private` method because no public alternative existed.
+**Symptom:** External service had to call `_private` method because no public alternative existed.
 
-**Root cause:** The token manager only had `_refresh_token()` (private). A downstream service needed to refresh tokens but had no public entry point.
+**Root cause:** `TokenManager` only had `_refresh_token()` (private). `token_refresh_service` needed to refresh tokens but had no public entry point.
 
 **Which rule violated:** 5: Respect Encapsulation (same family as Bug 3 and 7)
 
@@ -225,24 +225,24 @@ except ScopeMismatchError as scope_err:
 
 ## Bug 10: Conflicting Quota Limits (2026-03-03)
 
-**Symptom:** Your messaging service allowed 2000 messages/day while your token/auth service enforced 500. Inconsistent behavior depending on which check ran first.
+**Symptom:** Email service allowed 2000 emails/day while token manager enforced 500. Inconsistent behavior depending on which check ran first.
 
-**Root cause:** Your messaging service defined its own quota limit while your token/auth service defined a different limit. Two definitions for the same constant.
+**Root cause:** `email.py` defined `'per_user_daily': 2000` while `token_manager.py` defined `daily_quota_limit = 500`.
 
 **Which rule violated:** 4: One Source of Truth
 
 **Code (bad):**
 ```python
-# your_messaging_service.py
-RATE_LIMITS = {'per_user_daily': 2000}
-# your_token_service.py
+# email.py
+GMAIL_RATE_LIMITS = {'per_user_daily': 2000}
+# token_manager.py
 daily_quota_limit = Column(Integer, default=500)
 ```
 
 **Code (fix):**
 ```python
-# your_messaging_service.py — defer to token service as source of truth
-RATE_LIMITS = {'per_user_daily': 500}  # token service is source of truth
+# email.py — defer to token_manager as source of truth
+GMAIL_RATE_LIMITS = {'per_user_daily': 500}  # token_manager is source of truth
 ```
 
 **Pressure scenario prompt:** "Write two service modules that both enforce a rate limit. Module A sends messages, Module B tracks quotas. Both need to know the daily limit."
@@ -251,26 +251,26 @@ RATE_LIMITS = {'per_user_daily': 500}  # token service is source of truth
 
 ## Bug 11: Missing Import for Return Type (2026-03-04)
 
-**Symptom:** `NameError: name 'YourApiResponse' is not defined` when the method was called at runtime. Module imported fine, function crashed on first invocation.
+**Symptom:** `NameError: name 'TenantPanelResponse' is not defined` when `get_tenant_panel_data()` was called at runtime. Module imported fine, function crashed on first invocation.
 
-**Root cause:** The response schema was used in the method's return type annotation (`-> Optional[YourApiResponse]`) but was never imported. Python evaluates type annotations lazily in some contexts, so the import error only surfaces at call time.
+**Root cause:** `TenantPanelResponse` was used in the method's return type annotation (`-> Optional[TenantPanelResponse]`) but was never imported. Python evaluates type annotations lazily in some contexts, so the import error only surfaces at call time.
 
 **Which rule violated:** NEW — Rule 6: Verify Imports Match Signatures
 
 **Code (bad):**
 ```python
-from app.schemas.your_module import YourDocument, YourMember
+from app.schemas.tenant_panel import TenantPanelDocument, TenantPanelTenant
 
-async def get_panel_data(...) -> Optional[YourApiResponse]:
+async def get_tenant_panel_data(...) -> Optional[TenantPanelResponse]:
     # NameError at runtime
 ```
 
 **Code (fix):**
 ```python
-from app.schemas.your_module import (
-    YourDocument,
-    YourApiResponse,
-    YourMember,
+from app.schemas.tenant_panel import (
+    TenantPanelDocument,
+    TenantPanelResponse,
+    TenantPanelTenant,
 )
 ```
 
@@ -282,7 +282,7 @@ from app.schemas.your_module import (
 
 **Symptom:** Document query crashed on PostgreSQL with errors about JSON equality in DISTINCT and ORDER BY columns not matching SELECT DISTINCT list.
 
-**Root cause:** Query used `select(Document).distinct().order_by(Document.created_at.desc())`. The document model has JSON columns, and Postgres cannot compare JSON for equality (needed by DISTINCT). Additionally, ORDER BY on a column not in SELECT DISTINCT is invalid in Postgres.
+**Root cause:** Query used `select(Document).distinct().order_by(Document.created_at.desc())`. The Document model has JSON columns, and Postgres cannot compare JSON for equality (needed by DISTINCT). Additionally, ORDER BY on a column not in SELECT DISTINCT is invalid in Postgres.
 
 **Which rule violated:** NEW — Rule 7: Test Queries Against Real DB Semantics
 
@@ -324,9 +324,9 @@ if doc_ids:
 
 ## Bug 13: AttributeError on Non-Existent Model Attribute (2026-03-04)
 
-**Symptom:** `AttributeError: 'Document' object has no attribute 'signed_at'` at runtime when building a document list.
+**Symptom:** `AttributeError: 'Document' object has no attribute 'signed_at'` at runtime when building the tenant panel document list.
 
-**Root cause:** Status date calculation referenced `document.signed_at`, but your document model has no `signed_at` column. The correct fallback chain is `completed_at → sent_at → viewed_at → created_at`.
+**Root cause:** Status date calculation referenced `document.signed_at`, but the `Document` model has no `signed_at` column. The correct fallback chain is `completed_at → sent_at → viewed_at → created_at`.
 
 **Which rule violated:** NEW — Rule 8: Verify Model Attributes Before Access
 
@@ -349,18 +349,18 @@ status_date = (
 
 ---
 
-## Bug 14: AsyncSession + Connection Check NameError (2026-03-04)
+## Bug 14: AsyncSession + Google Connection NameError (2026-03-04)
 
-**Symptom:** `NameError` for `AsyncSession` in type hints; also a connection check returned `True` for expired/disconnected tokens because it only checked if a connection row existed.
+**Symptom:** `NameError` for `AsyncSession` in `calendar.py` type hints; also `_google_connected()` returned `True` for expired/disconnected tokens because it only checked if a connection row existed.
 
-**Root cause:** Two issues in one: (1) `AsyncSession` used in function signature before import, (2) connection check used row existence instead of a status check that accounts for token expiry.
+**Root cause:** Two issues in one: (1) `AsyncSession` used in function signature before import, (2) connection check used row existence instead of `status.is_connected` which accounts for token expiry.
 
 **Which rule violated:** 6: Verify Imports Match Signatures
 
 **Code (bad):**
 ```python
 # No import for AsyncSession at top of file
-async def _is_connected(db: AsyncSession, user_id: UUID) -> bool:
+async def _google_connected(db: AsyncSession, user_id: UUID) -> bool:
     conn = await token_manager.get_connection(db, user_id)
     return conn is not None  # True even if token expired!
 ```
@@ -369,26 +369,26 @@ async def _is_connected(db: AsyncSession, user_id: UUID) -> bool:
 ```python
 from sqlalchemy.ext.asyncio import AsyncSession
 
-async def _is_connected(db: AsyncSession, user_id: UUID) -> bool:
+async def _google_connected(db: AsyncSession, user_id: UUID) -> bool:
     status = await token_manager.get_connection_status(db, user_id)
     return status.is_connected  # Checks actual token validity
 ```
 
-**Pressure scenario prompt:** "Write a helper function `is_service_connected(db, user_id)` that checks if a user has a valid external service connection. Use the `AsyncSession` type hint."
+**Pressure scenario prompt:** "Write a helper function `is_google_connected(db, user_id)` that checks if a user has a valid Google connection. Use the `AsyncSession` type hint."
 
 ---
 
-## Bug 15: Late Import NameError in Retry Function (2026-03-04)
+## Bug 15: Late Import NameError in Email Retry (2026-03-04)
 
-**Symptom:** `NameError: name 'token_manager' is not defined` — the singleton was referenced before its late import.
+**Symptom:** `NameError: name 'token_manager' is not defined` in `_send_email_with_retry` — the singleton was referenced before its late import.
 
-**Root cause:** A service singleton was used in the function body before the `from app.services.token_manager import token_manager` line that appeared later in the function.
+**Root cause:** `token_manager` was used in the function body before the `from app.services.token_manager import token_manager` line that appeared later in the function.
 
 **Which rule violated:** 6: Verify Imports Match Signatures (late-import variant)
 
 **Code (bad):**
 ```python
-async def _send_with_retry(self, ...):
+async def _send_email_with_retry(self, ...):
     conn = await token_manager.get_connection(...)  # NameError
     # ... later in the function ...
     from app.services.token_manager import token_manager
@@ -396,14 +396,14 @@ async def _send_with_retry(self, ...):
 
 **Code (fix):**
 ```python
-async def _send_with_retry(self, ...):
+async def _send_email_with_retry(self, ...):
     from app.services.token_manager import (
         TokenExpiredError, TokenNotFoundError, token_manager,
     )
     conn = await token_manager.get_connection(...)
 ```
 
-**Pressure scenario prompt:** "Write a send function with retry logic that uses a `token_manager` singleton to check quota before sending."
+**Pressure scenario prompt:** "Write an email send function with retry logic that uses a `token_manager` singleton to check Gmail quota before sending."
 
 ---
 
@@ -433,9 +433,9 @@ PERMANENT_ERRORS = {"invalid_grant", "invalid_client", "unauthorized_client"}
 
 ## Bug 17: SMS Failure Aborts Disconnect Flow (2026-03-04)
 
-**Symptom:** When SMS notification failed during a service disconnect, the entire disconnect operation was rolled back. User remained in a broken state.
+**Symptom:** When SMS notification failed during Google disconnect, the entire disconnect operation was rolled back. User remained "connected" in a broken state.
 
-**Root cause:** The SMS send was called without a try-catch wrapper in the disconnect flow. Any SMS failure (provider down, no phone number, rate limit) propagated up and rolled back the DB transaction.
+**Root cause:** `_send_disconnect_sms()` was called without a try-catch wrapper in the disconnect flow. Any SMS failure (Twilio down, no phone number, rate limit) propagated up and rolled back the DB transaction that had already marked the connection as disconnected.
 
 **Which rule violated:** NEW — Rule 9: Auxiliary Side-Effects Must Not Abort Primary Flow
 
@@ -465,7 +465,7 @@ async def _send_disconnect_sms(self, db, user_id):
 
 **Symptom:** pytest collection errors when `pytest_plugins` was defined in a subdirectory conftest. Recent pytest versions reject this.
 
-**Root cause:** `pytest_plugins` was placed in a subdirectory `conftest.py` instead of the root `conftest.py`. pytest requires plugin registration at the root level.
+**Root cause:** `pytest_plugins = ["tests.e2e.fixtures.conftest_mocks"]` was placed in `tests/e2e/conftest.py` instead of the root `conftest.py`. pytest requires plugin registration at the root level.
 
 **Which rule violated:** 4: One Source of Truth (test plugin registration must be centralized)
 
@@ -487,9 +487,9 @@ pytest_plugins = ["tests.e2e.fixtures.conftest_mocks"]
 
 ---
 
-## Bug 19: Missing API Methods on Service Class (2026-03-04)
+## Bug 19: 2FA Missing API Methods (2026-03-04)
 
-**Symptom:** Tests failed with `AttributeError` — a service class had no expected method, and a dependent class didn't exist.
+**Symptom:** Tests failed with `AttributeError` — `TwoFAService` had no `generate_email_verification_code()` method, and `TwoFAEmailService` class didn't exist.
 
 **Root cause:** Tests were written against an expected API contract, but the service implementation didn't expose the expected methods/classes. The service had internal equivalents but no matching public interface.
 
@@ -497,54 +497,54 @@ pytest_plugins = ["tests.e2e.fixtures.conftest_mocks"]
 
 **Code (bad):**
 ```python
-# service.py — missing method
-class VerificationService:
-    def generate_code(self) -> str: ...
+# twofa.py — missing method
+class TwoFAService:
+    def generate_verification_code(self) -> str: ...
     # No generate_email_verification_code()
-# No EmailVerificationService class at all
+# No TwoFAEmailService class at all
 ```
 
 **Code (fix):**
 ```python
-# service.py — complete API
-class VerificationService:
-    def generate_code(self) -> str: ...
+# twofa.py — complete API
+class TwoFAService:
+    def generate_verification_code(self) -> str: ...
     def generate_email_verification_code(self) -> str:
-        return self.generate_code()
+        return self.generate_verification_code()
 
-class EmailVerificationService:
+class TwoFAEmailService:
     def generate_email_verification_code(self) -> str:
         return "".join(secrets.choice("0123456789") for _ in range(6))
 ```
 
-**Pressure scenario prompt:** "Write unit tests for an email verification service. The service should generate 6-digit codes and verify them."
+**Pressure scenario prompt:** "Write unit tests for a 2FA email verification service. The service should generate 6-digit codes and verify them."
 
 ---
 
-## Bug 20: OAuth Scope Mismatch (2026-03-04)
+## Bug 20: Google OAuth Scope Mismatch (2026-03-04)
 
-**Symptom:** Adding a scope to your OAuth scope constants didn't propagate to your calendar integration service, which had its own hardcoded scope list. Users got `ScopeMismatchError` on operations requiring the new scope.
+**Symptom:** Adding `drive.file` scope to `REQUIRED_GOOGLE_SCOPES` in `token_manager.py` didn't propagate to `calendar_service.py`, which had its own hardcoded scope list. Users got `ScopeMismatchError` on Drive operations.
 
-**Root cause:** Your calendar integration service hardcoded its own scope list instead of importing your OAuth scope constants from your token/auth service.
+**Root cause:** `calendar_service.py` hardcoded its own scope list instead of importing `REQUIRED_GOOGLE_SCOPES` from `token_manager.py`.
 
 **Which rule violated:** 4: One Source of Truth
 
 **Code (bad):**
 ```python
-# your calendar integration service — hardcoded scopes
+# calendar_service.py — hardcoded scopes
 flow = Flow.from_client_config(
     config,
-    scopes=["calendar", "gmail.send", "openid"],  # missing new scope!
+    scopes=["calendar", "gmail.send", "openid"],  # missing drive.file!
 )
 ```
 
 **Code (fix):**
 ```python
-# your calendar integration service — imports canonical source
-from app.services.token_service import REQUIRED_OAUTH_SCOPES
+# calendar_service.py — imports canonical source
+from app.services.token_manager import REQUIRED_GOOGLE_SCOPES
 flow = Flow.from_client_config(
     config,
-    scopes=sorted(REQUIRED_OAUTH_SCOPES),
+    scopes=sorted(REQUIRED_GOOGLE_SCOPES),
 )
 ```
 
@@ -582,79 +582,79 @@ async def onboarding_calendar(
 
 ---
 
-## Bug 22: Sends Not in Recent Activity (2026-03-04)
+## Bug 22: Document Sends Not in Recent Activity (2026-03-04)
 
-**Symptom:** A user completed a key action but the home feed showed no record of it. No confirmation the action happened.
+**Symptom:** Landlord sent documents to tenants but the home feed showed no record of it. No confirmation the action happened.
 
-**Root cause:** The send route completed the operation but never created an audit log entry. The action was invisible on the dashboard.
+**Root cause:** The `send_document()` route completed the send but never created an `ActionLog` entry. The action was invisible on the dashboard.
 
 **Which rule violated:** NEW — Rule 10: User-Facing Actions Must Create Audit Trails
 
 **Code (bad):**
 ```python
-async def send_document(db, document, recipient, user):
-    await deliver(document, recipient)
+async def send_document(db, document, tenant, user):
+    await deliver(document, tenant)
     document.status = "sent"
     await db.flush()
-    return {"success": True}  # No audit log!
+    return {"success": True}  # No ActionLog!
 ```
 
 **Code (fix):**
 ```python
-async def send_document(db, document, recipient, user):
-    await deliver(document, recipient)
+async def send_document(db, document, tenant, user):
+    await deliver(document, tenant)
     document.status = "sent"
-    db.add(AuditLog(
+    db.add(ActionLog(
         user_id=user.id,
-        action_type=AuditLogType.DOCUMENT_SENT,
-        title=f"Sent document to {recipient.full_name}",
-        level=AuditLogLevel.INFO,
+        action_type=ActionLogType.DOCUMENT_SENT,
+        title=f"Sent document to {tenant.full_name}",
+        level=ActionLogLevel.INFO,
     ))
     await db.flush()
     return {"success": True}
 ```
 
-**Pressure scenario prompt:** "Add a 'Send Document' feature that emails a PDF to a recipient. The sender should see confirmation on their dashboard."
+**Pressure scenario prompt:** "Add a 'Send Document' feature that emails a PDF to a tenant. The landlord should see confirmation on their dashboard."
 
 ---
 
-## Bug 23: Contact Updates Not in Recent Activity (2026-03-04)
+## Bug 23: Tenant Contact Updates Not in Recent Activity (2026-03-04)
 
-**Symptom:** A user updated contact preferences via a magic link, but the account owner had no visibility — no dashboard entry, no notification.
+**Symptom:** Tenant updated contact preferences via magic link, but landlord had no visibility — no dashboard entry, no notification.
 
-**Root cause:** The preference update service updated the record but created no audit log entry.
+**Root cause:** `process_contact_preferences()` updated the tenant record but created no `ActionLog` entry.
 
 **Which rule violated:** 10: User-Facing Actions Must Create Audit Trails
 
 **Code (bad):**
 ```python
 async def process_contact_preferences(self, token, preferences):
-    member.preferred_contact_channel = channel
-    member.contact_preferences_updated_at = datetime.now(timezone.utc)
-    return {"success": True}  # Account owner sees nothing
+    tenant.preferred_contact_channel = channel
+    tenant.contact_preferences_updated_at = datetime.now(timezone.utc)
+    return {"success": True}  # Landlord sees nothing
 ```
 
 **Code (fix):**
 ```python
 async def process_contact_preferences(self, token, preferences):
-    member.preferred_contact_channel = channel
-    member.contact_preferences_updated_at = datetime.now(timezone.utc)
-    db.add(AuditLog(
-        user_id=member.parent_record.user_id,
-        action_type=AuditLogType.MEMBER_UPDATED,
-        title=f"{member.full_name} updated contact preferences",
-        level=AuditLogLevel.INFO,
+    tenant.preferred_contact_channel = channel
+    tenant.contact_preferences_updated_at = datetime.now(timezone.utc)
+    db.add(ActionLog(
+        user_id=tenant.household.user_id,
+        action_type=ActionLogType.TENANT_UPDATED,
+        title=f"{tenant.full_name} updated contact preferences",
+        level=ActionLogLevel.INFO,
     ))
     return {"success": True}
 ```
 
-**Pressure scenario prompt:** "Build a self-service page where members can update their contact preferences. The account owner should see these changes on their dashboard."
+**Pressure scenario prompt:** "Build a tenant self-service page where tenants can update their contact preferences. The landlord should see these changes on their dashboard."
 
 ---
 
 ## Bug 24: Home Feed Excluding Error Logs (2026-03-04)
 
-**Symptom:** Workflow execution failures (SMS not sent, email bounced) never appeared on the home feed. Critical errors were invisible.
+**Symptom:** Workflow execution failures (SMS not sent, email bounced) never appeared on the landlord's home feed. Critical errors were invisible.
 
 **Root cause:** `get_recent_activity()` defaulted `include_errors=False`, and the dashboard caller used the default. ERROR-level logs were silently filtered out.
 
@@ -662,10 +662,10 @@ async def process_contact_preferences(self, token, preferences):
 
 **Code (bad):**
 ```python
-# activity_service.py
+# logging_service.py
 async def get_recent_activity(db, user_id, include_errors=False):
     if not include_errors:
-        conditions.append(AuditLog.level != AuditLogLevel.ERROR)
+        conditions.append(ActionLog.level != ActionLogLevel.ERROR)
 
 # dashboard_service.py — uses default (errors hidden)
 activity = await get_recent_activity(db, user_id)
@@ -683,9 +683,9 @@ activity = await get_recent_activity(
 
 ---
 
-## Bug 25: Stale Frontend Endpoint Paths (2026-03-04)
+## Bug 25: Stale AI Endpoints in Email Composer (2026-03-04)
 
-**Symptom:** A UI template referenced backend endpoints that didn't exist in the router, causing 404s when users tried to use the feature.
+**Symptom:** Email compose template referenced `/ai/improve` and `/ai/generate` endpoints that didn't exist in the router, causing 404s when users tried AI features.
 
 **Root cause:** Frontend JS hardcoded endpoint paths that were never created or were moved during refactoring. No integration test verified the endpoints existed.
 
@@ -695,11 +695,11 @@ activity = await get_recent_activity(
 
 ---
 
-## Bug 26: Route Handler Missing Return (2026-03-04)
+## Bug 26: Onboarding complete_step Missing Return (2026-03-04)
 
-**Symptom:** After the database commit, the handler returned nothing. The client got no JSON response, so the frontend couldn't redirect.
+**Symptom:** After `await db.commit()`, the onboarding step-complete handler returned nothing. Frontend got no JSON (no `next_route`), so the "Continue" button couldn't redirect.
 
-**Root cause:** Route handler had no `return` statement after the database commit. FastAPI returned `null` instead of the expected response.
+**Root cause:** Route handler had no `return` statement after the database commit. FastAPI returned `null` instead of the expected `{success, next_step, next_route}` response.
 
 **Which rule violated:** Project-specific — every route handler must return an explicit response body.
 
@@ -708,8 +708,8 @@ activity = await get_recent_activity(
 @router.post("/complete_step")
 async def complete_step(body: StepCompleteBody, db=Depends(get_db)):
     step.completed = True
-    await db.flush()
-    # No return — client gets null
+    await db.commit()
+    # No return — frontend gets null
 ```
 
 **Code (fix):**
@@ -717,7 +717,7 @@ async def complete_step(body: StepCompleteBody, db=Depends(get_db)):
 @router.post("/complete_step")
 async def complete_step(body: StepCompleteBody, db=Depends(get_db)):
     step.completed = True
-    await db.flush()
+    await db.commit()
     return {
         "success": True,
         "next_step": step.order + 1,
@@ -730,23 +730,23 @@ async def complete_step(body: StepCompleteBody, db=Depends(get_db)):
 
 ---
 
-## Bug 27: Inline Imports in Route Functions (2026-03-04)
+## Bug 27: Inline ActionLog Imports in Route Functions (2026-03-04)
 
-**Symptom:** Multiple functions in the same file had identical import blocks scattered inside function bodies, violating conventions and risking NameError if an import was accidentally placed after first use.
+**Symptom:** Multiple functions in `documents.py` had identical `from app.models.action_log import ...` blocks scattered inside function bodies, violating conventions and risking NameError if an import was accidentally placed after first use.
 
-**Root cause:** When audit log entries were added incrementally to different route handlers, each got its own inline import instead of a single top-level import.
+**Root cause:** When ActionLog entries were added incrementally to different route handlers, each got its own inline import instead of a single top-level import.
 
 **Which rule violated:** 6: Verify Imports Match Signatures (convention: imports belong at file top)
 
-**Pressure scenario prompt:** "Add audit log entries to three different route handlers in an existing file. Each handler needs AuditLog, AuditLogLevel, and AuditLogType."
+**Pressure scenario prompt:** "Add ActionLog entries to three different route handlers in an existing file. Each handler needs ActionLog, ActionLogLevel, and ActionLogType."
 
 ---
 
 ## Bug 28: Circuit Breaker Was a No-Op Stub (2026-03-04)
 
-**Symptom:** An external service kept hammering a down API. A circuit breaker existed in code but never tripped because `is_open()` always returned `False` and `record_failure()` was a no-op.
+**Symptom:** OpenAI service kept hammering a down API. Circuit breaker existed in code but never tripped because `is_open()` always returned `False` and `record_failure()` was a no-op.
 
-**Root cause:** The circuit breaker class was implemented as a skeleton with placeholder methods that did nothing. It passed code review because the interface *looked* correct.
+**Root cause:** Circuit breaker class was implemented as a skeleton with placeholder methods that did nothing. It passed code review because the interface *looked* correct.
 
 **Which rule violated:** NEW pattern — no-op stubs give false confidence. A safety mechanism that doesn't work is worse than none (people rely on it).
 
@@ -786,11 +786,11 @@ class CircuitBreaker:
 
 ---
 
-## Bug 29: Audit Metadata Leaked PII (2026-03-04)
+## Bug 29: AI Audit Metadata Leaked PII (2026-03-04)
 
-**Symptom:** Audit logs stored raw metadata dictionaries containing email addresses, phone numbers, and API key fragments.
+**Symptom:** AI audit logs stored raw metadata dictionaries containing email addresses, phone numbers, and API key fragments.
 
-**Root cause:** The raw metadata dict was persisted without scrubbing. Metadata came from user prompts and API responses, which can contain PII.
+**Root cause:** `extra_data["metadata"] = metadata` persisted the raw dict without scrubbing. Metadata came from user prompts and API responses, which can contain PII.
 
 **Which rule violated:** NEW — sensitive data must be scrubbed before audit persistence.
 
@@ -822,7 +822,7 @@ extra_data["metadata"] = _sanitize_metadata(metadata)
 
 ## Bug 30: OAuth Error Messages Leaked Internals (2026-03-04)
 
-**Symptom:** OAuth callback failure redirected users with a raw exception string in the URL — exposing file paths, tracebacks, and internal error details in the URL bar.
+**Symptom:** OAuth callback failure redirected users to `/calendar?error=true&message=<raw exception string>` — exposing file paths, tracebacks, and internal error details in the URL bar.
 
 **Root cause:** `quote_plus(str(e)[:200])` was used as the error message in the redirect URL. Also contained `print()` debug statements and `traceback.format_exc()` in HTTP responses.
 
@@ -832,7 +832,7 @@ extra_data["metadata"] = _sanitize_metadata(metadata)
 ```python
 except Exception as e:
     error_msg = quote_plus(str(e)[:200])
-    return RedirectResponse(url=f"/dashboard?error=true&message={error_msg}")
+    return RedirectResponse(url=f"/calendar?error=true&message={error_msg}")
 ```
 
 **Code (fix):**
@@ -840,95 +840,95 @@ except Exception as e:
 except Exception:
     logger.error("OAuth callback failed", exc_info=True)
     error_msg = quote_plus("Connection failed. Please try again.")
-    return RedirectResponse(url=f"/dashboard?error=true&message={error_msg}")
+    return RedirectResponse(url=f"/calendar?error=true&message={error_msg}")
 ```
 
-**Pressure scenario prompt:** "Write an OAuth callback handler that redirects to the dashboard on failure, showing the error message to the user."
+**Pressure scenario prompt:** "Write an OAuth callback handler that redirects to the calendar page on failure, showing the error message to the user."
 
 ---
 
 ## Bug 31: Ephemeral Local Storage Cluster (2026-03-04)
 
-**Symptom:** Five related bugs from depending on local filesystem for document storage on your cloud platform:
+**Symptom:** Five related bugs from depending on local filesystem for document storage on Railway:
 1. Upload fallback wrote files to `uploads/` — gone after deploy
-2. The send pipeline logged storage failures but continued with a local path that wouldn't survive deploy
+2. `SEND_DOCUMENT` pipeline logged Drive upload failures but continued with a local path that wouldn't survive deploy
 3. Manual send email attachments used `doc.file_path` (local disk)
-4. Bulk send fetched `file_url` with an unauthenticated request — no auth for private storage links
+4. Bulk send fetched `file_url` with unauthenticated `httpx.get()` — no OAuth for private Drive links
 5. File availability checks assumed `os.path.exists(doc.file_path)` would work
 
-**Root cause:** The upload system was designed with a local-disk fallback for when external storage wasn't connected. On your cloud platform, local disk is ephemeral — files vanish on every deploy. Five different code paths assumed local files would persist.
+**Root cause:** The upload system was designed with a local-disk fallback for when Google Drive wasn't connected. On Railway, local disk is ephemeral — files vanish on every deploy. Five different code paths assumed local files would persist.
 
 **Which rule violated:** 12: Never Depend on Ephemeral Local Storage
 
 **Code (bad):**
 ```python
-# Silent fallback to local when external storage fails
-if not storage_result.success:
+# Silent fallback to local when Drive fails
+if not drive_result.success:
     local_path = save_to_disk(content, filename)
     doc.file_path = local_path  # Works today, gone tomorrow
 
 # Attachment from local disk
 attachments = [{"path": doc.file_path, "name": doc.title}]
 
-# Unauthenticated storage fetch
+# Unauthenticated Drive fetch
 resp = await httpx.AsyncClient().get(doc.file_url)
 ```
 
 **Code (fix):**
 ```python
-# Fail if external storage unavailable — no local fallback
-if not storage_result.success:
-    raise ExternalServiceError("Upload failed. Connect your storage provider.")
-doc.file_url = storage_result.file_url
+# Fail if Drive unavailable — no local fallback
+if not drive_result.success:
+    raise ExternalServiceError("Upload failed. Connect Google Drive.")
+doc.file_url = drive_result.file_url
 
-# Attachment from storage with auth
-file_bytes = await storage_service.download(access_token, doc.file_id)
+# Attachment from Drive with auth
+file_bytes = await drive_service.download(access_token, doc.drive_file_id)
 attachments = [{"content": file_bytes, "name": doc.title}]
 
-# Authenticated storage fetch
-resp = await storage_service.download(access_token, doc.file_id)
+# Authenticated Drive fetch
+resp = await drive_service.download(access_token, doc.drive_file_id)
 ```
 
-**Pressure scenario prompt:** "Add document upload with external storage integration. If storage isn't connected, save locally as a fallback so users can still upload."
+**Pressure scenario prompt:** "Add document upload with Google Drive integration. If Drive isn't connected, save locally as a fallback so users can still upload."
 
 ---
 
-## Bug 32: Failed Notification Emails Not in Audit Log (2026-03-04)
+## Bug 32: Failed Signature Emails Not in ActionLog (2026-03-04)
 
-**Symptom:** When notification emails failed to send, the failure was logged to stdout but never appeared in the user's activity feed.
+**Symptom:** When signature notification emails failed to send, the failure was logged to stdout but never appeared in the landlord's Home activity feed.
 
-**Root cause:** The `except` block used standard logging but didn't create an audit log entry. Stdout logs are invisible to users.
+**Root cause:** The `except` block used `logging.getLogger().exception()` but didn't create an `ActionLog` entry. Stdout logs are invisible to users.
 
 **Which rule violated:** 10: User-Facing Actions Must Create Audit Trails (error variant)
 
 **Code (bad):**
 ```python
 except Exception:
-    logging.getLogger(__name__).exception("send_notifications failed")
-    # No audit log — failure invisible on dashboard
+    logging.getLogger(__name__).exception("send_signing_notifications failed")
+    # No ActionLog — failure invisible on dashboard
 ```
 
 **Code (fix):**
 ```python
 except Exception:
-    logger.exception("send_notifications failed")
-    db.add(AuditLog(
-        action_type=AuditLogType.EMAIL_FAILED,
-        title=f"Notification email failed: {doc.title}",
-        level=AuditLogLevel.ERROR,
+    logger.exception("send_signing_notifications failed")
+    db.add(ActionLog(
+        action_type=ActionLogType.EMAIL_FAILED,
+        title=f"Signature email failed: {doc.title}",
+        level=ActionLogLevel.ERROR,
         user_id=user.id,
     ))
 ```
 
-**Pressure scenario prompt:** "Send notification emails to all recipients. Handle failures gracefully and make sure the account owner knows if any emails failed."
+**Pressure scenario prompt:** "Send signature notification emails to all signers. Handle failures gracefully and make sure the landlord knows if any emails failed."
 
 ---
 
-## Bug 33: Export Fallback Returned Wrong Format (2026-03-04)
+## Bug 33: PDF Export Fallback Returned Non-PDF Bytes (2026-03-04)
 
-**Symptom:** When the PDF export hit the file-size limit, the fallback downloaded the file in its native format (DOCX/XLSX) but still treated it as PDF.
+**Symptom:** When Google Drive's PDF export hit the file-size limit, the fallback downloaded the file in its native format (DOCX/XLSX) but still treated it as PDF.
 
-**Root cause:** The export function fell back to downloading in native format, but the caller assumed it always received PDF bytes.
+**Root cause:** `_export_or_download_pdf()` fell back to `download_file_bytes()` which returns the native format, not PDF. The caller assumed it always got PDF bytes.
 
 **Which rule violated:** Project-specific — function contract mismatch (name says "pdf", returns non-pdf)
 
@@ -937,7 +937,7 @@ except Exception:
 async def _export_or_download_pdf(self, access_token, file_id):
     try:
         return await self.export_file_as_pdf(access_token, file_id)
-    except StorageAPIError:
+    except DriveAPIError:
         return await self.download_file_bytes(access_token, file_id)  # Not PDF!
 ```
 
@@ -948,16 +948,16 @@ async def _export_or_download_pdf(self, access_token, file_id):
     return await self.export_file_as_pdf(access_token, file_id)
 ```
 
-**Pressure scenario prompt:** "Write a function that exports a file from external storage as PDF. Handle the case where the file is too large for export."
+**Pressure scenario prompt:** "Write a function that exports a Google Drive file as PDF. Handle the case where the file is too large for export."
 
 ---
 
-## Bug 34: Cache Window Mismatch for Primary View (2026-03-04)
+## Bug 34: Home Events Cache Window + Query Issues (2026-03-04)
 
-**Symptom:** Three related issues with a home page upcoming events section:
+**Symptom:** Three related issues with home page upcoming events:
 1. Events constrained by a recent-window cache — far-future events didn't appear
-2. An API endpoint used a short lookahead for an external calendar, under-counting events
-3. Upcoming events exceeded the item cap after client-side refresh
+2. `/api/chat/home-data` used a short lookahead for Google Calendar, under-counting events
+3. Upcoming events exceeded the 10-item cap after client-side refresh
 
 **Root cause:** The dashboard cache was designed for "recent" events but was reused for "upcoming" events without adjusting the time window. The API response wasn't bounded, and the client-side renderer didn't enforce the cap.
 
@@ -969,15 +969,15 @@ async def _export_or_download_pdf(self, access_token, file_id):
 
 ## Bug 35: String-Quoted Type Annotation Missing Module Import (2026-03-04)
 
-**Symptom:** Flake8 F821 error: `undefined name 'UUID'` in a function signature. The type annotation `tuple["UUID | None", str | None]` used `UUID` but it was only imported inside the function body.
+**Symptom:** Flake8 F821 error: `undefined name 'UUID'` on line 458 of `auth.py`. The type annotation `tuple["UUID | None", str | None]` used `UUID` but it was only imported inside the function body.
 
-**Root cause:** `from uuid import UUID` was placed inside the function body but the type annotation referencing `UUID` was on the function signature. Even though `"UUID | None"` is a string annotation and won't cause a runtime `NameError`, flake8 flags it as F821.
+**Root cause:** `from uuid import UUID` was placed inside the function body (line 461) but the type annotation referencing `UUID` was on the function signature (line 458). Even though `"UUID | None"` is a string annotation and won't cause a runtime `NameError`, flake8 flags it as F821.
 
 **Which rule violated:** 6: Verify Imports Match Signatures (extended — string annotations still need module-level imports for linters)
 
 **Code (bad):**
 ```python
-def _parse_state(
+def _parse_google_state(
     state: str | None,
 ) -> tuple["UUID | None", str | None]:
     from uuid import UUID  # too late for flake8
@@ -988,7 +988,7 @@ def _parse_state(
 ```python
 from uuid import UUID  # module-level
 
-def _parse_state(
+def _parse_google_state(
     state: str | None,
 ) -> tuple["UUID | None", str | None]:
     ...
@@ -1000,9 +1000,9 @@ def _parse_state(
 
 ## Bug 36: Variable Scope Error After Function Split (2026-03-04)
 
-**Symptom:** Flake8 F821 error: `undefined name 'google_connected'` in a function. The variable was defined in one function but referenced in a sibling function.
+**Symptom:** Flake8 F821 error: `undefined name 'google_connected'` on line 647 of `chat.py`. The variable was defined in `get_chat_context()` but used in `get_home_data()`.
 
-**Root cause:** When a function was split (likely by copying/splitting logic), the code referencing the variable was moved but the variable definition was not. Each function has its own scope — variables from one don't carry to another.
+**Root cause:** When `get_home_data()` was created (likely by copying/splitting logic from `get_chat_context()`), the code referencing `google_connected` was moved but the variable definition was not. Each function has its own scope — variables from one don't carry to another.
 
 **Which rule violated:** NEW — 18: Variables Don't Follow When Functions Split
 
@@ -1028,40 +1028,40 @@ async def get_home_data(db, user):
         events = await fetch_remote(db, user.id)
 ```
 
-**Pressure scenario prompt:** "Split a context function into two: one for chat context and one for home data. The home data function should check if an external service is connected before fetching events."
+**Pressure scenario prompt:** "Split the get_chat_context() function into two: one for chat context and one for home data. The home data function should check if Google Calendar is connected before fetching events."
 
 ---
 
 ## Bug 37: Tests Check Wrong Template After Route Redirect (2026-03-04)
 
-**Symptom:** Several UI state tests failed with 302 instead of 200. Tests were hitting a route expecting HTML content, but the route now redirects elsewhere.
+**Symptom:** Four calendar UI state tests failed with 302 instead of 200. Tests were hitting `/calendar/` expecting HTML content, but the route now redirects to `/home`.
 
-**Root cause:** A route was changed to redirect to a new destination, but the tests still checked for HTML elements that only exist in the old template, not in the new one the redirect destination renders.
+**Root cause:** The `/calendar/` route was changed to redirect to `/home`, but the tests still checked for HTML elements (`calendarEventsLabel`, "Connect a calendar to see your events") that only exist in `calendar.html`, not in `dashboard.html` which `/home` renders.
 
 **Which rule violated:** 17: After Conflict Resolution, Re-Run Targeted Tests (broader: tests must track route behavior changes)
 
 **Code (bad):**
 ```python
 # Test hits old route, expects old template content
-resp = await client.get("/old-route/")
+resp = await client.get("/calendar/")
 assert resp.status_code == 200
-assert "old_element" in resp.text  # only in the old template
+assert "calendarEventsLabel" in resp.text  # only in calendar.html
 ```
 
 **Code (fix):**
 ```python
 # Test verifies redirect behavior
-resp = await client.get("/old-route/", follow_redirects=False)
+resp = await client.get("/calendar/", follow_redirects=False)
 assert resp.status_code == 302
-assert "/new-destination" in resp.headers["location"]
+assert "/home" in resp.headers["location"]
 
-# Separate test hits /new-destination, checks new content
-resp = await client.get("/new-destination")
+# Separate test hits /home, checks dashboard content
+resp = await client.get("/home")
 assert resp.status_code == 200
-assert "new_element" in resp.text
+assert "googleConnected" in resp.text  # JS config in dashboard.html
 ```
 
-**Pressure scenario prompt:** "A route now redirects to a new page. Update the existing tests to verify the new behavior."
+**Pressure scenario prompt:** "The /calendar route now redirects to /home. Update the existing calendar tests to verify the new behavior."
 
 ---
 
@@ -1118,9 +1118,9 @@ Each is a failure to ask: **"What happens to the data if this fails halfway?"**
 
 ### Scenario 4: Encapsulation Violation (Rule 5)
 
-**RED (without skill):** ❌ NOT REPRODUCED — Agent used public `get_valid_token()` instead of calling `_do_refresh()` directly. **Caveat:** the general-purpose subagent had file access and read the project's actual token service, which biased it toward the correct pattern.
+**RED (without skill):** ❌ NOT REPRODUCED — Agent used public `get_valid_token()` instead of calling `_do_refresh()` directly. **Caveat:** the general-purpose subagent had file access and read the project's actual `token_manager.py`, which biased it toward the correct pattern.
 
-**GREEN (with skill):** ✅ IMPROVED — Agent provided more specific error handling and explicitly cited Rule 5 ("Respect Encapsulation") in comments explaining why the public method was used instead of the private one.
+**GREEN (with skill):** ✅ IMPROVED — Agent provided more specific error handling and explicitly cited Rule 5 ("Respect Encapsulation") in comments explaining why `get_valid_token()` was used instead of `_do_refresh()`.
 
 **Verdict:** Scenario needs refinement. The prompt shows both public and private methods with clear naming conventions (`_do_refresh` vs `get_valid_token`). A subtler test would only show the private method and see if the agent creates a public wrapper. Also, subagent file access should be restricted for fairer testing.
 

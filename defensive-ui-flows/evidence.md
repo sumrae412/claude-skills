@@ -34,9 +34,9 @@
 
 ## Bug 1: Silent Guard Clause (2026-03-03)
 
-**Symptom:** Action button does nothing on click.
+**Symptom:** "Send for Signatures" button does nothing on click.
 
-**Root cause:** A boolean guard returned silently:
+**Root cause:** `_isSending` boolean guard returned silently:
 ```javascript
 // BAD — user sees nothing
 function sendForSignatures() {
@@ -75,11 +75,11 @@ _isSending = true;
 setSendButtonBusy(true);
 
 // This line can throw if element doesn't exist
-var codeEl = document.getElementById('accessCode');
+var codeEl = document.getElementById('drawerAccessCode' + index);
 codeEl.value.trim();  // TypeError if codeEl is null
 
 // Promise chain never starts, .catch() never runs
-core.saveData().then(...)
+core.saveSigners().then(...)
     .catch(function() { _isSending = false; });
 ```
 
@@ -90,7 +90,7 @@ _isSending = true;
 setSendButtonBusy(true);
 try {
     // sync code that might throw
-    var codeEl = document.getElementById('accessCode');
+    var codeEl = document.getElementById('drawerAccessCode' + index);
     var codeVal = codeEl && codeEl.value ? codeEl.value.trim() : '';
 } catch (syncErr) {
     console.error('sync error:', syncErr);
@@ -100,7 +100,7 @@ try {
     return;
 }
 // NOW start promise chain
-core.saveData().then(...)
+core.saveSigners().then(...)
 ```
 
 **Pressure scenario:** "Add a loading spinner to an async form submit that calls an API."
@@ -138,7 +138,7 @@ function showDrawerStatus(message, isError) {
 
 ## Bug 4: Button Disabled State Not Reset (2026-03-03)
 
-**Symptom:** After navigating back from Review step to a previous step, the "Continue" button is permanently disabled.
+**Symptom:** After navigating back from Review step to Signers step, the "Continue to Review" button is permanently disabled.
 
 **Root cause:** `_nextBtn.disabled = true` was set during the send flow, but `setPanel()` — the function that handles step navigation — never reset it.
 
@@ -164,11 +164,11 @@ function setPanel(stepIndex) {
 
 ---
 
-## Bug 7: Viewport Culling Hid List Items (2026-03-04)
+## Bug 7: Viewport Culling Hid Workflow Steps (2026-03-04)
 
-**Symptom:** Some items didn't render in a vertical list. Items were present in the data but invisible.
+**Symptom:** Some workflow steps didn't render in the vertical timeline. Steps were present in the data but invisible.
 
-**Root cause:** `getVisibleStepsForViewport` was filtering items based on scroll position. Items outside the current viewport were excluded from the render list — but the container wasn't tall enough to scroll, so hidden items could never become visible.
+**Root cause:** `getVisibleStepsForViewport` was filtering steps based on scroll position. Steps outside the current viewport were excluded from the render list — but the timeline wasn't tall enough to scroll, so hidden steps could never become visible.
 
 **Which rule violated:** Not a direct rule violation — a performance optimization that broke correctness. Related to Rule 4 (state management) in that render state diverged from data state.
 
@@ -186,7 +186,7 @@ getVisibleStepsForViewport() {
 **Code (fix):**
 ```javascript
 getVisibleStepsForViewport() {
-    // Vertical list: always show all items (no culling)
+    // Vertical timeline: always show all steps (no culling)
     return this.steps;
 }
 ```
@@ -195,49 +195,49 @@ getVisibleStepsForViewport() {
 
 ---
 
-## Bug 8: List Items Not Clickable (2026-03-04)
+## Bug 8: Home Events Not Clickable (2026-03-04)
 
-**Symptom:** Items on a dashboard had no interactivity — clicking did nothing. Users expected items to navigate elsewhere.
+**Symptom:** Upcoming events on the home dashboard had no interactivity — clicking did nothing. Users expected events to navigate to the calendar.
 
-**Root cause:** Items were rendered as `<div>` elements with no click handler or link. Both the server-rendered template and the JS-refreshed version had the same issue.
+**Root cause:** Event items were rendered as `<div>` elements with no click handler or link. Both the server-rendered Jinja template and the JS-refreshed version had the same issue.
 
 **Which rule violated:** Rule 1 (Guard Clauses Must Give Feedback) — broader principle: every user-facing UI element that looks interactive must BE interactive.
 
 **Code (bad):**
 ```html
 <div class="home-event-item">
-    <span class="event-title">Upcoming Item</span>
+    <span class="event-title">Move-In: Unit 2B</span>
 </div>
 ```
 
 **Code (fix):**
 ```html
-<a href="/detail?id={{ item.id }}" class="home-event-item home-event-item-link">
-    <span class="event-title">Upcoming Item</span>
+<a href="/calendar?event={{ event.id }}" class="home-event-item home-event-item-link">
+    <span class="event-title">Move-In: Unit 2B</span>
 </a>
 ```
 
-**Pressure scenario:** "Add an upcoming items feed to a dashboard page. Show the next 5 items with date and title."
+**Pressure scenario:** "Add an upcoming events feed to a dashboard page. Show the next 5 events with date and title."
 
 ---
 
-## Bug 9: Duplicate Data Block in Detail View (2026-03-04)
+## Bug 9: Duplicate Google Calendar Text (2026-03-04)
 
-**Symptom:** A detail modal showed certain text twice — once in the description field and again in a dedicated metadata block.
+**Symptom:** Event detail modal showed Google Calendar description text twice — once in the description field and again in a dedicated Google Calendar block.
 
-**Root cause:** The modal template rendered the description field AND separately extracted metadata from the same description. When the description contained formatted text, it appeared in both places.
+**Root cause:** The modal template rendered `event.description` in the body AND separately extracted Google Calendar metadata from the same description. When the description contained calendar-formatted text, it appeared in both places.
 
 **Which rule violated:** Rule 4 (Multi-Step UI State Reset) — broader: when two UI sections derive from the same data, one must suppress the other.
 
-**Pressure scenario:** "Show item details in a modal. Include both the description and a link to the external source."
+**Pressure scenario:** "Show event details in a modal. Include both the description and a link to the Google Calendar event."
 
 ---
 
-## Bug 10: Canvas Layout Constraint (2026-03-04)
+## Bug 10: Workflow Builder Canvas Layout (2026-03-04)
 
-**Symptom:** Builder canvas was constrained to a fixed max-width. Empty state had excessive spacing. A sidebar textarea was too tall, pushing content below the fold.
+**Symptom:** Workflow builder canvas was constrained to 672px max-width. Empty state had excessive spacing. AI sidebar textarea was too tall, pushing content below the fold.
 
-**Root cause:** Multiple CSS layout issues: canvas container had an explicit `max-width`, empty state had oversized padding, and a textarea used `flex: 1` which expanded to fill available space.
+**Root cause:** Multiple CSS layout issues: canvas container had `max-width: 672px`, empty state had oversized padding, and the AI textarea used `flex: 1` which expanded to fill available space.
 
 **Which rule violated:** Not a defensive-flow rule — CSS layout correctness. Documented for completeness.
 
@@ -257,9 +257,9 @@ getVisibleStepsForViewport() {
 
 ## Bug 11: Iframe Preview Fails for Protected Files (2026-03-04)
 
-**Symptom:** PDF preview in a detail panel and setup drawer showed blank/error. Worked for public files but failed for any file requiring auth.
+**Symptom:** PDF preview in document detail panel and signing setup showed blank/error. Worked for public files but failed for any file requiring auth.
 
-**Root cause:** Preview used `<iframe src="/api/documents/ID/preview">`. Iframes cannot send auth headers (credentials, CSRF tokens). The server returned 401/403. Also, some third-party storage URLs have `X-Frame-Options: deny`, so even raw external URLs failed.
+**Root cause:** Preview used `<iframe src="/api/documents/ID/preview">`. Iframes cannot send auth headers (credentials, CSRF tokens). The server returned 401/403. Also, Google Drive URLs have `X-Frame-Options: deny`, so even raw Drive URLs failed.
 
 **Which rule violated:** Rule 10 (API Fetches in Overlays Must Send Auth Headers)
 
@@ -267,26 +267,26 @@ getVisibleStepsForViewport() {
 ```javascript
 // iframe can't send auth headers
 previewFrame.src = '/api/documents/' + id + '/preview';
-// Also bad: raw third-party storage URL blocked by X-Frame-Options
-previewFrame.src = storageFileUrl;
+// Also bad: raw Google Drive URL blocked by X-Frame-Options
+previewFrame.src = driveFileUrl;
 ```
 
 **Code (fix):**
 ```javascript
-// Backend proxy route fetches via storage API with user's OAuth token
+// Backend proxy route fetches via Drive API with user's OAuth token
 // Returns same-origin content that iframe can display
 previewFrame.src = '/documents/' + id + '/download?proxy=true';
 ```
 
-**Learned from a production incident:** PDF preview failed silently. API calls in your drawer component also lacked auth headers. Fix: backend proxy route that fetches via storage API with user's OAuth token and streams back.
+**Learned from:** `documents.html` — PDF preview failed silently. `signing-setup-core.js` — signing preview also failed. Fix: backend proxy route that fetches via Drive API with user's OAuth token and streams back.
 
 ---
 
 ## Bug 12: Upload Flow Missing Dependency Check (2026-03-04)
 
-**Symptom:** User opened upload modal, filled out all fields, clicked Upload — THEN got "Storage not connected" error. Wasted effort.
+**Symptom:** User opened upload modal, filled out all fields, clicked Upload — THEN got "Google Drive not connected" error. Wasted effort.
 
-**Root cause:** Upload modal opened without checking if the external storage provider was connected. The dependency check only happened at upload time, after the user had already filled the form.
+**Root cause:** Upload modal opened without checking if Google Drive was connected. The dependency check only happened at upload time, after the user had already filled the form.
 
 **Which rule violated:** Rule 11 (Pre-Check Dependencies Before Destructive Actions)
 
@@ -297,33 +297,33 @@ function openUploadModal() {
 }
 // User fills form... clicks Upload...
 async function handleUpload(file) {
-    var result = await fetch('/api/upload', { body: formData });
-    // 500 error: storage not connected — too late!
+    var result = await fetch('/api/documents/upload', { body: formData });
+    // 500 error: Drive not connected — too late!
 }
 ```
 
 **Code (fix):**
 ```javascript
 async function openUploadModal() {
-    var status = await fetch('/api/service-status', { credentials: 'same-origin' });
+    var status = await fetch('/api/drive-status', { credentials: 'same-origin' });
     var data = await status.json();
     if (!data.connected) {
-        showToast('Connect your storage provider in Settings to upload files.', true);
+        showToast('Connect Google Drive in Settings to upload files.', true);
         return;
     }
     uploadModal.show();
 }
 ```
 
-**Learned from a production incident:** Upload modal had no pre-check for storage connectivity. A dedicated status endpoint was added specifically for this check.
+**Learned from:** `documents.html` — Upload modal had no pre-check for Drive connectivity. Also: `/api/drive-status` endpoint was added specifically for this check.
 
 ---
 
 ## Bug 13: Non-PDF Upload Validation Mismatch (2026-03-04)
 
-**Symptom:** A file input had `accept="application/pdf,.pdf"` but backend accepted Word docs, images, and other formats. Help text said "PDF, Word, images" but the browser only offered PDFs in the file picker.
+**Symptom:** Documents page file input had `accept="application/pdf,.pdf"` but backend accepted Word docs, images, and other formats. Help text said "PDF, Word, images" but the browser only offered PDFs in the file picker.
 
-**Root cause:** Frontend `accept` attribute, help text, and backend allowed extensions all disagreed. The HTML was PDF-only, the backend accepted many formats, and the help text listed a third set.
+**Root cause:** Frontend `accept` attribute, help text, and backend `ALLOWED_EXTENSIONS` set all disagreed. The HTML was PDF-only, the backend accepted 20+ formats, and the help text listed a third set.
 
 **Which rule violated:** Rule 9 (Form Accept Attributes Must Match API Validation)
 
@@ -341,54 +341,54 @@ async function openUploadModal() {
 
 ---
 
-## Bug 14: Data Query Missing a Source Table (2026-03-04)
+## Bug 14: Signer Prefill Missing Tenants (2026-03-04)
 
-**Symptom:** A selection dropdown only showed some records for an entity. Records that existed in a second table were missing.
+**Symptom:** Signing setup only showed some tenants for a property. Tenants who existed as `Client` records (not `HouseholdMember`) were missing from the signer dropdown.
 
-**Root cause:** The endpoint only queried one table. Records could also exist in a second table linked by a foreign key. The query needed to cover both sources, deduplicating by email.
+**Root cause:** The `/signing-setup` endpoint only queried `HouseholdMember` table. Tenants could also be stored in the `Client` table with `household_id` linking them to a property. The query needed to UNION both sources, deduplicating by email.
 
 **Which rule violated:** Backend Rule 8 (Verify Model Attributes Before Access) — broader: verify the complete data model before building a query. One table doesn't mean one source.
 
 **Code (bad):**
 ```python
-# Only queries the primary table — misses records in the secondary table
+# Only queries HouseholdMember — misses Client-table tenants
 members = await db.execute(
-    select(PrimaryModel).where(
-        PrimaryModel.parent_id == parent_id
+    select(HouseholdMember).where(
+        HouseholdMember.household_id == doc.property_id
     )
 )
 ```
 
 **Code (fix):**
 ```python
-# Query primary table first, then also check secondary table
+# Query HouseholdMember first, then also check Client table
 members = await db.execute(
-    select(PrimaryModel).where(...)
+    select(HouseholdMember).where(...)
 )
 for member in members:
     seen_emails.add(member.email.lower())
-    suggested.append(...)
+    suggested_signers.append(...)
 
-# Also check secondary records linked to this parent
-secondary = await db.execute(
-    select(SecondaryModel).where(
-        SecondaryModel.parent_id == parent_id,
-        SecondaryModel.user_id == user.id,
+# Also check Client records linked to this property
+clients = await db.execute(
+    select(Client).where(
+        Client.household_id == doc.property_id,
+        Client.user_id == user.id,
     )
 )
-for record in secondary:
-    if record.email.lower() in seen_emails:
+for client in clients:
+    if client.email.lower() in seen_emails:
         continue  # Dedup by email
-    suggested.append(...)
+    suggested_signers.append(...)
 ```
 
-**Learned from a production incident:** a setup endpoint — records stored only in a secondary table were invisible in a dropdown because the query only covered one source.
+**Learned from:** `documents.py` signing-setup endpoint — tenants stored only in Client table were invisible in signing drawer.
 
 ---
 
-## Bug 15: Upcoming Items String Compare Instead of Datetime (2026-03-04)
+## Bug 15: Upcoming Events String Compare Instead of Datetime (2026-03-04)
 
-**Symptom:** Dashboard upcoming items filter showed stale or wrong items. Items near midnight or across timezone boundaries appeared/disappeared incorrectly.
+**Symptom:** Home dashboard upcoming events filter showed stale or wrong events. Events near midnight or across timezone boundaries appeared/disappeared incorrectly.
 
 **Root cause:** The filter compared ISO strings lexicographically (`e.get("start_time", "") >= now_iso`) instead of parsing to real `datetime` objects. String comparison breaks when timezone offsets differ (e.g., `+00:00` vs `-05:00` vs `Z`), producing wrong sort order and incorrect future/past classification.
 
@@ -398,7 +398,7 @@ for record in secondary:
 ```python
 now_iso = datetime.now(timezone.utc).isoformat()
 future_events = [
-    _format_for_display(e, tz_name)
+    _format_event_for_display(e, tz_name)
     for e in events
     if e.get("start_time", "") >= now_iso
 ][:10]
@@ -423,18 +423,18 @@ for event in events:
     if start_dt < now_utc:
         continue
     future_events.append(
-        _format_for_display(event, tz_name)
+        _format_event_for_display(event, tz_name)
     )
 future_events = future_events[:10]
 ```
 
-**Learned from a production incident:** a dashboard service — upcoming items filter used string compare. Tests added to prevent regression.
+**Learned from:** `dashboard_service.py` — upcoming events filter used string compare. Tests added in `test_dashboard_service.py` to prevent regression.
 
 ---
 
 ## Bug 16: Upload Action No-Op on Click Path (2026-03-04)
 
-**Symptom:** Clicking an upload button did nothing. No error, no feedback — the button appeared to work but the upload never fired.
+**Symptom:** Clicking "Upload & Create Document" did nothing. No error, no feedback — the button appeared to work but the upload never fired.
 
 **Root cause:** The upload logic was bound to a button `click` handler, but the button lived inside a `<form>`. Depending on how the user triggered it (click vs Enter vs form submit), the handler might not fire. The click handler also didn't call `preventDefault()`, so the form could submit-and-reload before the async upload started.
 
@@ -464,44 +464,44 @@ uploadForm.addEventListener('submit', function(e) {
 });
 ```
 
-**Learned from a production incident:** upload button click handler was unreliable. Switching to form `submit` event ensured the action fires consistently.
+**Learned from:** `documents.html` — upload button click handler was unreliable. Switching to form `submit` event ensured the action fires consistently.
 
 ---
 
 ## Bug 17: UI State Tests Check Wrong Template After Redirect (2026-03-04)
 
-**Symptom:** UI state consistency tests failed with HTTP 302 instead of 200. Tests were hitting a route and asserting on elements from the old template.
+**Symptom:** Four calendar UI state consistency tests failed with HTTP 302 instead of 200. Tests were hitting `/calendar/` and asserting on `calendarEventsLabel` and "Connect a calendar to see your events" — elements from `calendar.html`.
 
-**Root cause:** A route was changed to redirect to a different URL that renders a different template. The tests still asserted on elements unique to the original template. The first fix attempt naively changed the URL but kept the same assertions — which still failed because those elements don't exist in the new template.
+**Root cause:** The `/calendar/` route was changed to redirect to `/home`, which renders `dashboard.html`. The tests still asserted on elements unique to `calendar.html`. The first fix attempt naively changed the URL to `/home` but kept the same assertions — which still failed because those elements don't exist in `dashboard.html`.
 
 **Which rule violated:** Rule 19 (Primary Views Must Surface Data Source Status) — broader: when a route redirects, tests must assert on the redirect target's actual content, not the old template's elements.
 
 **Code (bad):**
-```python
-# Test hits route that now redirects, asserts on old template's elements
-resp = await client.get("/old-route/");
-assert resp.status_code == 200;  # Actually 302
-assert "oldTemplateElement" in resp.text;  # Only in old template
+```javascript
+// Test hits route that now redirects, asserts on old template's elements
+resp = await client.get("/calendar/");
+assert resp.status_code == 200;  // Actually 302
+assert "calendarEventsLabel" in resp.text;  // Only in calendar.html
 ```
 
 **Code (fix):**
-```python
-# Separate test for redirect behavior
-resp = await client.get("/old-route/", follow_redirects=False);
+```javascript
+// Separate test for redirect behavior
+resp = await client.get("/calendar/", follow_redirects=False);
 assert resp.status_code == 302;
 
-# State test hits the actual destination, asserts on its content
-resp = await client.get("/new-destination");
-assert "newTemplateElement" in resp.text;  # In new template
+// State test hits the actual destination, asserts on its content
+resp = await client.get("/home");
+assert "googleConnected" in resp.text;  // JS config in dashboard.html
 ```
 
-**Learned from a production incident:** a test class had multiple tests checking old template elements, but the route now redirected to a different destination with a different template.
+**Learned from:** `test_api_calendar.py` — `TestCalendarEventsBadgeState` class had 4 tests checking `calendar.html` elements, but `/calendar/` now redirects to `/home` → `dashboard.html`.
 
 ---
 
 ## Common Thread
 
-All bugs share one root cause: **the agent optimized for the happy path and didn't think about what the user sees when something goes wrong** — or when the data model is more complex than assumed.
+All 17 bugs share one root cause: **the agent optimized for the happy path and didn't think about what the user sees when something goes wrong** — or when the data model is more complex than assumed.
 
 The agent:
 1. Assumed guard clauses don't need feedback (Bug 1)
@@ -609,9 +609,9 @@ if (btn.disabled) {
 
 ### Loophole 5: Bug 5 — Undefined CSS Design Token (2026-03-04)
 
-**Symptom:** A panel rendered with no shadow, making it look flat/unfinished.
+**Symptom:** Slideout panel rendered with no shadow, making it look flat/unfinished.
 
-**Root cause:** CSS referenced a design token that doesn't exist in your CSS variables file. Without a fallback value, the `box-shadow` property silently evaluates to nothing.
+**Root cause:** CSS referenced `--ds-shadow-elevated` which doesn't exist in `_variables.css`. Without a fallback value, the `box-shadow` property silently evaluates to nothing.
 
 **Which rule violated:** NEW — Rule 8: Verify Design System Tokens Exist
 
@@ -633,14 +633,14 @@ if (btn.disabled) {
 
 ---
 
-### Loophole 4: Word count exceeds guideline
+### Loophole 4: Word count (608 words) exceeds guideline
 - Writing-skills guide says < 500 words for non-frequently-loaded skills
-- Skill has grown significantly — could trim examples
+- Current skill is 608 words — could trim examples
 - Status: **LOW PRIORITY** — skill is effective, trim later if needed
 
 ### Loophole 6: Bug 6 — Form Accept/Validation Contract Mismatch (2026-03-04)
 
-**Symptom:** A file input restricted to one format, but another upload page accepted more formats. Help text on one page didn't match its accept attribute.
+**Symptom:** Documents page accept attribute restricted to PDF-only, but tenant upload page accepted Word/images. Help text on tenant page said "PDF, Word, images" but documents page had no help text matching its PDF-only restriction.
 
 **Root cause:** Two different templates for file upload had inconsistent `accept` attributes and help text. Neither was verified against the backend validation.
 
@@ -648,10 +648,10 @@ if (btn.disabled) {
 
 **Code (bad):**
 ```html
-<!-- upload page 1 — single format, no help text -->
+<!-- documents.html — PDF only, no help text -->
 <input type="file" accept="application/pdf,.pdf">
 
-<!-- upload page 2 — accepts more formats, mismatched text -->
+<!-- tenant upload — accepts everything, mismatched text -->
 <input type="file" accept=".pdf,.doc,.docx,.jpg,.jpeg,.png">
 <div class="form-text">Accepted formats: PDF, Word, images (max 10MB)</div>
 ```
@@ -663,7 +663,7 @@ if (btn.disabled) {
 <div class="form-text">Accepted formats: PDF, Word, images (max 10MB)</div>
 ```
 
-**Pressure scenario prompt:** "Add a file upload feature to a document management page. The app already has an upload on another page."
+**Pressure scenario prompt:** "Add a file upload feature to a document management page. The app already has an upload on the tenant portal page."
 
 ---
 
@@ -673,4 +673,4 @@ if (btn.disabled) {
 - Framework-specific: does this apply to React/Vue or only vanilla JS?
 - File upload contract mismatches across different pages (partially addressed by Bug 13)
 - Auth-header patterns for non-iframe fetches (fetch + credentials vs blob URL)
-- Pre-check dependency patterns beyond storage providers (SMS, AI, third-party APIs)
+- Pre-check dependency patterns beyond Google Drive (Twilio, OpenAI, etc.)
