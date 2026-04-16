@@ -215,6 +215,15 @@ PR_STATE=$(gh pr view "$BRANCH" --json state --jq '.state' 2>/dev/null || echo "
   "PR #N is open but unmerged. If this session ends, the work may be orphaned. The session-start hook will flag it, but consider merging now if ready."
   Wait for user acknowledgment before proceeding to worktree teardown.
 - **NONE** → No PR exists (e.g., direct merge). Proceed normally.
+- **CONFLICTING** (mergeable check returns this immediately on push) → main has moved under the worktree. Do NOT exit-remove. Salvage flow:
+  1. `git branch backup/feat-X-pre-rebase HEAD` — backup before any destructive op
+  2. Inspect what main changed: `git diff --name-only $(git merge-base HEAD origin/main)..origin/main`
+  3. If main DELETED files this branch still has (typical for repo-split refactors): `git reset --hard origin/main` then selective `git checkout backup -- <files>` for the files that still belong here
+  4. Adjust cross-repo path references (e.g., persona files now in another repo via `~/.claude/skills` symlink)
+  5. Recreate logical commits, `git push --force-with-lease`
+  6. Open companion PR in the other repo for files that moved out
+
+  See MEMORY `cross_repo_split_brain_salvage.md`. The skill's normal in-place conflict resolution does not apply when the conflict is structural.
 
 **Why this exists:** PR #286 was created via Option 2, the worktree was torn down, and the session ended. The PR sat unmerged for days because no one checked. This gate ensures cleanup never silently walks away from unmerged work.
 

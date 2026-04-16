@@ -19,7 +19,15 @@ Load plan, review critically, execute tasks in batches, report for review betwee
 1. Read plan file
 2. Review critically - identify any questions or concerns about the plan
 3. If concerns: Raise them with your human partner before starting
-4. If no concerns: Create TodoWrite and proceed
+4. **Main-drift risk for plans touching shared infra:** Before a long-running worktree on shared infra (registries, hook configs, skill files, MEMORY indexes, anything under `skills/` or `~/.claude/`), check for in-flight refactors that could move/delete the paths the plan modifies:
+
+   ```bash
+   gh pr list --state open --search "<infra-path>"
+   git log origin/main --oneline --since="3 days ago" -- <infra-path>
+   ```
+
+   If a structural refactor is in flight (paths being moved/deleted), either ship the current plan faster, OR branch from the in-flight refactor's branch instead of main. See MEMORY `cross_repo_split_brain_salvage.md` for the salvage flow when this guidance was missed.
+5. If no concerns: Create TodoWrite and proceed
 
 ### Step 2: Execute Batch
 **Default: First 3 tasks**
