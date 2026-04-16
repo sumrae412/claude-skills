@@ -248,6 +248,48 @@ TDD cycle:
 4. THEN claim complete
 ```
 
+## Anti-Pattern 6: Hand-Authored Fixture as Tautology
+
+**The violation:**
+```python
+# ❌ BAD: same human authored both the fixture and the assertion bounds
+def test_breaker_catches_concurrency_bug():
+    recorded = json.loads(Path("recorded_response.json").read_text())  # I wrote this
+    bounds = json.loads(Path("expected_scores.json").read_text())       # I wrote this too
+    assert any(kw in recorded["text"] for kw in bounds["keywords"])     # of course it passes
+```
+
+**Why this is wrong:**
+- Both halves came from the same author's vocabulary
+- Test passes because the human wrote consistent JSON, not because the system works
+- First real input that uses different (correct) wording will fail the test
+
+**The fix — two-test reliability split for LLM-backed code:**
+
+1. **Replay test (always-on):** asserts captured fixture against contract bounds. Deterministic, fast.
+2. **Live test (opt-in via `RUN_LIVE_LLM=1`):** dispatches real LLM, asserts same bounds, **overwrites the fixture on success**.
+
+Every fixture carries `_meta.source` indicating provenance:
+- `"synthetic-stub"` → tautological, only validates wiring
+- `"test_X_live.py"` → captured from real model dispatch
+
+Calibrate keyword bounds against observed real-LLM output. If you wrote both the stub and the bounds, the assertion proves nothing.
+
+See MEMORY `llm_fixture_two_test_split.md` for the full pattern.
+
+### Gate Function
+
+```
+BEFORE writing a test that asserts against fixture data:
+  Ask: "Did the same human write both the fixture and the assertion bounds?"
+
+  IF yes:
+    STOP - The test is a tautology
+    Either:
+      (a) Capture the fixture from a real run before locking the bounds, OR
+      (b) Add an opt-in live-dispatch test that refreshes the fixture
+```
+
 ## When Mocks Become Too Complex
 
 **Warning signs:**

@@ -73,6 +73,32 @@ Future CLI-backed runners should emit the envelope from the same three branches 
 
 Phase 6 cascades Tier 1 → Tier 2-4 with an early-exit gate: **if Tier 1 (CodeRabbit) returns no HIGH+ findings, Tiers 2-4 are skipped entirely**. Any `always` reviewer whose cost should be avoided on clean diffs must therefore be at `cascade_tier >= 2`. The test `tests/test_reviewer_registry.py::test_all_always_reviewers_have_cascade_tier` guards against future entries that omit `cascade_tier` and land in an un-early-exit-able bucket.
 
+## Scored Reviewers (v1.1+)
+
+Reviewers that emit per-criterion numeric scores set:
+
+- `score_threshold` (integer 1-10): scores strictly below this become blocking findings
+- `scored_criteria` (array of strings): canonical criterion names the reviewer scores
+
+The Phase 6 aggregator (phase-6-quality.md) reads these fields, iterates the reviewer's
+`scores[]` output, and synthesizes one blocking finding per sub-threshold score in the form:
+`Adversarial score {N}/10 on {criterion}: {break_case}`.
+
+Sub-threshold findings flow into Phase 5 retry input same as test failures.
+
+Scored reviewers extend their `calibration` block with `"verdict_type": "scored"`. Agreement is computed as `(|judge_score - human_score| <= 2) / n` against a labeled corpus, vs binary reviewers' exact-match agreement.
+
+### Cross-repo persona resolution
+
+When a reviewer's persona/system-prompt file lives in a different repo than the registry (typical for `general-purpose` agent-backed reviewers under the post-2026-04-16 single-source-of-truth layout), declare BOTH:
+
+- `persona_file` — repo-relative path inside the source repo (e.g. `claude-flow/scripts/adversarial_breaker_persona.txt`)
+- `persona_file_root` — install root the path resolves under (e.g. `~/.claude/skills` for the canonical claude-skills install)
+
+Resolved path: `<root>/<persona_file>`. Tests, dispatchers, and runtime consumers all use the same resolution. See MEMORY `cross_repo_persona_resolution.md`.
+
+If the persona file is in the same repo as the registry, omit `persona_file_root` and use a repo-relative `persona_file` only.
+
 ## Adding a new reviewer
 
 1. Pick an `id` (kebab-case, domain prefix if extending a family).

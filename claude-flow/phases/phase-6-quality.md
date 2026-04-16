@@ -87,6 +87,7 @@ All reviewers receive:
 | 2 | `safety-reviewer` | `pr-review-toolkit:silent-failure-hunter` + `security-reviewer` | sonnet | Always — silent failures + security (combined) |
 | 2 | `test-coverage-analyzer` | `pr-review-toolkit:pr-test-analyzer` | sonnet | Always — test gaps |
 | 2 | `curmudgeon-review` | `scripts/curmudgeon_review.sh` (Codex CLI) | gpt-5-codex | Always — non-Anthropic second opinion |
+| 2 | `adversarial-breaker` | `general-purpose` (persona file) | sonnet | Always — scored reviewer; sub-7/10 scores become blocking findings |
 | 3 | `migration-reviewer` | `migration-reviewer` | sonnet | Alembic/migration files in diff |
 | 3 | `google-api-reviewer` | `google-api-reviewer` | sonnet | Google/calendar files + content match |
 | 3 | `async-reviewer` | `async-reviewer` | sonnet | 3+ async patterns in Python files |
@@ -95,6 +96,8 @@ All reviewers receive:
 **Note:** Agents that ran as conditional specialists during Phase 5 (`migration-reviewer`, `google-api-reviewer`, `async-reviewer`) are **skipped** here — no double review.
 
 **CLI-backed reviewers (`runner_script`):** Entries with a `runner` field (currently `curmudgeon-review`) shell out to a local script instead of dispatching an agent. Full schema in `skills/claude-flow/references/reviewer-registry-schema.md`.
+
+**Scored reviewers (`score_threshold` + `scored_criteria`):** Entries with these fields emit per-criterion 1-10 scores. After dispatch, `scripts/aggregate_reviewer_findings.py` converts each sub-threshold score into a blocking finding. Full schema in `references/reviewer-registry-schema.md`.
 
 Contract (from the schema doc, summarized):
 
@@ -125,6 +128,16 @@ if jq -e '.runner == "codex-cli"' <<<"$reviewer" >/dev/null; then
     bash "$(jq -r .runner_script <<<"$reviewer")" "$DIFF_FILE"
 fi
 ```
+
+### Scored-Reviewer Aggregation
+
+After each reviewer completes, if its registry entry has `score_threshold`, run:
+
+    python scripts/aggregate_reviewer_findings.py --reviewer <output.json> --registry reviewer-registry.json
+
+The script converts every sub-threshold score into a blocking finding of the form
+`Adversarial score {N}/10 on {criterion}: {break_case}`. Aggregated findings join
+the main findings[] pool and flow to Phase 5 retries on any blocking verdict.
 
 ---
 
