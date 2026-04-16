@@ -69,6 +69,20 @@ When changing CSS/JS:
 
 **Verification after deploy:** If CSS changes do not appear on the live site after deploy, first check that the `?v=` param was bumped, then check Railway build status (builds may be failing silently). Use `WebFetch` against the live URL to compare deployed CSS with the repo version.
 
+## Logo & Favicon Asset Pipeline
+
+Source: `app/static/images/courier_transparent.png` (RGBA).
+
+Refresh procedure documented in MEMORY: `pattern_logo_and_favicon_asset_pipeline.md`. Key points:
+- Generate variants `courier{,_transparent}{,-medium,-thumbnail}.{png,webp,jpeg}` so legacy filenames update together.
+- macOS `sips` cannot output WebP — use `.venv/bin/python3` + Pillow.
+- Bump `?v=YYYYMMDD[letter]` on every nav-logo `<img>` and favicon `<link>` in `base.html`. Landing pages reference assets without `?v=` and pick up new files automatically.
+- Logo size lives in `app/static/css/components/_navigation.css` (`.cf-nav-logo`). Anchor percentage bumps to the original baseline, not the current size.
+
+## Required favicon `<link>` tags in base.html
+
+`base.html` MUST include the four favicon link tags (`favicon.ico`, `favicon-16x16.png`, `favicon-32x32.png`, `apple-touch-icon.png`) immediately after `<link rel="manifest">`. `errors/404.html` previously had them while `base.html` did not — this was a latent SEO/UX bug fixed in PR #309. Verify presence on any new layout file that doesn't extend `base.html`.
+
 ## Service Worker
 
 - **Network-first for CSS/JS** — Cache is offline fallback only

@@ -256,3 +256,4 @@ Before committing UI code:
 - [ ] Typography hierarchy uses 3x+ size jumps (not timid 1.5x increments)?
 - [ ] Animations are functional (150-300ms), not decorative?
 - [ ] New layouts avoid cookie-cutter patterns — is this the right layout type for the context?
+- [ ] If editing a top-level layout (`base.html`, `landing_base.html`, `errors/*.html`), favicon `<link>` tags present? (favicon.ico, 16x16, 32x32, apple-touch-icon — all with `?v=` cache-bust)
