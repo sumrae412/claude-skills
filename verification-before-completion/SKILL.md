@@ -48,6 +48,7 @@ Skip any step = lying, not verifying
 | Regression test works | Red-green cycle verified | Test passes once |
 | Agent completed | VCS diff shows changes | Agent reports "success" |
 | Requirements met | Line-by-line checklist | Tests passing |
+| Count / quantity claim | Enumerate full result set | API `resultSizeEstimate` / `total` / `count` heuristic field |
 
 ## Red Flags - STOP
 
