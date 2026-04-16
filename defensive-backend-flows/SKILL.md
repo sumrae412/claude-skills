@@ -955,6 +955,43 @@ Scope the parent lookup by `user_id` so the check doubles as authorization — d
 
 **Learned from:** `template_analytics_service.refresh_template_metrics` (`7066a568`) — `GET /api/analytics/templates/<bogus>/metrics` returned 200 (with empty stats) instead of 404, because the service happily created a metrics row for any UUID and the route's `if not metrics: 404` branch never fired.
 
+### 36. Consuming LLM-Generated JSON
+
+Any function that processes LLM output sits at the highest-variance input boundary in your stack. The LLM may omit fields, emit strings where numbers were expected, or shift nesting. Code written against the "happy-path schema" crashes at runtime on malformed output — and the aggregator/reviewer that was supposed to catch production bugs becomes the bug.
+
+**Rule:** every field from LLM output is optional and type-guarded.
+
+- `.get(key)` / `.get(key, default)` — never `dict[key]`
+- Type-check numerics: `isinstance(v, (int, float))` before comparison; coerce with `try: int(v) except (TypeError, ValueError): continue`
+- Check container types: `isinstance(scores, list)` before iterating; skip-with-warning if the shape is wrong
+- WARNING-log on skip with the raw offending value + reviewer/source id; never silent `None`
+- One malformed item must not kill the aggregate — continue past bad entries
+
+```python
+# BAD: crashes Phase 6 when the LLM omits 'break_case' or emits score="unknown"
+for score_entry in reviewer_output["scores"]:
+    if score_entry["score"] < threshold:
+        findings.append({"message": f"{score_entry['criterion']}: {score_entry['break_case']}"})
+
+# GOOD: malformed entries are skipped with a log, valid ones still produce findings
+for i, score_entry in enumerate(reviewer_output.get("scores", []) or []):
+    if not isinstance(score_entry, dict):
+        log.warning("%s scores[%d] not a dict; skipping", reviewer_id, i); continue
+    criterion = score_entry.get("criterion")
+    break_case = score_entry.get("break_case", "<no break_case provided>")
+    try:
+        score = int(score_entry.get("score"))
+    except (TypeError, ValueError):
+        log.warning("%s scores[%d] score=%r not int; skipping", reviewer_id, i, score_entry.get("score")); continue
+    if criterion is None or score >= threshold:
+        continue
+    findings.append({"message": f"{criterion}: {break_case}"})
+```
+
+Applies to every scored reviewer, aggregator, fixture loader, and JSON-consuming endpoint. See MEMORY `defensive_llm_output_consumers.md`.
+
+**Audit:** `rg -n 'reviewer_output\[' -g '*.py'` and `rg -n 'response\["' -g '*.py' services/ | grep -i llm`.
+
 ## Quick Reference
 
 | Rule | Symptom | Check |

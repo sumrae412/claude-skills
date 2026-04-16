@@ -54,6 +54,44 @@ row = result.one()
 ```
 This avoids N+1 roundtrips. See `app/services/counts_service.py` for a 7-subquery example.
 
+## Aggregators in Retry-Prone Pipelines Must Be Idempotent
+
+Any function that fans in subagent outputs, appends to a persisted artifact, or enriches a shared record will be called more than once per run — Phase 5/6 retries, resume-after-crash, parallel sessions, and cron re-fires all trigger re-invocation. Naive `list.append()` doubles findings; dashboards look like regressions, alert queues flood, and downstream consumers see stuttered duplicates.
+
+**Rule:** stamp every output record with a stable dedup key and use read-modify-write to skip duplicates on re-entry.
+
+```python
+# BAD: second call doubles findings
+def convert(reviewer_output, registry_entry):
+    findings = list(reviewer_output.get("findings", []))
+    for score in reviewer_output.get("scores", []):
+        if score["score"] < registry_entry["score_threshold"]:
+            findings.append({"criterion": score["criterion"], "severity": "blocking"})
+    return {**reviewer_output, "findings": findings}
+
+# GOOD: stamped + deduped — safe to call N times
+_MARKER = "adversarial-breaker-aggregator"
+
+def convert(reviewer_output, registry_entry):
+    findings = list(reviewer_output.get("findings", []))
+    already = {f.get("criterion") for f in findings if f.get("source") == _MARKER}
+    for score in reviewer_output.get("scores", []) or []:
+        criterion = score.get("criterion")
+        if criterion in already:
+            log.debug("dedup: %s already aggregated; skipping", criterion)
+            continue
+        if score.get("score", 10) < registry_entry.get("score_threshold", 11):
+            findings.append({"source": _MARKER, "criterion": criterion, "severity": "blocking"})
+            already.add(criterion)
+    return {**reviewer_output, "findings": findings}
+```
+
+**Dedup-key choices:** `(source, criterion)` for reviewer aggregators; `(table, row_id)` for DB backfills; `(event_type, external_id, timestamp_bucket)` for webhook processors. Pick a key that survives the specific re-entry mode you expect.
+
+**Audit:** `rg -n '\.append\(' -g '*.py' services/ scripts/` — every append inside a function that could be called twice per run is a candidate.
+
+See MEMORY `idempotent_aggregators.md`.
+
 ## Detailed Guidelines
 
 For specific patterns and examples, see:

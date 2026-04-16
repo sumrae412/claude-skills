@@ -129,6 +129,15 @@ After the PR is confirmed merged (or the user explicitly acknowledges unmerged s
 
 Do not manually run session-learnings, sync repos, or remove worktrees — `/cleanup` handles all of this.
 
+## Companion-PR mode
+
+When a feature splits across two PRs (often across repos) and one references the other, pre-merge review adds two checks on top of the standard Stage 4:
+
+1. **Docs-to-code contract check.** Grep the referencing PR for CLI invocations (`` `python scripts/...` ``, `` `./scripts/...` ``, fenced `$ ...` blocks, `npm run ...`). For each, verify the referenced PR's file actually exposes that entrypoint — `if __name__ == "__main__":` + argparse/click/typer, `bin:` in `package.json`, etc. — and that flag names match. Catches the library-vs-CLI drift where one side documents an interface the other never shipped.
+2. **Merge order gate.** Merge the referenced side first (the side whose code the other PR's docs point at), and only after check 1 passes. Rebase the referencing side on the updated base, re-run CI, then merge.
+
+See memory: `library_vs_cli_drift_companion_prs.md`, `companion_pr_merge_order.md`.
+
 ## Key Principles
 
 1. **Never ship without review** — Review runs automatically; no manual skip.
