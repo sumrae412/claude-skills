@@ -157,6 +157,16 @@ If any commands are missing, either:
 
 **Signal for "which CLAUDE.md is this command from":** if a command feels standard but you cannot find the script in the target repo, grep across your global CLAUDE.md files — the command probably belongs to a sibling project. Only cross-project universal tools (git, pytest, npm, cargo, make itself) are safe to carry across projects without verification.
 
+## Verbatim-Port Tasks: Do Not Paraphrase Source Behavior
+
+When a task ports a file verbatim from another repo, **do not restate the source's flag names, function signatures, env vars, or error strings in plan prose**. The implementer's rule is "source wins for verbatim ports," which means any paraphrase in the plan is either redundant or wrong — and when it's wrong (e.g., plan says `--width`, source says `--max-width`), the implementer must stop and choose.
+
+Instead, write:
+
+> Port `path/to/source.py` verbatim. See source for exact CLI flags, env vars, and error messages.
+
+Reserve plan prose for scaffolding, intent, and explicit deviation points. This applies to any "mirror upstream behavior" task — external API clients, compatibility shims, reimplemented CLIs.
+
 ## Execution Handoff
 
 After saving the plan, offer execution choice:
