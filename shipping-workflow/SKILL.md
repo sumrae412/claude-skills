@@ -34,6 +34,16 @@ Before starting:
 
 **v2 subagent model:** In code-creation-workflow v2, shipping-workflow is invoked directly (not as a subagent) since it's the final pipeline stage. Context from Phase 6A findings is available in the session.
 
+## Step 0: Detect parallel-agent activity
+
+```bash
+git branch --show-current && git reflog -20 && git fetch origin --prune
+```
+
+If HEAD or the reflog contradicts what you think is happening (a commit you didn't make, a reset you didn't initiate, a branch you're not on), STOP and investigate before starting the ship pipeline. Branch state moves between tool calls when another agent or process is active.
+
+See: `memory/gotcha_parallel_agent_merged_pr_mid_session.md`
+
 ## The 4-Stage Pipeline
 
 ### Stage 1: Commit
@@ -91,6 +101,8 @@ After review completes and CI passes, **merge the PR automatically**:
 ```bash
 gh pr merge <number> --squash --delete-branch
 ```
+
+**Caveat:** `--delete-branch` will fail the LOCAL branch delete if the branch is any worktree's HEAD. The remote delete still succeeds. Either switch the worktree off the branch before merging, or skip `--delete-branch` and handle cleanup in the follow-up teardown. See `memory/gotcha_gh_pr_merge_delete_branch_worktree.md`.
 
 Then verify the merge succeeded:
 

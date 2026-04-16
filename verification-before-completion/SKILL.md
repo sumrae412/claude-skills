@@ -105,6 +105,20 @@ Skip any step = lying, not verifying
 ❌ Trust agent report
 ```
 
+## Regression tests for silent service-signature changes (red-green-revert)
+
+When hot-fixing a regression caused by a service returning a new shape (e.g. `T` → `Optional[T]`), write the test and verify it with full red-green-revert:
+
+1. Write the test. Run — MUST pass (green) with your fix in place.
+2. Revert the fix. Run — MUST fail with the EXACT production signature (e.g. `pydantic_core._pydantic_core.ValidationError` with the specific field path, not just any `AssertionError`).
+3. Restore the fix. Run — green again.
+
+Document the production signature in the test docstring. A regression test that fails for some reason other than the regression is not a regression test; it's an aspirational test.
+
+Concrete example: PR #344 (analytics 404 hot-fix). The test asserts the exact `Pydantic ValidationError` that a bogus `template_id` triggered before the 404 guard was added.
+
+See: `memory/pattern_orphan_edit_redirect.md`.
+
 ## Why This Matters
 
 From 24 failure memories:

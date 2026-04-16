@@ -40,6 +40,15 @@ description: Git workflow, branching, deploys, PRs. Load when committing, deploy
 
 **Gotcha:** A worktree cannot check out `main` if the main repo already has it checked out. When using `gh pr merge` from a worktree, the post-merge branch cleanup may show an error — this is harmless; the merge itself succeeds. Verify with `gh pr view <number> --json state`.
 
+**`gh pr merge --delete-branch` + worktrees:** If the branch being merged is any worktree's HEAD, the remote delete succeeds but the local delete fails:
+
+```
+✗ failed to delete local branch <name>:
+  Cannot delete branch '<name>' checked out at '/path/to/worktree'
+```
+
+Workaround: switch the worktree off the branch BEFORE merging, or skip `--delete-branch` and delete deliberately in a teardown step (`git worktree remove … && git branch -d …`). See `memory/gotcha_gh_pr_merge_delete_branch_worktree.md`.
+
 If you used a worktree, clean it up:
 
 ```bash

@@ -134,6 +134,17 @@ Load project context before any exploration or coding.
 
 Read `.claude/workflow-state.json`. If `running` → resume or archive (see Cross-Session Resume). If `completed` → archive. If missing → proceed (initialize after Step 6).
 
+**Parallel-agent reflog check (when another agent may be running):** When the user mentions (or session context implies) a parallel agent is active, run:
+
+```bash
+git branch --show-current
+git reflog -20
+git fetch origin --prune
+git log origin/main --oneline -10
+```
+
+If HEAD has moved since the last inspection you made, re-plan from current state. Do not proceed with any plan that assumed a stale HEAD. See `memory/gotcha_parallel_agent_merged_pr_mid_session.md`.
+
 ### Step 1: Load Project Identity
 
 Read the workspace `CLAUDE.md` (slim version — identity, terminology, boundaries, skill pointers).
