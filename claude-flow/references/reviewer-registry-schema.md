@@ -88,6 +88,25 @@ Sub-threshold findings flow into Phase 5 retry input same as test failures.
 
 Scored reviewers extend their `calibration` block with `"verdict_type": "scored"`. Agreement is computed as `(|judge_score - human_score| <= 2) / n` against a labeled corpus, vs binary reviewers' exact-match agreement.
 
+### Calibration block fields (scored reviewers)
+
+The `calibration` block on a scored reviewer entry carries:
+
+| Field | Type | Set by | Meaning |
+|---|---|---|---|
+| `verdict_type` | `"scored"` | author | Marks the reviewer as scored vs binary. Drives which agreement formula the calibration script uses. |
+| `min_agreement` | float (0.0-1.0) | author | Pass threshold. Calibration runs below this should not record a passing value into `last_agreement`. |
+| `sample_size` | integer | author | Target corpus size. The labeled corpus under `tests/fixtures/<reviewer>/calibration_corpus/` should have at least this many cases. |
+| `last_calibrated` | ISO date string \| null | calibration script | Date of the most recent successful calibration run. `null` until the first run. |
+| `last_agreement` | float \| null | calibration script | Overall agreement value from the most recent successful run, rounded to 4 decimals. `null` until the first run. |
+| `note` | string | author | Free-form description of the agreement formula or any reviewer-specific quirks. |
+
+`last_calibrated` and `last_agreement` are populated by the per-reviewer calibration script (e.g. `scripts/calibrate_adversarial_breaker.py` in the claude_flow repo) on a successful run — agreement >= `min_agreement`. The script preserves all other fields and the file's existing JSON formatting.
+
+The labeled corpus is the source of truth for "human agreement" — each case has a `diff.patch` (input) and an `expected.json` (per-criterion human-labeled scores in the 1-10 range). See `tests/fixtures/adversarial_breaker/calibration_corpus/README.md` in claude_flow for the canonical layout.
+
+Drift detection (running the live reviewer against a single planted-bug fixture on a cron) is a separate concern from calibration (running against a 20+ case corpus to compute agreement). Both can coexist at different cadences — drift weekly, calibration monthly or on-demand.
+
 ### Cross-repo persona resolution
 
 When a reviewer's persona/system-prompt file lives in a different repo than the registry (typical for `general-purpose` agent-backed reviewers under the post-2026-04-16 single-source-of-truth layout), declare BOTH:
