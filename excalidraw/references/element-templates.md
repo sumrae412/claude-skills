@@ -115,6 +115,31 @@ Copy-paste JSON templates for each Excalidraw element type. The `strokeColor` an
 }
 ```
 
+## Diamond (decisions, conditionals)
+```json
+{
+  "type": "diamond",
+  "id": "decision1",
+  "x": 100, "y": 100, "width": 160, "height": 100,
+  "strokeColor": "<stroke from palette — typically Decision color>",
+  "backgroundColor": "<fill from palette — typically Decision color>",
+  "fillStyle": "solid",
+  "strokeWidth": 2,
+  "strokeStyle": "solid",
+  "roughness": 0,
+  "opacity": 100,
+  "angle": 0,
+  "seed": 88888,
+  "version": 1,
+  "versionNonce": 99999,
+  "isDeleted": false,
+  "groupIds": [],
+  "boundElements": [{"id": "text_decision", "type": "text"}],
+  "link": null,
+  "locked": false
+}
+```
+
 ## Text (centered in shape)
 ```json
 {
