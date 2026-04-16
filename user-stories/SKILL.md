@@ -150,6 +150,18 @@ After exploration, present findings and ask ONE question at a time:
 - Are there audit/history requirements?
 - What should happen to related records?
 
+## Writing Rules
+
+Before generating stories, apply these rules uniformly:
+
+- **Cover all major user-facing flows** — no skipping auth, error paths, or edge states.
+- **Consistent structure** — every story uses the template below; no deviation.
+- **Strict Gherkin for acceptance criteria** — `Given` / `When` / `Then` / `And` only. No prose paragraphs, no mixed narrative + bullets.
+- **Every step references observable UI behavior** — something a test runner can assert (visible text, element state, URL change, DOM attribute).
+- **Ban vague language** — no "works correctly", "loads successfully", "behaves as expected", "is displayed properly". If a criterion can't name what's observable, rewrite it until it can.
+- **Prefer testable anchors** — reference accessible labels (`aria-label`, role), visible text, or stable selectors that a Playwright test could target. Avoid brittle anchors (nth-child, auto-generated class names).
+- **No implementation details** — stories describe user-visible behavior, not code, endpoints, or internal state transitions.
+
 ## Phase 3: User Story Format
 
 Generate stories in this Playwright-optimized format:
