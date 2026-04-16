@@ -82,25 +82,30 @@ Run the **10-step review process** on the PR. Prefer running this in the backgro
 
 **Full procedure:** See [reference.md](reference.md) for the 10 steps (eligibility → staleness → sweep → deep-dive triggers → conditional analysis → merge findings → re-check → fix → CI gate → ship), scoring rubric, false positive filters, and project-level customization (CI command, defensive patterns, deep-dive triggers).
 
-### Stage 4.5: Merge Verification Gate
+### Stage 4.5: Merge
 
 <HARD-GATE>Do not proceed to cleanup until the PR is confirmed merged or the user explicitly acknowledges it is unmerged.</HARD-GATE>
 
-After review completes and CI passes, verify the PR was actually merged:
+After review completes and CI passes, **merge the PR automatically**:
+
+```bash
+gh pr merge <number> --squash --delete-branch
+```
+
+Then verify the merge succeeded:
 
 ```bash
 gh pr view <number> --json state --jq '.state'
 ```
 
 - **MERGED** → proceed to Stage 5.
-- **OPEN** → The PR was created and reviewed but never merged. This is the exact scenario that causes orphaned PRs. You MUST either:
-  1. Merge it now: `gh api -X PUT repos/{owner}/{repo}/pulls/{number}/merge -f merge_method=squash`
-  2. Or explicitly warn the user: "PR #N is still open and unmerged. If this session ends now, the fix will be orphaned. Merge now or acknowledge you'll handle it later."
-
-  **Do not silently proceed to cleanup with an unmerged PR.** Wait for the user's decision.
+- **OPEN** → Merge failed. Check for: required status checks still pending, branch protection rules, merge conflicts. Diagnose and retry:
+  - If CI is still running, wait and retry.
+  - If merge conflicts exist, resolve them, push, and retry.
+  - If branch protection blocks it, inform the user and ask them to merge manually.
 - **CLOSED** → Warn: PR was closed without merging. Ask if this was intentional.
 
-**Why this gate exists:** A PR that was created and reviewed but never merged is the root failure mode this gate prevents. When a session ends with an unmerged PR, the worktree gets cleaned up and the fix is orphaned — sometimes for days. This gate forces an explicit decision before cleanup runs.
+**Why this gate exists:** A PR that was created and reviewed but never merged is the root failure mode this gate prevents. When a session ends with an unmerged PR, the worktree gets cleaned up and the fix is orphaned — sometimes for days. Auto-merging after review prevents that.
 
 ### Stage 5: Cleanup
 
