@@ -49,6 +49,15 @@ Cold storage for data past retention threshold.
 - Validate signature/shared secret before processing
 - Twilio IP whitelist for SMS webhooks
 
+### Webhook Signature Validator Audit Checklist
+
+Every webhook signature validator (grep: `rg -n 'RequestValidator|webhook.*validate|signature' app/routes/`) must confirm BOTH:
+
+- **Fails closed in production:** when the auth token is missing AND `settings.is_production`, return `False`. Never leave a public webhook unauthenticated in prod.
+- **Validates against the FULL request body:** `await request.form()` (form-encoded) or `await request.body()` (raw) — not the subset of `Form(...)` args the handler happens to read. Partial dicts rejected legit signed traffic in `twilio_inbound` (caught by CodeRabbit, PR #342).
+
+Known sites to audit: `app/routes/twilio_inbound.py`, `app/routes/sms.py`, any future `/webhooks/*`.
+
 ## Secrets Management
 
 - Never commit secrets to git

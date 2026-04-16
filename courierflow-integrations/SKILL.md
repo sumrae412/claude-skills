@@ -40,6 +40,24 @@ description: External API patterns — Calendar, Twilio, OpenAI, webhooks. Load 
 - Validate signature/shared secret before processing
 - Twilio IP whitelist for SMS webhooks
 
+## Twilio Webhook Correctness Checklist
+
+Required pattern for every inbound Twilio handler:
+
+1. **Signature body:** Read `params = dict(await request.form())` and pass the FULL dict to `RequestValidator.validate`. Twilio signs all POST fields (AccountSid, ApiVersion, NumMedia, SmsSid, SmsStatus, …); passing a partial dict built from `Form(...)` args 403-rejects every legit production webhook. See memory/gotcha_twilio_signature_full_body.md.
+2. **Production fail-closed:** When `settings.twilio_auth_token` is missing AND `settings.is_production`, the validator must return `False`. Never leave a public webhook unauthenticated in prod.
+3. **TwiML escaping:** Run `xml.sax.saxutils.escape(reply)` before interpolating into `<Message>{reply}</Message>`. User-controlled text may contain `<`, `&`, or quotes. See memory/gotcha_twiml_xml_escape_user_content.md.
+4. **Rate limit:** Async handlers need per-key `asyncio.Lock`; document the per-process scope. See memory/pattern_asyncio_lock_per_key_rate_limit.md.
+
+## AsyncAnthropic in Webhook Paths
+
+Any `AsyncAnthropic.messages.create(...)` call inside a webhook path must:
+
+- Pass `timeout=<sec>` (SDK default is unbounded; Twilio's 15s deadline will blow up under API slowdown).
+- Guard `response.content[0]` before `.text` access — empty content lists and non-text blocks crash the handler.
+
+See memory/pattern_anthropic_timeout_in_webhook.md.
+
 ## Integration Data Sync Invariant
 
 Any integration code path that creates a `HouseholdMember` (e.g., `sync_service.py`, `contact_import_service.py`) **must** call `ensure_client_for_member()` (module-level in `app/services/household_service.py`, import directly) after creation. The Tenants page queries `Client` exclusively via `search_clients_grouped` — a member without a corresponding Client is invisible in the UI.

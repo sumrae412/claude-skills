@@ -238,6 +238,8 @@ Before committing code changes:
 - [ ] `AsyncMock` for async method mocking
 - [ ] `pattern=` not `regex=` in Pydantic v2
 - [ ] Service layer for business logic (not in routes)
+- [ ] **Mocking Pydantic `BaseSettings`:** `mock.patch("mod.settings.attr", new=..., create=True)` fails with `AttributeError: can't set attribute` — BaseSettings freezes attrs. Replace the whole reference: `patch.object(mod, "settings", MagicMock(attr=value, ...))`. See memory/gotcha_pydantic_settings_mock_patch.md.
+- [ ] **Lazy imports defeat module-level patching:** `from X import Y` inside a function binds Y in the function's local scope, not the module's. `patch.object(mod, "Y", fake)` raises or silently no-ops with `create=True`. Hoist the import to module top or use DI. See memory/gotcha_lazy_import_hides_module_patch.md.
 
 ### JavaScript
 - [ ] DOM elements null-checked before use

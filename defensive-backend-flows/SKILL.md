@@ -992,6 +992,29 @@ Applies to every scored reviewer, aggregator, fixture loader, and JSON-consuming
 
 **Audit:** `rg -n 'reviewer_output\[' -g '*.py'` and `rg -n 'response\["' -g '*.py' services/ | grep -i llm`.
 
+## Stopgap In-Memory Rate Limiter
+
+Before Redis, an async-safe in-memory rate limiter needs BOTH pieces — partial fixes regress to the race.
+
+1. **Per-key `asyncio.Lock`** to serialize the `len(store) < MAX` check and the `append`. Without it, two coroutines at the boundary both pass the check, then both append — the window overflows by the concurrency factor.
+2. **Explicit per-process caveat** in the module docstring and the function docstring: multi-worker deploys (`uvicorn --workers N`) multiply the effective ceiling by N. Document it so callers don't treat it as a global guarantee.
+
+```python
+_store: Dict[str, List[float]] = defaultdict(list)
+_locks: Dict[str, asyncio.Lock] = defaultdict(asyncio.Lock)
+
+async def check_rate_limit(key: str) -> bool:
+    async with _locks[key]:
+        now = datetime.now(timezone.utc).timestamp()
+        _store[key] = [ts for ts in _store[key] if ts > now - WINDOW]
+        if len(_store[key]) >= MAX:
+            return False
+        _store[key].append(now)
+        return True
+```
+
+See MEMORY `pattern_asyncio_lock_per_key_rate_limit.md`.
+
 ## Quick Reference
 
 | Rule | Symptom | Check |
