@@ -88,6 +88,8 @@ For each source, extract as much as possible:
 - [ ] **Stress triggers** — Situations that create tension or frustration for them
 - [ ] **Stress reactions** — How they behave under pressure (more formal? withdrawn? escalating? blunt?)
 - [ ] **Speech patterns** — Characteristic phrases, framing patterns, recurring language (e.g., "at the end of the day...", "the data shows...")
+- [ ] **Mental models** — How they conceptualize key abstractions (meetings, data, risk, tools, feedback). Derive from how they talk about these things, not from generic role assumptions.
+- [ ] **Positive reactions** — What excites, impresses, or delights them. Count sources like frustrations. A persona without positives is a caricature.
 
 ---
 
@@ -156,6 +158,27 @@ Features in this bucket should not appear as findings in reviews.]
 ### Decision Pattern
 [How they evaluate — ROI-focused? User-first? Risk-averse? Data-driven? Gut-feel?]
 
+### Mental Models
+How this person conceptualizes key abstractions in their domain. These shape what they expect from products and conversations — mismatches cause confusion.
+
+- **Meetings are**: [e.g., "decision-making forums, not status updates"]
+- **Data is**: [e.g., "the starting point, not the answer"]
+- **Risk is**: [e.g., "something to manage, not avoid"]
+- **New tools are**: [e.g., "guilty until proven innocent — must earn their place"]
+- **Feedback is**: [e.g., "a gift — direct and frequent is best"]
+- **[Domain-specific]**: [add 2-3 entries relevant to their field — e.g., "ROI is: the first question, always"]
+
+*Derive from public statements. If someone says "I don't do meetings without an agenda," their mental model of meetings is "structured decision points." If they say "show me the dashboard," data is a visual artifact, not a narrative.*
+
+### Positive Reactions
+What excites, impresses, or delights this person — the counterpart to frustrations. These are equally important for realistic persona fidelity; a persona that only complains is a caricature.
+
+- [e.g., "Clean, simple interfaces that respect their time"]
+- [e.g., "When data is presented visually with clear takeaways"]
+- [e.g., "Products that handle edge cases gracefully"]
+- [e.g., "Direct communication without corporate jargon"]
+- [5-10 specific positive reactions, evidence-counted where possible]
+
 ### Personality Frameworks
 [Enneagram, DISC, MBTI, etc. — if known]
 
@@ -202,11 +225,13 @@ that I can use to role-play as this person. Write it in second person ("You are
 
 1. How they think about problems (analytical process, what they prioritize)
 2. How they communicate (tone, pacing, level of directness)
-3. What excites them and what frustrates them
+3. What excites them and what frustrates them (both sides — a persona that only complains is a caricature)
 4. How they make decisions (what evidence they need, what they trust)
 5. Their domain expertise and blind spots
 6. Characteristic phrases or framing patterns from their public communications
 7. How they'd react to being presented with something new (skeptical? enthusiastic? methodical?)
+8. Their mental models — how they conceptualize key abstractions like meetings, data, risk, new tools, and feedback. These shape expectations and where mismatches cause confusion.
+9. What delights them — specific positive reactions grounded in source material, not generic enthusiasm
 
 Be specific — use examples from the source material. Don't be generic.
 End with a note about where the persona model is thin (low-confidence areas).
@@ -227,3 +252,40 @@ After completing Stage 1, save two files to the memory system:
    - Description: "Role-play instructions for [Name] persona — use when adopting their perspective."
 
 Update MEMORY.md index with pointers to both files.
+
+---
+
+## Trait Correlation Table
+
+Use this table to ensure internal consistency when building a persona. Traits should correlate — a data-driven decision maker who communicates via gut-feel stories is a contradiction (unless you have source evidence for it).
+
+### Decision Style → Expected Correlations
+
+| Decision Style | Communication | Risk Tolerance | Frustration Profile | Positive Profile |
+|----------------|---------------|----------------|---------------------|------------------|
+| **Data-driven** | Asks for evidence, metrics-first | Moderate — wants proof before acting | Vague claims, hand-waving, "trust me" | Dashboards, clear benchmarks, A/B results |
+| **Intuition / gut-feel** | Story-driven, anecdotal | Higher — comfortable with ambiguity | Over-analysis, death by committee | Bold moves, quick decisions, momentum |
+| **Consensus-driven** | Diplomatic, inclusive | Low — needs buy-in before moving | Being steamrolled, unilateral decisions | Alignment, everyone heard, shared ownership |
+| **ROI-focused** | Direct, bottom-line oriented | Calculated — risk vs. reward | Wasted resources, unclear value prop | Clear payback periods, efficiency gains |
+| **User-first** | Empathetic, design-oriented | Moderate — will take risks for UX | Ignoring user feedback, tech-driven decisions | User delight, reduced friction, testimonials |
+
+### Tech Comfort → Expected Correlations
+
+| Tech Comfort | Mental Model of Tools | Error Tolerance | Feedback Style |
+|--------------|----------------------|-----------------|----------------|
+| **Power user** | "Tools should be configurable" | High — will debug, workaround | Specific, technical, solution-oriented |
+| **Competent** | "Tools should just work" | Moderate — expects clear error messages | Pragmatic, feature-request style |
+| **Casual** | "Tools should be invisible" | Low — confused by errors | General, outcome-focused ("it doesn't work") |
+| **Reluctant** | "Tools are a necessary evil" | Very low — errors confirm distrust | Emotional, avoidance-oriented |
+
+### Communication Style → Expected Correlations
+
+| Communication | Decision Speed | Meeting Style | Conflict Approach |
+|---------------|---------------|---------------|-------------------|
+| **Direct / blunt** | Fast | Short, agenda-driven | Head-on, explicit |
+| **Diplomatic** | Moderate | Inclusive, longer | Indirect, seeks compromise |
+| **Data-first** | Deliberate | Structured, presentation-heavy | Evidence-based rebuttal |
+| **Story-driven** | Variable | Conversational, tangential | Reframes via narrative |
+| **Terse** | Fast | Minimal, async-preferred | Brief pushback, moves on |
+
+**When to override correlations:** If source material shows a genuine contradiction (e.g., a data-driven executive who makes gut-feel hiring decisions), keep it — real people are inconsistent. Flag it in the persona card as a notable trait, not a bug.

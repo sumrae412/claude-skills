@@ -51,11 +51,13 @@ Work through **one stage per session**. Stages 3-4 are repeatable with the same 
 
 5. **Define their JTBD** — Ask: "What job is this person hiring your product (or a product like yours) to do?" Frame as: "When [situation], I want to [motivation], so I can [expected outcome]." Capture functional, emotional, and social dimensions.
 
-6. **Build the Persona Card** — Synthesize into structured format (template in research guide). Includes JTBD statement and Empathy Map summary. Present to user for validation: "Does this feel like them? What's off?"
+6. **Map their mental models** — How does this person conceptualize key abstractions? (meetings, data, risk, new tools, feedback, plus 2-3 domain-specific entries). Derive from how they talk about these things — e.g., "I don't do meetings without an agenda" → meetings = "structured decision points." Also capture **positive reactions** — what excites or impresses them, evidence-counted like frustrations.
 
-7. **Meta-prompt step** — Feed all gathered material to Claude and generate a Persona Prompt — the actual role-playing instructions written in second person. This produces richer behavior than the structured card alone. See meta-prompt template in research guide.
+7. **Build the Persona Card** — Synthesize into structured format (template in research guide). Includes JTBD, Empathy Map, Mental Models, and Positive Reactions. Use the **Trait Correlation Table** (in research guide) to check internal consistency — flag genuine contradictions as notable traits, not errors. Present to user for validation: "Does this feel like them? What's off?"
 
-8. **Save to memory** — Store both the Persona Card and Persona Prompt as memory files for reuse in future sessions.
+8. **Meta-prompt step** — Feed all gathered material to Claude and generate a Persona Prompt — the actual role-playing instructions written in second person. This produces richer behavior than the structured card alone. See meta-prompt template in research guide.
+
+9. **Save to memory** — Store both the Persona Card and Persona Prompt as memory files for reuse in future sessions.
 
 **Output format:**
 ```
