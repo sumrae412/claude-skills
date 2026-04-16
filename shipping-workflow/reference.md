@@ -95,7 +95,7 @@ git commit -m "fix: address PR review findings"
 
 ### Step 9: Run CI (Hard Gate)
 
-Run project CI (e.g. `./scripts/quick_ci.sh`). **Hard gate:** must pass. If failures, fix and re-run; loop up to 3 attempts, then escalate to user.
+Run your project's CI script (e.g., `npm test`, `make check`, `pytest`). **Hard gate:** must pass. If failures, fix and re-run; loop up to 3 attempts, then escalate to user.
 
 ### Step 9.5: Verify Behavior (not just code)
 
@@ -209,7 +209,7 @@ Replace with your stack’s anti-patterns.
 
 | Component | Example (Python/FastAPI) | Example (Node/React) |
 |-----------|--------------------------|----------------------|
-| CI command | `./scripts/quick_ci.sh` | `npm run ci` |
+| CI command | `make check` or `pytest` | `npm run ci` or `npm test` |
 | Test command | `pytest tests/ -v` | `npm test` |
 | Lint command | `flake8 app --select=E9,F63,F7,F82` | `eslint --max-warnings=0` |
 | Base branch | `main` | `main`, `develop` |

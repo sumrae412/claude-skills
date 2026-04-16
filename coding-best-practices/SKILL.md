@@ -1,6 +1,10 @@
 ---
 name: coding-best-practices
 description: Comprehensive coding standards for Python, JavaScript, APIs, testing, and performance. Apply when writing code, reviewing PRs, debugging, or designing systems. Covers SQLAlchemy relationships, async patterns, DOM safety, REST design, and optimization techniques.
+license: MIT
+metadata:
+  author: summerela
+  version: "1.0.0"
 user-invocable: false
 ---
 
@@ -17,7 +21,7 @@ Apply these principles when writing, reviewing, or debugging code across any pro
 | Create migration? | **Always** when changing DB schema |
 | Add type hints? | **Always** on function signatures |
 | Use service layer? | **Always** for business logic |
-| Using external API? | **Always** fetch docs first: `chub get <api-id> --lang py\|js` |
+| Using external API? | **Always** fetch docs first via your project's API docs tool |
 | Cache data? | When frequently accessed, rarely changed |
 | Add index? | When queries slow or tables > 1000 rows |
 | Add rate limiting? | **Always** for new endpoints |
@@ -48,22 +52,22 @@ q2 = select(func.count(M2.id)).where(...).scalar_subquery()
 result = await db.execute(select(q1.label("c1"), q2.label("c2")))
 row = result.one()
 ```
-This avoids N+1 roundtrips. See `app/services/counts_service.py` for a 7-subquery example.
+This avoids N+1 roundtrips. See your project's aggregate counts service for a multi-subquery example.
 
 ## scalar_one_or_none() Crash Risk
 
 Use `scalars().first()` for non-unique column lookups. `scalar_one_or_none()` raises `MultipleResultsFound` on non-unique columns — this is a production crash risk, not just a style issue.
 
-## Detailed Guidelines
+## Reference Files
 
-For specific patterns and examples, see:
-
-- [Python Patterns](docs/python-patterns.md) - SQLAlchemy, async, transactions, migrations
-- [JavaScript Safety](docs/javascript-safety.md) - DOM, events, WebSocket
-- [API Design](docs/api-design.md) - REST, routing, HTTP methods
-- [Testing Guide](docs/testing.md) - Test types and when to use them
-- [Performance](docs/performance.md) - Caching, circuit breakers, optimization
-- [Security](docs/security.md) - OWASP top 10, input validation, secrets
+| File | Use for |
+|------|---------|
+| [Python Patterns](references/python-patterns.md) | SQLAlchemy relationships, async patterns, transactions, Alembic migrations |
+| [JavaScript Safety](references/javascript-safety.md) | DOM null-checks, event handlers, WebSocket alignment |
+| [API Design](references/api-design.md) | REST conventions, route naming, HTTP method matching |
+| [Testing Guide](references/testing.md) | Test types, factories, async setup, mocking patterns |
+| [Performance](references/performance.md) | Caching, circuit breakers, N+1 prevention, connection pooling |
+| [Security](references/security.md) | OWASP top 10, input validation, secrets management |
 
 ## Type Hint Discipline
 
@@ -153,4 +157,11 @@ class DeployManager:
         self.timeout = timeout
 ```
 
-**Examples:** scripts/release.py, scripts/rollback.py, scripts/canary_deploy.py
+**Examples:** your project's CI/CD scripts (e.g. release, rollback, canary deploy scripts)
+
+## Guardrails
+
+- Do **not** apply these patterns to archived or deprecated code paths — fix forward, not sideways
+- Do **not** add type hints, tests, or service-layer refactors as part of an unrelated bug fix without explicit scope approval
+- Do **not** apply SQLAlchemy eager-load or migration rules to non-SQLAlchemy ORMs without verifying equivalents
+- Do **not** enforce `scalar_one_or_none()` replacement globally — only change it where non-unique lookups are confirmed

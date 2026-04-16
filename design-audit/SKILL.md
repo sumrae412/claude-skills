@@ -6,6 +6,10 @@ description: >
   a UI, improve visual design, make an interface more polished, review design consistency,
   fix visual hierarchy, or refine spacing/typography/color. Triggers: "design review", "make
   it look better", "UI polish", "visual refinement", "design pass", "audit the design".
+license: MIT
+metadata:
+  author: summerela
+  version: "1.0.0"
 ---
 
 # Design Audit
@@ -97,6 +101,15 @@ If a design improvement requires a functional change, flag it:
 - All values must reference design system tokens — no hardcoded colors, spacing, or sizes
 - If a needed token does not exist, propose it explicitly — do not invent silently
 - Use `/typography` for text correctness (curly quotes, dashes, entities)
+
+---
+
+## Guardrails
+
+- Every change must preserve existing functionality exactly
+- Do not implement changes without user approval — present the plan first
+- If a design improvement requires a functional change, flag it as out of scope
+- All values must reference design system tokens — no hardcoded colors, spacing, or sizes
 
 ---
 

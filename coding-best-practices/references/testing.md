@@ -201,23 +201,22 @@ mock takes effect.
 
 ```python
 # BAD — only mocks the client class, settings.api_key is None
-with patch("app.services.ai.llm_fallback.AsyncOpenAI") as mock_cls:
+with patch("myapp.services.external_service.AsyncAPIClient") as mock_cls:
     mock_cls.return_value = mock_client
     result = await get_completion("prompt")  # may fail on settings
 
 # GOOD — mock settings AND client class together
 with (
-    patch("app.services.ai.llm_fallback.settings") as mock_settings,
-    patch("app.services.ai.llm_fallback.AsyncOpenAI") as mock_cls,
+    patch("myapp.services.external_service.settings") as mock_settings,
+    patch("myapp.services.external_service.AsyncAPIClient") as mock_cls,
 ):
-    mock_settings.openai_api_key = "test-key"
-    mock_settings.openai_model = "gpt-4o-mini"
+    mock_settings.api_key = "test-key"
+    mock_settings.model = "model-name"
     mock_cls.return_value = mock_client
     result = await get_completion("prompt")  # works
 ```
 
-**Learned from:** `test_llm_fallback.py` — test only mocked `AsyncOpenAI` but not
-`settings`. The real settings had `openai_api_key = None`, causing test failure.
+**Learned from:** A service test that only mocked the API client class but not the settings object. The real settings had `api_key = None`, causing the client constructor to fail before the mock took effect.
 
 ---
 
@@ -225,11 +224,11 @@ with (
 
 ### Enum and allowlist tests use production sources
 
-- **Enum validator tests:** Use the enum value actually used in production for the test (e.g. `ClientType.RENTER` for "renter"), not a different enum (e.g. `ACTIVE` for "active") so the test validates the real conversion.
-- **Allowlist/filter tests:** Import and assert against the same constant the route/service uses (e.g. `_VALID_STATUS_FILTERS` from `app.routes.tenants`) so the test cannot drift from the implementation.
+- **Enum validator tests:** Use the enum value actually used in production for the test (e.g. `Status.ACTIVE` for `"active"`), not a mismatched enum member, so the test validates the real conversion.
+- **Allowlist/filter tests:** Import and assert against the same constant the route/service uses (e.g. `_VALID_STATUS_FILTERS` from your route module) so the test cannot drift from the implementation.
 - **Exception-path tests:** When testing a fallback triggered by an exception, raise the same exception type the code catches (e.g. `SQLAlchemyError`), not a generic `Exception`, so the catch block is actually exercised.
 
-**Learned from:** `test_tenants_standalone.py` — ClientType test used "active" → ACTIVE; status filter tests used a local set instead of `_VALID_STATUS_FILTERS`; fallback test raised generic Exception so the SQLAlchemyError catch was not hit.
+**Learned from:** A standalone route test where an enum test used a mismatched value, status filter tests duplicated a local set instead of importing the canonical constant, and a fallback test raised generic `Exception` so the specific catch block was never hit.
 
 ```python
 # Null/None handling

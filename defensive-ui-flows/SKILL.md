@@ -1,6 +1,10 @@
 ---
 name: defensive-ui-flows
 description: Defensive patterns for UI flows — guard clauses with feedback, state flags with try-catch, overlay inline feedback, multi-step state reset. Use when writing or reviewing JavaScript, modals, drawers, forms, or multi-step flows.
+license: MIT
+metadata:
+  author: summerela
+  version: "1.0.0"
 ---
 
 # Defensive UI Flows
@@ -166,16 +170,16 @@ document.getElementById('submitBtn')?.addEventListener('click', handler);
 Promise `.catch()` handlers that swallow errors leave the user with no explanation when something fails.
 
 ```javascript
-// BAD - Silent catch, user has no idea properties failed to load
-loadProperties().catch(function () {});
+// BAD - Silent catch, user has no idea data failed to load
+loadData().catch(function () {});
 
 // GOOD - Show feedback
-loadProperties().catch(function () {
-    showToast('Failed to load properties.', true);
+loadData().catch(function () {
+    showToast('Failed to load data.', true);
 });
 ```
 
-**Learned from:** signing-drawer.js `loadProperties` — empty catch left property dropdowns empty with no user feedback.
+**Learned from a production incident:** an empty catch left a dropdown empty with no user feedback.
 
 ---
 
@@ -184,25 +188,25 @@ loadProperties().catch(function () {
 When using a shared `elements` object (e.g. from `document.getElementById`), guard against missing elements before calling methods.
 
 ```javascript
-// BAD - Crashes if pdfStatus element is missing
-const setPdfStatus = (message) => {
-    elements.pdfStatus.textContent = message;
+// BAD - Crashes if statusEl element is missing
+const setStatus = (message) => {
+    elements.statusEl.textContent = message;
 };
 
 // GOOD
-const setPdfStatus = (message) => {
-    if (!elements.pdfStatus) return;
-    elements.pdfStatus.textContent = message;
+const setStatus = (message) => {
+    if (!elements.statusEl) return;
+    elements.statusEl.textContent = message;
 };
 ```
 
-**Learned from:** document-templates/wizard.js — setPdfStatus and showPdfError could throw if pdfStatus element missing.
+**Learned from a production incident:** status and error setter functions in your wizard/stepper component could throw if a DOM element was missing.
 
 ---
 
 ## 8. Verify Design System Tokens Exist
 
-When referencing CSS custom properties (`--ds-*` tokens), verify the token is actually defined in `_variables.css`. An undefined token with no fallback renders as **nothing** — the property silently disappears. This is especially dangerous for visual properties like `box-shadow`, `color`, and `border` where "nothing" means invisible UI.
+When referencing CSS custom properties (e.g. `--ds-*` tokens), verify the token is actually defined in your CSS variables file. An undefined token with no fallback renders as **nothing** — the property silently disappears. This is especially dangerous for visual properties like `box-shadow`, `color`, and `border` where "nothing" means invisible UI.
 
 ```css
 /* BAD - --ds-shadow-elevated doesn't exist, renders no shadow */
@@ -216,9 +220,9 @@ When referencing CSS custom properties (`--ds-*` tokens), verify the token is ac
 }
 ```
 
-**How to check:** Search `_variables.css` for the token name before using it. If it's not there, use one that is — don't invent new token names.
+**How to check:** Search your CSS variables file for the token name before using it. If it's not there, use one that is — don't invent new token names.
 
-**Learned from:** `_slideout-panel.css` — referenced `--ds-shadow-elevated` which was never defined. Panel rendered with no shadow until changed to `--ds-shadow-modal`.
+**Learned from a production incident:** your panel styles referenced a shadow token that was never defined. The panel rendered with no shadow until the token was corrected.
 
 ---
 
@@ -237,8 +241,6 @@ When a file upload `<input>` has an `accept` attribute, the accepted types, the 
 ```
 
 **Check:** When writing a file upload, verify three things match: (1) `accept` attribute, (2) visible help text, (3) backend validation. If different pages accept different formats, each page's accept+text+validation must be internally consistent.
-
-**Learned from:** `documents.html` — PDF-only accept attribute but tenant upload page accepted Word/images. Help text on one page didn't match the accept attribute on another.
 
 ---
 
@@ -264,37 +266,37 @@ previewFrame.src = URL.createObjectURL(blob);
 
 **Pattern:** Use an auth-aware fetch helper for all API calls in overlay components. Never assume iframes or plain `fetch()` will have the right auth context.
 
-**Learned from:** `documents.html` — PDF preview failed because iframe can't send auth headers. Also: `signing-setup-core.js` — API calls in signing setup lacked auth headers.
+**Learned from a production incident:** a PDF preview failed because an iframe can't send auth headers. API calls in your drawer component also lacked auth headers.
 
 ---
 
 ## 11. Pre-Check Dependencies Before Destructive Actions
 
-Before starting a multi-step operation that depends on an external service (Drive, Twilio, API), check the dependency is available FIRST and show a clear message if not. Don't let the user fill out a form only to fail at the final step.
+Before starting a multi-step operation that depends on an external service (cloud storage, SMS provider, third-party API), check the dependency is available FIRST and show a clear message if not. Don't let the user fill out a form only to fail at the final step.
 
 ```javascript
-// BAD - user fills form, clicks Upload, THEN discovers Drive not connected
+// BAD - user fills form, clicks Upload, THEN discovers dependency not connected
 async function handleUpload(file) {
-    var result = await fetch('/api/documents/upload', { body: file });
-    if (result.error === 'no_drive') {
-        showError('Google Drive not connected');  // Too late!
+    var result = await fetch('/api/upload', { body: file });
+    if (result.error === 'no_storage') {
+        showError('Storage not connected');  // Too late!
     }
 }
 
 // GOOD - check before showing the form
 async function openUploadModal() {
-    var status = await fetch('/api/drive-status',
+    var status = await fetch('/api/service-status',
         { credentials: 'same-origin' });
     var data = await status.json();
     if (!data.connected) {
-        showDrawerStatus('Connect Google Drive to upload.', true);
+        showDrawerStatus('Connect your storage provider to upload.', true);
         return;
     }
     showUploadForm();
 }
 ```
 
-**Learned from:** `documents.html` — upload flow didn't warn when Drive wasn't connected. Users filled out the entire form before discovering the dependency was missing.
+**Learned from a production incident:** an upload flow didn't warn when an external storage provider wasn't connected. Users filled out the entire form before discovering the dependency was missing.
 
 ---
 
@@ -304,7 +306,7 @@ Large JS object literals (Alpine.js components, Vue data functions, config objec
 
 ```javascript
 // BAD - duplicate }, closes the return object early, kills the whole component
-function tenantTable() {
+function myComponent() {
     return {
         methodA() { ... },
         methodB() {
@@ -317,8 +319,8 @@ function tenantTable() {
 }
 
 // GOOD - verify syntax after every edit to object literals
-// Run: node --check app/static/js/components/tenant-table.js
-function tenantTable() {
+// Run: node --check app/static/js/components/my-component.js
+function myComponent() {
     return {
         methodA() { ... },
         methodB() {
@@ -330,11 +332,11 @@ function tenantTable() {
 }
 ```
 
-**Why it's dangerous:** The syntax error prevents the function from parsing, so `Alpine.data('tenantTable', tenantTable)` never registers. The template shows `x-data="tenantTable()"` but Alpine logs `tenantTable is not defined` — which looks like a missing import, not a syntax error. The real cause is buried.
+**Why it's dangerous:** The syntax error prevents the function from parsing, so `Alpine.data('myComponent', myComponent)` never registers. The template shows `x-data="myComponent()"` but Alpine logs `myComponent is not defined` — which looks like a missing import, not a syntax error. The real cause is buried.
 
 **Check:** After any edit to a `.js` file containing object literals, run `node --check <file>`. Zero output = valid syntax.
 
-**Learned from:** `tenant-table.js` — a duplicate `},` introduced when adding a slideout panel feature silently killed the entire tenant list. The table showed "No tenants found" with no obvious error.
+**Learned from a production incident:** your data table component had a duplicate `},` introduced when adding a slideout panel feature, which silently killed the entire table. The table showed "No results found" with no obvious error.
 
 ---
 
@@ -342,18 +344,18 @@ function tenantTable() {
 
 `<script>` and `<link>` tags for app JS/CSS must include a `?v=` version parameter. Without it, browsers cache the old file indefinitely — even after a fix is deployed, users still get the broken version.
 
-**CourierFlow specifics:** The middleware sets `max-age=31536000` (1 year) on static files. This means a missing or stale `?v=` param causes the browser to serve cached assets for up to **one year** — hard refresh alone won't fix it because CDN/proxy caches also honor the header.
+**If your cloud platform sets `max-age=31536000` (1 year) on static files**, a missing or stale `?v=` param causes the browser to serve cached assets for up to **one year** — hard refresh alone won't fix it because CDN/proxy caches also honor the header.
 
 ```html
-<!-- BAD - no version param, browser serves stale cached file for 1 YEAR -->
-<script defer src="/static/js/components/tenant-table.js"></script>
+<!-- BAD - no version param, browser serves stale cached file -->
+<script defer src="/static/js/components/my-component.js"></script>
 
 <!-- BAD - version param exists but wasn't bumped after file changed -->
-<link href="/static/css/pages/calendar.css?v=3" rel="stylesheet">
+<link href="/static/css/pages/feature.css?v=3" rel="stylesheet">
 
 <!-- GOOD - version param bumped to today's date after file change -->
-<link href="/static/css/pages/calendar.css?v=20260304a" rel="stylesheet">
-<script defer src="/static/js/components/tenant-table.js?v=20260304a"></script>
+<link href="/static/css/pages/feature.css?v=20260304a" rel="stylesheet">
+<script defer src="/static/js/components/my-component.js?v=20260304a"></script>
 ```
 
 **When to update:** Bump the version parameter **every time** the file content changes. A CSS or JS file can be loaded from multiple templates — you must update ALL of them.
@@ -364,7 +366,7 @@ function tenantTable() {
 3. If no `?v=` exists, add one
 4. Commit the version bumps alongside the CSS/JS changes (or immediately after)
 
-**Learned from:** `base.html` — loaded `tenant-table.js` without a version param. After fixing a syntax error, the browser kept serving the cached broken version. User reported "still not seeing tenants" despite the fix being deployed. Also: `calendar.html`, `dashboard.html`, `home.html`, `tasks/list_modern.html`, `properties/list_modern.html` — CSS files were updated across 4 commits but version strings never bumped. Deployed successfully but no visual changes appeared on the site due to year-long cache headers.
+**Learned from a production incident:** your base template loaded a component JS file without a version param. After fixing a syntax error, the browser kept serving the cached broken version. Users reported "still not seeing data" despite the fix being deployed. Also: CSS files were updated across multiple commits but version strings were never bumped — changes deployed successfully but no visual changes appeared due to long-lived cache headers.
 
 ---
 
@@ -395,7 +397,7 @@ When using runtime-compiled Vue templates (CDN build, not SFC), `v-if`/`v-else-i
 
 **Check:** After editing any runtime-compiled Vue template, verify every `v-else` / `v-else-if` has an immediately preceding sibling with `v-if` or `v-else-if`. Search for `v-else` and trace upward.
 
-**Learned from:** VerticalTimeline component — an invalid `v-else` with no adjacent `v-if` caused a template compiler crash. The error was masked by cached JS, making it appear the fix hadn't deployed.
+**Learned from a production incident:** an invalid `v-else` with no adjacent `v-if` caused a template compiler crash. The error was masked by cached JS, making it appear the fix hadn't deployed.
 
 ---
 
@@ -403,7 +405,7 @@ When using runtime-compiled Vue templates (CDN build, not SFC), `v-if`/`v-else-i
 
 When the app uses a service worker for caching, fixing a JS/CSS bug is not enough — you must also bump the service worker's cache name. Otherwise the SW serves stale assets from its own cache, completely bypassing `?v=` query params and even server-side changes.
 
-**Additionally, the SW caching strategy for CSS/JS must be network-first, not cache-first.** Cache-first for `/static/` assets causes stale deploys that survive cache-buster version bumps because the old SW intercepts requests before the new SW activates.
+**Additionally, the SW caching strategy for CSS/JS must be network-first, not cache-first.** Cache-first for static assets causes stale deploys that survive cache-buster version bumps because the old SW intercepts requests before the new SW activates.
 
 ```javascript
 // BAD - same cache name after fixing a bug, SW serves old assets
@@ -433,11 +435,11 @@ async function handleStaticAsset(request) {
 
 **Full cache-busting checklist after any asset fix:**
 1. Bump `?v=` params on `<script>`/`<link>` tags (pattern #13)
-2. Bump the service worker cache name constant
+2. Bump the service worker cache name constant in your service worker
 3. If using a CDN, purge the CDN cache or use content-hashed filenames
 4. Verify the SW uses **network-first** for CSS/JS (not cache-first)
 
-**Learned from:** After fixing a Vue template compiler error, the console still showed the old broken template. The service worker was serving its cached copy, ignoring the server-side fix entirely. Later, even bumping CACHE_NAME to v17 didn't help because the old SW served old assets before the new SW activated. Switching to network-first was the definitive fix (`sw.js`).
+**Learned from a production incident:** after fixing a Vue template compiler error, the console still showed the old broken template. Your service worker was serving its cached copy, ignoring the server-side fix entirely. Even bumping the cache version didn't help because the old SW served old assets before the new SW activated. Switching to network-first was the definitive fix.
 
 ---
 
@@ -454,8 +456,6 @@ Development builds of Vue, React, and other frameworks include extra warnings, r
 ```
 
 **Check:** Search for framework CDN `<script>` tags. If the URL doesn't contain `.prod.` or `.min.`, it's a dev build.
-
-**Learned from:** Vue "You are running a development build" warning in production — not fatal but noisy and can mask real errors in the console.
 
 ---
 
@@ -478,8 +478,6 @@ When the browser shows `Uncaught SyntaxError: Unexpected token '<'` or `Unexpect
 2. Find the failing `.js` request
 3. Check the Response tab — is it actually JavaScript?
 4. If it's HTML/JSON, fix the server route or static file path
-
-**Learned from:** `Unexpected token '{'` error that appeared to be a JS syntax issue but was actually a server returning the wrong content type for a static asset request.
 
 ---
 
@@ -540,13 +538,13 @@ Also: **never redeclare base class properties in variant classes.** If `.base-ca
 
 **Check:** When a component mixes `<a>`, `<button>`, and `<div>` with a shared base class, verify the `<button>` variant includes ALL five resets (`display`, `appearance`, `font`, `color`, `cursor`) and does NOT redeclare properties already on the base class.
 
-**Learned from:** `home-dashboard.css` / `_stats.html` — Alerts stat card used `<button>` while the other three used `<a>`. First fix attempt only added `font: inherit; color: inherit;` — card still looked wrong because `display: block` and `appearance: none` were also needed. Required two rounds of fixes to get right.
+**Learned from a production incident:** your stat card component — one card used `<button>` while others used `<a>`. First fix attempt only added `font: inherit; color: inherit;` — the card still looked wrong because `display: block` and `appearance: none` were also needed. Required two rounds of fixes to get right.
 
 ---
 
 ## 19. Primary Views Must Surface Data Source Status
 
-When a page becomes the primary UI for a data domain (e.g., Home becomes the only calendar view), it must show connection status and surface remote-fetch errors. A dashboard that silently shows stale/sparse data with no explanation violates "Fail Visible."
+When a page becomes the primary UI for a data domain, it must show connection status and surface remote-fetch errors. A dashboard that silently shows stale/sparse data with no explanation violates "Fail Visible."
 
 ```html
 <!-- BAD - shows "1 event" with no indication data is from sparse cache -->
@@ -559,8 +557,8 @@ When a page becomes the primary UI for a data domain (e.g., Home becomes the onl
 <div class="upcoming-events">
   <h3>Upcoming Events</h3>
   <div class="connection-status">
-    {% if not google_connected %}
-      <span class="badge bg-warning">Google Calendar not connected</span>
+    {% if not service_connected %}
+      <span class="badge bg-warning">Data service not connected</span>
     {% elif fetch_error %}
       <span class="badge bg-danger">Could not refresh — showing cached data</span>
     {% endif %}
@@ -571,7 +569,7 @@ When a page becomes the primary UI for a data domain (e.g., Home becomes the onl
 
 **Check:** If the page is the only way to see certain data, ask: "Does the user know where the data came from and whether it's current?" If not, add a visible status indicator.
 
-**Learned from:** Home dashboard — became the only calendar view after `/calendar` redirected there, but showed sparse cached events with no indication that the remote fetch was failing or that Google wasn't connected.
+**Learned from a production incident:** a dashboard became the only view after a route redirected there, but showed sparse cached events with no indication that the remote fetch was failing or that the data service wasn't connected.
 
 ---
 
@@ -610,7 +608,7 @@ if (response.ok) {
 
 **Rule of thumb:** If a flag prevents cleanup/reset, it must only be set inside the branch that makes cleanup unnecessary (i.e., the branch that navigates away).
 
-**Learned from:** `tenants/detail.html` `submitTenantWorkflowStart()` — `redirecting = true` set before `if (instance?.id)` check. A 200 response without an ID permanently locked the modal because `resetTenantWorkflowModal()` returned early on the `redirecting` guard.
+**Learned from a production incident:** your detail view's `submitWorkflowStart()` — `redirecting = true` was set before an `if (instance?.id)` check. A 200 response without an ID permanently locked the modal.
 
 ---
 
@@ -651,7 +649,7 @@ async function submitWorkflowStart() {
 
 **Consistency check:** When reviewing a file, grep for the loading-state function name. If some handlers use it and others don't, the ones without it are bugs.
 
-**Learned from:** `tenants/detail.html` `submitTenantWorkflowStart()` — no `setBtnLoading()` call despite `submitConfirmEvent()` and `submitBulkActions()` in the same file both using it. A slow network could result in duplicate workflow instances.
+**Learned from a production incident:** a submit handler had no `setBtnLoading()` call despite other handlers in the same file using it. A slow network could result in duplicate records.
 
 ---
 
@@ -680,9 +678,9 @@ The inverse is equally dangerous: CSS selectors targeting classes that no longer
 1. **HTML → CSS:** `grep -r "\.class-name" app/static/css/` — if zero results, the class is undefined
 2. **CSS → HTML:** `grep -r "class-name" app/templates/` — if zero results, the CSS selector is dead code
 
-**Prevention:** Use design system partials (e.g., `_filter_bar.html` macros) instead of writing raw HTML. Partials guarantee the HTML classes match the component CSS.
+**Prevention:** Use design system partials/macros instead of writing raw HTML. Partials guarantee the HTML classes match the component CSS.
 
-**Learned from:** `workflows.html` — used `class="filter-pill"` but no `.filter-pill` selector existed in any CSS file. The `workflow-manager.css` defined `.category-filters .wf-btn-ghost` styles, but the HTML never used `.wf-btn-ghost`. Both sides of the mismatch went undetected because neither caused an error — just unstyled buttons.
+**Learned from a production incident:** your list view template used a filter button class that had no CSS selector in any stylesheet. The feature manager styles defined styles for a different class that the HTML never used. Both sides of the mismatch went undetected because neither caused an error — just unstyled buttons.
 
 **Migration variant:** When migrating CSS class names from one framework to another (e.g., Bootstrap `d-none` to Tailwind `hidden`), the new class names must have CSS definitions available on the page. If the target framework is not installed (no CDN link, no build tool, no PostCSS config), you must add the class definitions manually to the design system. A class rename without a backing definition is the same as using a class that doesn't exist — it silently renders as nothing.
 
@@ -691,13 +689,13 @@ The inverse is equally dangerous: CSS selectors targeting classes that no longer
 <div class="hidden">...</div>  <!-- .hidden has no definition, div is visible -->
 
 <!-- GOOD - added .hidden definition to design system -->
-/* In app/static/css/design-system/index.css */
+/* In your design system CSS */
 .hidden { display: none !important; }
 ```
 
 **Check:** When renaming utility classes across templates, run `grep -r "\.new-class-name" app/static/css/` to confirm the new class has a CSS definition. If the framework that defines the class is not installed, add the definitions to the design system.
 
-**Learned from:** PR #155 — migrated 91 template files from Bootstrap `d-none`/`d-md-block` to Tailwind `hidden`/`md:block` classes, but Tailwind CSS was never installed. All renamed classes rendered as nothing.
+**Learned from a production incident:** migrated 91 template files from Bootstrap visibility classes to a different utility framework, but the target framework CSS was never installed. All renamed classes rendered as nothing.
 
 ---
 
@@ -735,8 +733,6 @@ When building a floating action bar for bulk operations (multi-select on cards/r
 
 **Mobile:** Switch to full-width with `left: 12px; right: 12px; transform: none;` and `border-radius: var(--ds-radius-xl)`.
 
-**Learned from:** `workflow-manager.css` — user explicitly required rounded edges on bulk action bar buttons, matching the filter pill style from `_filter-bar.css`.
-
 ---
 
 ## 24. Card Selection Checkboxes Need Progressive Disclosure
@@ -768,8 +764,6 @@ When adding multi-select to card grids, checkboxes must be hidden by default and
 
 **Required:** `position: relative` on the card element so the checkbox positions correctly. Cards need `data-*` attributes for JS to find them. The checkbox `change` event (not `click`) should drive selection state.
 
-**Learned from:** `workflows.html` Custom Workflows tab — checkbox hidden by default, shown on hover/selected/selecting-mode. Parent pane gets `custom-workflows-selecting` class when any card is selected.
-
 ---
 
 ## 25. Clear Container Content Safely — No innerHTML
@@ -784,16 +778,16 @@ grid.innerH‍TML = '';
 while (grid.firstChild) grid.removeChild(grid.firstChild);
 ```
 
-**Same rule for building content:** When constructing DOM from API data, use `document.createElement()` + `textContent` for text, not string concatenation into an HTML parser. User-controlled strings (template names, descriptions) must never enter a parser.
+**Same rule for building content:** When constructing DOM from API data, use `document.createElement()` + `textContent` for text, not string concatenation into an HTML parser. User-controlled strings (names, descriptions) must never enter a parser.
 
 ```javascript
 // GOOD - textContent auto-escapes, createElement is safe
 var h6 = document.createElement('h6');
-h6.textContent = tmpl.name;
+h6.textContent = item.name;
 card.appendChild(h6);
 ```
 
-**Learned from:** `workflows.html` `loadCustomWorkflows()` — original implementation assigned empty string to grid HTML to clear before re-rendering. Security hook caught this. Fixed to the safe DOM loop.
+**Learned from a production incident:** your list view's `loadItems()` — the original implementation assigned an empty string to grid HTML to clear before re-rendering. A security hook caught this. Fixed to the safe DOM loop.
 
 ---
 
@@ -802,7 +796,7 @@ card.appendChild(h6);
 Before editing a template or its CSS to fix a visual bug on a page, **verify which template the route actually renders.** Route names, template filenames, and URL paths often do not match. Editing the wrong template means your fix deploys but has zero effect on the page.
 
 ```python
-# landing.py
+# routes.py
 @router.get("/home")
 async def home_page(...):
     return templates.TemplateResponse("dashboard.html", ...)
@@ -816,7 +810,7 @@ async def home_page(...):
 3. Check what CSS/partials that template includes
 4. Only then edit the correct template and CSS files
 
-**Learned from:** `/home` renders `dashboard.html`, not `home.html`. Multiple sessions edited `home.html` CSS and cache busters while the actual page used `dashboard.html`. Fixes appeared deployed but had no visual effect.
+**Learned from a production incident:** `/home` rendered `dashboard.html`, not `home.html`. Multiple sessions edited the wrong template's CSS and cache busters while the actual page used a different template. Fixes appeared deployed but had no visual effect.
 
 ---
 
@@ -825,7 +819,7 @@ async def home_page(...):
 In a `@layer`-based cascade, unlayered CSS always beats layered CSS regardless of specificity or source order. A file loaded without `@layer` wrapping can silently override every design system token and component style.
 
 ```css
-/* BAD - cute.css loaded last, unlayered, overrides everything */
+/* BAD - your utility CSS file loaded last, unlayered, overrides everything */
 .btn { border-radius: 20px; }  /* beats @layer components .btn */
 
 /* GOOD - wrap in the correct layer or remove */
@@ -836,7 +830,7 @@ In a `@layer`-based cascade, unlayered CSS always beats layered CSS regardless o
 
 **Check:** When a design system token appears to be "ignored," check if an unlayered stylesheet is loaded after the layered ones. `grep -L '@layer' app/static/css/*.css` finds unlayered files.
 
-**Learned from:** `cute.css` (28 KB, unlayered, loaded last in `base.html`) was overriding the entire design system's buttons, cards, and typography. Removing it restored all design tokens.
+**Learned from a production incident:** your utility CSS file (unlayered, loaded last in your base template) was overriding the entire design system's buttons, cards, and typography. Removing it restored all design tokens.
 
 ---
 
@@ -850,9 +844,7 @@ grep -r "filename.css" app/templates/ app/static/css/
 grep -r "class-from-file" app/templates/ app/static/js/
 ```
 
-**Gotcha:** Cache-buster normalization across many files can miss individual templates (e.g., `buildings/list.html` was missed by an automated agent). Always do a manual verification pass after bulk changes.
-
-**Learned from:** CSS streamlining session — `buildings/list.html` cache-buster was missed by the normalization agent. Manual `grep` caught it.
+**Gotcha:** Cache-buster normalization across many files can miss individual templates. Always do a manual verification pass after bulk changes.
 
 ---
 
@@ -880,13 +872,13 @@ function showPanel() {
 
 **Check:** `grep -c 'style\.display' <file>` and `grep -c "classList.*'hidden'" <file>`. If both return non-zero counts, the file has mixed mechanisms. Pick one and migrate the other.
 
-**Learned from:** `calendar.js` — 21 `style.display` usages alongside 43 `classList` usages. PR #155 review caught 6 instances that should have been `classList` to match the file's dominant pattern.
+**Learned from a production incident:** your calendar component had dozens of `style.display` usages alongside an even larger number of `classList` usages in the same file. A code review caught multiple instances that should have been `classList` to match the file's dominant pattern.
 
 ---
 
 ## 30. Vue Apps With External DOM Elements Need Explicit Bridging
 
-When a Vue app mounts inside a container but header/toolbar elements live outside the mount point (e.g., page-level headers rendered by Jinja), the Vue app must bridge to those elements explicitly using `getElementById` + `addEventListener` in `mounted()`, plus `$watch` to sync reactive state back to the DOM.
+When a Vue app mounts inside a container but header/toolbar elements live outside the mount point (e.g., page-level headers rendered server-side), the Vue app must bridge to those elements explicitly using `getElementById` + `addEventListener` in `mounted()`, plus `$watch` to sync reactive state back to the DOM.
 
 ```javascript
 // BAD - header buttons outside #vue-app have no connection to Vue state
@@ -912,13 +904,13 @@ mounted() {
 - Use `$watch` for state-to-DOM sync (don't poll or use timers)
 - Keep external DOM manipulation in dedicated methods (`wireHeaderButtons`, `updateHeaderStatus`)
 
-**Learned from:** `TimelineListBuilder.js` — builder page header (workflow name, status badge, undo/redo, publish) lives outside the Vue mount point in `builder.html`. Required `wireHeaderButtons()` + two `$watch` hooks to keep header in sync with Vue state.
+**Learned from a production incident:** your builder component — the page header (title, status badge, undo/redo, publish button) lives outside the Vue mount point in your builder template. Required explicit DOM bridging + `$watch` hooks to keep the header in sync with Vue state.
 
 ---
 
 ## 31. Store Setters Must Normalize Legacy Data Formats
 
-When a store's `setTemplate()` or `loadData()` accepts data from an API or template injection, it must normalize legacy field formats to the current schema. Otherwise, components that depend on the new schema (e.g., `timing_config`) will render incorrectly because old data only has the legacy fields (e.g., `delay_days`).
+When a store's `setTemplate()` or `loadData()` accepts data from an API or template injection, it must normalize legacy field formats to the current schema. Otherwise, components that depend on the new schema will render incorrectly because old data only has the legacy fields.
 
 ```javascript
 // BAD - trusts incoming data shape, legacy steps break timeline grouping
@@ -944,29 +936,29 @@ setTemplate(template) {
 }
 ```
 
-**Learned from:** `store.js` `setTemplate()` — steps from "Use this template" had `delay_days` but no `timing_config`. The timeline grouped all steps at day 0 because the rendering logic only read `timing_config.offset_days`.
+**Learned from a production incident:** your state store's `setTemplate()` — steps loaded from older records had legacy timing fields but no current schema equivalent. The timeline grouped all steps at the default value because the rendering logic only read the new schema field.
 
 ---
 
-## 32. Jinja Template Attribute Names Must Match Model Columns
+## 32. Template Attribute Names Must Match Model Columns
 
-Jinja2 templates accessing model attributes (e.g., `member.is_primary`) render as falsy/empty when the attribute does not exist on the model, rather than raising an error. This means a wrong column name silently breaks conditional rendering.
+Server-rendered templates accessing model attributes (e.g., `member.is_primary`) silently render as falsy/empty when the attribute does not exist on the model, rather than raising an error. This means a wrong column name silently breaks conditional rendering.
 
 ```html
-<!-- ❌ BAD — is_primary doesn't exist on HouseholdMember; condition always false -->
-{% if member.is_primary %}
+<!-- BAD — wrong_column doesn't exist on your domain model; condition always false -->
+{% if member.wrong_column %}
 <i class="fas fa-star" title="Primary Contact"></i>
 {% endif %}
 
-<!-- ✅ GOOD — matches the actual column name -->
+<!-- GOOD — matches the actual column name -->
 {% if member.is_primary_contact %}
 <i class="fas fa-star" title="Primary Contact"></i>
 {% endif %}
 ```
 
-**Check:** When referencing model attributes in Jinja templates, verify the attribute name against the model class. Do not copy attribute names from other templates without checking.
+**Check:** When referencing model attributes in templates, verify the attribute name against the model class. Do not copy attribute names from other templates without checking.
 
-**Learned from:** `sync_service.py` / template audit — `is_primary` vs `is_primary_contact` mismatch silently broke primary contact badge rendering across multiple templates.
+**Learned from a production incident:** a model column name mismatch silently broke conditional badge rendering across multiple templates. The shorter alias name matched nothing in ORM filters at query execution time.
 
 ---
 
@@ -987,20 +979,18 @@ for (const evt of ["mousedown", "click", "keydown", "keypress", "keyup", "input"
 }
 ```
 
-**Learned from:** ToneGuard overlay.js — typing in shadow DOM inputs sent keystrokes to Slack's composer. Initial fix inside shadow root failed; had to move to host element.
-
 ---
 
 ## 34. Rich Text Editor Text Replacement Needs Multi-Tier Fallback
 
-`document.execCommand("insertText")` fails silently in modern rich text editors (Slack's Quill, Draft.js, ProseMirror). The command may return `true` but the editor's internal model is not updated, causing the original text to persist. Raw DOM manipulation (`removeChild` + `appendChild`) is worse — it desyncs the framework's model entirely.
+`document.execCommand("insertText")` fails silently in modern rich text editors (Quill, Draft.js, ProseMirror). The command may return `true` but the editor's internal model is not updated, causing the original text to persist. Raw DOM manipulation (`removeChild` + `appendChild`) is worse — it desyncs the framework's model entirely.
 
 ```javascript
 // BAD - execCommand fails silently in Quill, sends original text
 document.execCommand("selectAll", false, null);
 document.execCommand("insertText", false, newText);
 
-// BAD - raw DOM manipulation desyncs Quill's Delta model
+// BAD - raw DOM manipulation desyncs the editor's internal model
 while (el.firstChild) el.removeChild(el.firstChild);
 el.appendChild(document.createElement("p"));
 
@@ -1033,8 +1023,6 @@ if (normalize(el.innerText) !== normalize(text)) {
 
 **Key insight:** Always verify the replacement actually worked. `innerText` comparison must normalize whitespace because rich editors wrap lines in block elements that add newlines.
 
-**Learned from:** ToneGuard `content.js` — suggestion replacement silently failed on Slack's Quill editor, sending original text instead of the rewrite. Commit cb8b61e.
-
 ---
 
 ## 35. Shadow DOM Event Detection Must Use composedPath()
@@ -1064,8 +1052,6 @@ function isFromOverlay(e) {
   return false;
 }
 ```
-
-**Learned from:** ToneGuard `content.js` — capture-phase keydown listener intercepted Enter from Shadow DOM inputs because the composedPath guard was fragile. Commit cb8b61e.
 
 ---
 
@@ -1133,14 +1119,14 @@ Animations that run on page load, loop continuously, or animate layout propertie
 - [ ] DOM elements null-checked before use
 - [ ] Async catch handlers show user feedback (no empty catch)
 - [ ] elements object members null-checked before use
-- [ ] CSS `--ds-*` tokens verified to exist in `_variables.css`
+- [ ] CSS design system tokens verified to exist in your CSS variables file before use
 - [ ] File upload `accept` attr matches help text and backend validation
 - [ ] API fetches in overlays include auth credentials
 - [ ] Dependency availability checked before multi-step operations
 - [ ] JS files validated with `node --check` after editing object literals
 - [ ] Static asset `<script>`/`<link>` tags include `?v=` cache-busting param (grep ALL templates for the filename — one file may be loaded from multiple templates)
 - [ ] Vue `v-else`/`v-else-if` has an immediately adjacent `v-if` sibling
-- [ ] Service worker cache name bumped after asset changes
+- [ ] Service worker cache name bumped after asset changes (in your service worker)
 - [ ] Framework CDN uses production build (`.prod.js` or `.min.js`)
 - [ ] "Unexpected token" errors checked via Network tab before debugging JS
 - [ ] `<button>` variants include ALL 5 resets (`display:block`, `appearance:none`, `font:inherit`, `color:inherit`, `cursor:pointer`)
@@ -1154,15 +1140,23 @@ Animations that run on page load, loop continuously, or animate layout propertie
 - [ ] Container clearing uses `while (el.firstChild) el.removeChild(el.firstChild)` — never assign empty HTML strings; DOM construction uses `createElement` + `textContent`, not string concatenation into HTML parser
 - [ ] Service worker uses **network-first** strategy for CSS/JS (never cache-first for mutable assets)
 - [ ] Before any frontend fix, verified which template the route actually renders (`grep -r '"/url"' app/routes/` and read the handler)
-- [ ] New CSS files wrapped in the correct `@layer` (`design-system`, `components`, or `pages`); only Bootstrap and `mobile.css` should be unlayered
+- [ ] New CSS files wrapped in the correct `@layer` (e.g., `design-system`, `components`, or `pages`); only reset/base stylesheets should be unlayered
 - [ ] When migrating CSS class names between frameworks, confirmed the new classes have CSS definitions (framework installed OR definitions added to design system)
 - [ ] Visibility toggling uses ONE mechanism per file (`style.display` OR `classList.add/remove('hidden')`, not both); `grep -c` both patterns to verify
 - [ ] Vue apps with header/toolbar elements outside the mount point have explicit DOM bridging (`getElementById` + `$watch` in `mounted()`)
-- [ ] Store setters that accept external data normalize legacy field formats to the current schema (e.g., `delay_days` → `timing_config`)
-- [ ] Modules with multiple `addEventListener` calls use an `AbortController` + `{ signal }` option for bulk cleanup on teardown/reinit; call `controller.abort()` before re-attaching (ref: `email-compose-modal.js`)
-- [ ] Inline `<script>` blocks in Jinja templates that do NOT reference `{{ }}` variables are extracted to external `.js` files with `defer` for browser caching (ref: `base.html` → `app-init.js`, 1,779 lines extracted)
+- [ ] Store setters that accept external data normalize legacy field formats to the current schema
+- [ ] Modules with multiple `addEventListener` calls use an `AbortController` + `{ signal }` option for bulk cleanup on teardown/reinit; call `controller.abort()` before re-attaching
+- [ ] Inline `<script>` blocks in templates that do NOT reference template variables are extracted to external `.js` files with `defer` for browser caching
 - [ ] Dark mode overrides include explicit `color` for ALL text elements — never rely on light-mode inherited colors (invisible text on dark backgrounds)
 - [ ] Shadow DOM UIs attach `stopPropagation` on the HOST element (not inside shadow root) to isolate composed keyboard/mouse events from the host page
 - [ ] Keyboard event interceptors check for open autocomplete/mention dropdowns before suppressing keystrokes (scope dropdown selectors to the correct platform)
-- [ ] Platform-specific DOM selectors are guarded by a platform check (don't query Slack selectors on LinkedIn)
+- [ ] Platform-specific DOM selectors are guarded by a platform check (don't query one platform's selectors inside another)
 - [ ] Animations are functional (150-300ms, transforms/opacity only), not decorative; wrapped in `prefers-reduced-motion` media query; no `animation: infinite` on non-loading elements
+
+---
+
+## Guardrails
+
+- These patterns apply to any JavaScript UI with async operations, modals, or multi-step flows
+- When reviewing, flag violations but preserve existing functionality
+- Guard clauses and state flags are defensive — do not remove them to "simplify" code

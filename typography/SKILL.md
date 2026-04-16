@@ -7,6 +7,10 @@ description: >
   existing interfaces, flag violations and provide fixes. Trigger on: any HTML/CSS/React/Jinja
   artifact creation, "fix the typography", "make this look professional", "typography audit",
   web design, UI component work, or any task producing visible text for humans.
+license: MIT
+metadata:
+  author: summerela
+  version: "1.0.0"
 ---
 
 # Typography Skill
@@ -118,7 +122,13 @@ When generating any HTML/JSX with text, automatically fix:
 
 ---
 
+## Guardrails
+
+- These rules are permanent typographic standards, not stylistic opinions — apply them universally
+- When auditing, flag violations but do not change meaning or content
+- Enforcement applies only to visible text — do not alter code identifiers, variable names, or string literals that are not user-facing
+
 ## Next Steps
 
 - Use `/design-audit` for systematic visual review of existing interfaces
-- Use `/courierflow-ui-standards` for CourierFlow-specific design system compliance
+- If your project has a design system, check its typography tokens for consistency with these rules

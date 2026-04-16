@@ -1,6 +1,10 @@
 ---
-name: courierflow-startup-planner
+name: startup-planner
 description: Guided startup planning workshop — Kawasaki Conception stages (1-7) plus execution planning stages (8-12) with Business Model Canvas, market analysis, MVP/PRD, Go/NoGo decision, and pitch deck generation. Works for any product or startup idea. Triggers on "startup planning", "business model", "business plan", "mantra", "MATT", "Kawasaki", "MVP definition", "pitch deck", "Go/NoGo", or "market analysis".
+license: MIT
+metadata:
+  author: summerela
+  version: "1.0.0"
 ---
 
 # Startup Planning Workshop
@@ -391,4 +395,12 @@ Next stage: [X+1 name]
 
 ## After Every Session
 
-At the end of any session where this skill was used, always run the session learnings skill to capture new patterns, fixes, and examples discovered during the session.
+Capture key decisions and open questions before ending the session.
+
+---
+
+## Guardrails
+
+- This skill provides frameworks for thinking, not professional business, legal, or financial advice.
+- Validate market assumptions with real customer conversations, not just framework exercises.
+- Go/NoGo decisions should involve stakeholders beyond this planning session.

@@ -1,6 +1,10 @@
 ---
 name: shipping-workflow
 description: End-to-end code shipping pipeline — commit (conventional), push, create PR, run automated 10-step code review, fix issues, run CI, merge to main. Use when implementation is complete and the user wants to finalize work (e.g. "ship it", "done", "merge it", "push it", "deliver this") or when creating a PR and running full review-and-ship.
+license: MIT
+metadata:
+  author: summerela
+  version: "1.0.0"
 ---
 
 # Shipping Workflow
@@ -17,7 +21,7 @@ Automated ship-and-review pipeline: commit → push → PR → 10-step review �
 
 Before starting:
 
-1. **Tests pass** — Run project CI (e.g. `./scripts/quick_ci.sh`). If it fails, stop and fix first.
+1. **Tests pass** — Run your project's CI script (e.g., `npm test`, `make check`, `pytest`). If it fails, stop and fix first.
 2. **Feature branch** — If on `main`, create a branch: `git checkout -b fix/name` or `feat/name`.
 3. **GitHub CLI** — `gh` installed and authenticated.
 4. **CodeRabbit CLI** (optional) — `coderabbit --version`. Install: `curl -fsSL https://cli.coderabbit.ai/install.sh | sh`.
@@ -96,7 +100,7 @@ gh pr view <number> --json state --jq '.state'
   **Do not silently proceed to cleanup with an unmerged PR.** Wait for the user's decision.
 - **CLOSED** → Warn: PR was closed without merging. Ask if this was intentional.
 
-**Why this gate exists:** PR #286 was created, reviewed, but never merged. The session ended, the worktree was cleaned up, and the fix was orphaned for days. This gate prevents that.
+**Why this gate exists:** A PR that was created and reviewed but never merged is the root failure mode this gate prevents. When a session ends with an unmerged PR, the worktree gets cleaned up and the fix is orphaned — sometimes for days. This gate forces an explicit decision before cleanup runs.
 
 ### Stage 5: Cleanup
 
@@ -134,3 +138,9 @@ Only run the pipeline after the user chooses "Ship it" (or equivalent).
 ## Project-Level Customization
 
 Per-repo settings live in project rules or in the reference. Customize: CI command, test/lint commands, defensive-pattern checklists (backend/frontend), deep-dive trigger patterns, base branch. See [reference.md](reference.md) for the checklist and examples (Python/FastAPI, Node/React).
+
+## Guardrails
+
+- Never force-push to main/master.
+- Do not merge without passing CI.
+- Confirm branch is up-to-date with base before merge.

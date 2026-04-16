@@ -2,6 +2,10 @@
 name: new-migration
 description: Create and validate Alembic database migrations with safety checks
 user-invocable: true
+license: MIT
+metadata:
+  author: summerela
+  version: "1.0.0"
 ---
 
 # Create New Migration
@@ -21,7 +25,7 @@ Example: `/new-migration add_phone_verified_column_to_users`
 ### Step 1: Generate Migration
 
 ```bash
-cd ~/claude_code/courierflow
+cd <project-root>
 alembic revision --autogenerate -m "<description>"
 ```
 
@@ -55,7 +59,7 @@ alembic downgrade -1
 alembic upgrade head
 
 # Verify schema matches models
-python -c "from app.models import *; print('Models OK')"
+python -c "from your_app.models import *; print('Models OK')"
 ```
 
 ### Step 4: Run Migration Reviewer
@@ -138,3 +142,9 @@ def downgrade():
 - [ ] Foreign keys are indexed
 - [ ] Tests pass after migration
 - [ ] Reviewed by migration-reviewer agent
+
+## Guardrails
+
+- Always create a backup or test on a branch database before running destructive migrations
+- Never add NOT NULL columns without a server_default on tables with existing data
+- Test migrations both up and down before committing

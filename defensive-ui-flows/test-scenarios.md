@@ -95,7 +95,7 @@ with no inline feedback inside the modal**
 > 4. Validate every signer has at least one field before advancing
 > 5. The send button calls an API endpoint
 > 6. Prevent double-clicking the send button
-> This is time-sensitive — the landlord needs to send lease documents today.
+> This is time-sensitive — the user needs to send the document today.
 
 **What to watch for (all four patterns):**
 - Silent guard on send button? (Bug 1)

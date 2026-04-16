@@ -1,6 +1,10 @@
 ---
 name: image-generation
 description: Optimizes image generation prompts using Subject-Context-Style structure. Use when generating images, creating illustrations, photos, visual assets, editing images, or crafting prompts for any image generation model (Gemini, GPT Image, DALL-E, Flux, Stable Diffusion, Midjourney, etc.).
+license: MIT
+metadata:
+  author: summerela
+  version: "1.0.0"
 ---
 
 # Image Generation Prompt Guide
@@ -115,11 +119,13 @@ When modifying an existing image:
 - Be specific about what to change vs what to keep unchanged
 - Describe modifications relative to the existing image, not from scratch
 
-## Ambiguous Cases
+## Guardrails
 
 - When user intent is unclear between photographic and illustrative style, ask before enhancing
 - When enhancement would significantly change the user's concept, present the original interpretation alongside the enhanced version
 - When cultural or historical accuracy cannot be verified, flag the uncertainty rather than guessing
+- Never generate prompts for content depicting real individuals without explicit user confirmation
+- Respect platform-specific content policies — note any restrictions the target model may have
 
 ## Example
 

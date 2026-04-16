@@ -1,6 +1,10 @@
 ---
 name: session-learnings
 description: Use proactively after committing significant work to capture session lessons — dispatches a background agent that writes MEMORY.md directly (auto-committed) and proposes updates to skills and CLAUDE.md
+license: MIT
+metadata:
+  author: summerela
+  version: "1.0.0"
 ---
 
 # Session Learnings
@@ -59,9 +63,17 @@ Task tool:
     to skills and project docs.
 
     ## Write Access
-    You have DIRECT WRITE ACCESS to the project memory repo:
-      MEMORY_DIR=~/.claude/projects/-Users-summerrae-courierflow/memory
+    You have DIRECT WRITE ACCESS to the project memory repo. Detect the project
+    memory directory dynamically from the current working directory:
+
+      # Derive the project hash from the working directory path
+      PROJECT_PATH=$(pwd)
+      PROJECT_HASH=$(echo "$PROJECT_PATH" | sed 's|/|-|g' | sed 's|^-||')
+      MEMORY_DIR=~/.claude/projects/$PROJECT_HASH/memory
       MEMORY_FILE=$MEMORY_DIR/MEMORY.md
+
+    If $MEMORY_DIR does not exist, fall back to checking ~/.claude/memory/ or
+    the project-local .claude/memory/ directory.
 
     For MEMORY.md updates: READ the file, EDIT it directly, then commit and push:
       cd $MEMORY_DIR && git add MEMORY.md && git commit -m "session-learnings: <summary>" && git push
@@ -100,12 +112,14 @@ Task tool:
     improvements. A single occurrence is noise; three occurrences is signal.
 
     ## Domain Mapping
-    Map changed files to skill domains:
-    - CSS/HTML/templates → defensive-ui-flows, project UI standards skill
-    - routes/*.py, services/*.py → defensive-backend-flows
-    - models/*.py, alembic/ → coding-best-practices
+    Map changed files to skill domains using your project's skill set:
+    - CSS/HTML/templates → your project's defensive UI skills, UI standards skill
+    - routes/*.py, services/*.py, controllers/ → your project's defensive backend skills
+    - models/*.py, migrations/ → coding-best-practices
     - tests/ → coding-best-practices (testing section)
     - .claude/skills/ → meta (skills changed directly)
+
+    Adapt file patterns to match your project's language and framework conventions.
 
     ## Available Skills
     Personal: ls ~/.claude/skills/
@@ -202,21 +216,28 @@ Check if the project has a `REVIEW.md`. If not, and the session established revi
 
 ## Example Session Context
 
-From a real session that built a bulk action bar:
+From a session that built a modal overlay component:
 
 ```
 SESSION CONTEXT:
-- User corrections: "The bulk options menu does not have rounded edges —
-  make sure it does" (user provided screenshot showing expected pill shape)
-- Bugs investigated: User reported "bulk select was removed from workflows
-  page" — systematic investigation showed feature NEVER existed in any
-  git version. CSS classes existed but were used by a different JS file.
+- User corrections: "The modal overlay does not have the correct backdrop
+  opacity — make sure it matches the design spec"
+- Bugs investigated: User reported "modal overlay was removed from the
+  settings page" — systematic investigation showed the feature NEVER
+  existed in any git version. CSS classes existed but were used by a
+  different JS file for a tooltip.
 - Patterns established: "Update the UI skills to make this the default
-  style" — bulk action bar with rounded edges is now standard.
-- Gotchas hit: Security hook blocked innerHTML=''. Fixed with
-  while(el.firstChild) el.removeChild(el.firstChild).
-- New components built: Floating bulk action bar (.wf-bulk-bar),
-  card selection with progressive disclosure (.card-select-checkbox)
+  style" — modal overlay with consistent backdrop is now standard.
+- Gotchas hit: Security hook blocked innerHTML assignment. Fixed by
+  using DOM API (createElement, textContent, append) instead.
+- New components built: Modal overlay (.modal-overlay),
+  focus trap with progressive disclosure (.modal-focus-trap)
 ```
 
-This produced 3 skill updates (defensive-ui-flows patterns #23-25) and 1 project skill update (courierflow-ui-standards bulk action bar section).
+This produced skill updates to the project's defensive UI flows and UI standards skill (modal overlay section).
+
+## Guardrails
+
+- **Memory entries must be useful in future sessions** — ephemeral task details (what file you edited, which specific line you fixed) belong in todos, not memory. Memory entries should encode reusable rules, recurring patterns, and durable conventions.
+- **Verify memory entries against current code state before acting on them** — a stale memory entry describing a pattern that was later refactored or deleted is worse than no entry. When a session starts, treat memory as a starting hypothesis, not ground truth.
+- **Do not save project-specific file paths or implementation details that will go stale** — absolute paths, function names, and line numbers change. Memory entries should name the principle or pattern, not the specific location. Link to files by relative path if needed, never by absolute path.
