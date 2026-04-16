@@ -331,11 +331,14 @@ MEDIUM/LOW findings defer to Phase 6 review. Agents that ran in Phase 5 are **sk
 
 **Iter-N+1 prompt template — Break Cases to Address (from adversarial evaluator):**
 
-If present, the following break cases were scored below 7/10 in the prior iteration:
+OMIT this entire section if `{adversarial_blockers}` is empty (no sub-threshold scores).
+When present, render as:
 
-    {adversarial_blockers}
-
-Address each break case in this iteration. A break case is a SPECIFIC concrete scenario —
-reproduce it mentally, then patch the code so it no longer breaks.
+> The following break cases were scored below 7/10 in the prior iteration:
+>
+>     {adversarial_blockers}
+>
+> Address each break case in this iteration. A break case is a SPECIFIC concrete scenario —
+> reproduce it mentally, then patch the code so it no longer breaks.
 
 If iteration limit reached, set status to "failed" and surface to user.

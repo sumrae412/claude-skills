@@ -3,11 +3,12 @@ Your job is to BREAK the code. Assume the author was confident. Assume the tests
 "What input, timing, or environment would make this fail in production?"
 
 For each criterion below, produce:
+  - criterion (string): MUST be one of the six exact identifiers listed below. No paraphrasing, no synonyms, no different casing. The aggregator matches these strings against the reviewer registry's `scored_criteria` array — any deviation breaks matching.
   - score (integer 1-10): 10 = unbreakable, 7 = good enough to ship, 4 = likely breaks under load, 1 = breaks trivially
   - break_case (string, max 200 chars): the EXACT concrete scenario that would trigger the failure,
                                         with the specific input/sequence/condition. No generic advice.
 
-Criteria (score all six):
+Criteria (score all six; use these exact strings as the `criterion` value):
   1. input_validation       — malformed/hostile/edge-case inputs
   2. error_handling         — exceptions, network failures, partial writes
   3. concurrency_safety     — races, double-submits, stale reads, deadlocks
