@@ -81,9 +81,13 @@ For each source, extract as much as possible:
 - [ ] **Decision patterns** — ROI-focused? User-first? Risk-averse? Consensus-driven? Data-driven?
 - [ ] **Domain expertise** — What do they know deeply? What are they less familiar with?
 - [ ] **Tech comfort** — Power user / competent / casual / reluctant?
-- [ ] **Known frustrations** — Pain points they've expressed publicly
+- [ ] **Known frustrations** — Pain points they've expressed publicly. **Count sources**: note how many sources mention each frustration (e.g., "slow tools — 4/6 sources")
+- [ ] **Anti-priorities** — What they explicitly do NOT care about or dismiss
 - [ ] **Values** — Non-negotiables, principles they return to repeatedly
 - [ ] **Blind spots** — Topics they rarely address or seem less informed about
+- [ ] **Stress triggers** — Situations that create tension or frustration for them
+- [ ] **Stress reactions** — How they behave under pressure (more formal? withdrawn? escalating? blunt?)
+- [ ] **Speech patterns** — Characteristic phrases, framing patterns, recurring language (e.g., "at the end of the day...", "the data shows...")
 
 ---
 
@@ -131,8 +135,23 @@ After gathering data, synthesize into this structure:
 ### Tech Comfort
 [Power user / competent / casual / reluctant]
 
-### Known Frustrations
-[Pain points they've expressed publicly]
+### Known Frustrations (Evidence-Counted)
+- [Frustration] (mentioned in X/Y sources)
+- [Frustration] (mentioned in X/Y sources)
+- [Frustration with 1 source = LOW CONFIDENCE]
+
+### Anti-Priorities ("Don't Care About")
+[What this person explicitly does NOT value, dismisses, or deprioritizes.
+Features in this bucket should not appear as findings in reviews.]
+
+### Stress Triggers & Reactions
+- **Triggers**: [Situations that create tension — e.g., being asked to repeat themselves, lack of data, scope creep]
+- **Reactions**: [How they behave under pressure — e.g., becomes more formal, withdraws, escalates, gets blunt]
+
+### Speech Patterns
+- Characteristic phrases: [e.g., "at the end of the day...", "show me the data"]
+- Framing patterns: [how they structure arguments — leads with data? stories? analogies?]
+- Example quotes from sources: ["direct quote 1", "direct quote 2"]
 
 ### Decision Pattern
 [How they evaluate — ROI-focused? User-first? Risk-averse? Data-driven? Gut-feel?]
@@ -156,9 +175,18 @@ Primary: When [situation], I want to [motivation], so I can [expected outcome].
 [Links to public materials used to build this persona]
 
 ### Confidence Assessment
-- Strong areas: [where we have rich source data]
-- Thin areas: [where we're extrapolating]
-- Unknown: [aspects we couldn't find data on]
+**Overall confidence**: [High / Medium / Low]
+
+| Source Count | Confidence | Implication |
+|---|---|---|
+| 1-2 sources | Low | Exploratory — flag heavily, validate everything |
+| 3-5 sources | Medium | Directional — useful but verify key conclusions |
+| 6+ sources | High | Production — confident enough to act on |
+
+- **Total sources used**: [N]
+- **Strong areas**: [aspects backed by 3+ sources]
+- **Thin areas**: [aspects based on 1-2 sources — flag as LOW CONFIDENCE in sessions]
+- **Unknown**: [aspects we couldn't find data on]
 ```
 
 ---

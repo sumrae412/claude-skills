@@ -234,9 +234,12 @@ tied to their known priorities]
 [Terminology, flows, or concepts that don't match this person's mental
 model — include specific examples]
 
-### What's Missing
-[Features, information, or capabilities the persona would expect to
-exist — ranked by importance to this persona]
+### What's Missing (Scored)
+Ranked using Priority Score = Frequency × Severity × Solvability (each 1-5).
+
+| Gap | Frequency | Severity | Solvability | Priority Score | Notes |
+|-----|-----------|----------|-------------|----------------|-------|
+| [missing feature/info] | [how often persona would hit this] | [how much it hurts] | [how feasible to fix] | [F×S×S] | [context] |
 
 ### Priority Issues (Opportunity Scored)
 Ranked using Opportunity Score = Importance + (Importance - Satisfaction).
@@ -255,6 +258,16 @@ preserving — these are useful for the real conversation]
 - **Moderate conclusions:** [backed by limited data]
 - **Speculative:** [areas where Claude extrapolated beyond sources]
 - **Validate with real person:** [specific questions to ask]
+
+### Session Quality Self-Assessment
+
+| Dimension | Score (0-1) | Notes |
+|-----------|-------------|-------|
+| **Persona Fidelity** | [0.0-1.0] | How well did this session reflect the real person vs. a generic reviewer? |
+| **Actionability** | [0.0-1.0] | How concrete and implementable are the findings? |
+| **Coverage** | [0.0-1.0] | What percentage of the product/topic was reviewed? |
+
+Scoring guide: 0.8-1.0 = Excellent, 0.6-0.8 = Good, below 0.6 = Needs improvement.
 
 ### Recommended Next Steps
 [3-5 concrete actions to take before the real conversation]

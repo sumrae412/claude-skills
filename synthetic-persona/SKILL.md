@@ -197,3 +197,63 @@ Saved to: docs/persona-reviews/[filename]
 - **Load a persona**: Read both the card and prompt from memory
 - **Update a persona**: Re-run Stage 1 with new sources, update memory files
 - **Delete a persona**: Remove memory files and MEMORY.md entries
+
+---
+
+## Multi-Persona Features
+
+When you have 2+ saved personas, these additional capabilities become available.
+
+### Comparison Matrix
+
+Generate a side-by-side comparison of all saved personas across key attributes:
+
+```
+## Persona Comparison Matrix
+
+| Attribute          | [Name 1]           | [Name 2]           | [Name 3]           |
+|--------------------|---------------------|---------------------|---------------------|
+| Primary goal       | [from priorities]   | [from priorities]   | [from priorities]   |
+| Key pain point     | [top frustration]   | [top frustration]   | [top frustration]   |
+| Communication      | [style]             | [style]             | [style]             |
+| Tech comfort       | [level]             | [level]             | [level]             |
+| Decision pattern   | [approach]          | [approach]          | [approach]          |
+| JTBD               | [primary job]       | [primary job]       | [primary job]       |
+| Anti-priorities    | [don't care about]  | [don't care about]  | [don't care about]  |
+| Stress triggers    | [triggers]          | [triggers]          | [triggers]          |
+| Confidence         | [High/Med/Low]      | [High/Med/Low]      | [High/Med/Low]      |
+```
+
+Use this to choose which persona to deploy for a specific review, or to identify where personas agree vs. diverge.
+
+### Feature Decision Framework
+
+Run a specific feature, design, or decision through multiple personas to get a verdict. This is a structured variant of Mode A that works across personas rather than one persona on the whole product.
+
+**Process:**
+1. Define the feature/decision to evaluate
+2. For each saved persona, assess:
+   - **Reaction**: How would they feel about this? (Excited / Neutral / Negative)
+   - **Reasoning**: Why, based on their known priorities and JTBD?
+   - **Blockers**: Does this conflict with their anti-priorities or frustrations?
+   - **Impact**: High / Medium / Low for this persona
+
+**Output format:**
+```
+## Feature Decision: [Feature Name]
+
+| Dimension     | [Name 1]                | [Name 2]                | [Name 3]                |
+|---------------|--------------------------|--------------------------|--------------------------|
+| Reaction      | [Excited/Neutral/Negative] | [Excited/Neutral/Negative] | [Excited/Neutral/Negative] |
+| Reasoning     | [why, from their persona] | [why, from their persona] | [why, from their persona] |
+| Blockers      | [conflicts with anti-priorities?] | [conflicts?] | [conflicts?] |
+| Impact        | [High/Med/Low]           | [High/Med/Low]           | [High/Med/Low]           |
+
+### Verdict
+[Ship / Hold / Rethink] — [rationale based on persona consensus or divergence]
+
+### Key Insight
+[What the cross-persona analysis reveals that a single-persona review wouldn't]
+```
+
+This helps prioritize features by asking: "Who does this serve, who doesn't care, and who does it actively hurt?"
