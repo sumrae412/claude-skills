@@ -2,6 +2,10 @@
 
 Unified orchestrator for all feature development. Supersedes brainstorming, writing-plans, executing-plans, test-driven-development, plancraft, and feature-dev.
 
+## Installation model
+
+This skill (and all its siblings in `claude-skills`) is installed via symlink, not copy. `claude_flow/install.sh` creates `~/.claude/skills` → `<claude-skills-repo>/` so edits to any skill file here are live immediately across every Claude session on this machine — no reinstall step between edits. If you need an isolated snapshot (e.g. for a publish step), clone this repo fresh; do not overwrite the symlink. See MEMORY `symlink_single_source_of_truth.md`.
+
 ## Phases
 
 ```

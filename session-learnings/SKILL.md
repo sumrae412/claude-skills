@@ -340,6 +340,27 @@ For each approved skill/CLAUDE.md proposal:
 
 **`projects/` gitignore + new memory files:** Memory files under `~/.claude/projects/<slug>/memory/` are covered by `projects/` in `~/.claude/.gitignore`. New memory entries must be added with `git add -f`. Bare `git add .` from the memory dir fails silently with "paths ignored" and does NOT stage the new file. Pre-existing tracked memory files update normally; only NEW files hit the ignore gate. The background agent must use `git add -f <file>` when creating new topic-slug memory files.
 
+## Reusable Conventions
+
+**Test-script resolver pattern:** When a session surfaces a test that broke because a hardcoded skill-internal script path moved (e.g. after consolidating skills into a single-source repo), propose the `_resolve_script(name)` helper. It tries the runtime location first (where the installed/symlinked skill lives), then a sibling-checkout fallback. Expose both `SCRIPT` (the file) and `SCRIPTS_DIR` (its parent, needed for `sys.path.insert` before `import <module>`):
+
+```python
+def _resolve_script(name):
+    for p in (
+        Path.home() / ".claude" / "skills" / "<skill-name>" / "scripts" / name,
+        Path(__file__).parents[N] / "<skills-repo>" / "<skill-name>" / "scripts" / name,
+    ):
+        if p.exists():
+            return p
+    raise RuntimeError(f"{name} not found; install <skills-repo> via <skill-repo>/install.sh")
+
+
+SCRIPT = _resolve_script("my_script.py")
+SCRIPTS_DIR = SCRIPT.parent
+```
+
+See MEMORY `resolve_script_helper_pattern.md`.
+
 ## Red Flags
 
 | Thought | Reality |
