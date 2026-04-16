@@ -319,6 +319,16 @@ Done!
 - Dispatch fix subagent with specific instructions
 - Don't try to fix manually (context pollution)
 
+**If subagent reports a file missing that you verified exists:**
+- Treat it as a stale workspace view, not ground truth. Subagents occasionally have cached/partial views of the filesystem or a failed `find`.
+- Re-dispatch with the **absolute path** and an alternative read command (`"use cat via Bash"` or `"use the Read tool with this absolute path"`).
+- Do not accept "not found" without verifying via a second method.
+
+**If a subagent completion notification arrives after you already processed its output:**
+- Background subagent completions are delivered as what looks like a new user turn. If you already handled the synchronous result, the notification is stale.
+- Recognize by: agent ID matches a subagent you already handled, or content duplicates a prior completion report.
+- Do not treat as a new prompt or re-run the task.
+
 **Self-debugging integration:** When a subagent's work fails verification (test or lint), use the retry loop defined in `claude-flow` Phase 5. Emit failure events, match against the failure catalog, and escalate thinking budget per attempt. Do not silently retry without emitting events.
 
 ## Inter-Task Verification Gate
