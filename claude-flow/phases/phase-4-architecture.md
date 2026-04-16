@@ -11,6 +11,26 @@ The **executor (Sonnet)** drafts two competing architecture options. It has full
 
 ---
 
+## Step 0a: Pre-Flight Namespace Collision Check
+
+Before drafting architecture or naming new files/enums, run cheap collision checks against the existing codebase. Mid-implementation reroutes (which subagents handle silently) waste plan-debate effort and force reviewer churn.
+
+```bash
+# Enum namespace (Postgres enums share one namespace per schema)
+rg -n "class \w+Status\(.*Enum" app/models/ src/models/ 2>/dev/null
+
+# Route file path collision (flat-file vs package-directory)
+ls -la app/routes/<proposed_path>* 2>/dev/null
+ls -la src/routes/<proposed_path>* 2>/dev/null
+
+# Service / model name reuse
+rg -n "^class <ProposedName>" app/ src/ 2>/dev/null
+```
+
+If a name already exists, prefix the new one with the feature/domain (`Concierge*`, `Workflow*`, `Document*`). If a flat-file collides with the proposed package directory (or vice versa), choose a different layout. Both checks run in seconds; mid-implementation reroutes cost plan-debate effort.
+
+PR #342 hit both: `ConversationStatus` already taken by `chat.py` → renamed to `ConciergeConversationStatus`; `app/routes/webhooks/twilio_inbound.py` collided with existing `app/routes/webhooks.py` flat-file → moved to `app/routes/twilio_inbound.py`. Both reroutes were silent and only caught by code review when WHERE-clause + scope bugs surfaced together.
+
 ## Step 0: Cross-Document Consistency Check
 
 Before drafting architectures, check if existing plans or PRPs contain decisions that constrain this feature:

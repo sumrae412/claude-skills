@@ -114,6 +114,31 @@ When a sync bug left orphaned records (e.g., HouseholdMembers without Clients), 
 3. Handles both email and name-based matching for records without email
 4. Guards against empty-string normalized fields — use `NULLIF` or Python guard (`value if value else None`) to store `NULL` instead of `''` for normalized fields derived from optional source columns
 
+## JSON Column Mutation
+
+SQLAlchemy doesn't track in-place mutation of `Column(JSON)` / `Column(JSONB)` fields. `.append()`, `.update()`, and nested dict assignment are silent no-ops at flush time. Two safe options:
+
+```python
+# Option 1: reassign wholesale (works on any model)
+conversation.messages = list(conversation.messages or []) + [entry]
+
+# Option 2: opt into mutation tracking on the column
+from sqlalchemy.ext.mutable import MutableList
+messages: Mapped[list] = mapped_column(MutableList.as_mutable(JSON), default=list)
+```
+
+Audit: `rg -n '\.\w+\.append\(' app/services/` — every hit on a JSON-typed column needs reassignment. See MEMORY `gotcha_sqlalchemy_json_column_in_place_mutation.md`.
+
+## Enum Naming Discipline
+
+Postgres enum types share a single namespace. Multiple `ConversationStatus` enums silently shadow each other in migrations. Pre-flight grep before naming a new enum:
+
+```bash
+rg -n "class \w+Status\(.*Enum" app/models/
+```
+
+If the unprefixed name already exists, prefix the new one with the feature/domain (`Concierge*`, `Workflow*`, `Document*`). PR #342 hit this — plan said `ConversationStatus`, `app/models/chat.py` already had it; renamed to `ConciergeConversationStatus`.
+
 ## Performance Patterns
 
 1. **Cursor-based pagination** — No offset pagination in new code

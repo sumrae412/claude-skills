@@ -49,6 +49,21 @@ Required pattern for every inbound Twilio handler:
 3. **TwiML escaping:** Run `xml.sax.saxutils.escape(reply)` before interpolating into `<Message>{reply}</Message>`. User-controlled text may contain `<`, `&`, or quotes. See memory/gotcha_twiml_xml_escape_user_content.md.
 4. **Rate limit:** Async handlers need per-key `asyncio.Lock`; document the per-process scope. See memory/pattern_asyncio_lock_per_key_rate_limit.md.
 
+## Twilio Phone Lookups
+
+Twilio sends inbound numbers in E.164 (`+15551234567`); `Client.phone` stores freeform (`(555) 123-4567`). They will never match. Always normalize to digits AND scope by landlord — same phone can legitimately appear under multiple landlords.
+
+```python
+import re
+digits = re.sub(r"\D", "", from_number)
+stmt = select(Client).where(
+    Client.phone_normalized == digits,
+    Client.user_id == landlord_id,  # mandatory
+)
+```
+
+Resolve the landlord by the inbound `to_number` (the Twilio webhook's `To` field) via `User.twilio_phone_number == to_number` before scoping the tenant query. Multi-landlord routing requires this.
+
 ## AsyncAnthropic in Webhook Paths
 
 Any `AsyncAnthropic.messages.create(...)` call inside a webhook path must:

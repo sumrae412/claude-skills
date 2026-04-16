@@ -38,6 +38,27 @@ Services raise domain exceptions; routes convert to HTTP responses:
 - **Services use `db.flush()`** — When they need data visible within same transaction
 - **Never use `db.commit()` in services**
 
+### Webhook Handlers Own Their Session
+
+The "no `db.commit()` in services" rule applies to request-scoped services where the FastAPI route handler owns the transaction. Webhook handlers (Twilio inbound, DocuSeal callbacks, Stripe webhooks) ARE the route handler — they own their own session via `async with AsyncSessionLocal()` and MUST `await db.commit()` (and `db.rollback()` on error) before returning. The service called from inside still uses `flush()` only.
+
+```python
+@router.post("/webhooks/twilio/inbound")
+async def twilio_inbound(request: Request, ...):
+    if not _validate_twilio_signature(request, params):
+        return Response(status_code=403)
+    async with AsyncSessionLocal() as db:
+        try:
+            reply = await get_concierge_service(db).process_inbound_sms(...)
+            await db.commit()
+        except Exception:
+            await db.rollback()
+            raise
+    return Response(content=twiml(reply), media_type="application/xml")
+```
+
+See MEMORY `pattern_webhook_handler_owns_session.md`.
+
 ## Route-to-Template Gotcha
 
 Route URLs, handler names, and template filenames do not always match:

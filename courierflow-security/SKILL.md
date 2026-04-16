@@ -58,6 +58,21 @@ Every webhook signature validator (grep: `rg -n 'RequestValidator|webhook.*valid
 
 Known sites to audit: `app/routes/twilio_inbound.py`, `app/routes/sms.py`, any future `/webhooks/*`.
 
+## State Machine Integrity
+
+Any model with a status enum (e.g. `ACTIVE / PENDING_APPROVAL / CLOSED`) must transition `status` on every exit action. Clearing only the trigger field (e.g. `pending_action = None`) leaves the state machine permanently stuck — the conversation/workflow/document stays in PENDING_* forever, re-firing approval prompts on every subsequent event.
+
+```python
+# BAD — status stuck in PENDING_APPROVAL
+conversation.pending_action = None
+
+# GOOD — explicit transition on exit
+conversation.pending_action = None
+conversation.status = ConciergeConversationStatus.ACTIVE
+```
+
+Audit: for each status enum, list every exit code path. Verify each both clears the trigger AND reassigns `status`. PR #342 hit this — `approve_action`/`reject_action` cleared `pending_action` but never transitioned `status`, leaving conversations permanently in `PENDING_APPROVAL`.
+
 ## Secrets Management
 
 - Never commit secrets to git

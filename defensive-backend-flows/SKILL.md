@@ -1015,6 +1015,102 @@ async def check_rate_limit(key: str) -> bool:
 
 See MEMORY `pattern_asyncio_lock_per_key_rate_limit.md`.
 
+### 37. Test Constraints, Not Just Return Shapes
+
+When a unit test mocks `db.execute`, the mock returns the same object regardless of WHERE clause. A query with the wrong column or missing scope passes its test silently. Three independent bugs in the concierge feature (wrong `Client.phone` instead of `phone_normalized`, missing landlord scoping, missing INSERT path) all passed unit tests because mocks short-circuited the WHERE clause.
+
+**Defenses:**
+- After `mock_db.execute.assert_awaited_once()`, inspect the bound `Select` statement and assert key columns/scopes appear in the compiled SQL
+- OR write at least one integration test per query exercising real DB matching
+
+**Audit:** Search test files for `mock_db.execute.return_value` with no companion assertion on call args.
+
+**Learned from:** PR #342 — `identify_tenant`, `process_inbound_sms` landlord scoping, `ConciergeConversation` insert path. See MEMORY `policy_test_query_constraints.md`.
+
+### 38. JSON Column Updates Must Reassign, Not Mutate In Place
+
+SQLAlchemy doesn't track in-place mutation of `Column(JSON)` / `Column(JSONB)` fields. `model.field.append(x)` is a no-op at flush time. Either reassign wholesale or opt into mutation tracking.
+
+```python
+# BAD: silent no-op at flush
+conversation.messages.append(entry)
+
+# GOOD option 1: reassign
+conversation.messages = list(conversation.messages or []) + [entry]
+
+# GOOD option 2: opt into mutation tracking on the column
+from sqlalchemy.ext.mutable import MutableList
+messages: Mapped[list] = mapped_column(MutableList.as_mutable(JSON), default=list)
+```
+
+**Audit:** `rg -n '\.\w+\.append\(|\.metadata\[.*\] =' app/services/` — every hit on a JSON column needs reassignment.
+
+**Learned from:** PR #342, `concierge_service._append_message`. See MEMORY `gotcha_sqlalchemy_json_column_in_place_mutation.md`.
+
+### 39. Phone Lookups Use `phone_normalized`, Not `phone`
+
+`Client.phone` is freeform; `Client.phone_normalized` is digits-only and indexed at `ix_clients_phone_normalized`. External systems (Twilio E.164, CSV imports) deliver canonical formats that never equal the freeform value. Always also scope by `user_id` — same phone can appear under different landlords.
+
+```python
+import re
+digits = re.sub(r"\D", "", from_number)
+stmt = select(Client).where(
+    Client.phone_normalized == digits,
+    Client.user_id == landlord_id,
+)
+```
+
+**Audit:** `rg -n 'Client\.phone\s*==' app/`.
+
+**Learned from:** PR #342 — `identify_tenant` queried `Client.phone` against E.164. Tests passed; real tenants matched zero rows.
+
+### 40. State-Machine Transitions on Every Exit Path
+
+When a model has a status enum, every action that exits a state must explicitly transition `status`. Clearing only the trigger field (e.g. `pending_action = None`) leaves the state machine permanently stuck.
+
+```python
+# BAD — status stays PENDING_APPROVAL forever
+conversation.pending_action = None
+
+# GOOD — explicit transition on exit
+conversation.pending_action = None
+conversation.status = ConciergeConversationStatus.ACTIVE
+```
+
+**Check:** For each status value, list every exit action. Verify each sets `status` explicitly.
+
+**Learned from:** PR #342 — `approve_action`/`reject_action` cleared `pending_action` but never transitioned `status`.
+
+### 41. Webhook Signature Validators Must Fail Closed in Production
+
+A webhook validator that returns `True` when the auth token is unset is convenient for dev but turns the endpoint into an unauthenticated public POST in prod. Branch on `settings.is_production` (or `settings.environment == "production"`) and hard-fail.
+
+```python
+def _validate_signature(request, body):
+    if not settings.twilio_auth_token:
+        if settings.is_production:
+            return False
+        return True  # dev convenience only
+    return RequestValidator(settings.twilio_auth_token).validate(...)
+```
+
+**Audit:** `rg -n 'auth_token|webhook.*validate|signature' app/routes/` — every webhook validator's no-token branch must hard-fail in prod.
+
+**Learned from:** PR #342 — `_validate_twilio_signature` failed open. `app/routes/sms.py` has the same pattern (sweep candidate).
+
+### 42. Escape User/AI Content in String-Templated Markup
+
+TwiML, RSS, SOAP, sitemaps — any string-templated XML — never f-string AI-generated or user-derived content into the response body. Wrap with `xml.sax.saxutils.escape`. Same family as HTML escaping for `innerHTML`.
+
+```python
+from xml.sax.saxutils import escape as xml_escape
+twiml = f'<Response><Message>{xml_escape(reply)}</Message></Response>'
+```
+
+A reply text of `</Message><Redirect>https://attacker.example.com/twiml</Redirect><Message>` would otherwise hijack the entire Twilio conversation.
+
+**Learned from:** PR #342 — `app/routes/twilio_inbound.py` line 167.
+
 ## Quick Reference
 
 | Rule | Symptom | Check |
@@ -1050,6 +1146,12 @@ See MEMORY `pattern_asyncio_lock_per_key_rate_limit.md`.
 | No BaseHTTPMiddleware | "Session is closed" / greenlet errors | `grep -r "BaseHTTPMiddleware" app/` returns zero? |
 | Audit ALL Pattern Instances | Same bug reported twice, different file | Codebase-wide grep for pattern before shipping fix? |
 | `scalar_one_or_none` on non-unique col | `MultipleResultsFound` crash months later | WHERE clause backed by unique DB constraint? If no, use `scalars().first()` |
+| Test Constraints, Not Shapes | "Tests passed but feature is broken" | Mocked `db.execute` test asserts the bound `Select`? OR has companion integration test? |
+| JSON Column Reassignment | `model.field.append(x)` doesn't persist | JSON-column writes reassign (`field = list(field) + [x]`) or use `MutableList`? |
+| Phone Lookup Normalization | Twilio E.164 never matches stored phone | Lookup uses `Client.phone_normalized` AND `Client.user_id` scope? |
+| State-Machine Exit Transitions | Status stuck in `PENDING_*` forever | Every exit action sets `status` explicitly, not just clears trigger field? |
+| Fail-Closed Webhook Validators | Public unauthenticated POST in prod | No-token branch hard-fails when `settings.is_production`? |
+| Escape XML/TwiML Substitutions | TwiML hijack via tag injection | AI/user content wrapped in `xml_escape()` before f-string? |
 
 ## Red Flags — STOP and Fix
 
@@ -1091,6 +1193,12 @@ See MEMORY `pattern_asyncio_lock_per_key_rate_limit.md`.
 - `from starlette.middleware.base import BaseHTTPMiddleware` — use pure ASGI middleware instead
 - A pattern-class bug fix that only fixes the reported instance without grepping for all occurrences
 - `scalar_one_or_none()` on a query filtering by a non-unique column (email, phone, name) — use `scalars().first()` instead
+- Mocked `db.execute.return_value` in a test with no companion assertion on the bound `Select` — WHERE clause is invisible
+- `.append()` / nested-dict mutation on a `Column(JSON)` value — silent no-op without reassignment or `MutableList`
+- `Client.phone == ...` lookup against external (E.164) input — use `Client.phone_normalized` and scope by `user_id`
+- Status-enum-driven model where an exit action only clears a trigger field and never reassigns `status`
+- Webhook signature validator with a no-token branch that returns `True` unconditionally — must hard-fail in production
+- F-string interpolation of AI/user content into XML/TwiML/RSS without `xml.sax.saxutils.escape`
 
 ## When NOT to Use
 
