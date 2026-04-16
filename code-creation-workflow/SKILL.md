@@ -82,23 +82,53 @@ The advisor is called at these specific decision points, each with a focused que
 
 The advisor returns guidance — the executor acts on it.
 
-### Extended Thinking for Critical Checkpoints
+### Extended Thinking: Budget Keywords
 
-The Architecture Critique (Phase 4) and Plan Stress-Test (Phase 4b) checkpoints benefit from deeper reasoning. These are the highest-stakes decision points — a missed blind spot here propagates through all of implementation.
+Claude Code supports three thinking-budget keywords that scale reasoning depth. Use them in advisor prompts AND executor subagent prompts to match reasoning depth to task complexity — under-thinking costs quality, over-thinking wastes tokens.
 
-**When to request extended thinking in advisor prompts:**
+| Keyword | Budget | Use For |
+|---------|--------|---------|
+| `think about this...` | ~4K tokens | Quick lookups, simple edits, straightforward subagent tasks |
+| `think harder about...` | ~10K tokens | Multi-step logic, debugging, integration analysis, exploration |
+| `ultrathink about...` | ~32K tokens | Architecture decisions, security review, plan stress-tests, complex refactors |
 
-| Checkpoint | Extended Thinking? | Rationale |
-|------------|-------------------|-----------|
-| Exploration Review (Phase 2) | No | Broad gap-finding, not deep analysis |
-| **Architecture Critique (Phase 4)** | **Yes** | Trade-off analysis requires weighing multiple competing factors |
-| **Plan Stress-Test (Phase 4b)** | **Yes** | Finding logic errors and edge cases in a multi-step plan requires systematic reasoning |
-| Mid-Implementation (Phase 5) | No | Focused decision, speed matters more |
-| Strategic Pre-Review (Phase 6) | No | High-level check, not deep reasoning |
+**Phase-to-keyword mapping:**
 
-**How to request it:** Add to the advisor prompt: "Think through this step by step before responding. Consider each constraint independently, then look for interactions between constraints."
+| Checkpoint / Phase | Keyword | Rationale |
+|--------------------|---------|-----------|
+| Phase 2 Exploration (executor) | `think harder about` | Multi-file tracing + pattern recognition |
+| Phase 2 Exploration Review (advisor) | `think about` | Broad gap-finding, not deep analysis |
+| **Phase 4 Architecture Critique (advisor)** | **`ultrathink about`** | Trade-off analysis across competing factors |
+| **Phase 4b Plan Stress-Test (advisor)** | **`ultrathink about`** | Finding logic errors + edge cases in multi-step plan |
+| Phase 5 Implementation (executor, simple step) | `think about` | Pattern is known, speed wins |
+| Phase 5 Implementation (executor, complex step) | `think harder about` | Concurrency, complex business logic, integration |
+| Phase 5 Mid-Implementation (advisor) | `think about` | Focused decision, speed matters |
+| Phase 6 Strategic Pre-Review (advisor) | `think harder about` | Architectural fit check |
+| Phase 6 Security Reviewer | `ultrathink about` | Auth, data exposure, injection — high-stakes |
+| Phase 6 Light reviewers (haiku) | `think about` | Pattern-matching, deterministic checks |
 
-This is a prompt-level technique — not the API-level `thinking` parameter (which applies to direct API calls). In Claude Code, the advisor subagent benefits from explicit "think step by step" instructions for complex architectural reasoning.
+**How to apply:** Prefix the advisor/subagent prompt with the keyword. Examples:
+
+```
+# Phase 4 Architecture Critique (advisor)
+"ultrathink about these two architecture options against the exploration findings.
+What are the blind spots? Which trade-offs am I underweighting?"
+
+# Phase 2 Exploration (executor subagent)
+"think harder about how authentication middleware is implemented here —
+trace the flow, find patterns, identify key files."
+
+# Phase 5 simple step (executor subagent)
+"think about adding the new column to the User model following models/client.py."
+
+# Phase 6 security review
+"ultrathink about this auth flow — JWT vulnerabilities, token storage,
+session fixation, CSRF."
+```
+
+**Rule:** Default to the phase mapping above. Escalate one level when the specific step is more complex than typical. **Never under-think Phase 4 architecture or Phase 6 security reviews** — these are the decision points where blind spots propagate furthest.
+
+**Interaction with step-by-step prompting:** The thinking keywords are the primary mechanism. For advisors specifically, you may also append "consider each constraint independently, then look for interactions" — this shapes WHAT Claude thinks about within the allocated budget.
 
 ---
 
