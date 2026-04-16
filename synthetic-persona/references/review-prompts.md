@@ -62,6 +62,14 @@ For each stage:
 
 Use the journey map when reviewing a product end-to-end. Use the product map when reviewing specific feature areas. The persona reacts at each journey stage, not just feature-by-feature.
 
+**Moments of Truth**: In addition to stages, identify these critical inflection points where the persona's perception crystallizes. The persona should react to each specifically:
+
+- **First-time use** — The "aha moment" (or lack thereof). Does the product click immediately?
+- **First success** — Value realization. When does the persona feel "this was worth it"?
+- **First problem** — Support experience. How does the product handle failure?
+- **Commitment decision** — Upgrade, renewal, or deeper investment. What justifies it?
+- **Advocacy moment** — Would this persona recommend the product? Why or why not?
+
 ### Two-Pass Enrichment Prompt
 
 After building the product map, refine the persona:
@@ -241,13 +249,19 @@ Ranked using Priority Score = Frequency × Severity × Solvability (each 1-5).
 |-----|-----------|----------|-------------|----------------|-------|
 | [missing feature/info] | [how often persona would hit this] | [how much it hurts] | [how feasible to fix] | [F×S×S] | [context] |
 
-### Priority Issues (Opportunity Scored)
+### Priority Issues (Opportunity Scored + Severity)
 Ranked using Opportunity Score = Importance + (Importance - Satisfaction).
 Scores > 10 indicate high-priority gaps.
 
-| Issue | Importance (1-10) | Satisfaction (1-10) | Opp. Score | Action |
-|-------|-------------------|---------------------|------------|--------|
-| [gap] | [how much persona cares] | [how well product addresses it] | [calculated] | [fix/add/improve] |
+**Severity classification:**
+- **Critical**: Prevents the persona from accomplishing their JTBD
+- **Major**: Significant friction or confusion that degrades the experience
+- **Minor**: Causes hesitation but persona recovers
+- **Cosmetic**: Noticed but not problematic
+
+| Issue | Severity | Importance (1-10) | Satisfaction (1-10) | Opp. Score | Action |
+|-------|----------|-------------------|---------------------|------------|--------|
+| [gap] | [C/Ma/Mi/Co] | [how much persona cares] | [how well product addresses it] | [calculated] | [fix/add/improve] |
 
 ### Key Reactions
 [Notable quotes or reactions from the interactive session worth

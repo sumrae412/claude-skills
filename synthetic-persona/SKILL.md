@@ -197,6 +197,11 @@ Saved to: docs/persona-reviews/[filename]
 - **Load a persona**: Read both the card and prompt from memory
 - **Update a persona**: Re-run Stage 1 with new sources, update memory files
 - **Delete a persona**: Remove memory files and MEMORY.md entries
+- **Refresh triggers**: Update a persona when any of these occur:
+  - The person publishes significant new content (book, major talk, role change)
+  - 6+ months since the persona was built (priorities and frustrations shift)
+  - Review findings didn't match the real person's actual reaction (calibration needed)
+  - The product has changed substantially since the last product scan
 
 ---
 
