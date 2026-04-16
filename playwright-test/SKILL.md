@@ -1,3 +1,8 @@
+---
+name: playwright-test
+description: User-story-driven end-to-end testing using Playwright MCP tools. Fills forms, clicks buttons, captures screenshots, and reports pass/fail against acceptance criteria. Use when running interactive browser tests, validating user stories against a live site, or verifying UI flows end-to-end. Pairs with the `user-stories` skill for story generation.
+---
+
 # Playwright Test Skill - Interactive E2E Testing from User Stories
 
 Execute comprehensive end-to-end tests using Playwright MCP tools, driven by user stories. This skill provides interactive browser testing with visual verification, screenshots, and detailed reporting.
