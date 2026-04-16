@@ -126,6 +126,16 @@ if jq -e '.runner == "codex-cli"' <<<"$reviewer" >/dev/null; then
 fi
 ```
 
+### Scored-Reviewer Aggregation
+
+After each reviewer completes, if its registry entry has `score_threshold`, run:
+
+    python scripts/aggregate_reviewer_findings.py --reviewer <output.json> --registry reviewer-registry.json
+
+The script converts every sub-threshold score into a blocking finding of the form
+`Adversarial score {N}/10 on {criterion}: {break_case}`. Aggregated findings join
+the main findings[] pool and flow to Phase 5 retries on any blocking verdict.
+
 ---
 
 ## Batched Lightweight Review (Tiers 3-4 Combined)

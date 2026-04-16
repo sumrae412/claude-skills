@@ -322,4 +322,20 @@ MEDIUM/LOW findings defer to Phase 6 review. Agents that ran in Phase 5 are **sk
 - **iter 2:** same executor, escalated thinking budget — **preceded by the Step 3a explain-before-fix gate**
 - **iter 3:** cross-model investigator (Sonnet executor → Opus, or vice versa); see `memory/cross_model_retry_ladder.md`
 
+**Retry inputs (iter N+1 receives all applicable):**
+- Test failures from iter N (pytest output, failing assertions)
+- Lint failures from iter N (ruff/eslint output)
+- **Adversarial blockers from Phase 6** (sub-threshold scored findings) — formatted as
+  `{criterion}: {break_case}` entries in the iter-N+1 prompt under a "Break cases to address" section
+- Explain-before-fix analysis from iter-1 (if transitioning to iter-2)
+
+**Iter-N+1 prompt template — Break Cases to Address (from adversarial evaluator):**
+
+If present, the following break cases were scored below 7/10 in the prior iteration:
+
+    {adversarial_blockers}
+
+Address each break case in this iteration. A break case is a SPECIFIC concrete scenario —
+reproduce it mentally, then patch the code so it no longer breaks.
+
 If iteration limit reached, set status to "failed" and surface to user.
