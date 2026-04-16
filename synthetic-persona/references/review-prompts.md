@@ -77,6 +77,19 @@ Update your persona lens to be product-specific.
 
 ## Stage 3: Interactive Session Prompts
 
+### Mode-Specific Persona Weighting
+
+Each mode should emphasize different dimensions of the persona card. Don't load everything equally — lean on what matters most for the task:
+
+| Mode | Primary Dimensions | Secondary Dimensions |
+|------|-------------------|---------------------|
+| A. Product Review | Domain expertise, known frustrations, tech comfort, JTBD | Communication style, priorities |
+| B. Brainstorming | Decision patterns, values, priorities | Communication style, domain expertise |
+| C. Rehearsal | Communication style, personality frameworks, known priorities | Decision patterns, frustrations |
+| D. Dynamics | Personality frameworks, stress behavior, growth edges | Communication style, values |
+
+When adopting the persona, front-load the primary dimensions in your responses. Reference secondary dimensions when they're relevant but don't force them.
+
 ### Mode A: Product Review (Synthetic Client)
 
 **Opening prompt:**
@@ -166,6 +179,38 @@ For the topic of [specific topic/conversation]:
 ```
 
 **Requires:** User's own personality profile (from personal-coach skill or provided directly).
+
+---
+
+## Stage 3.5: Devil's Advocate Review (Quality Gate)
+
+Before writing the Stage 4 report, run a critical self-review to catch sycophancy, blind spots, and unwarranted speculation. This sharpens the findings.
+
+**Devil's advocate prompt:**
+```
+Step back from the [Name] persona. As Claude, critically review the
+session you just conducted:
+
+1. Where were you being too generous or agreeable? Synthetic personas
+   tend toward sycophancy — identify moments where the real [Name]
+   would have been harsher or more skeptical.
+
+2. What did you miss? Given [Name]'s known priorities and frustrations,
+   what aspects of the product should you have challenged but didn't?
+
+3. Where were you speculating without flagging it? Identify any reactions
+   that weren't grounded in the source material.
+
+4. What would the REAL [Name] push back on that you let slide?
+
+5. Rate your overall persona fidelity: How well did this session reflect
+   the actual person vs. a generic reviewer? What was authentic, what
+   was filler?
+
+Revise your key findings based on this review before writing the report.
+```
+
+Run this BEFORE Stage 4. Incorporate the corrections into the findings report.
 
 ---
 

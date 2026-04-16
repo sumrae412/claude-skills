@@ -122,7 +122,7 @@ Next stage: Stage 3 — Interactive Session
 - **C. Rehearsal** — Practice pitching or presenting to [Name]
 - **D. Dynamics Analysis** — Analyze how YOU and [Name] interact (requires your personality profile)
 
-See `references/review-prompts.md` for mode-specific prompt templates.
+See `references/review-prompts.md` for mode-specific prompt templates and the **persona weighting table** — each mode emphasizes different persona dimensions (e.g., Product Review leans on domain expertise and JTBD; Rehearsal leans on communication style and personality frameworks).
 
 ### Mode A: Product Review (Synthetic Client)
 
@@ -162,7 +162,7 @@ Analyze the interpersonal dynamic between the user and [Name]:
 
 **Process:**
 
-1. Review everything from the Stage 3 session
+1. **Devil's advocate review** — Before writing the report, run the critical self-review prompt (see Stage 3.5 in `references/review-prompts.md`). This catches sycophancy, blind spots, and unwarranted speculation. Revise findings based on this review.
 2. Organize into the report template (see `references/review-prompts.md`)
 3. **Score priority issues** — For each gap or issue, calculate Opportunity Score: `Importance + (Importance - Satisfaction)`. Scores > 10 = high-priority. This uses the JTBD from Stage 1 to ground importance ratings.
 4. Assess confidence for each finding — strong, moderate, or speculative
