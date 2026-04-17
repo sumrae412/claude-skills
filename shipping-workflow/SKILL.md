@@ -94,7 +94,11 @@ Run the **10-step review process** on the PR. Prefer running this in the backgro
 
 #### CR rate-limit fallback
 
-If CodeRabbit returns `"Rate limit exceeded, please try after N minutes"`, don't wait blindly and don't ship blind. Run a targeted local grep for the anti-pattern classes CR typically flags, then decide:
+If CodeRabbit returns `"Rate limit exceeded, please try after N minutes"`, don't wait blindly and don't ship blind.
+
+**Before running the grep fallback:** Check `~/.coderabbit/reviews/<hash>/*/reviews/*/*.json` — if the first (partial) run produced any cached findings, parse them for the full list (`fileName`, `startLine`, `severity`, `title`, `comment`). More reliable than grep for markdown-only PRs. See [reference.md](reference.md) § "CR rate-limit fallback: JSON cache".
+
+Then run a targeted local grep for the anti-pattern classes CR typically flags, then decide:
 
 ```bash
 # 1. Silent catches (the #1 CR-flag class)

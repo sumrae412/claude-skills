@@ -260,6 +260,17 @@ Task tool:
         option numbering (finishing options 1-4), delegation targets
         (which skill handles which option).
 
+    8c. **Description/body drift (skill frontmatter):** When a skill's
+        `description:` was tightened or shortened this session, grep the
+        skill's SKILL.md body for use cases, modes, or numeric claims that
+        the new description no longer covers. Flag: (a) body-documented
+        modes dropped from description, (b) hard-coded counts in description
+        ("27-item", "37 patterns") that don't match the body's actual count,
+        (c) trigger phrases removed from description that still appear in
+        body examples. PR #22 shipped two of these (synthetic-persona lost
+        "brainstorm"; production-readiness-check claimed 27 items when body
+        listed ~39).
+
     ## Policy Detection (REQUIRED when 3+ files changed for the same reason)
     9. **Cross-cutting policy:** If the same rule/correction was applied to
        3 or more files, this is a policy decision. Propose a memory entry

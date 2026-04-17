@@ -163,6 +163,18 @@ Generated with [AI Agent]
 
 ---
 
+## CR rate-limit fallback: JSON cache
+
+When CodeRabbit returns `"Rate limit exceeded"` on a retry, findings from the first (partial) run are cached locally as JSON — one file per finding:
+
+```bash
+ls ~/.coderabbit/reviews/<hash>/*/reviews/*/*.json
+```
+
+Each JSON has `fileName`, `startLine`, `severity`, `title`, `comment`. Parse with a short Python snippet to recover the full finding list when the CLI's streamed tail was truncated. More reliable than the grep fallback for markdown-only / skill PRs where the anti-pattern greps don't apply. Use in that order: JSON cache (if present) → grep fallback (code PRs) → wait.
+
+---
+
 ## False Positive Filters
 
 Do **not** flag:

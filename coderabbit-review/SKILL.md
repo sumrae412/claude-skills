@@ -51,6 +51,15 @@ Where `<type>` from `$ARGUMENTS` or context:
 
 Add `--base <branch>` if specified or if reviewing a feature branch against main.
 
+## When the CLI output is truncated or rate-limited
+
+CodeRabbit caches each finding as JSON at `~/.coderabbit/reviews/<hash>/*/reviews/*/*.json` (fields: `fileName`, `startLine`, `severity`, `title`, `comment`). If the streamed output was truncated (mid-retry rate-limit, scrollback loss), parse the cache directly rather than re-running:
+
+```bash
+ls ~/.coderabbit/reviews/*/*/reviews/*/*.json | head -5
+python3 -c "import json,sys,glob; [print(json.load(open(f))) for f in glob.glob('$HOME/.coderabbit/reviews/*/*/reviews/*/*.json')]"
+```
+
 ## Present Results
 
 Group findings by severity and create a task list:
