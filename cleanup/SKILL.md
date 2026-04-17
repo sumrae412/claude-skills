@@ -1,6 +1,6 @@
 ---
 name: cleanup
-description: Branch/worktree teardown — ExitWorktree, session-learnings capture, config/skills repo sync. Use on "clean up", "I'm done", "wrap up", or after shipping. Also the finishing hand-off for /ship and claude-flow Phase 6B non-ship options.
+description: Branch/worktree teardown — ExitWorktree, session-learnings capture, config/skills repo sync. Use for "clean up", "I'm done", "wrap up", or after shipping. Also the finishing hand-off for /ship and /claude-flow Phase 6B non-ship options.
 ---
 
 # Cleanup
@@ -121,7 +121,7 @@ If invoked from `/claude-flow` Phase 6B, Option 1 should not appear (that path g
 
 ### Option 1: Merge and Push
 
-> If you got here from `/claude-flow`, redirect to `/ship` instead — it includes automated review.
+> **Defensive fallback** — Option 1 is suppressed for `/claude-flow` Phase 6B callers (see Step 3). If suppression fails and a `/claude-flow` caller reaches this option, redirect to `/ship` instead — it includes automated review.
 
 ```bash
 CURRENT_BRANCH=$(git branch --show-current)

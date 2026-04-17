@@ -1,6 +1,6 @@
 ---
 name: synthetic-persona
-description: Build a "synthetic person" from public data for product reviews, pitch rehearsals, or interpersonal analysis. Use on "what would [name] think", "build a persona", "rehearse a pitch", "role-play as".
+description: Build a "synthetic person" from public data for product reviews, brainstorming, pitch rehearsals, or interpersonal analysis. Use for "what would [name] think", "build a persona", "rehearse a pitch", "role-play as".
 ---
 
 # Synthetic Persona — Public-Data Persona Builder

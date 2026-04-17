@@ -14,7 +14,7 @@ Apply these patterns when writing or reviewing UI code to prevent silent failure
 ## How to Use
 
 1. Scan the **Checklist** below before committing any UI change — it's the 1-line index of every pattern.
-2. For BAD/GOOD examples, failure-mode rationale, and code, load **references/patterns.md** (37 numbered patterns).
+2. For BAD/GOOD examples, failure-mode rationale, and code, load **references/patterns.md**.
 3. Apply the **Auto-Update Rule** when a new UI bug surfaces.
 
 ## Auto-Update Rule

@@ -428,7 +428,7 @@ Combine with per-domain caching (independent TTLs) so a cache miss in one domain
 
 **Learned from:** `counts_service.py` — unified counts endpoint serves 7 domains; each independently cached and independently error-isolated.
 
-### 14. Never Compare Datetimes as Strings
+### 14a. Never Compare Datetimes as Strings
 
 String comparison of ISO timestamps breaks with timezone offsets, variable-length fractional seconds, and `Z` vs `+00:00` differences. Always parse to `datetime` objects and compare with timezone-aware values.
 

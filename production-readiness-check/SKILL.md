@@ -1,6 +1,6 @@
 ---
 name: production-readiness-check
-description: Pre-ship 27-item readiness check (SECURITY / DATABASE / DEPLOYMENT / CODE). Runs as claude-flow Phase 6 reviewer or standalone via `/production-readiness`. Advisory — reports findings, user decides.
+description: Pre-ship readiness check across SECURITY / DATABASE / DEPLOYMENT / CODE. Runs as claude-flow Phase 6 reviewer or standalone via `/production-readiness`. Advisory — reports findings, user decides.
 user-invocable: true
 ---
 

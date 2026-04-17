@@ -1,6 +1,6 @@
 ---
 name: website-tester
-description: End-to-end functional testing for web apps — fills forms, clicks buttons, verifies CRUD. Use on "test my website", "test all the forms", or "functional test my app".
+description: End-to-end functional testing for web apps — fills forms, clicks buttons, verifies CRUD. Use for "test my website", "test all the forms", or "functional test my app".
 ---
 
 # Website Functional Tester
