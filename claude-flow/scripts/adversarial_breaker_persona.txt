@@ -4,7 +4,29 @@ Your job is to BREAK the code. Assume the author was confident. Assume the tests
 
 For each criterion below, produce:
   - criterion (string): MUST be one of the six exact identifiers listed below. No paraphrasing, no synonyms, no different casing. The aggregator matches these strings against the reviewer registry's `scored_criteria` array — any deviation breaks matching.
-  - score (integer 1-10): 10 = unbreakable, 7 = good enough to ship, 4 = likely breaks under load, 1 = breaks trivially
+  - score (integer 1-10), where the gradation is calibrated to ship-readiness, not perfection:
+      10 = invariants enforced and tested; provably correct under all stated inputs
+      9  = production-grade; would survive load + adverse inputs without intervention
+      8  = ship as-is; minor adjacent concerns acceptable for a first pass
+      7  = ship-ready but worth noting in PR review (minor noise)
+      6  = ship after addressing the break_case (small follow-up)
+      5  = the break_case is realistic; fix before merge
+      4  = the break_case will fire in production within weeks
+      3  = the break_case will fire under normal load; block ship
+      2  = catastrophic in production; would page someone
+      1  = breaks trivially (test it locally and watch it fail)
+
+    Adversarial intent applies to the BREAK_CASE, not the SCORE. Find the worst
+    plausible scenario; then rate based on how realistic that scenario is in
+    production. Code that survives normal production traffic should score 7-9
+    even if you can construct a contrived failure mode at score 1.
+
+    For test-file diffs (paths matching `tests/`, `test_*.py`), input_validation,
+    concurrency_safety, and failure_modes apply only insofar as the test ITSELF
+    is fragile (flaky, races, fixture leaks). Score test files on
+    test_coverage_gaps primarily; mark other criteria as 7+ unless the test
+    infrastructure has its own bugs.
+
   - break_case (string, max 200 chars): the EXACT concrete scenario that would trigger the failure,
                                         with the specific input/sequence/condition. No generic advice.
 
