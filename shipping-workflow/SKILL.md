@@ -15,7 +15,7 @@ Automated ship-and-review pipeline: commit → push → PR → 10-step review �
 
 - Implementation is complete and tests pass.
 - User says "ship it", "done", "merge it", "push it", "deliver this", or similar.
-- You are finishing a branch and the user chooses "Ship it" (from /cleanup or code-creation-workflow Phase 6B).
+- You are finishing a branch and the user chooses "Ship it" (from /cleanup or claude-flow Phase 6B).
 
 ## Prerequisites
 
@@ -28,11 +28,11 @@ Before starting:
 
 ## Integration with Upstream Orchestrators
 
-**When invoked from code-creation-workflow Phase 6B:** The quality gate (6A) has already run — severity-classified review, deep-dives, CI retry. The shipping-workflow's own 10-step review provides a second pass. This is intentional redundancy for high-stakes changes.
+**When invoked from claude-flow Phase 6B:** The quality gate (6A) has already run — severity-classified review, deep-dives, CI retry. The shipping-workflow's own 10-step review provides a second pass. This is intentional redundancy for high-stakes changes.
 
-**Batch review context:** When invoked from code-creation-workflow Phase 6B, a Batch API review may have already run during Phase 6A. If batch results are available in the session, include them in the Stage 4 review context to avoid re-reviewing the same issues.
+**Batch review context:** When invoked from claude-flow Phase 6B, a Batch API review may have already run during Phase 6A. If batch results are available in the session, include them in the Stage 4 review context to avoid re-reviewing the same issues.
 
-**v2 subagent model:** In code-creation-workflow v2, shipping-workflow is invoked directly (not as a subagent) since it's the final pipeline stage. Context from Phase 6A findings is available in the session.
+**v2 subagent model:** In claude-flow v2, shipping-workflow is invoked directly (not as a subagent) since it's the final pipeline stage. Context from Phase 6A findings is available in the session.
 
 ## Step 0: Detect parallel-agent activity
 
