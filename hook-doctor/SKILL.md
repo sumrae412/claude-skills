@@ -32,6 +32,8 @@ cat ~/.claude/hooks/claude-flow/hook-registry.json 2>/dev/null || echo "(no hook
 
 List all hooks found, noting their source: **global** (`~/.claude/settings.json`), **project** (`.claude/hooks.json`), or **registry** (`~/.claude/hooks/claude-flow/hook-registry.json`).
 
+**Source of truth:** `hooks/hook-registry.json` in the claude-flow repo is canonical for all hook definitions. `settings.json` and `.claude/hooks.json` are materialized views of a subset of registry entries. The canonical way to generate project hooks is `./install.sh --generate-hooks` — note that this outputs config for the user to paste; it does NOT auto-modify `settings.json`.
+
 ### Step 2: Check Each Hook Script
 
 For each hook that references a command or script path, run:

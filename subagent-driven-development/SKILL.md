@@ -94,6 +94,19 @@ digraph process {
 - `./spec-reviewer-prompt.md` - Dispatch spec compliance reviewer subagent
 - `./code-quality-reviewer-prompt.md` - Dispatch code quality reviewer subagent
 
+## Pre-Dispatch: Memory Injection
+
+Before dispatching the FIRST implementer subagent in this plan, invoke the `memory-injection` skill to pull project-specific gotchas from MEMORY.md into every subsequent dispatch prompt:
+
+1. Collect the full list of files the plan will touch (across all tasks)
+2. Invoke memory-injection with that file list — it returns a `PROJECT GOTCHAS` block
+3. Cache the block; prepend it to every implementer prompt's PROJECT CONTEXT area
+4. Only re-invoke memory-injection if the file scope shifts materially mid-plan (e.g., new files added during review fixes)
+
+If no MEMORY.md exists or no domains match, memory-injection returns nothing — proceed without the block. This is a graceful no-op, not an error.
+
+**Why:** subagent-driven-development dispatches code-writing agents fresh per task. Without memory injection, project-specific gotchas captured in MEMORY.md (e.g., "is_primary_contact not is_primary", "eager-load discipline", "no alias methods") silently recur because each fresh subagent has no exposure to them. This is the single highest-leverage safety net for cross-session consistency.
+
 ## Pre-Dispatch: Per-Step Lookup Injection
 
 Before dispatching each implementer subagent, run the **step-scope** lookup

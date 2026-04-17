@@ -140,6 +140,10 @@ Tell the user:
 
 ---
 
+## MCP Integration
+
+The `claude-flow` MCP server (`mcp/claude-flow-server/server.py`) exposes `.claude/handoff.md` as a resource at `claude-flow://handoff`. Any MCP-speaking client can read the handoff without parsing the file manually — including fresh Claude Code sessions that have the server registered, external dashboards, or CI pipelines checking session state. The handoff written by this skill becomes programmatically queryable with no extra work.
+
 ## Next Steps
 
 - **Resuming in a new session?** Open `.claude/handoff.md` — it contains your phase, modified files, blockers, and next steps.

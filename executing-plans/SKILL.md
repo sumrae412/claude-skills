@@ -29,6 +29,19 @@ Load plan, review critically, execute tasks in batches, report for review betwee
    If a structural refactor is in flight (paths being moved/deleted), either ship the current plan faster, OR branch from the in-flight refactor's branch instead of main. See MEMORY `cross_repo_split_brain_salvage.md` for the salvage flow when this guidance was missed.
 5. If no concerns: Create TodoWrite and proceed
 
+### Step 1.5: Memory Injection (if dispatching subagents)
+
+If the plan calls for subagent dispatch (explicitly or implicitly via tasks that mention "dispatch" / "implementer" / parallel work), invoke the `memory-injection` skill before the first dispatch:
+
+1. Collect the file list the plan will touch
+2. Invoke memory-injection — returns a `PROJECT GOTCHAS` block
+3. Cache the block; prepend it to every subagent prompt's PROJECT CONTEXT area
+4. Re-invoke only if the file scope shifts materially mid-plan
+
+Graceful no-op if no MEMORY.md or no domain matches. Skip this step entirely if the plan is purely sequential controller work with no subagent dispatch.
+
+**Why:** without injection, known project gotchas recur silently in fresh subagent context. See `memory-injection` skill for the full rationale.
+
 ### Step 2: Execute Batch
 **Default: First 3 tasks**
 

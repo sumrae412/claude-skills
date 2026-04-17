@@ -174,15 +174,19 @@ PREVIOUSLY RULED OUT (from .claude/abandoned/):
 
 If matches were found in Step 4, Step 4b, or Step 5b, return the formatted injection block (all applicable sections: `PROJECT GOTCHAS`, `COMPILED KNOWLEDGE`, and `PREVIOUSLY RULED OUT`, omitting any section with no matches). If no section has matches, omit the entire block — do not return an empty section.
 
-## Usage Points
+## Used By
 
-This skill is invoked internally by `claude-flow` at four points:
+Callers that MUST invoke this skill before dispatching any subagent that will touch project code:
 
-| Phase | When | What's injected into |
-|-------|------|---------------------|
-| Phase 2 | After exploration completes, file list is known | All subsequent subagent prompts |
-| Phase 4 | Architect subagent dispatch | Each architect's prompt |
-| Phase 5 | Implementation subagent dispatch | Each implementation subagent's prompt |
-| Phase 6 | Review subagent dispatch | Each reviewer's prompt |
+| Caller | When | What's injected into |
+|--------|------|---------------------|
+| `claude-flow` Phase 2 | After exploration completes, file list is known | All subsequent subagent prompts |
+| `claude-flow` Phase 4 | Architect subagent dispatch | Each architect's prompt |
+| `claude-flow` Phase 5 | Implementation subagent dispatch | Each implementation subagent's prompt |
+| `claude-flow` Phase 6 | Review subagent dispatch | Each reviewer's prompt |
+| `subagent-driven-development` | Before dispatching implementer subagent for each task | Implementer prompt (PROJECT CONTEXT) |
+| `executing-plans` | Before dispatching any subagent referenced by the plan | Each dispatched subagent's prompt |
 
-The block returned at Phase 2 is reused for Phases 4–6 unless the file scope changes significantly (e.g., new files added during plan refinement).
+The block returned at Phase 2 is reused for subsequent phases unless the file scope changes significantly (e.g., new files added during plan refinement). Callers outside claude-flow (subagent-driven-development, executing-plans) should invoke once before the first dispatch and reuse the block across tasks in the same plan unless the file scope shifts.
+
+**Policy:** Any skill that dispatches code-writing subagents must call this skill first. Bypassing it breaks the cross-session gotcha safety net — mistakes captured in MEMORY.md recur because new subagents don't see them.
