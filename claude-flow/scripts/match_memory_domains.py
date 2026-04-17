@@ -2,9 +2,8 @@
 """
 Mechanical file-pattern → domain → gotcha-key matching for memory-injection.
 
-Replaces the LLM-prose Steps 3-4 in skills/memory-injection/SKILL.md with
-deterministic glob matching against the domain table in
-skills/claude-flow/references/memory-injection.md.
+Replaces the LLM-prose Steps 3-4 in claude-flow/references/memory-injection.md
+with deterministic glob matching against the domain table in the same file.
 
 Inputs:
 - A list of file paths (one per arg or via stdin)

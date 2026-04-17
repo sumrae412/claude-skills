@@ -1,15 +1,10 @@
----
-name: source-driven-development
-description: Grounds framework-specific code in official documentation. Use when building with any framework or library where correctness matters. Complements fetch-api-docs with a verify-and-cite discipline.
----
-
 # Source-Driven Development
 
 ## Overview
 
-Every framework-specific code decision must be backed by official documentation. Don't implement from memory — verify, cite, and let the user see your sources. Training data goes stale, APIs get deprecated, best practices evolve. This skill ensures code traces back to an authoritative source the user can check.
+Every framework-specific code decision must be backed by official documentation. Don't implement from memory — verify, cite, and let the user see your sources. Training data goes stale, APIs get deprecated, best practices evolve. This reference ensures code traces back to an authoritative source the user can check.
 
-**Relationship to `fetch-api-docs`:** That skill handles Context Hub tooling (`chub search/get`). This skill is the broader discipline — verify everything against official docs, whether via Context Hub, WebFetch, or WebSearch.
+**Relationship to `fetch-api-docs`:** That skill handles Context Hub tooling (`chub search/get`). This reference is the broader discipline — verify everything against official docs, whether via Context Hub, WebFetch, or WebSearch.
 
 ## When to Use
 

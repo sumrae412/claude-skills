@@ -1,6 +1,6 @@
 ---
 name: research
-description: Multi-agent research team with staggered waves and confidence-scored synthesis. Standalone skill for deep codebase + external research, also invoked by claude-flow Phase 2 for full/complex tasks.
+description: Multi-agent research team
 user-invocable: true
 ---
 
@@ -24,7 +24,7 @@ The orchestrator runs inline as the Sonnet executor (not a subagent). It coordin
 1. Read research request (from user directly or Phase 2 handoff)
 2. Classify task using smart-exploration's 9 categories
 3. Select 2-4 researchers from the pool based on task type
-4. Compose Wave 1 prompts (inject memory-injection gotchas if in workflow context)
+4. Compose Wave 1 prompts (inject gotchas per `claude-flow/references/memory-injection.md` if in workflow context)
 5. Dispatch Wave 1 researchers in parallel via Agent tool
 6. Read Wave 1 scratchpad entries, run gap detection
 7. If gaps found → dispatch Wave 2 gap-fillers (1-2 researchers)

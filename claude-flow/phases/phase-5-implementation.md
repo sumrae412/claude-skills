@@ -96,7 +96,7 @@ Break the plan into individual TodoWrite items. Mark each complete as you finish
 For each plan step:
 
 ```
-1. Write test FIRST (test-driven-development skill)
+1. Write test FIRST (see `claude-flow/references/test-driven-development.md`)
    - Test the expected behavior, not the implementation
    - Include edge cases identified in Phase 3
 
@@ -219,7 +219,7 @@ For each plan step:
 6. Inter-task verification gate (proactive, not just reactive):
    Run full test suite + lint + build check BEFORE starting next task.
    Catches cross-TASK regressions (step 3b catches within-FIX ones).
-   See subagent-driven-development skill for full gate protocol.
+   See `claude-flow/references/subagent-driven-development.md` for full gate protocol.
    Skip full suite for Task 1 or trivial tasks.
    If gate fails → fix regression → re-verify → then proceed.
 ```
@@ -279,7 +279,7 @@ Question: focused on the specific ambiguity.
 When the plan has 3+ steps with no dependencies between them:
 
 ```
-Use subagent-driven-development skill:
+Follow `claude-flow/references/subagent-driven-development.md`:
   → Dispatch parallel implementation agents with model: "sonnet"
   → Each follows the same TDD + defensive pattern
   → Merge results when all complete

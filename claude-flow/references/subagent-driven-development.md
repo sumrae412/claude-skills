@@ -1,8 +1,3 @@
----
-name: subagent-driven-development
-description: Use when executing implementation plans with independent tasks in the current session
----
-
 # Subagent-Driven Development
 
 Execute plan by dispatching fresh subagent per task, with two-stage review after each: spec compliance review first, then code quality review.
@@ -90,18 +85,19 @@ digraph process {
 
 ## Prompt Templates
 
-- `./implementer-prompt.md` - Dispatch implementer subagent
-- `./spec-reviewer-prompt.md` - Dispatch spec compliance reviewer subagent
-- `./code-quality-reviewer-prompt.md` - Dispatch code quality reviewer subagent
+Siblings in this directory:
+- `./implementer-prompt.md` — Dispatch implementer subagent
+- `./spec-reviewer-prompt.md` — Dispatch spec compliance reviewer subagent
+- `./code-quality-reviewer-prompt.md` — Dispatch code quality reviewer subagent
 
 ## Pre-Dispatch: Memory Injection
 
-Before dispatching the FIRST implementer subagent in this plan, invoke the `memory-injection` skill to pull project-specific gotchas from MEMORY.md into every subsequent dispatch prompt:
+Before dispatching the FIRST implementer subagent in this plan, apply the memory-injection pattern (see `memory-injection.md` in this directory) to pull project-specific gotchas from MEMORY.md into every subsequent dispatch prompt:
 
 1. Collect the full list of files the plan will touch (across all tasks)
-2. Invoke memory-injection with that file list — it returns a `PROJECT GOTCHAS` block
+2. Run memory-injection with that file list — it returns a `PROJECT GOTCHAS` block
 3. Cache the block; prepend it to every implementer prompt's PROJECT CONTEXT area
-4. Only re-invoke memory-injection if the file scope shifts materially mid-plan (e.g., new files added during review fixes)
+4. Only re-run memory-injection if the file scope shifts materially mid-plan (e.g., new files added during review fixes)
 
 If no MEMORY.md exists or no domains match, memory-injection returns nothing — proceed without the block. This is a graceful no-op, not an error.
 
@@ -411,7 +407,7 @@ Without inter-task verification, a subtle regression in Task 2 compounds silentl
 - **superpowers:finishing-a-development-branch** - Complete development after all tasks
 
 **Subagents should use:**
-- **superpowers:test-driven-development** - Subagents follow TDD for each task
+- `test-driven-development.md` (in this directory) — Subagents follow TDD for each task
 
 **Alternative workflow:**
 - **superpowers:executing-plans** - Use for parallel session instead of same-session execution

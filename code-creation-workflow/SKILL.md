@@ -756,7 +756,7 @@ Break the plan into individual TodoWrite items. Mark each complete as you finish
 For each plan step:
 
 ```
-1. Write test FIRST (test-driven-development skill)
+1. Write test FIRST (see `claude-flow/references/test-driven-development.md`)
    - Test the expected behavior, not the implementation
    - Include edge cases identified in Phase 3
 
@@ -829,7 +829,7 @@ Call the Opus advisor during implementation only when the executor hits a **genu
 When the plan has 3+ steps with no dependencies between them:
 
 ```
-Use subagent-driven-development skill:
+Follow `claude-flow/references/subagent-driven-development.md`:
   → Dispatch parallel implementation agents with model: "sonnet"
   → Each follows the same TDD + defensive pattern
   → Merge results when all complete
@@ -1172,8 +1172,8 @@ All advisor calls use `model: "opus"`, `subagent_type: "general-purpose"`.
 | defensive-backend-flows | Phase 0 (loaded), Phase 5 (applied) |
 | writing-plans | Phase 4 (plan creation) |
 | executing-plans | Phase 5 (plan execution) |
-| test-driven-development | Phase 5 (TDD per step) |
-| subagent-driven-development | Phase 5 (parallel independent steps) |
+| `claude-flow/references/test-driven-development.md` | Phase 5 (TDD per step) |
+| `claude-flow/references/subagent-driven-development.md` | Phase 5 (parallel independent steps) |
 | **coderabbit:review** | **Phase 6 Tier 1 (consolidated first-pass code review)** |
 | verification-before-completion | Phase 6 (pre-finish check) |
 | finishing-a-development-branch | Phase 6 (branch completion) |

@@ -11,7 +11,7 @@ Feed agents the right information at the right time. Context is the single bigge
 
 **Relationship to other skills:**
 - `smart-exploration` handles tactical codebase exploration (dispatch tuned subagents)
-- `memory-injection` handles injecting known gotchas into subagent prompts
+- `claude-flow/references/memory-injection.md` handles injecting known gotchas into subagent prompts
 - This skill is the strategic layer — how to structure what the agent sees across a whole session
 
 ## When to Use
@@ -127,7 +127,7 @@ PROJECT CONTEXT:
 - Key constraints: [list]
 - Files involved: [list with brief descriptions]
 - Related patterns: [pointer to an example file]
-- Known gotchas: [list — or use memory-injection skill]
+- Known gotchas: [list — or apply `claude-flow/references/memory-injection.md`]
 ```
 
 ### The Selective Include
@@ -244,4 +244,4 @@ After setting up context:
 - [ ] Agent output follows the patterns shown in the rules file
 - [ ] Agent references actual project files and APIs (not hallucinated ones)
 - [ ] Context is refreshed when switching between major tasks
-- [ ] Known gotchas are injected into subagent prompts (via `memory-injection`)
+- [ ] Known gotchas are injected into subagent prompts (via `claude-flow/references/memory-injection.md`)
