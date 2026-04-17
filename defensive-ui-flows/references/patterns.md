@@ -1172,3 +1172,40 @@ try { /* ... */ } finally {
 **Learned from:** ToneGuard PR #22 follow-up. CodeRabbit caught it — the verification-fail nack path left `pendingText` / `pendingEditor` set and the entry-guard blocked every future send until page reload.
 
 ---
+
+## 38. Generation-Counter Guard for Teardown-Sync / Setup-Async Watchers
+
+When a reactive watcher tears down synchronously and schedules setup via `$nextTick` / `setTimeout` / `requestAnimationFrame`, rapid key changes (A→B→C within one tick) let multiple setup callbacks flush against the final DOM — duplicating event listeners, timers, or subscriptions. The teardown array empties between changes, so subsequent teardowns become no-ops, but every scheduled setup still runs.
+
+```javascript
+// BAD — setup runs once per change, all against the latest DOM
+watch: {
+    'selectedStep.id'(newId) {
+        this._teardown();
+        if (newId) this.$nextTick(() => this._setup());
+    },
+}
+// A→B→C within one tick: teardown A, schedule setup B, teardown (empty),
+// schedule setup C. Flush fires setup B then setup C, both against C's DOM.
+
+// GOOD — generation counter; only the latest setup executes
+watch: {
+    'selectedStep.id'(newId) {
+        this._teardown();
+        if (!newId) return;
+        if (this._setupGen == null) this._setupGen = 0;
+        const gen = ++this._setupGen;
+        this.$nextTick(() => {
+            if (gen === this._setupGen) this._setup();
+        });
+    },
+}
+```
+
+**Applies to:** Vue watchers, Alpine `$watch`, React `useEffect` with async setup — any teardown-sync / setup-async pair whose reactive key can change multiple times per tick.
+
+**Don't:** rely on debounce (introduces trailing-edge delay and a new dependency). Don't guard with a boolean flag alone — the second setup can clobber the first after a reset.
+
+**Learned from:** CourierFlow `WorkflowBuilder.js` `selectedStep.id` watcher (PR #351). Rapid step clicks caused duplicate `input`/`keydown`/`blur` listeners on token autocomplete inputs; `handleInput` fired twice per keystroke.
+
+---
