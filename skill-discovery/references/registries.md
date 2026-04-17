@@ -63,6 +63,7 @@ Before recommending an external install:
 - [ ] Non-trivial star count OR known author (personal repos with 0 stars need stronger justification)
 - [ ] SKILL.md is readable and matches the user's actual intent (don't guess from the name)
 - [ ] No obvious red flags: shell-exec in frontmatter, undocumented network calls, vendored credentials
+- [ ] Org/repo/CLI names cited in this doc were verified via `gh api repos/<org>/<repo>` or `<cli> --help` at author time, not recalled from memory — silent hallucination of third-party names is the primary failure mode for registry references
 
 ## Deferred verification pattern
 
