@@ -1,6 +1,6 @@
 ---
 name: shipping-workflow
-description: End-to-end code shipping pipeline — commit (conventional), push, create PR, run automated 10-step code review, fix issues, run CI, merge to main. Use when implementation is complete and the user wants to finalize work (e.g. "ship it", "done", "merge it", "push it", "deliver this") or when creating a PR and running full review-and-ship.
+description: End-to-end ship pipeline — commit, push, PR, 10-step review, fix, CI, merge. Use on "ship it", "done", "merge it", "push it", "deliver this".
 license: MIT
 metadata:
   author: summerela

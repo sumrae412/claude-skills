@@ -1,6 +1,6 @@
 ---
 name: personal-coach
-description: AI-powered personal coaching using personality frameworks (Enneagram, MBTI, DISC, Human Design). Use for self-reflection, emotional regulation, interpersonal dynamics, and personalized advice. Triggers on "coach me", "personal coaching", "personality", "Enneagram", "MBTI", "interpersonal dynamics", or "emotional coaching".
+description: Personal coaching via personality frameworks (Enneagram, MBTI, DISC, Human Design) — self-reflection, emotional regulation, interpersonal dynamics. Use on "coach me".
 ---
 
 # Personal Coach — Personality-Driven AI Coaching

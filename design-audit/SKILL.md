@@ -1,11 +1,6 @@
 ---
 name: design-audit
-description: >
-  Systematic visual UI/UX audit producing phased, implementation-ready design plans. Purely
-  visual — does not touch functionality, logic, or features. Use when the user asks to audit
-  a UI, improve visual design, make an interface more polished, review design consistency,
-  fix visual hierarchy, or refine spacing/typography/color. Triggers: "design review", "make
-  it look better", "UI polish", "visual refinement", "design pass", "audit the design".
+description: Visual-only UI/UX audit producing phased, implementation-ready design plans. Does not touch logic. Use on "design review", "UI polish", "make it look better", "audit the design".
 license: MIT
 metadata:
   author: summerela

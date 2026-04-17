@@ -1,12 +1,6 @@
 ---
 name: vanity-engineering-review
-description: >
-  Reviews codebases, architectures, PRs, and plans for vanity engineering — code built for
-  ego rather than user value. Produces a structured assessment with V0-V3 severity scores,
-  a Requirement-to-Complexity Ratio, and kill criteria. Triggers: "is this over-engineered",
-  "complexity audit", "vanity check", "is this necessary", "simplify this", "tech debt review",
-  or when you detect unnecessary abstraction, premature optimization, or resume-driven choices.
-  Also usable as a Phase 6 reviewer in claude-flow.
+description: Review code, architecture, PRs, or plans for vanity engineering — ego-driven complexity. V0-V3 severity + Requirement-to-Complexity Ratio + kill criteria. Use on "is this over-engineered", "complexity audit", "simplify this". Usable as claude-flow Phase 6 reviewer.
 ---
 
 # Vanity Engineering Review

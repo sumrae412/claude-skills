@@ -1,6 +1,6 @@
 ---
 name: cleanup
-description: Use when you're done with a branch or worktree and need to clean up — handles git branch cleanup, worktree teardown via ExitWorktree, session-learnings capture, and config/skills repo sync. Trigger on "clean up", "I'm done", "tear down", "finish up", "wrap up this branch", "exit worktree", "done with this branch", or after shipping/merging work. Also use when code-creation-workflow Phase 6B selects Options 2-4 (non-ship finishing), or when /ship completes and worktree cleanup is needed. Replaces finishing-a-development-branch with smarter worktree integration.
+description: Branch/worktree teardown — ExitWorktree, session-learnings capture, config/skills repo sync. Use on "clean up", "I'm done", "wrap up", or after shipping. Also the finishing hand-off for /ship and claude-flow Phase 6B non-ship options.
 ---
 
 # Cleanup

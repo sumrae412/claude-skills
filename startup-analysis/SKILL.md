@@ -1,6 +1,6 @@
 ---
 name: startup-analysis
-description: Brutally honest startup idea validation using a 6-step prompt stack — CLEARFRAME mode (anti-sycophancy), Market Reality Evaluator (TAM/saturation/CAC/Go-NoGo), ICP definition (JTBD + Awareness Levels), value propositions, competitive wedge analysis, and GTM mode selector. Use whenever the user wants to validate a startup idea, assess market opportunity, analyze competitors, define positioning, pick a go-to-market strategy, or decide whether an idea is worth pursuing. Trigger on phrases like "validate this idea," "is this worth building," "market analysis," "competitive landscape," "find our wedge," "positioning," "ICP," "go-to-market," "should I pivot," "kill this idea," or any request for cold strategic feedback on a product/business concept. Prefer this skill over generic brainstorming when the user wants rigor, structure, and ratings instead of open-ended ideation.
+description: Brutally honest startup idea validation — 6-step CLEARFRAME stack (TAM, ICP, wedge, GTM, Go/NoGo). Use for "validate this idea", "is this worth building", competitive analysis, or cold strategic feedback on a business concept.
 ---
 
 # Startup Analysis

@@ -1,6 +1,6 @@
 ---
 name: user-stories
-description: Generate detailed, Playwright-testable user stories by exploring an existing codebase and asking targeted questions. Crawls routes, templates, and models, synthesizes context from docs, then produces acceptance criteria ready for test conversion. Use when creating user stories, acceptance criteria, or test specs for a web application. Pairs with the `playwright-test` skill for test execution.
+description: Generate Playwright-testable user stories by crawling a web app's routes, templates, and models. Pairs with `playwright-test` for execution.
 ---
 
 # User Story Generator - Test-Ready Stories from Codebase Analysis

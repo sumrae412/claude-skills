@@ -1,6 +1,6 @@
 ---
 name: production-readiness-check
-description: Pre-ship production readiness checker covering 27 items across SECURITY, DATABASE, DEPLOYMENT, and CODE categories. Runs as a Phase 6 parallel reviewer — minimal core always runs, deep-dive sections trigger on matching file patterns. Standalone invocation (`/production-readiness`) runs the full checklist including infra-confirm items not tied to code changes. Advisory mode — findings are reported; user decides what to fix before ship.
+description: Pre-ship 27-item readiness check (SECURITY / DATABASE / DEPLOYMENT / CODE). Runs as claude-flow Phase 6 reviewer or standalone via `/production-readiness`. Advisory — reports findings, user decides.
 user-invocable: true
 ---
 
