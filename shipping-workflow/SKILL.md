@@ -92,6 +92,31 @@ Run the **10-step review process** on the PR. Prefer running this in the backgro
 
 **Full procedure:** See [reference.md](reference.md) for the 10 steps (eligibility → staleness → sweep → deep-dive triggers → conditional analysis → merge findings → re-check → fix → CI gate → ship), scoring rubric, false positive filters, and project-level customization (CI command, defensive patterns, deep-dive triggers).
 
+#### CR rate-limit fallback
+
+If CodeRabbit returns `"Rate limit exceeded, please try after N minutes"`, don't wait blindly and don't ship blind. Run a targeted local grep for the anti-pattern classes CR typically flags, then decide:
+
+```bash
+# 1. Silent catches (the #1 CR-flag class)
+git diff main | grep -E "^\+.*catch\s*\{\s*\}|^\+.*except.*:\s*pass|^\+.*\.catch\(.*=>\s*\{\s*\}\)"
+
+# 2. Missing state cleanup on failure returns (CR caught this in ToneGuard PR #22)
+git diff main | grep -B2 -A4 "return\s*{\s*ok:\s*false\|return\s*null"
+
+# 3. Fire-and-forget async across iframe/worker boundaries
+git diff main | grep -E "^\+.*postMessage|^\+.*chrome\.runtime\.sendMessage"
+
+# 4. Unguarded DOM access
+git diff main | grep -E "^\+.*getElementById\([^)]+\)\." | grep -v "?\."
+```
+
+**Decision:**
+- Tests pass + clean grep + scope well-understood → **merge.** Note in the PR body: "Shipped without CR review — rate-limited; ran local grep for known anti-patterns, no hits."
+- Any grep hit → fix before merge, or wait out the rate limit.
+- >3 grep hits OR scope is unfamiliar → wait for CR, or dispatch claude-flow Phase 6 reviewers manually.
+
+This is **not** a CR replacement. It's a ship-unblocker when CR is temporarily unavailable for work that's already well-tested and narrow in scope. Full feature PRs with wide blast radius should wait for CR regardless.
+
 ### Stage 4.5: Merge
 
 <HARD-GATE>Do not proceed to cleanup until the PR is confirmed merged or the user explicitly acknowledges it is unmerged.</HARD-GATE>

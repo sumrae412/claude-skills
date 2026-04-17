@@ -101,6 +101,34 @@ After all tasks complete and verified:
 - Stop when blocked, don't guess
 - Never start implementation on main/master branch without explicit user consent
 
+## Multi-Surface Features: Phased Commits with Green Between
+
+For features that span >500 LoC across multiple surfaces (backend + client + infra, or API + UI + migration), land the work as N phase commits on a single branch rather than one monolithic commit. Each phase leaves both (or all) test suites green. Label phases A–F in commit messages.
+
+**Write the inter-phase DAG into the plan doc explicitly:**
+- "Phase A — schema + storage foundation"
+- "Phase B — service layer (depends on A's schema)"
+- "Phase C — parallel critic/worker (independent, can land after A)"
+- "Phase D — client UI (depends on B's API shape)"
+- "Phase E — integration surface (depends on C's result schema)"
+- "Phase F — version bump + changelog + final verify"
+
+Surface integration assumptions **before** merge, not during review.
+
+**Benefits:**
+- Reviewable — no 1,600-line diffs. Each phase is a readable commit.
+- Bisectable — a regression points to a single phase commit.
+- Rollback-per-phase if needed.
+- User can review phase-by-phase at their own pace rather than in one mega-session.
+
+**Skip this pattern when:**
+- Changes can't individually be green (e.g., atomic refactors that must migrate all call sites at once). Use scaffolding + migration + cleanup as separate PRs instead.
+- Total diff is <500 LoC — overhead isn't worth it.
+
+**Verification between phases (hard gate):** full test suite passes after each phase commit. If a phase breaks tests, fix before the next phase — never let green drift across multiple phases.
+
+**Learned from:** ToneGuard v0.3.0 (PR #23). 6 phases (A–F), 1,633 insertions, 22 files, all tests green between each. User reviewed phase-by-phase; CodeRabbit only needed to look at the final diff. Zero regressions between phases.
+
 ## Integration
 
 **Required workflow skills:**

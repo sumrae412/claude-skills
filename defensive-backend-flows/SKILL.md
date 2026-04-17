@@ -1156,6 +1156,44 @@ def parse_model_json(raw: str) -> dict | None:
 
 **Learned from:** ToneGuard PR #20 — the service-worker's global-regex sanitizer escaped `\n` → `\\n` in structural positions once Claude Haiku 4.5 began pretty-printing JSON. `JSON.parse` rejected at "position 1 column 2"; the catch block fell through to `releaseSend()` and the user's unreviewed message was sent.
 
+### 44. Stateful Callbacks — Failure Paths Must Clear State
+
+Service-layer callbacks that maintain module-level or request-scoped state (retry-token caches, rate-limit counters, per-request pending maps, "is-running" flags) and guard re-entry on that state must clear it on **every** return path, not just the happy path. A silent failure that leaves state set turns the re-entry guard into a permanent block — every subsequent call short-circuits until the process restarts.
+
+```python
+# BAD — success clears, failure leaves state stuck
+_pending: set[str] = set()
+
+def handle(request_id: str) -> dict:
+    if request_id in _pending:
+        return {"ok": False, "error": "already in flight"}
+    _pending.add(request_id)
+    result = do_work(request_id)
+    if not result:
+        return {"ok": False, "error": "work failed"}  # request_id stuck in _pending
+    _pending.discard(request_id)
+    return {"ok": True}
+
+# GOOD — try/finally guarantees cleanup
+def handle(request_id: str) -> dict:
+    if request_id in _pending:
+        return {"ok": False, "error": "already in flight"}
+    _pending.add(request_id)
+    try:
+        result = do_work(request_id)
+        if not result:
+            return {"ok": False, "error": "work failed"}
+        return {"ok": True}
+    finally:
+        _pending.discard(request_id)
+```
+
+Prefer `try / finally` for cleanup. When `finally` doesn't fit (cleanup must be conditional on outcome — e.g., commit-on-success vs rollback-on-fail), duplicate the cleanup in each branch and leave a comment explaining why.
+
+**Grep pattern:** for each function that mutates module-level state at the top (`_pending.add`, `_cache[k] = ...`, `self._lock.acquire()`), every `return`, `raise`, or exception exit must restore that state.
+
+**Learned from:** ToneGuard PR #22 (UI layer; same principle applies to backend). CodeRabbit caught a nack path that forgot to clear `pendingEditor`, wedging the feature permanently after the first failure.
+
 ## Quick Reference
 
 | Rule | Symptom | Check |
@@ -1198,6 +1236,7 @@ def parse_model_json(raw: str) -> dict | None:
 | Fail-Closed Webhook Validators | Public unauthenticated POST in prod | No-token branch hard-fails when `settings.is_production`? |
 | Escape XML/TwiML Substitutions | TwiML hijack via tag injection | AI/user content wrapped in `xml_escape()` before f-string? |
 | Context-Aware Sanitizers | "JSON.parse fails at position 1 after sanitize" | Sanitizer is a state-machine walk (tracks in-string vs structural), not a global regex? Fallback path doesn't silently release destructive action on parse failure? |
+| Stateful Callback Cleanup | "Feature works once, then wedges until restart" | Every return/raise/early-exit in a function that mutates module-level state clears that state? Prefer `try/finally`. |
 
 ## Red Flags — STOP and Fix
 

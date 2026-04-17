@@ -342,3 +342,9 @@ When present, render as:
 > reproduce it mentally, then patch the code so it no longer breaks.
 
 If iteration limit reached, set status to "failed" and surface to user.
+
+---
+
+## Multi-surface features — phased commits
+
+For features spanning multiple surfaces (backend + client + infra, >500 LoC), Phase 5 MAY land as N logical phase commits on one branch rather than a single commit. Each phase must leave full test suites green. See `executing-plans` § "Multi-Surface Features: Phased Commits with Green Between" for the DAG-documentation convention, labeling (A–F), and skip criteria.

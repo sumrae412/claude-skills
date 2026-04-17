@@ -1168,6 +1168,27 @@ useSuggestionBtn.addEventListener("click", async () => {
 
 **Learned from:** ToneGuard's `overlay-frame.js` painted "Suggestion applied!" before the parent iframe had even received the `postMessage`. When Gmail's insertion silently failed, the user was told success anyway. This is the same failure mode as any silent-catch anti-pattern — the UI becomes a liar.
 
+**Sub-rule: failure returns must mirror success cleanup.** The ack/nack pattern introduces module-level pending state (`pendingText`, `pendingEditor`, the `pending` Map). Every failure return — nack, timeout, validation reject — must clear the same state the success return clears. Otherwise the re-entry guard wedges the feature permanently after the first failure.
+
+```javascript
+// BAD — success path clears state, nack path doesn't
+if (ok) {
+  pendingText = null; pendingEditor = null;
+  return { ok: true };
+}
+return { ok: false, error: "editor rejected" };  // state stuck
+
+// GOOD — both paths clear
+try { /* ... */ } finally {
+  pendingText = null;
+  pendingEditor = null;
+}
+```
+
+**Check:** grep `return { ok: false` (or equivalent) inside stateful callbacks; each hit must clear the same state the success return clears.
+
+**Learned from:** ToneGuard PR #22 follow-up. CodeRabbit caught it — the verification-fail nack path left `pendingText` / `pendingEditor` set and the entry-guard blocked every future send until page reload.
+
 ---
 
 ## Checklist for New UI Code
@@ -1213,6 +1234,7 @@ useSuggestionBtn.addEventListener("click", async () => {
 - [ ] Platform-specific DOM selectors are guarded by a platform check (don't query one platform's selectors inside another)
 - [ ] Animations are functional (150-300ms, transforms/opacity only), not decorative; wrapped in `prefers-reduced-motion` media query; no `animation: infinite` on non-loading elements
 - [ ] Cross-frame / cross-process actions use id-tagged request → `:ack` response with `{ok, error?}` — never paint success after a fire-and-forget `postMessage` or `chrome.runtime.sendMessage`
+- [ ] Every failure return from a stateful callback clears the same module-level state the success return clears (grep `return { ok: false` or equivalent, audit each)
 
 ---
 

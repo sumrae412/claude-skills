@@ -203,6 +203,19 @@ Next failing test for next feature.
 | **Clear** | Name describes behavior | `test('test1')` |
 | **Shows intent** | Demonstrates desired API | Obscures what code should do |
 
+## LLM-Artifact Features: Test Routing, Not Generation
+
+For any feature built on an LLM call, split the design into:
+
+1. **Generator** — takes inputs, returns the artifact (or raises). Covered by a small number of *optional* live integration tests (expensive, flaky, require API keys).
+2. **Router / composer / failure-isolator** — decides which inputs to pass, invokes the generator, handles generator failure, picks between branches. Covered by unit tests with a stubbed generator, **branch-per-branch**.
+
+The routing layer is plain code that silently breaks when thresholds, branches, or failure modes drift. Test it exhaustively against a stub. Don't write a single "testFullPipeline" that mocks the generator end-to-end — branch bugs hide inside the mock.
+
+**Example (ToneGuard voice-training):** fingerprint generation is one Sonnet call (integration-test only); the routing — "≥3 trained samples → prefer fingerprint; <3 → raw; critic fails → siblings still return" — got 4 dedicated unit tests that caught regressions between phase merges. The generator itself was never unit-tested and that was correct.
+
+**Rule of thumb:** if the test needs a real model call to pass, it's a generator test (sparse, integration-only). Everything else is a routing test (dense, fast, stubbed).
+
 ## Why Order Matters
 
 **"I'll write tests after to verify it works"**
