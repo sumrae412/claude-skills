@@ -27,7 +27,7 @@ No full Phase 0 context load. Load only what the bug area needs:
    - Backend bug → `defensive-backend-flows`
    - Both → load both
 4. **Domain skill** — only if relevant (e.g., data skill if bug is in a model, API skill if bug is in a route)
-5. **MEMORY.md** — check for known gotchas in the affected area (memory-injection)
+5. **MEMORY.md** — check for known gotchas in the affected area (see `claude-flow/references/memory-injection.md`)
 
 ---
 
@@ -222,8 +222,8 @@ Review: <findings summary — resolved/escalated>
 | `claude-flow` | Bug-fix is the bug counterpart. Phase 1 Discovery auto-routes bug tasks here. |
 | `investigator` | Dispatched in Step 2 for complex bugs. Evidence matrix feeds diagnosis. |
 | `systematic-debugging` | Methodology reference. Step 2 follows its "no fixes without root cause" principle. |
-| `test-driven-development` | Used in Steps 1 and 3. Failing test first, then fix to green. |
-| `memory-injection` | Step 2 checks MEMORY.md for known gotchas before tracing code. |
+| `claude-flow/references/test-driven-development.md` | Used in Steps 1 and 3. Failing test first, then fix to green. |
+| `claude-flow/references/memory-injection.md` | Step 2 checks MEMORY.md for known gotchas before tracing code. |
 | `verification-before-completion` | Final gate in Step 4. Same as claude-flow. |
 | `shipping-workflow` | After bug-fix completes, user can invoke `/ship` to commit → PR → merge. |
 

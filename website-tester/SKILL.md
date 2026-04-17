@@ -1,6 +1,6 @@
 ---
 name: website-tester
-description: Functional testing for web applications. Actually fills forms, submits data, clicks buttons, and verifies CRUD operations (Create, Read, Update, Delete) work correctly. Crawls all pages and tests every interactive element. Use when the user wants to test their web app end-to-end, verify forms submit correctly, test add/edit/delete workflows, or run comprehensive functional tests. Triggers on requests like "test my website", "test all the forms", "make sure save/delete works", "functional test my app".
+description: End-to-end functional testing for web apps — fills forms, clicks buttons, verifies CRUD. Use for "test my website", "test all the forms", or "functional test my app".
 ---
 
 # Website Functional Tester

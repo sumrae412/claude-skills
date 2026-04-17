@@ -197,9 +197,9 @@ Vertical timeline format:
 | Skill | Relationship |
 |-------|--------------|
 | **defensive-ui-flows** | Use alongside this skill. This skill = WHAT (visual design). defensive-ui-flows = HOW (error handling, state management, guard clauses). |
-| **code-creation-workflow** | Orchestrator that invokes both UI skills during implementation phase. |
+| **claude-flow** | Orchestrator that invokes both UI skills during implementation phase. |
 
-**Location:** `~/.claude/skills/courierflow-ui-standards/` — available to all projects using code-creation-workflow.
+**Location:** `~/.claude/skills/courierflow-ui-standards/` — available to all projects using claude-flow.
 
 ---
 

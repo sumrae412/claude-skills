@@ -304,17 +304,17 @@ Invoke `verification-before-completion` skill:
 
 ## Finish Branch
 
-Invoke `finishing-a-development-branch` skill:
+Invoke `/cleanup`:
 1. Run full test suite (`pytest tests/ -v` or project equivalent)
 2. Commit with conventional message
 3. Present options: merge, PR, keep branch, discard
-4. Execute user's choice
+4. Execute user's choice — `/cleanup` then runs `session-learnings` + repo sync automatically. The "Capture Learnings" section below describes what `session-learnings` covers; no separate invocation is needed.
 
 ---
 
 ## Capture Learnings
 
-Invoke `session-learnings` skill:
+`session-learnings` (auto-invoked by `/cleanup` above) covers:
 - What patterns were discovered?
 - What defensive rules were applied or should be added?
 - Any memories to persist?

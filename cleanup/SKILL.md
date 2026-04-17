@@ -1,6 +1,6 @@
 ---
 name: cleanup
-description: Use when you're done with a branch or worktree and need to clean up — handles git branch cleanup, worktree teardown via ExitWorktree, session-learnings capture, and config/skills repo sync. Trigger on "clean up", "I'm done", "tear down", "finish up", "wrap up this branch", "exit worktree", "done with this branch", or after shipping/merging work. Also use when code-creation-workflow Phase 6B selects Options 2-4 (non-ship finishing), or when /ship completes and worktree cleanup is needed. Replaces finishing-a-development-branch with smarter worktree integration.
+description: Branch/worktree teardown — ExitWorktree, session-learnings capture, config/skills repo sync. Use for "clean up", "I'm done", "wrap up", or after shipping. Also the finishing hand-off for /ship and /claude-flow Phase 6B non-ship options.
 ---
 
 # Cleanup
@@ -21,8 +21,8 @@ This skill handles all three in one flow, using the native `ExitWorktree` tool f
 ## Relationship to Other Skills
 
 - **`/ship` (shipping-workflow):** Handles the full pipeline: commit, push, PR, review, merge. If the user says "ship it", use `/ship` — not this skill. However, `/ship` delegates its final cleanup stage to `/cleanup`.
-- **code-creation-workflow Phase 6B:** Options 2-4 delegate here. Option 1 ("Ship it") goes to `/ship`.
-- **session-learnings:** This skill triggers session-learnings automatically after Options 1 or 2 (work was integrated). No need to invoke it separately. Note: code-creation-workflow v2 ensures session-learnings fires for ALL paths including FAST PATH (orchestrator fires directly if /cleanup is not invoked).
+- **`/claude-flow` Phase 6B:** Options 2-4 delegate here. Option 1 ("Ship it") goes to `/ship`.
+- **session-learnings:** This skill triggers session-learnings automatically after Options 1 or 2 (work was integrated). No need to invoke it separately. Note: `/claude-flow` ensures session-learnings fires for ALL paths including FAST PATH (orchestrator fires directly if `/cleanup` is not invoked).
 
 **When to use which:**
 | User says | Use |
@@ -115,13 +115,13 @@ Work on `<branch>` is ready to wrap up. What would you like to do?
 4. Discard this work
 ```
 
-If invoked from code-creation-workflow Phase 6B, Option 1 should not appear (that path goes to `/ship`). Present only Options 2-4.
+If invoked from `/claude-flow` Phase 6B, Option 1 should not appear (that path goes to `/ship`). Present only Options 2-4.
 
 ## Step 4: Execute Choice
 
 ### Option 1: Merge and Push
 
-> If you got here from code-creation-workflow, redirect to `/ship` instead — it includes automated review.
+> **Defensive fallback** — Option 1 is suppressed for `/claude-flow` Phase 6B callers (see Step 3). If suppression fails and a `/claude-flow` caller reaches this option, redirect to `/ship` instead — it includes automated review.
 
 ```bash
 CURRENT_BRANCH=$(git branch --show-current)

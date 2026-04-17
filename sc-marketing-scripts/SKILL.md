@@ -1,6 +1,6 @@
 ---
 name: sc-marketing-scripts
-description: Write DeepLearning.AI course scripts — Lesson Zero (L0) introductory videos and marketing teasers featuring Andrew Ng and course instructors. Use this skill whenever asked to write, review, or improve a course intro script, L0 script, marketing script, teaser video script, or any video content for a DeepLearning.AI shortcourse. Also use when asked to check a script against DL.AI guidelines, apply Andrew Ng's voice, or evaluate script quality for course launch materials.
+description: Write or review DeepLearning.AI course scripts — Lesson Zero (L0) intros, marketing teasers, Andrew Ng voice, DL.AI guideline checks.
 ---
 
 # SC Marketing Scripts

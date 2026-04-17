@@ -1,6 +1,6 @@
 ---
 name: startup-planner
-description: Guided startup planning workshop — Kawasaki Conception stages (1-7) plus execution planning stages (8-12) with Business Model Canvas, market analysis, MVP/PRD, Go/NoGo decision, and pitch deck generation. Works for any product or startup idea. Triggers on "startup planning", "business model", "business plan", "mantra", "MATT", "Kawasaki", "MVP definition", "pitch deck", "Go/NoGo", or "market analysis".
+description: Guided 12-stage startup planning workshop — Kawasaki Conception (1-7) + execution planning (8-12) with BMC, MVP/PRD, Go/NoGo, pitch deck. Use on "startup planning", "business model", "pitch deck".
 license: MIT
 metadata:
   author: summerela

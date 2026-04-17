@@ -1,6 +1,6 @@
 ---
 name: product-sprint
-description: 7-stage rapid product sprint — user research (debate technique), context-primed PRD, stakeholder persona, interactive prototype, pitch with stakeholder rehearsal, personal OS lens, and demo judging. Takes an idea from insight to validated vision in ~30 minutes. Triggers on "product sprint", "rapid PM", "validate idea", "quick PRD", "prototype an idea", "debate technique", "product pitch", "demo judge", "stakeholder rehearsal", "personal OS", or "20-minute PM cycle".
+description: 7-stage rapid product sprint — research → PRD → persona → prototype → pitch → personal OS → demo judge. Use on "product sprint", "quick PRD", "rapid PM", "prototype an idea".
 ---
 
 # Product Sprint

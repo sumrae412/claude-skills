@@ -1,12 +1,6 @@
 ---
 name: typography
-description: >
-  Professional typography rules enforcing correct quote marks, dashes, spacing, hierarchy,
-  and HTML entities. ENFORCEMENT MODE: When generating ANY HTML, CSS, React, JSX, or Jinja
-  code containing visible text, auto-apply every rule silently. AUDIT MODE: When reviewing
-  existing interfaces, flag violations and provide fixes. Trigger on: any HTML/CSS/React/Jinja
-  artifact creation, "fix the typography", "make this look professional", "typography audit",
-  web design, UI component work, or any task producing visible text for humans.
+description: Typography rules — quote marks, dashes, spacing, hierarchy, HTML entities. Auto-apply when generating HTML/CSS/React/Jinja with visible text; audit on "fix the typography", "typography audit", "make this look professional".
 license: MIT
 metadata:
   author: summerela

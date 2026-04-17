@@ -1,6 +1,6 @@
 ---
 name: session-learnings
-description: Use proactively after committing significant work to capture session lessons — dispatches a background agent that writes MEMORY.md directly (auto-committed) and proposes updates to skills and CLAUDE.md
+description: Capture lessons after commits
 license: MIT
 metadata:
   author: summerela
@@ -29,7 +29,7 @@ When writing a new memory file (topic-slug-named, one per learning), end it with
 
 `slug` is the filename without `.md` (e.g. `fold_check_upstream` → `fold_check_upstream.md`).
 
-Why this matters: the `memory-injection` skill reads `## Related` footers for 1-hop relational retrieval (Step 4a). When a gotcha matches a subagent's file scope, co-cited neighbors get pulled in too — capped at 3 additions per injection, additive to Section 1's 10-entry cap, co-citation scored for tiebreak. Graceful no-op when the footer is absent, so adding it is strictly additive value. Add it only when genuine relationships exist; do not force-link.
+Why this matters: `claude-flow/references/memory-injection.md` reads `## Related` footers for 1-hop relational retrieval (Step 4a). When a gotcha matches a subagent's file scope, co-cited neighbors get pulled in too — capped at 3 additions per injection, additive to Section 1's 10-entry cap, co-citation scored for tiebreak. Graceful no-op when the footer is absent, so adding it is strictly additive value. Add it only when genuine relationships exist; do not force-link.
 
 ## When to Use
 

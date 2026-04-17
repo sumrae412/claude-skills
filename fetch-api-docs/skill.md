@@ -1,6 +1,6 @@
 ---
 name: fetch-api-docs
-description: Fetch curated API docs from Context Hub before coding with external services to prevent hallucinations
+description: Fetch API docs before coding
 ---
 
 # Fetch API Documentation

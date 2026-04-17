@@ -1,6 +1,6 @@
 ---
 name: investigator
-description: Structured problem investigation that collects evidence without proposing solutions. Use when debugging, diagnosing unexpected behavior, or when a Phase 5 TDD cycle hits failures that aren't immediately obvious. Outputs an evidence matrix — the caller decides what to do with it.
+description: Evidence matrix for debugging
 user-invocable: true
 ---
 

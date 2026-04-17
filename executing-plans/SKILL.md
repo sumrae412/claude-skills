@@ -1,6 +1,6 @@
 ---
 name: executing-plans
-description: Use when you have a written implementation plan to execute in a separate session with review checkpoints
+description: Execute a written plan
 ---
 
 # Executing Plans
@@ -31,16 +31,16 @@ Load plan, review critically, execute tasks in batches, report for review betwee
 
 ### Step 1.5: Memory Injection (if dispatching subagents)
 
-If the plan calls for subagent dispatch (explicitly or implicitly via tasks that mention "dispatch" / "implementer" / parallel work), invoke the `memory-injection` skill before the first dispatch:
+If the plan calls for subagent dispatch (explicitly or implicitly via tasks that mention "dispatch" / "implementer" / parallel work), follow `claude-flow/references/memory-injection.md` before the first dispatch:
 
 1. Collect the file list the plan will touch
-2. Invoke memory-injection — returns a `PROJECT GOTCHAS` block
+2. Apply memory-injection (per reference) — produces a `PROJECT GOTCHAS` block
 3. Cache the block; prepend it to every subagent prompt's PROJECT CONTEXT area
 4. Re-invoke only if the file scope shifts materially mid-plan
 
 Graceful no-op if no MEMORY.md or no domain matches. Skip this step entirely if the plan is purely sequential controller work with no subagent dispatch.
 
-**Why:** without injection, known project gotchas recur silently in fresh subagent context. See `memory-injection` skill for the full rationale.
+**Why:** without injection, known project gotchas recur silently in fresh subagent context. See `claude-flow/references/memory-injection.md` for the full rationale.
 
 ### Step 2: Execute Batch
 **Default: First 3 tasks**
@@ -50,7 +50,7 @@ For each task:
 2. Follow each step exactly (plan has bite-sized steps)
 3. Run verifications as specified
 4. Mark as completed
-5. **Inter-task verification gate:** Before starting the next task, run the full test suite + lint + build check to catch regressions early. If any fail, fix before proceeding. Skip the full suite for the first task in a batch or trivial tasks (config, docs). See `subagent-driven-development` for the full gate protocol.
+5. **Inter-task verification gate:** Before starting the next task, run the full test suite + lint + build check to catch regressions early. If any fail, fix before proceeding. Skip the full suite for the first task in a batch or trivial tasks (config, docs). See `claude-flow/references/subagent-driven-development.md` for the full gate protocol.
 6. **Typed dependencies:** When the plan includes typed dependencies (`data`, `build`, `knowledge`), respect them: `data`/`build` edges are strictly sequential; `knowledge` edges are parallelizable (record assumptions). If no typed dependencies are present, execute tasks in plan order.
 
 ### Step 3: Report
@@ -68,8 +68,8 @@ Based on feedback:
 ### Step 5: Complete Development
 
 After all tasks complete and verified:
-- Announce: "I'm using the finishing-a-development-branch skill to complete this work."
-- **REQUIRED SUB-SKILL:** Use superpowers:finishing-a-development-branch
+- Announce: "I'm using the cleanup skill to complete this work."
+- **REQUIRED SUB-SKILL:** Use `/cleanup`
 - Follow that skill to verify tests, present options, execute choice
 
 ## When to Stop and Ask for Help
@@ -134,4 +134,4 @@ Surface integration assumptions **before** merge, not during review.
 **Required workflow skills:**
 - **superpowers:using-git-worktrees** - REQUIRED: Set up isolated workspace before starting
 - **superpowers:writing-plans** - Creates the plan this skill executes
-- **superpowers:finishing-a-development-branch** - Complete development after all tasks
+- **`/cleanup`** - Complete development after all tasks (branch teardown + session-learnings + repo sync)

@@ -1,6 +1,6 @@
 ---
 name: synthetic-persona
-description: Build "synthetic people" from public data for product reviews, brainstorming, pitch rehearsals, and interpersonal dynamics analysis. Use when you want a specific person's perspective on your product, ideas, or communication approach. Triggers on "synthetic persona", "synthetic client", "what would [name] think", "build a persona", "role-play as", "rehearse a pitch", "how would [person] react", or "model my [boss/client/stakeholder]".
+description: Build a "synthetic person" from public data for product reviews, brainstorming, pitch rehearsals, or interpersonal analysis. Use for "what would [name] think", "build a persona", "rehearse a pitch", "role-play as".
 ---
 
 # Synthetic Persona — Public-Data Persona Builder
