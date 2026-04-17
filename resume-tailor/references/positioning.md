@@ -6,7 +6,7 @@ Phase 4 of the tailoring flow — always runs. Positioning is about how the resu
 
 Offer 2–3 headline options at different angles. Show the framing choice so the user can pick intentionally.
 
-- **Function-forward:** "Product Manager specializing in 0→1 B2B SaaS"
+- **Function-forward:** "Product Manager specializing in 0 to 1 B2B SaaS"
 - **Outcome-forward:** "Product leader who has shipped 4 products to $1M+ ARR"
 - **Angle-forward:** "PM/eng hybrid — ships product fast and unblocks the team"
 
@@ -20,7 +20,7 @@ Read the resume top to bottom and tell the user what story it tells. Then name w
 - **Specialization:** progressive depth in one domain. Strong for IC / staff+ roles.
 - **Pivot:** clean change in function or industry. Needs to be explained in summary, not hidden.
 - **Breadth:** multiple functions or industries. Positions as adaptability, but only if the JD rewards it.
-- **Founder/operator:** mix of scale and 0→1. Lean into the specific mix the JD wants.
+- **Founder/operator:** mix of scale and 0-to-1. Lean into the specific mix the JD wants.
 
 **Common arc problem:** strong early career, weaker recent. Fix — lead with outcomes not titles; re-emphasize the recent role's impact with quantifiables from Phase 2's matching pass.
 
@@ -64,7 +64,7 @@ End Phase 4 with:
 
 ```
 HEADLINE OPTIONS (pick one):
-  A. [function-forward]   "Product Manager specializing in 0→1 B2B SaaS"
+  A. [function-forward]   "Product Manager specializing in 0 to 1 B2B SaaS"
   B. [outcome-forward]    "Product leader who has shipped 4 products to $1M+ ARR"
   C. [angle-forward]      "PM/eng hybrid — ships product fast and unblocks the team"
 

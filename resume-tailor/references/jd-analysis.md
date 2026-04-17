@@ -10,11 +10,11 @@ role:
   seniority: senior          # junior | mid | senior | staff | principal | exec
   scope:
     team_size: "5-15 direct/indirect"
-    ownership: "0→1 + scale"
+    ownership: "0-to-1 + scale"
     budget: "unspecified"
 
 focus_areas:
-  - area: "0→1 product discovery"
+  - area: "0-to-1 product discovery"
     weight: 0.4              # weights across all areas must sum to 1.0
     signals: ["shipped 3 products from scratch", "customer interviews", "wrote specs"]
     action: LEAD_WITH

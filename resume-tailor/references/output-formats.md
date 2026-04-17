@@ -52,8 +52,8 @@ A line-level diff with rationale. Makes every change auditable.
 CHANGE LOG — Resume tailored to [Role] at [Company], [Date]
 
 HEADLINE:
-  ± "Product Manager" → "Product Manager specializing in 0→1 B2B SaaS"
-  Why: JD weights 0→1 product discovery at 0.4 (LEAD_WITH). Option A (function-forward) chosen per Phase 4.
+  ± "Product Manager" → "Product Manager specializing in 0 to 1 B2B SaaS"
+  Why: JD weights 0-to-1 product discovery at 0.4 (LEAD_WITH). Option A (function-forward) chosen per Phase 4.
 
 SUMMARY:
   + Added 2-sentence summary
@@ -91,7 +91,7 @@ KEYWORD COVERAGE — [Role] at [Company]
 MUST-HAVE (4/5):
   ✓ "product manager"          — headline, 3 bullets
   ✓ "B2B SaaS"                 — summary, bullet 2 of Acme
-  ✓ "0 to 1"                   — summary, bullet 1 of Acme ("0→1")
+  ✓ "0 to 1"                   — summary, bullet 1 of Acme (rendered as "0 to 1" for ATS safety)
   ✓ "customer discovery"       — bullet 3 of Acme
   ✗ "PLG"                      — missed; nice-to-have in JD but worth adding
 
@@ -129,6 +129,7 @@ Never offer HTML, LaTeX, or heavily-designed templates as default. They fail ATS
 ## ATS Tips
 
 - Keywords must appear **in the bullet prose**, not just in a skills list. ATS-modern scanners weight context, not keyword density.
+- **Avoid Unicode glyphs in the resume body.** Arrows (`→`, `⇒`), em-dashes in keyword positions, bullet-point characters, and fancy quotes can fail older ATS parsers and cause keyword mismatches. Write `0 to 1` instead of `0→1`, `A to B` instead of `A→B`, regular hyphens instead of en/em-dashes in keyword-adjacent positions. Reserve Unicode for the change log and coverage report (internal, not parsed by ATS).
 - Do not use tables, text boxes, headers/footers, or multi-column layouts in DOCX. Single column, standard headings.
 - Standard section names (`Experience`, not "Where I've Been"). ATS looks for headers.
 - Dates in `MMM YYYY` or `YYYY`, consistently.
