@@ -11,6 +11,8 @@ Internal guide for writing introductory lessons (Lesson Zero / L0) and marketing
 
 ## Core Principles
 
+Load `shared/communication-principles.md` before drafting any script. The principles there (audience-centered focus, lead with the conclusion, plain-language simplicity, medium calibration, preparation) apply on top of the course-specific rules below. The course-specific rules refine and extend — they do not replace.
+
 ### Voice & Tone
 - Conversational and collegial — one engineer to another
 - Avoid: "should," "understand," "simple," "simply," marketing hype, hyperbole
@@ -226,6 +228,7 @@ When a slide contains a multi-panel or sequential diagram:
 
 Before finalizing any script:
 
+- [ ] Run through the checklist at the end of `shared/communication-principles.md` first — audience-centered, leads with the conclusion, plain language, tuned to the medium
 - [ ] All sentences pass a read-aloud test — no pronoun ambiguity, no compound run-ons
 - [ ] Lesson 1 preview is specific and teases what Lesson 2 unlocks (not generic)
 - [ ] No condescending framing ("this will make more sense once you...")

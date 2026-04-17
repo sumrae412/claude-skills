@@ -45,7 +45,7 @@ Ask: *"Does this profile match how you read the role? Anything I over- or under-
 
 ## Phase 2 — Matching Pass
 
-For each bullet and role in the resume, assign a confidence band vs. the JD profile and propose a reframe if appropriate. Rubric + four reframing strategies are in `references/matching-rubric.md` — load it.
+For each bullet and role in the resume, assign a confidence band vs. the JD profile and propose a reframe if appropriate. Rubric + four reframing strategies are in `references/matching-rubric.md` — load it. Also load `shared/communication-principles.md` — reframed bullets must lead with the conclusion, stay in plain language, and serve the reader (hiring manager / ATS), not the author.
 
 Output to user (checkpoint):
 
@@ -77,7 +77,7 @@ Then fold new bullets into the matching pass and update the roll-up.
 
 ## Phase 4 — Positioning
 
-Always runs. This is where the skill's second promise lives. Covers headline/summary, narrative arc, level calibration, and gap handling. Load `references/positioning.md`.
+Always runs. This is where the skill's second promise lives. Covers headline/summary, narrative arc, level calibration, and gap handling. Load `references/positioning.md` and `shared/communication-principles.md` — the "I help" framing (principle 6) applies directly to headlines and summaries; audience-centered focus (principle 1) drives the narrative arc.
 
 Output to user (checkpoint):
 
@@ -113,6 +113,7 @@ Offer: *"Want me to convert to DOCX, draft a cover letter, or iterate on any sec
 4. **Solo-user scope.** One person, one resume, one JD at a time. No batch mode, no library management, no external infra.
 5. **Minimum viable dependencies.** Pure markdown by default. Optional DOCX via `anthropic-skills:docx`. No bun/node/React required.
 6. **Gap handling is disclosure, not manufacturing.** Visible gaps go to cover letters or discovery prompts — never filled with invented content.
+7. **Communication principles apply.** Resumes are author-to-audience writing. Audience-centered focus, lead with the strongest evidence, simple plain-language bullets, no ego residue. Load `shared/communication-principles.md` before Phase 2 matching and Phase 4 positioning — the bullet-level and headline-level decisions are where these principles bite hardest.
 
 ## Professional Help Boundary
 
