@@ -289,3 +289,18 @@ Use this table to ensure internal consistency when building a persona. Traits sh
 | **Terse** | Fast | Minimal, async-preferred | Brief pushback, moves on |
 
 **When to override correlations:** If source material shows a genuine contradiction (e.g., a data-driven executive who makes gut-feel hiring decisions), keep it — real people are inconsistent. Flag it in the persona card as a notable trait, not a bug.
+
+---
+
+## UX / Usability Personas
+
+For personas that will drive a Playwright or website-tester walkthrough (rather than a strategic review or pitch rehearsal), see `ux-persona-schema.md`. That file provides:
+
+- Structured JSON schema with numeric fidelity knobs (techComfort 1-10, patience 1-10, timing in ms)
+- `techComfort → interaction` and `patience → tolerance` correlation tables
+- UX-specific mental model keys (`formsAre`, `buttonsAre`, `errorsAre`…)
+- Gender variants (male/female/neutral) for inclusive testing
+- Validation checklist (≥8 frustration triggers, ≥10 expressions, all mental model keys)
+- Seed archetypes (boomer-tech-averse, low-vision-user, keyboard-only-user, etc.)
+
+Skip that layer for executive or strategic personas — the narrative card above is enough.

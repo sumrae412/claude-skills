@@ -17,6 +17,7 @@ Build a "synthetic person" from public data, then use that persona to review you
 
 1. Read `references/research-guide.md` for data collection process, persona card template, and meta-prompt template
 2. Read `references/review-prompts.md` for mode-specific prompts and report template
+3. For UX/usability personas that will drive a Playwright or website-tester walkthrough, also read `references/ux-persona-schema.md` — structured JSON schema with timing/trait fidelity knobs, UX-specific trait correlations, and seed archetypes (boomer-tech-averse, low-vision-user, keyboard-only-user, etc.). Skip for strategic/executive personas.
 3. Ask which stage to work on (or start from Stage 1 for a new persona)
 4. If the user has built a persona before, check memory for a saved persona card and prompt
 
