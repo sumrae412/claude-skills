@@ -304,11 +304,11 @@ Invoke `verification-before-completion` skill:
 
 ## Finish Branch
 
-Invoke `finishing-a-development-branch` skill:
+Invoke `/cleanup`:
 1. Run full test suite (`pytest tests/ -v` or project equivalent)
 2. Commit with conventional message
 3. Present options: merge, PR, keep branch, discard
-4. Execute user's choice
+4. Execute user's choice (`/cleanup` also runs session-learnings + repo sync)
 
 ---
 

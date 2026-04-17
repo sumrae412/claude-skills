@@ -46,7 +46,7 @@ All advisor calls use `subagent_type: "general-purpose"`. Phase 2 uses `model: "
 | `claude-flow/references/subagent-driven-development.md` | Phase 5 (parallel independent steps) |
 | **coderabbit:review** | **Phase 6 Tier 1 (consolidated first-pass code review)** |
 | verification-before-completion | Phase 6 (pre-finish check) |
-| finishing-a-development-branch | Phase 6 (branch completion) |
+| `/cleanup` | Phase 6 (branch completion) |
 | session-learnings | Phase 6 (capture discoveries) |
 
 ## Static Analysis & Context Tools (Automatic)
