@@ -53,6 +53,24 @@ User says "implement X" / "fix Y"
    │   3. TDD implementation                       │
    │   4. Run Phase 6 review → done                │
    │                                               │
+   │ Is this an AUDIT or CLEANUP request?          │
+   │ ("audit", "review existing code", "codebase   │
+   │  health", "tech debt", "cleanup", "tidy up",  │
+   │  "dead code", "find issues in", "consolidate")│
+   │                                               │
+   │ YES → AUDIT PATH (read-only)                  │
+   │   1. Phase 1: scope → $audit_scope            │
+   │   2. Phase 2: exploration                     │
+   │   3. Phase 3: audit criteria → $requirements  │
+   │   4. Phase 4: assessment → $assessment        │
+   │   5. Phase 6: review cascade (file-list mode) │
+   │   6. Report → docs/audits/<date>-<topic>.md   │
+   │   Subflow selection (references/audit-       │
+   │   subflows.md):                               │
+   │     - Noisy log input → Subflow A             │
+   │     - Cleanup/tidy/dead-code → Subflow C      │
+   │   No Phase 5 — read-only.                     │
+   │                                               │
    │ Is this EXPLORATORY?                          │
    │ ("try this", "experiment with", "spike",      │
    │  "prototype", "proof of concept",             │
@@ -81,6 +99,7 @@ User says "implement X" / "fix Y"
 - **Plan path:** An existing plan file or PRP already exists for this feature — skip directly to Phase 5.
 - **Clone path:** Feature X already exists and you're building Feature X' (e.g., "add a delete endpoint" when create/update endpoints already exist).
 - **Lite path:** Contained change touching 1-2 files — doesn't justify 5+ parallel subagents.
+- **Audit path:** Read-only assessment. Trigger words: "audit", "review existing code", "codebase health", "tech debt", "cleanup", "tidy up", "dead code", "consolidate", "find issues in". Skips Phase 5 (no code changes); output is a prioritized checklist in `docs/audits/`. Pick a subflow from `references/audit-subflows.md`: A for noisy-log inputs, C for cleanup-style multi-dimension scans (with deletion-safety + AI-artifact dimension + cross-dim coordination gate). See `audit_path.md` memory for the full contract flow.
 - **Explore path:** User wants to test an idea before committing to the full workflow. Signals: "try this", "experiment with", "spike", "prototype", "proof of concept", "see if X works". Quality bar is 60/100 (no TDD, no Phase 6 review). Graduation: "this works, let's ship it" → exploration findings become Phase 2 input, skip parallel explorers, flow into normal pipeline from Phase 4. Archive: invoke `/session-handoff --abandon` to document what was tried and why it was abandoned.
 - **Full workflow:** Everything else. If in doubt, use the full workflow.
 
@@ -90,6 +109,7 @@ Each path produces different artifacts. This table makes explicit what each path
 
 | Path | Files Touched | PRP | Design Doc | Work Plan | Test Skeletons | Review Tiers |
 |------|---------------|-----|------------|-----------|----------------|--------------|
+| **Audit** | N (read-only) | No | No | No | No | Tier 1-3 (file-list mode) |
 | **Bug** | 1-5 | No | No | No | No (test in Step 1) | Tier 1-3 (via /bug-fix) |
 | **Fast** | 1 | No | No | No | No | Tests only |
 | **Clone** | 1-3 | No | No | Inline | No | Tier 1-2 |
@@ -103,4 +123,4 @@ Each path produces different artifacts. This table makes explicit what each path
 
 ## State Transition
 
-Update `.claude/workflow-state.json` — set `current_phase.path` to the selected path (`fast`/`clone`/`lite`/`full`/`plan`/`bug`/`explore`), then transition to the appropriate next phase.
+Update `.claude/workflow-state.json` — set `current_phase.path` to the selected path (`fast`/`clone`/`lite`/`full`/`plan`/`bug`/`explore`/`audit`), then transition to the appropriate next phase.
