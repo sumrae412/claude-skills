@@ -17,18 +17,18 @@ gh search code "filename:SKILL.md <intent-keyword>" --limit=20
 gh search issues "<capability> skill" --limit=10
 ```
 
-**Rank results by:** star count, last-commit recency (< 6 months = active), author reputation (known orgs: anthropic, vercel-labs, anthropics-labs).
+**Rank results by:** star count, last-commit recency (< 6 months = active), author reputation (known orgs: anthropics, vercel-labs).
 
 ## Known registries
 
-### `anthropic/skills` (official reference set)
+### `anthropics/skills` (official reference set)
 
 Anthropic's reference skill set. Many are already installed locally as `anthropic-skills:*` (check the session-reminder list first).
 
 ```bash
 # Browse the canonical set
-gh repo view anthropic/skills
-gh api repos/anthropic/skills/contents/skills --jq '.[].name'
+gh repo view anthropics/skills
+gh api repos/anthropics/skills/contents/skills --jq '.[].name'
 ```
 
 Install path: usually via the Claude Code plugin system — check the repo README for current instructions rather than assuming.
