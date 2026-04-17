@@ -72,3 +72,9 @@ If you quote a registry command the user will run, say so explicitly:
 > "I haven't run `npx skills search X` in this session — this is the command to try. If the CLI has changed, fall back to browsing `vercel-labs/skills` on GitHub."
 
 Do not assert an external skill exists without either (a) fetching its SKILL.md or (b) citing a specific repo + commit. Hallucinated skill names are the primary failure mode for this kind of discovery.
+
+## After install: document provenance
+
+For every skill imported from an external registry, ship `<skill>/SOURCE.md` with four sections: attribution (upstream URL + commit SHA + license + ISO import date), vetting checklist (`skill-security-auditor` scan, cross-ref scrub, script review), and local modifications. The target dir name must match the skill's frontmatter `name:` field. Cross-refs to peer skills that don't exist locally must be substituted with local equivalents or dropped — not left dangling.
+
+Canonical examples: the seven skills imported from `alirezarezvani/claude-skills` across PRs #23–#25 (2026-04-17) all use the same `SOURCE.md` shape. See `skill-security-auditor/SOURCE.md` for the template.

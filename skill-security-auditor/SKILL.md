@@ -33,6 +33,24 @@ python3 scripts/skill_security_auditor.py /path/to/skill-name/ --strict
 python3 scripts/skill_security_auditor.py /path/to/skill-name/ --json
 ```
 
+## Use as a pre-install gate
+
+When importing skills from external repos into a canonical skills repo, run this
+auditor as a gate *before* the import PR opens, and record the result in a
+`SOURCE.md` file shipped alongside the imported skill:
+
+```bash
+python3 scripts/skill_security_auditor.py /path/to/imported-skill/
+# Record result in <skill>/SOURCE.md under "## Vetting":
+#   - Passed skill-security-auditor scan (0 findings)
+```
+
+If this tool is itself being imported as a new skill, ship it in its own PR
+first. Downstream import PRs can then cite concrete scan results as vetting
+evidence, rather than bundling the gate with the content it gates. Validated
+across PR #23 (auditor bootstrap) → PR #24 (LLM-eng trio) → PR #25 (compliance
+bundle) on 2026-04-17.
+
 ## What Gets Scanned
 
 ### 1. Code Execution Risks (Python/Bash Scripts)
