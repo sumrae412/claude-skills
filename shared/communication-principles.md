@@ -81,3 +81,13 @@ Before shipping any piece of writing produced under a skill that loads this refe
 - [ ] Tuned to the medium (email vs. script vs. doc vs. resume bullet).
 - [ ] Audience could state the one key takeaway in their own words after reading.
 - [ ] No ego residue, no completeness-anxiety filler, no hedges that blur the claim.
+
+---
+
+## Host skills that load this reference
+
+- `resume-tailor` — Phase 2 matching, Phase 4 positioning, Principle 7.
+- `sc-marketing-scripts` — Core Principles and Review Checklist.
+- Upstream via CLAUDE.md rule: `design:ux-copy`, `product-management:stakeholder-update`, `operations:status-report`, `anthropic-skills:toneguard`.
+
+Before ripping this reference out or renaming it, update the hosts above.
