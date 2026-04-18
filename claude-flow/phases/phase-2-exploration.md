@@ -31,6 +31,8 @@ The `/research` skill defaults to **task-typed** Wave 1 — 2-4 researchers cove
 - $requirements lists multiple candidate technologies and asks for a recommendation
 - Prior exploration produced ≥4 viable approaches and the architect needs each evaluated independently
 
+> **Explicit parallel fan-out (Opus 4.7):** When dispatching N independent reviewers / researchers / implementers across M items, emit a single message with N tool-use blocks. Do **not** issue them sequentially — 4.7's default bias is under-parallelization.
+
 ---
 
 ## Step 0: Prior Knowledge Check (Token Saver)

@@ -285,6 +285,8 @@ Follow `claude-flow/references/subagent-driven-development.md`:
   → Merge results when all complete
 ```
 
+> **Explicit parallel fan-out (Opus 4.7):** When dispatching N independent reviewers / researchers / implementers across M items, emit a single message with N tool-use blocks. Do **not** issue them sequentially — 4.7's default bias is under-parallelization.
+
 <!-- Task taxonomy (types + dependency types) defined in writing-plans/SKILL.md. Keep in sync. -->
 **Dependency-aware dispatch:**
 - `data` or `build` dependencies → strictly sequential (predecessor must complete first)
