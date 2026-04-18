@@ -351,4 +351,17 @@ After completing a feature, capture structured workflow metrics.
 
 ---
 
+## Optional follow-up: synthetic beta test (`/personas`)
+
+If the feature changed user-facing flows (new screen, new form, new API surface a persona would hit directly), consider an optional synthetic beta pass before real-user recruitment:
+
+- **When to offer:** `$diff` touches templates / routes / user-reachable endpoints AND the change is non-trivial (not a typo fix, not a backend-only refactor).
+- **What it produces:** bug/friction findings, UI snag clusters, per-persona usefulness ratings — the kind of feedback that would otherwise require scheduling real users.
+- **What it is not:** a replacement for real user testing. Use it to sharpen the UI and prioritize the real-user session that follows.
+- **Cost:** ~500 LLM calls default (25 personas × 2 testing styles × flows). Skippable — surface as an offer, not a gate.
+
+Phrasing for the user: "This touched user-facing flows — want to run `/personas` for a synthetic beta pass before inviting real users?" If yes, `/personas` runs its own 6-phase pipeline and writes `docs/persona-eval/<app>/`.
+
+---
+
 **State transition:** Write `artifacts.review_findings` with findings array. If high/critical findings and iteration < 2, transition back to phase-5 with status "fixing". If no high/critical findings, set workflow status to "completed".
