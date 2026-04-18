@@ -112,6 +112,8 @@ For each plan step:
      Review the evidence matrix BEFORE attempting a fix.
      (Prevents fix-retry loops on complex failures.)
 
+3a'. **Implementer pushback protocol:** When a code-quality or spec-review reviewer makes claims about external-tool behavior (CLI flag semantics, config discovery order, exit-code meanings), implementers MUST verify empirically before applying the fix. Record verification in-code as a comment. Reviewer authority does not override tool output. See `reviewer_claims_need_verification.md`.
+
 3a. Explain-before-fix (retry iter 2 gate):
     When a fix has already been attempted once and the test still fails,
     BEFORE writing any new code, ask the executor (same model) to explain

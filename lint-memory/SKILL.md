@@ -25,6 +25,7 @@ The 6 checks, in order:
 
 - Manually via `/lint-memory` — runs all 6 checks
 - Automatically during session-learnings compilation — runs checks 1, 2, 5, 6 only (quick lint)
+- **Automatically on session Stop** (opt-in) — `hooks/tier2/memory-triage-on-stop.sh` scans for unindexed memory files and writes `REVIEW_QUEUE.md` (advisory, never commits). Complements lint-memory by catching orphans between manual runs.
 - After bulk editing or reorganizing memory files
 - Before committing memory changes to catch issues early
 

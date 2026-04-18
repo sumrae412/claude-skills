@@ -180,6 +180,14 @@ After the edit, the controller MUST run — in the same turn — the same checks
 
 If any check fails, revert and dispatch a subagent instead. Direct execution without self-verification is the anti-pattern this section is trying to prevent.
 
+## Carry Lessons Across Task Groups
+
+After each task group's review cycle completes, scan spec-review and code-quality findings for **reusable lessons** (shell portability, tool-version quirks, cross-cutting idioms). Fold those lessons into the **next task group's dispatch prompt** as an explicit "known gotchas — avoid these" block with evidence (commit refs, specific failure modes).
+
+Do NOT carry task-specific bugs (they rarely recur). Only cross-cutting patterns. See `proactive_lessons_in_dispatch_prompt.md` in MEMORY.
+
+In the 2026-04-17 hook-improvements session, pre-seeding Task Group 2 (JS/TS lint gate) with 5 lessons from Task Group 1 (Python lint gate) eliminated re-discovery of bash 3.2 parse errors, mktemp extension-leak, apostrophe-in-heredoc, and exit-code-vs-regex issues — saved ~2 review/fix cycles.
+
 ## Clarification Windows
 
 Implementers follow a two-window clarification model:

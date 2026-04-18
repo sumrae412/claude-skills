@@ -89,6 +89,12 @@ Summary: 3 working, 1 broken, 1 warning, 2 not configured
 
 Use ✅ working, ❌ broken, ⚠️ warning, ℹ️ not configured.
 
+### Step 3.5: Registry Schema Checks
+
+Beyond per-script execution, validate registry entries for schema correctness:
+
+**Check: Stop-trigger hooks use `matcher: null`.** For `trigger` values in `{Stop, SessionStart, PreCompact}`, `matcher` must be `null`. Flag `matcher: ["*"]` or any non-null value — those triggers don't match against tool names, so a matcher is meaningless and may be rejected by future runtime versions. See `hook_stop_matcher_null_convention.md`.
+
 ### Step 4: Suggest Fixes
 
 For each broken or warning hook, provide a specific fix:
