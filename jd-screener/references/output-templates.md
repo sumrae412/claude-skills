@@ -1,11 +1,30 @@
 # Output Templates — Batch Summary, Ranked Table, Handoff Artifacts
 
-## Batch Summary (Phase 2)
+## Dedupe Report (Phase 2, Step 1)
+
+Run this BEFORE the ingestion summary. Always report — even when 0 dupes found.
+
+```
+## URL Dedupe
+
+Submitted: 13 URLs
+Duplicates removed: 2
+  - LinkedIn #4401124183 (appeared twice)
+  - LinkedIn #4388969098 (appeared twice)
+Unique to fetch: 11
+
+Canonical URLs (for reference):
+  1. https://www.linkedin.com/jobs/view/4391875424/
+  2. https://www.linkedin.com/jobs/view/4400408014/
+  …
+```
+
+## Batch Summary (Phase 2, Step 2)
 
 ```
 ## JD Ingestion Summary
 
-Requested: 12
+Unique URLs: 11
 Fetched cleanly: 7
 Auth-walled (need paste): 3 — LinkedIn #4402280727, #4401999001, #4398112233
 Expired / 404: 1 — Lever UUID abc123
@@ -19,17 +38,19 @@ Please paste the 3 auth-walled JDs (one at a time, I'll confirm before the next)
 Sort by composite score descending. One row per JD.
 
 ```
-| #  | Company          | Title                       | Score | Band        | Why fit                                   | Main gap                           | Rec     |
-|----|------------------|-----------------------------|-------|-------------|-------------------------------------------|------------------------------------|---------|
-| 1  | Enzo Tech Group  | VP of Data and AI           | 82    | STRONG_FIT  | AI function scale-up + claude_flow proof  | YOE: 12-15 req, 11 candidate       | Go      |
-| 2  | HealthWorks      | Director, ML Platform       | 78    | STRETCH★    | Direct domain + team-size match           | No RAG-platform experience         | Go/Ask  |
-| 3  | BioForge         | Head of Applied AI          | 71    | STRETCH     | Biotech domain + production ML            | Title step-up, no prior Head role  | Maybe   |
-| 4  | DataCoast        | VP Engineering (AI focus)   | 65    | STRETCH     | Seniority match                           | Engineering lean, not data-native  | Skip    |
-| 5  | MegaCorp         | Principal AI Architect      | 48    | WEAK_FIT    | Modern AI stack                           | IC track, not leadership           | Skip    |
-| 6  | FinFast          | Director of ML              | 72    | NO_GO       | Skill match is there                      | DEAL-BREAKER: onsite NYC           | No      |
+| #  | Company          | Title                       | Score | Band        | Link                                           | Why fit                                   | Main gap                           | Rec     |
+|----|------------------|-----------------------------|-------|-------------|------------------------------------------------|-------------------------------------------|------------------------------------|---------|
+| 1  | Enzo Tech Group  | VP of Data and AI           | 82    | STRONG_FIT  | linkedin.com/jobs/view/4402280727              | AI function scale-up + claude_flow proof  | YOE: 12-15 req, 11 candidate       | Go      |
+| 2  | HealthWorks      | Director, ML Platform       | 78    | STRETCH★    | boards.greenhouse.io/healthworks/jobs/12345    | Direct domain + team-size match           | No RAG-platform experience         | Go/Ask  |
+| 3  | BioForge         | Head of Applied AI          | 71    | STRETCH     | jobs.lever.co/bioforge/uuid-abc                | Biotech domain + production ML            | Title step-up, no prior Head role  | Maybe   |
+| 4  | DataCoast        | VP Engineering (AI focus)   | 65    | STRETCH     | datacoast.com/careers/vp-eng                   | Seniority match                           | Engineering lean, not data-native  | Skip    |
+| 5  | MegaCorp         | Principal AI Architect      | 48    | WEAK_FIT    | jobs.ashbyhq.com/megacorp/abc                  | Modern AI stack                           | IC track, not leadership           | Skip    |
+| 6  | FinFast          | Director of ML              | 72    | NO_GO       | linkedin.com/jobs/view/4398000001              | Skill match is there                      | DEAL-BREAKER: onsite NYC           | No      |
 
 ★ = BORDERLINE (within 3 points of a band boundary; user judgment called)
 ```
+
+**Link column rule:** display host+path (no `https://`, no query params) to keep the table readable. The full URL lives in `jd.md` and `fit-analysis.md`. User can click or copy as needed.
 
 Legend:
 - **Rec column values:** `Go` (pursue) · `Go/Ask` (pursue pending user confirmation) · `Maybe` (your call) · `Skip` (don't pursue) · `No` (deal-breaker)
@@ -174,9 +195,14 @@ full phased flow with review at each checkpoint.
 
 Suggested order (highest-scoring first):
   1. /resume-tailor with ~/Documents/resumes/Enzo/jd.md
+     apply at: https://www.linkedin.com/jobs/view/4402280727/
   2. /resume-tailor with ~/Documents/resumes/HealthWorks/jd.md
+     apply at: https://boards.greenhouse.io/healthworks/jobs/12345
   3. /resume-tailor with ~/Documents/resumes/BioForge/jd.md
+     apply at: https://jobs.lever.co/bioforge/uuid-abc
 ```
+
+**Every handoff artifact must include the apply URL.** If the source was a paste (no URL), say so explicitly: `apply at: (user-provided paste — no source URL; user knows where to apply)`.
 
 ## What NOT to include in outputs
 

@@ -2,6 +2,57 @@
 
 LinkedIn is the common case and the hardest case. Most other job boards (Greenhouse, Lever, Ashby, company careers pages) are cleanly fetchable via `WebFetch`.
 
+## URL Normalization (dedup prerequisite)
+
+Before any fetching, normalize URLs so duplicates collapse to one canonical form.
+
+### LinkedIn
+
+- Canonical form: `https://www.linkedin.com/jobs/view/<numeric-id>/`
+- Extract `<numeric-id>` with a regex on the path (e.g., `/jobs/view/(\d+)`).
+- Compare URLs on numeric ID alone — strip query params (`?eBP=...`, `&trackingId=...`, etc.), trailing slash variations, host case.
+- A URL without a trailing slash (`/jobs/view/4403401820`) is the same as one with (`/jobs/view/4403401820/`).
+
+### Greenhouse
+
+- Canonical form: `https://boards.greenhouse.io/<company>/jobs/<numeric-id>`
+- Strip query params (often `?gh_src=...` or `?source=...`).
+
+### Lever
+
+- Canonical form: `https://jobs.lever.co/<company>/<uuid>`
+- Strip query params.
+
+### Ashby
+
+- Canonical form: `https://jobs.ashbyhq.com/<company>/<uuid>`
+- Strip query params.
+
+### Workday
+
+- Canonical form varies by tenant; stable ID is the `R-######` req number embedded in the URL path.
+- Extract the `R-\d+` pattern; compare on that.
+
+### Other boards / company sites
+
+- Strip query params (tracking codes, UTM, session IDs).
+- Preserve path.
+- If the posting has both a public-site URL and an ATS URL, the ATS URL is canonical (more fetchable).
+
+### Pasted text (no URL)
+
+- Dedupe by `(company_normalized, title_normalized)` where normalization is lowercase + whitespace-collapsed.
+- Two pastes that dedupe to the same `(company, title)` — flag for user to resolve (one may be a revised/re-posted version).
+
+### Reporting
+
+Dedup must always be reported to the user, even when no duplicates were found:
+- `N URLs submitted, D duplicates removed, M unique.`
+- List the canonical URLs so the user can verify.
+- Name which duplicates collapsed onto which canonical entry.
+
+Never silently drop duplicates. A dedupe that removes entries without the user seeing which ones creates a trust gap.
+
 ## Fetch Order (per JD URL)
 
 1. **WebFetch** — default first try. Prompt asking for structured extraction (title, company, location, seniority, must-haves, nice-to-haves, comp, culture).

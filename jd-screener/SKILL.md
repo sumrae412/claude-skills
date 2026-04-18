@@ -40,13 +40,26 @@ Ask: *"Is this profile current and accurate? Anything to add or correct before I
 
 ## Phase 2 — Bulk JD Ingestion
 
-For each JD in the list, fetch and extract a structured posting. See `references/ingestion-patterns.md` for the fallback ladder (WebFetch → URL variants → manual paste). LinkedIn job pages often auth-gate; plan on partial fetch failures.
+### Step 1: Dedupe the URL list
+
+Before any fetching, normalize and dedupe. See `references/ingestion-patterns.md` §URL Normalization for rules by board. Summary:
+
+- **LinkedIn:** compare on numeric job ID from `/jobs/view/<id>/`; strip query params + trailing slashes.
+- **Greenhouse / Lever / Ashby:** strip query params; compare on canonical path.
+- **Workday:** extract `R-######` requisition number.
+- **Pasted text (no URL):** dedupe by `(company, title)` tuple; flag near-duplicates for user resolution.
+
+Report the dedupe result out loud: *"N URLs submitted, D duplicates removed, M unique to fetch."* Do NOT silently drop dupes — show which URLs were marked duplicates of which canonical entry.
+
+### Step 2: Fetch
+
+For each unique JD, fetch and extract a structured posting. See `references/ingestion-patterns.md` for the fallback ladder (WebFetch → URL variants → manual paste). LinkedIn job pages often auth-gate; plan on partial fetch failures.
 
 For each JD, store:
 
-- `title`, `company`, `location`, `seniority`, `comp_band`, `must_haves`, `nice_to_haves`, `red_flags`, `raw_text`, `source_url`
+- `title`, `company`, `location`, `seniority`, `comp_band`, `must_haves`, `nice_to_haves`, `red_flags`, `raw_text`, `source_url` *(always retained — downstream outputs must cite it so the user knows where to apply)*
 
-Present a batch summary (N JDs requested, M fetched, K failed with reason) and resolve the failed ones (ask user to paste, skip, or retry) before scoring.
+Present a batch summary (M unique, N fetched cleanly, K failed with reason) and resolve the failed ones (ask user to paste, skip, or retry) before scoring.
 
 ---
 
@@ -75,6 +88,7 @@ Combine into a weighted composite score. Default weights in the rubric; tunable 
 Present a ranked table with one row per JD. Format in `references/output-templates.md` §Ranked Table. Per row:
 
 - Composite score + band
+- **Source URL** (every row — so the user knows where to apply even without drilling down)
 - One-line "why fit" (strongest 2 signals)
 - One-line "main gap" (largest shortfall)
 - Go/no-go recommendation
@@ -89,8 +103,8 @@ User selects which to pursue. Defaults: pursue all STRONG_FIT, opt-in STRETCH, s
 
 For each JD the user confirms, write one directory under `~/Documents/resumes/<Company>/` containing:
 
-- `jd.md` — fetched posting + extracted structure
-- `fit-analysis.md` — Phase 3 score breakdown + Phase 4 reasoning
+- `jd.md` — fetched posting + extracted structure (**`source_url` in the header is mandatory** — the user needs to know where to submit)
+- `fit-analysis.md` — Phase 3 score breakdown + Phase 4 reasoning (include `source_url` at the top)
 
 Then prompt the user:
 
@@ -108,6 +122,8 @@ Do NOT invoke `resume-tailor` programmatically. Do NOT batch-draft. The handoff 
 4. **Deal-breakers are deal-breakers.** A hard preference fail is NO_GO regardless of skill match.
 5. **One score per JD, one handoff per JD.** Batches are for efficient fetching, not shortcut drafting.
 6. **Fetch failures surface, not silently skip.** If a JD can't be fetched, tell the user and resolve (paste or skip) — don't quietly drop it from the ranked list.
+7. **Dedupe before work, report dedupe out loud.** Duplicate URLs in a user-supplied list get normalized away at the top of Phase 2 with visible accounting — never silent. Applies to every subsequent session, not just the first time the user notices a dupe.
+8. **Source URL is always retained.** Every ranked-table row and every handoff artifact cites the original URL. The user needs to know where to apply; the skill does not make that information harder to find.
 
 ---
 
