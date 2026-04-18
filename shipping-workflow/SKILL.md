@@ -194,6 +194,17 @@ Only run the pipeline after the user chooses "Ship it" (or equivalent).
 
 Per-repo settings live in project rules or in the reference. Customize: CI command, test/lint commands, defensive-pattern checklists (backend/frontend), deep-dive trigger patterns, base branch. See [reference.md](reference.md) for the checklist and examples (Python/FastAPI, Node/React).
 
+## Worktree-session git/gh gotchas
+
+Applies when the session cwd is a worktree, not the main clone:
+
+- Prepend `cd /main/repo &&` to EVERY git/gh chain — the shell's cwd resets to the worktree path after each chained command finishes, so a subsequent Bash call without an explicit `cd` runs from the worktree's branch.
+- Use `gh pr create --head <branch>` and `gh pr view --repo <owner>/<name>` to bypass local-branch inference. Without `--head`, `gh pr create` infers the PR source from the current branch — which is the worktree's branch, not the one you just pushed.
+- `git checkout -b feat/X origin/main` issued via `cd /main/repo &&` creates the branch in the **main repo**, not the worktree. Subsequent absolute-path edits land in whichever working tree currently has the branch checked out. Use `git -C <worktree-path> checkout -b ...` if you want the branch in a specific worktree, or stay in the worktree entirely.
+- `git worktree list` to sanity-check which HEAD is where when state feels confused.
+
+See MEMORY `bash_cwd_resets_after_chained_cd_in_worktree.md` and `git_checkout_b_from_worktree_affects_main_repo.md`.
+
 ## Guardrails
 
 - Never force-push to main/master.
