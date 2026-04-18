@@ -17,7 +17,7 @@ Ask the user for:
 
 1. **Resume source** — path to their canonical resume (markdown preferred; DOCX/PDF fine, converted in-memory) OR pasted text.
 2. **Job description** — URL, file path, or pasted text. If URL, fetch with WebFetch; fall back to asking the user to paste if fetch fails.
-3. **Target outcome** — "drop-in replacement bullets", "full rewrite", "cover-letter draft too", or "just show me gaps". Default: tailored resume + change log.
+3. **Target outcome** — "drop-in replacement bullets", "full rewrite", "cover-letter draft too", or "just show me gaps". Default: tailored resume + keyword coverage report.
 
 If any piece is missing, ask once. Don't proceed with half the inputs.
 
@@ -92,18 +92,19 @@ Ask: *"Which headline angle? Does the narrative match how you want to be perceiv
 
 ## Phase 5 — Output
 
-Final deliverables. Format details, ATS tips, change-log format, and optional DOCX export via `anthropic-skills:docx` in `references/output-formats.md`.
+Final deliverables. Format details, ATS tips, and optional DOCX export via `anthropic-skills:docx` in `references/output-formats.md`.
 
 **Output path:** all files go to `~/Documents/resumes/<Company>/` (one folder per target company). See `references/output-formats.md` §0.
 
-**Required step before any file write:** walk the user through the assembled resume **section by section** (header/summary, each role, tail sections) for approval. See `references/output-formats.md` §4.5. Cover letters get the same treatment paragraph-by-paragraph, and must also clear the anti-patterns checklist (positive framing, no JD restatement, P4 claim verified).
+**Required step before any file write:** walk the user through the assembled resume **section by section** (header/summary, each role, tail sections) for approval. See `references/output-formats.md` §3.5. Cover letters get the same treatment paragraph-by-paragraph, and must also clear the anti-patterns checklist (positive framing, no JD restatement, P4 claim verified).
 
 Defaults:
 
 1. **Tailored resume** (markdown, ready to copy-paste or convert)
-2. **Change log** — what moved, what was reframed, what was added from discovery, with rationale per change
-3. **Keyword coverage report** — must-haves + nice-to-haves hit/missed
-4. **(Optional)** Cover letter draft — offered, not default
+2. **Keyword coverage report** — must-haves + nice-to-haves hit/missed
+3. **(Optional)** Cover letter draft — offered, not default
+
+No change log. What was reframed and why is a conversation artifact, not a deliverable — if the skill itself should behave differently next time, that's a session-learnings update to the skill, not a file for the user.
 
 Offer: *"Want me to convert to DOCX, draft a cover letter, or iterate on any section?"*
 

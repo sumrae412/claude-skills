@@ -1,6 +1,6 @@
 # Output Formats + ATS + Deliverables
 
-Phase 5 produces the final deliverables. Four parts — tailored resume, change log, keyword coverage report, optional cover letter.
+Phase 5 produces the final deliverables: tailored resume, keyword coverage report, optional cover letter. No change log — what was changed and why is a conversation artifact, not a file. If the skill itself should behave differently next time, that's a session-learnings update to the skill, not a deliverable.
 
 ## 0. Output Path Convention (Required)
 
@@ -10,7 +10,6 @@ All Phase 5 deliverables go to `~/Documents/resumes/<Company>/` — one folder p
 
 - `Summer_Rae_Resume_<Company>.md` and `.docx`
 - `Summer_Rae_CoverLetter_<Company>.md` and `.docx` (if drafted)
-- `Summer_Rae_<Company>_ChangeLog.md`
 - `Summer_Rae_<Company>_KeywordCoverage.md`
 
 `<Company>` matches the casing/spelling the user uses (e.g. `AHEAD`, `Anthropic`, `DeepMind`). Strip spaces and punctuation for directory and file names (`Acme Corp` → `AcmeCorp`).
@@ -59,44 +58,7 @@ Structure:
 
 **Role ordering:** reverse chronological. Group short or tangentially-relevant roles under "Earlier experience" with title + company + years only.
 
-## 2. Change Log
-
-A line-level diff with rationale. Makes every change auditable.
-
-```
-CHANGE LOG — Resume tailored to [Role] at [Company], [Date]
-
-HEADLINE:
-  ± "Product Manager" → "Product Manager specializing in 0 to 1 B2B SaaS"
-  Why: JD weights 0-to-1 product discovery at 0.4 (LEAD_WITH). Option A (function-forward) chosen per Phase 4.
-
-SUMMARY:
-  + Added 2-sentence summary
-  Why: Scope signal (cross-functional leadership) + user's eng+PM background warranted framing.
-
-EXPERIENCE — Senior PM, Acme (2022–present):
-  ± Bullet 1 reframed (Keyword Alignment):
-    Before: Led sprint team to ship onboarding flows
-    After:  Led self-serve onboarding redesign, driving 23% activation lift
-    Band: TRANSFERABLE 75% → DIRECT 90%
-    JD focus: 'B2B SaaS growth' (weight 0.3)
-
-  + New bullet from Phase 3 Branch A (Skill gap — product analytics):
-    "Built executive analytics dashboards (Looker) with ~200 weekly viewers..."
-    Band: TRANSFERABLE 70%
-
-  − Removed: "Ran weekly team lunches"
-    Why: WEAK 20% — no JD signal.
-
-  ↕ Reordered: bullet 4 → bullet 1
-    Why: Highest DIRECT band; LEAD_WITH for top focus area.
-
-SECTIONS:
-  − Removed "Skills" list (noise; keywords woven into bullets)
-  + Added "Projects" section (addresses recency gap on ML)
-```
-
-## 3. Keyword Coverage Report
+## 2. Keyword Coverage Report
 
 ATS-oriented, binary per keyword.
 
@@ -121,7 +83,7 @@ NOTES:
   - ATS traps avoided: filler words kept out of bullets.
 ```
 
-## 4. Cover Letter (Optional)
+## 3. Cover Letter (Optional)
 
 Offered, not default. If the user says yes, write naturally and persuasively — like a real professional wrote it, not a chatbot.
 
@@ -189,7 +151,7 @@ After the first full draft, ask whether the user wants to adjust:
 
 Re-draft. Repeat until the user explicitly signs off before any file write.
 
-## 4.5 Section-by-Section Review (Required Before File Export)
+## 3.5 Section-by-Section Review (Required Before File Export)
 
 Before writing any file (markdown, DOCX, PDF, cover letter), walk the user through the assembled resume **section by section**. Present one section at a time (header/summary, then each role, then education/speaking/skills) and wait for explicit approval or edits before moving to the next.
 
@@ -204,7 +166,7 @@ Why this matters: the Phase 2 and Phase 4 checkpoints validate individual bullet
 
 Only after the final confirmation: write the markdown, generate DOCX, and produce the cover letter. The cover letter gets its own review pass (paragraph-by-paragraph) before file export.
 
-## 5. Format Conversion (Optional)
+## 4. Format Conversion (Optional)
 
 - **DOCX:** invoke `anthropic-skills:docx` with the final markdown. Handles styling, hyperlinks, and file write.
 - **DOCX via `/tmp/` script:** if generating with a standalone node script that imports `docx-js`, the module is often installed globally. Wrap the call: `NODE_PATH="$(npm root -g)" node /tmp/generate_resume_docx.js`. Without `NODE_PATH`, node can't resolve global packages from scripts outside an npm project and fails with `Cannot find module 'docx'`.
@@ -216,7 +178,7 @@ Never offer HTML, LaTeX, or heavily-designed templates as default. They fail ATS
 ## ATS Tips
 
 - Keywords must appear **in the bullet prose**, not just in a skills list. ATS-modern scanners weight context, not keyword density.
-- **Avoid Unicode glyphs in the resume body.** Arrows (`→`, `⇒`), em-dashes in keyword positions, bullet-point characters, and fancy quotes can fail older ATS parsers and cause keyword mismatches. Write `0 to 1` instead of `0→1`, `A to B` instead of `A→B`, regular hyphens instead of en/em-dashes in keyword-adjacent positions. Reserve Unicode for the change log and coverage report (internal, not parsed by ATS).
+- **Avoid Unicode glyphs in the resume body.** Arrows (`→`, `⇒`), em-dashes in keyword positions, bullet-point characters, and fancy quotes can fail older ATS parsers and cause keyword mismatches. Write `0 to 1` instead of `0→1`, `A to B` instead of `A→B`, regular hyphens instead of en/em-dashes in keyword-adjacent positions. Reserve Unicode for the coverage report (internal, not parsed by ATS).
 - Do not use tables, text boxes, headers/footers, or multi-column layouts in DOCX. Single column, standard headings.
 - Standard section names (`Experience`, not "Where I've Been"). ATS looks for headers.
 - Dates in `MMM YYYY` or `YYYY`, consistently.
@@ -243,7 +205,6 @@ These waste line real-estate on a modern resume. Cut them unless a specific JD o
 Before wrapping up:
 
 - [ ] Tailored resume (markdown)
-- [ ] Change log with rationale per change
 - [ ] Keyword coverage report
 - [ ] DOCX version (if requested)
 - [ ] Cover letter draft (if requested)
