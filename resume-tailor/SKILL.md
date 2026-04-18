@@ -31,13 +31,16 @@ If any piece is missing, ask once. Don't proceed with half the inputs.
 
 Produce a **structured job profile** before touching the resume. Output format, action codes, and extraction heuristics live in `references/jd-analysis.md` — load it now.
 
-Output to user (checkpoint):
+Output to user (checkpoint) — **in this order**:
 
-- Weighted focus areas (weights sum to 1.0)
-- Must-have keywords vs. nice-to-haves (ATS tier)
-- Seniority signals + scope signals (team size, ownership, budget)
-- Cultural signals (what kind of operator do they want?)
-- Action-code plan per focus area: `LEAD_WITH` / `EMPHASIZE` / `QUANTIFY` / `DOWNPLAY`
+1. **JD recap** — title, company, seniority, comp, work mode, industry. Then a **bulleted 3-6 line summary of what the role actually does** (responsibilities + must-haves in plain language, not JD-parroted). This anchors the user in the JD before they evaluate weights.
+2. Weighted focus areas (weights sum to 1.0) — tied explicitly to JD recap items so the user can see *why* each area got its weight
+3. Must-have keywords vs. nice-to-haves (ATS tier)
+4. Seniority signals + scope signals (team size, ownership, budget)
+5. Cultural signals (what kind of operator do they want?)
+6. Action-code plan per focus area: `LEAD_WITH` / `EMPHASIZE` / `QUANTIFY` / `DOWNPLAY`
+
+**Rationale for JD-first ordering:** Users often can't evaluate whether a weight is right without re-anchoring in the JD content. Placing the JD recap immediately above the weights means the user sees the *evidence* and the *derived profile* together, without scrolling back to the JD file.
 
 Ask: *"Does this profile match how you read the role? Anything I over- or under-weighted?"* Wait for confirmation before Phase 2.
 
@@ -92,7 +95,7 @@ Ask: *"Which headline angle? Does the narrative match how you want to be perceiv
 
 ## Phase 5 — Output
 
-Final deliverables. Format details, ATS tips, and optional DOCX export via `anthropic-skills:docx` in `references/output-formats.md`.
+Final deliverables. Format details, ATS tips, and optional DOCX export via `anthropic-skills:docx` in `references/output-formats.md`. **Load `references/templates/README.md` now** — it captures the user's canonical resume + cover-letter layout, heading style, date format, and DOCX style source. Every Phase 5 output must follow those conventions unless the user explicitly deviates.
 
 **Output path:** all files go to `~/Documents/resumes/<Company>/` (one folder per target company). See `references/output-formats.md` §0.
 

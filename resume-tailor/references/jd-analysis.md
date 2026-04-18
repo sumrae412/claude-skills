@@ -4,6 +4,30 @@ Parse the job description into a structured profile before touching the resume. 
 
 ## Output Schema
 
+**Phase 1 output order to the user:** JD recap first, then derived profile (weights + keywords + action codes). The user needs to see the JD content re-surfaced above the weights so they can evaluate fit without scrolling back to the JD file. The recap is plain-English, not YAML.
+
+### 1. JD Recap (shown first, plain-English)
+
+```markdown
+## JD Recap
+
+- **Company:** Acme Corp (healthcare AI platform)
+- **Title:** Director, Applied AI Engineering
+- **Seniority:** Director
+- **Comp:** $167K–$268K base
+- **Work mode:** Remote with occasional travel
+- **Industry:** Healthcare (workers' comp / medical services)
+
+**What the role actually does (plain-English):**
+- Lead the team putting AI into production for core product capabilities
+- Build document-processing pipelines, LLM orchestration patterns, agentic automation workflows
+- Own AI platform strategy + technical direction + standards
+- Grow an engineering team across US + Mexico time zones
+- Operate inside HIPAA/PHI-protected data environments
+```
+
+### 2. Derived Profile (after JD recap)
+
 ```yaml
 role:
   title: "Senior Product Manager"

@@ -2,6 +2,8 @@
 
 Phase 5 produces the final deliverables: tailored resume, keyword coverage report, optional cover letter. No change log — what was changed and why is a conversation artifact, not a file. If the skill itself should behave differently next time, that's a session-learnings update to the skill, not a deliverable.
 
+**Load `templates/README.md` before producing any Phase 5 output.** It captures the user's canonical layout, heading style, date format, and DOCX style source. Every resume and cover letter must follow those conventions unless the user explicitly deviates.
+
 ## 0. Output Path Convention (Required)
 
 All Phase 5 deliverables go to `~/Documents/resumes/<Company>/` — one folder per target company. Create the directory if it does not exist (`mkdir -p`).
@@ -168,7 +170,7 @@ Only after the final confirmation: write the markdown, generate DOCX, and produc
 
 ## 4. Format Conversion (Optional)
 
-- **DOCX:** invoke `anthropic-skills:docx` with the final markdown. Handles styling, hyperlinks, and file write.
+- **DOCX:** use pandoc with `--reference-doc=` pointing at the appropriate template in `templates/` — this inherits the user's fonts, margins, and heading styles on every render. See `templates/README.md` for the exact command. Alternative: `anthropic-skills:docx` plugin if template-driven styling is not required.
 - **DOCX via `/tmp/` script:** if generating with a standalone node script that imports `docx-js`, the module is often installed globally. Wrap the call: `NODE_PATH="$(npm root -g)" node /tmp/generate_resume_docx.js`. Without `NODE_PATH`, node can't resolve global packages from scripts outside an npm project and fails with `Cannot find module 'docx'`.
 - **PDF:** convert from DOCX (Word, Pages, LibreOffice) OR render markdown via pandoc. Avoid PDF as primary source — ATS parses PDF unreliably. Submit DOCX when allowed; PDF only when required.
 - **Plain text:** for pasting into LinkedIn or ATS forms, generate a plain-text version stripped of markdown syntax.
