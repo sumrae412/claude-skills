@@ -153,6 +153,7 @@ Read the JD's voice and the company's public writing. Match it. A letter pitched
 - **Generic nouns where the user has distinctive ones.** "Combination", "intersection", "blend" are invisible; if the user offered a more specific word ("dual-modality", "two-track", "executive-plus-hands-on"), keep it. Don't smooth distinctive vocabulary into interchangeable filler.
 - **Any sentence restating the JD back at the reader** ("The JD emphasizes…", "Your posting highlights…", "As described in the role…"). They wrote it; answer the ask instead.
 - **Company-specific claims in P4 without verification** — do not infer the company's focus, methodology, or segment from the JD alone. WebFetch the company's own site (about page, services/products, careers) before naming anything specific. If the claim can't be verified, keep P4 generic or drop it.
+- **P4 self-focused openers** ("What excites me about working at…", "What drew me to…", "What I'd love about…"). These center the applicant's feelings, not the applicant's match to the role. Flip to audience-centered: lead with the role need (stated abstractly, not as a JD quote) then the candidate's evidence that answers it. Example: *"The full stack of enterprise agentic AI delivery — vision, execution, governance, adoption — is the work I've been running for years. At Govini…"* maps each JD pillar to a concrete credit without saying "your role calls for X." Describes the shape of the work, not the hiring team's stated ask.
 
 ### Process
 
