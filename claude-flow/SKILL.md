@@ -135,6 +135,8 @@ Contracts are the interface between phases. When dispatching subagents, pass the
 
 **Pattern vocabulary:** See `references/multi-agent-patterns.md` for which multi-agent pattern each phase implements. Load when designing a new phase or debating whether a phase's coordination approach is the right fit.
 
+**Phase 6 optional follow-up:** `/personas` — synthetic beta test (bugs, UI snags, usefulness ratings), offered non-gating when `$diff` touches user-facing flows. See `phases/phase-6-quality.md` §Optional follow-up.
+
 ---
 
 ## Error Recovery
