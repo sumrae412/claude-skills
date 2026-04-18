@@ -94,6 +94,8 @@ User says "implement X" / "fix Y"
 
 ## Path Criteria
 
+- **Direct-route (skip workflow):** Some requests match a dedicated skill better than any workflow path. Route without entering Phase 2+:
+  - "synthetic beta test &lt;app&gt;", "alpha test with personas", "assess usability with simulated users", "run persona-based eval" → `/personas` (standalone 6-phase pipeline for simulated user testing).
 - **Bug path:** Error report, regression, stack trace, "fix this bug", GitHub issue tagged as bug. Routes to `/bug-fix` skill — the dedicated bug fix orchestrator.
 - **Fast path:** Typo fix, one-line change, config tweak, single-file edit with no ripple effects.
 - **Plan path:** An existing plan file or PRP already exists for this feature — skip directly to Phase 5.

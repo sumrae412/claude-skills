@@ -264,4 +264,9 @@ Run a specific feature, design, or decision through multiple personas to get a v
 [What the cross-persona analysis reveals that a single-persona review wouldn't]
 ```
 
+## Related skills
+
+- **`/personas`** — for **population-level** alpha/beta testing (25+ synthetic personas, not one). Generates a diverse synthetic population and drives an app through multi-style testing end-to-end. Use when evaluating a pre-launch app — not when rehearsing a conversation with one specific person.
+- This skill (`synthetic-persona`) — for **one** persona built from public data about a real person, for pitch rehearsal / product review / interpersonal analysis. N=1, qualitative.
+
 This helps prioritize features by asking: "Who does this serve, who doesn't care, and who does it actively hurt?"
