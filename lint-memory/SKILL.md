@@ -8,7 +8,7 @@ user-invocable: true
 
 ## Overview
 
-Run 4 health checks against a project's memory directory to catch broken references, forgotten files, stale code pointers, and contradictory entries. Use this skill to keep memory clean and trustworthy.
+Run 6 health checks against a project's memory directory to catch broken references, forgotten files, stale code pointers, contradictory entries, oversized index lines, and frontmatter schema violations. Use this skill to keep memory clean and trustworthy.
 
 The 6 checks, in order:
 
@@ -259,7 +259,7 @@ Produce a markdown report with this structure:
 
 ### Full Lint (manual `/lint-memory`)
 
-Run all 5 checks in order. Produce the complete report.
+Run all 6 checks in order. Produce the complete report.
 
 ### Quick Lint (auto during compilation)
 
