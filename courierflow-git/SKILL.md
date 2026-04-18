@@ -160,6 +160,10 @@ python scripts/canary_deploy.py \
 python scripts/vulnerability_scan.py --severity-threshold high --format json
 ```
 
+## PR Shape: Foundation + One Worked Example
+
+When rolling out a pattern that will apply to N call-sites, prefer the **foundation + one worked example** PR shape — ship the primitive plus one representative caller in PR 1; follow-up per-site PRs become tiny mechanical diffs. Validated on PRs #384/#385. See `memory/pattern_foundation_plus_one_worked_example_pr_shape.md`.
+
 ## Commit Message Format
 
 ```

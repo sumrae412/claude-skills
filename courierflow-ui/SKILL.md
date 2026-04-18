@@ -100,6 +100,14 @@ Refresh procedure documented in MEMORY: `pattern_logo_and_favicon_asset_pipeline
 - **Equal-width columns:** Always use `repeat(N, minmax(0, 1fr))` instead of `repeat(N, 1fr)`. Plain `1fr` allows content (long text, images) to inflate individual columns beyond their fair share. `minmax(0, 1fr)` constrains the minimum to 0, forcing truly equal widths.
 - **Equal-height rows:** For grids that need uniform row heights (calendars, dashboards), set `grid-auto-rows: minmax(<min>, 1fr)` so rows do not size to content. Without this, rows with more content appear taller than empty rows.
 
+## CopilotKit generative UI + page_context readables
+
+Two conventions established in PRs #384 / #385 (2026-04-18):
+
+1. **Generative UI cards** live in `app/static/src/components/generative-ui/` and are registered via `useGenerativeActions` hook. Adding a new card: build the component following the existing `TenantCard` / `ConfirmationCard` shape, export from `generative-ui/index.ts`, register a `useCopilotAction` handler in `useGenerativeActions.ts` (use `render` for display-only, `renderAndWaitForResponse` for human-in-the-loop).
+
+2. **Page context readables** — to expose per-page state to the AI, override `{% block page_context %}` in your page template with a JSON object. Publish IDs and UX state (tab, filters, counts) — **never PII**. Backend actions fetch the actual data. See MEMORY `pattern_copilotkit_page_context_readables.md`.
+
 ## Before Creating New CSS
 
 Check if existing component/page file already covers the need.
