@@ -26,6 +26,12 @@ Automated QC for screencasts and tutorials. Produces a chronological incident re
 - `pip install openai-whisper`
 - ~2 GB disk for the `base` Whisper model (auto-downloaded on first run)
 
+Pre-flight check (runs in ~1s and surfaces all 4 deps in one shot rather than failing one-at-a-time mid-run):
+
+```bash
+which ffmpeg yt-dlp python3 && python3 -c 'import whisper'
+```
+
 ## Input forms
 
 Accept any of:
@@ -120,6 +126,8 @@ Invariants to preserve:
 - Visual QC is on by default and opt-out via `--no-visual`. Making it opt-in would hide exactly the failure modes the user most often asks about.
 
 ## Limitations (be upfront with the user)
+
+> Heuristic detectors cite observables, not conclusions — see MEMORY §"Heuristic detectors framed as candidates for review, not verdicts".
 
 - **Visual QC is heuristic, not vision.** The skill does not see what's on screen. It detects *change* (scene cuts, freezes, black frames) and correlates change against narration cues — it won't read the text in a tab, identify a wrong icon, or tell you the cursor is in the wrong button. For those, a human has to scrub the flagged timestamps. For true multimodal review, pair this log with a vision-capable model looking at frames at those timestamps.
 - **AV-mismatch false positives are common on lively narration.** "Now this is interesting" counts as a transition word but has no visual intent; tight demos with fast cutting produce many orphan scene changes. Treat AV_MISMATCH as candidate-for-review, not verdict. Tune `--av-window` up if your narration runs slightly ahead or behind the visual.
