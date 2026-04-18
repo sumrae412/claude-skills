@@ -133,6 +133,8 @@ Contracts are the interface between phases. When dispatching subagents, pass the
 | 5.5 | Reflection | executor | RARV self-check before expensive reviews | Auto |
 | 6 | Quality + Finish | sonnet/haiku | Cascading 5-tier review → verify → commit → retrospective | Verification |
 
+**Pattern vocabulary:** See `references/multi-agent-patterns.md` for which multi-agent pattern each phase implements. Load when designing a new phase or debating whether a phase's coordination approach is the right fit.
+
 ---
 
 ## Error Recovery
