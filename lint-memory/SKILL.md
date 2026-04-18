@@ -10,7 +10,7 @@ user-invocable: true
 
 Run 4 health checks against a project's memory directory to catch broken references, forgotten files, stale code pointers, and contradictory entries. Use this skill to keep memory clean and trustworthy.
 
-The 5 checks, in order:
+The 6 checks, in order:
 
 | # | Check | Severity | Auto-fixable |
 |---|-------|----------|--------------|
@@ -19,11 +19,12 @@ The 5 checks, in order:
 | 3 | Stale Entries | warning | no (manual review) |
 | 4 | Contradictions | error | no (manual review) |
 | 5 | Index Line Length | warning | yes (via `scripts/slim_memory_index.py`) |
+| 6 | Frontmatter Schema | warning | no (manual review) |
 
 ### When to Use
 
-- Manually via `/lint-memory` — runs all 5 checks
-- Automatically during session-learnings compilation — runs checks 1, 2, 5 only (quick lint)
+- Manually via `/lint-memory` — runs all 6 checks
+- Automatically during session-learnings compilation — runs checks 1, 2, 5, 6 only (quick lint)
 - After bulk editing or reorganizing memory files
 - Before committing memory changes to catch issues early
 
@@ -195,6 +196,40 @@ For each over-long line, report:
 - Actual length and excess over threshold
 - Suggested action: "Run `python3 scripts/slim_memory_index.py <memory_dir> --apply` to migrate detail into topic file"
 
+## Check 6 — Frontmatter Schema
+
+**Severity:** warning
+**Auto-fixable:** no (manual review required)
+
+### Why this exists
+
+Memory entries may optionally declare `evidence` (the episodes/lessons the entry builds on) and `confidence` (a float in `[0.0, 1.0]` signalling the strength of the claim). When authors add these fields, a typo or malformed value silently breaks downstream tooling that reads them. This check validates the *shape* of optional fields when present — it does not require them.
+
+See [`docs/conventions/memory-entry-schema.md`](../../claude_flow/docs/conventions/memory-entry-schema.md) for the full schema.
+
+### What to scan
+
+All top-level `*.md` files in the memory directory (same glob as Check 2, same exclusions). Skip files without YAML frontmatter (no leading `---` fence).
+
+### What to look for
+
+Parse the YAML frontmatter. Validate only when a field is present:
+
+- **`evidence`** — must be a YAML list. Every element must be a non-empty string. Reject `evidence: ""`, `evidence: null`, `evidence: [""]`, `evidence: "ep-001"` (scalar instead of list).
+- **`confidence`** — must be a number (int or float) in the inclusive range `[0.0, 1.0]`. Reject `confidence: "0.9"` (string), `confidence: 1.5`, `confidence: -0.1`.
+
+Absence of either field is NOT a warning.
+
+### Output
+
+For each invalid value, report:
+- Source file
+- Field name (`evidence` or `confidence`)
+- Offending value (truncated to 60 chars)
+- What was expected (e.g. "list of non-empty strings" / "number in [0.0, 1.0]")
+
+This check cannot auto-fix because fixing requires knowing the author's intent (e.g. was `confidence: 9` meant to be `0.9`?).
+
 ## Output Format
 
 Produce a markdown report with this structure:
@@ -212,6 +247,7 @@ Produce a markdown report with this structure:
 - [orphan] `feedback_api_retry_logic.md` — not referenced anywhere (auto-fixed: added to MEMORY.md)
 - [stale] `reference_db_schema.md`: references `src/models/legacy_user.py` — file not found
 - [oversized-index] `MEMORY.md:64`: 1502 chars (1252 over 250-char limit) — run `scripts/slim_memory_index.py --apply` to migrate
+- [frontmatter] `feedback_token_rotation.md`: `confidence: "0.9"` — expected number in [0.0, 1.0], got string
 
 ## Summary
 - Errors: N (M auto-fixed)
@@ -227,7 +263,7 @@ Run all 5 checks in order. Produce the complete report.
 
 ### Quick Lint (auto during compilation)
 
-Run checks 1, 2, and 5 (Broken Links + Orphan Memories + Index Line Length). Skip checks 3-4 (codebase grep + LLM judgment) to keep compilation fast. Check 5 is a single-file scan with a numeric threshold — fast enough to run every time. Produce an abbreviated report with Errors and Warnings from those three checks.
+Run checks 1, 2, 5, and 6 (Broken Links + Orphan Memories + Index Line Length + Frontmatter Schema). Skip checks 3-4 (codebase grep + LLM judgment) to keep compilation fast. Checks 5 and 6 are fast mechanical scans — cheap enough to run every time. Produce an abbreviated report with Errors and Warnings from those four checks.
 
 ## Important Notes
 
