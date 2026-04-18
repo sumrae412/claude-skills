@@ -21,7 +21,16 @@ Cross-model adversarial review for plans and code. Three tiers auto-selected by 
 - **Code reviews** with 3+ files or cross-cutting concerns → Tier 2 (dual critic)
 - **Simple code reviews** (1-2 files, no schema/security) → Tier 1 (scope check)
 - **User says "debate this"** → forces Tier 3
-- **User says "quick review"** → forces Tier 1
+- **User says "quick review"** or caller passes `--lite` → forces Tier 1
+
+## Flags
+
+| Flag | Effect |
+|------|--------|
+| `--lite` | Force Tier 1 (DeepSeek scope check only). Skip dual-critic and Opus Lead. ~10x cheaper. Use for early iterations where a full debate would be wasted. Output carries a `tier: 1 (forced)` marker so the caller knows to re-run full debate before shipping. |
+| `--tier N` | Force tier N explicitly (1/2/3). Overrides auto-tiering. |
+
+`--lite` is the "lite version" of this skill — quick, cheap, and intentionally shallow. Full tri-model debate should still run before the plan is approved or the code lands.
 
 ## When NOT to Use
 
