@@ -181,7 +181,7 @@ Go / Stretch-Go / Maybe / Skip / No-Go
 - Keywords to weave: …
 ```
 
-## Handoff Prompt (Phase 5, shown to user)
+## Sequential-Tailoring Prompt (Phase 5, shown to user)
 
 ```
 Wrote <N> directories to ~/Documents/resumes/:
@@ -189,17 +189,16 @@ Wrote <N> directories to ~/Documents/resumes/:
   - HealthWorks/jd.md + fit-analysis.md
   - BioForge/jd.md + fit-analysis.md
 
-To draft resume + cover letter for each, invoke `/resume-tailor` and
-point it at the directory. Run one at a time — each invocation runs the
-full phased flow with review at each checkpoint.
+Starting sequential tailoring (highest-scoring first). Each resume-tailor
+invocation runs its full phased flow with checkpoints — say "pause" between
+any two to halt the chain.
 
-Suggested order (highest-scoring first):
-  1. /resume-tailor with ~/Documents/resumes/Enzo/jd.md
-     apply at: https://www.linkedin.com/jobs/view/4402280727/
-  2. /resume-tailor with ~/Documents/resumes/HealthWorks/jd.md
-     apply at: https://boards.greenhouse.io/healthworks/jobs/12345
-  3. /resume-tailor with ~/Documents/resumes/BioForge/jd.md
-     apply at: https://jobs.lever.co/bioforge/uuid-abc
+Order:
+  1. Enzo — apply at https://www.linkedin.com/jobs/view/4402280727/
+  2. HealthWorks — apply at https://boards.greenhouse.io/healthworks/jobs/12345
+  3. BioForge — apply at https://jobs.lever.co/bioforge/uuid-abc
+
+Invoking /resume-tailor now for #1 (Enzo)...
 ```
 
 **Every handoff artifact must include the apply URL.** If the source was a paste (no URL), say so explicitly: `apply at: (user-provided paste — no source URL; user knows where to apply)`.

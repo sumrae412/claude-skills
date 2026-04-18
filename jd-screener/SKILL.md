@@ -99,24 +99,28 @@ User selects which to pursue. Defaults: pursue all STRONG_FIT, opt-in STRETCH, s
 
 ---
 
-## Phase 5 — Handoff to resume-tailor
+## Phase 5 — Sequential Tailoring
 
-For each JD the user confirms, write one directory under `~/Documents/resumes/<Company>/` containing:
+For each confirmed JD, write one directory under `~/Documents/resumes/<Company>/`:
 
-- `jd.md` — fetched posting + extracted structure (**`source_url` in the header is mandatory** — the user needs to know where to submit)
-- `fit-analysis.md` — Phase 3 score breakdown + Phase 4 reasoning (include `source_url` at the top)
+- `jd.md` — fetched posting + extracted structure (**`source_url` in the header is mandatory**)
+- `fit-analysis.md` — Phase 3 score breakdown + Phase 4 reasoning (include `source_url` at top)
 
-Then prompt the user:
+Then present the ordered list and begin sequential tailoring:
 
-> *"To draft resume + cover letter for <Company>, invoke `/resume-tailor` and point it at `~/Documents/resumes/<Company>/jd.md`. Each invocation runs the full phased flow with review at each checkpoint — no batch auto-drafting."*
+> *"Writing tailoring artifacts for N companies: A, B, C... Invoking `/resume-tailor` starting with A. Each session runs its full phased flow with checkpoints — I'll pause for your review at every phase before moving to the next company."*
 
-Do NOT invoke `resume-tailor` programmatically. Do NOT batch-draft. The handoff is a file + a nudge.
+Invoke `/resume-tailor` on the first `jd.md`. Wait for that session to complete all 5 phases with user checkpoints (no skipping). Only then move to the next JD. Do NOT run multiple resume-tailor sessions in parallel — parallelism breaks checkpoint discipline and truth-preserving review.
+
+**Pause-between-JDs:** if the user says "stop" or "pause" or wants a break after any JD, halt the chain. Remaining artifacts stay on disk; the user (or a future jd-screener session) can resume by invoking `/resume-tailor` on any remaining `jd.md`.
+
+**Partial-data JDs (auth-walled previews, incomplete pastes):** flag the incomplete data to the user at the start of that JD's resume-tailor invocation. Offer: (a) proceed with preview-only, (b) request paste before tailoring, (c) skip this JD and move to the next. Do not tailor silently against partial data.
 
 ---
 
 ## Principles
 
-1. **Triage, not applying.** This skill scores fit. Drafting goes through `resume-tailor` one JD at a time with full checkpoints. Sending applications is the user's hand only.
+1. **Triage first, then tailor sequentially.** This skill scores fit, then invokes `resume-tailor` one JD at a time for confirmed winners. Each resume-tailor invocation runs its full phased flow with user checkpoints — no shortcut through drafting. Sending applications remains the user's hand only.
 2. **Profile-first.** No scoring without a confirmed candidate profile. Stale profiles produce stale triage.
 3. **Honest scoring.** Bands are calibrated; do not inflate STRETCH into STRONG_FIT to justify 15 applications.
 4. **Deal-breakers are deal-breakers.** A hard preference fail is NO_GO regardless of skill match.
