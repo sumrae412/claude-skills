@@ -279,3 +279,7 @@ Run checks 1, 2, 5, and 6 (Broken Links + Orphan Memories + Index Line Length + 
 - **Found stale code references?** Update memory files manually, then re-run `/lint-memory` to confirm.
 - **Fixed broken links or orphans?** Use `/session-learnings` to capture the cleanup as a session event.
 - **Memory growing too large?** Review MEMORY.md for entries that duplicate CLAUDE.md content or are no longer load-bearing — remove them.
+
+## Related
+
+- [Memory Entry Schema](https://github.com/summerela/claude_flow/blob/main/docs/conventions/memory-entry-schema.md) — canonical definition of optional `evidence` + `confidence` fields validated by Check 6.
