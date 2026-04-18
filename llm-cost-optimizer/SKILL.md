@@ -188,3 +188,4 @@ All output follows the structured standard:
 - **rag-architect**: Use when designing retrieval pipelines. NOT for cost optimization of the LLM calls within RAG (that is this skill).
 - **prompt-governance**: Use when managing prompts in production. Pairs with this skill — governance catches quality regressions when you route to cheaper models.
 - **claude-api**: Use when building/tuning Anthropic SDK apps. Pairs with this skill for prompt-cache-aware implementations.
+- **brevity**: Complementary at a different layer. `llm-cost-optimizer` audits SDK call patterns (caching, batching, model tier) inside an AI product. `brevity` trims the outer Claude session's output. Use both together: tune SDK calls with this skill, invoke `brevity` on the Claude session iterating on the code.
