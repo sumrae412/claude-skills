@@ -97,6 +97,8 @@ Ask: *"Which headline angle? Does the narrative match how you want to be perceiv
 
 Final deliverables. Format details, ATS tips, and optional DOCX export via `anthropic-skills:docx` in `references/output-formats.md`. **Load `references/templates/README.md` now** — it captures the user's canonical resume + cover-letter layout, heading style, date format, and DOCX style source. Every Phase 5 output must follow those conventions unless the user explicitly deviates.
 
+**Template-compliant markdown is mandatory.** Resume markdown must use pandoc `custom-style` divs for the name (`::: {custom-style="Title"} ... :::`) and headline (`::: {custom-style="Subtitle"} ... :::`), ALL-CAPS H1 section headers (`# SKILLS`, `# EXPERIENCE`, `# EDUCATION`), plain-text H2 role headings (`## Company, Location - Title`, no italics), and `MONTH YYYY - PRESENT` date lines. Do NOT write the name as `# Name` or add a `## Summary` heading — both break the template's style mapping. Cover letters use the top-block format in `references/templates/README.md` (bold name, city/phone/email, ordinal date, recipient block, `Dear ...`, body, `Regards,`, bold signature name).
+
 **Output path:** all files go to `~/Documents/resumes/<Company>/` (one folder per target company). See `references/output-formats.md` §0.
 
 **Required step before any file write:** walk the user through the assembled resume **section by section** (header/summary, each role, tail sections) for approval. See `references/output-formats.md` §3.5. Cover letters get the same treatment paragraph-by-paragraph, and must also clear the anti-patterns checklist (positive framing, no JD restatement, P4 claim verified).

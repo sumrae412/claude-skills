@@ -22,34 +22,46 @@ Ask once if the target folder already exists with content that wasn't written th
 
 Markdown is the primary output because it's readable, diff-able, and converts cleanly to DOCX/PDF via downstream tools.
 
-Structure:
+**Use pandoc `custom-style` divs for the name and headline** so the rendered DOCX invokes the template's distinct `Title` and `Subtitle` Word paragraph styles — not generic `Heading 1` + bold body. Without the divs, the name looks identical to section headings like `SKILLS` and the template's visual hierarchy collapses. This is required, not optional.
+
+Structure (template-compliant):
 
 ```markdown
-# [Name]
+::: {custom-style="Title"}
+[Name]
+:::
 
+::: {custom-style="Subtitle"}
 [Headline]
+:::
 
 [City] · [email] · [phone] · [portfolio/LinkedIn]
 
-## Summary (optional)
-[2–3 sentence summary, if Phase 4 chose to include one]
+[2–3 sentence summary paragraph, if Phase 4 chose to include one — NO `## Summary` heading; the template has no Summary style]
 
-## Experience
+# SKILLS
+[Grouped or flat prose, depending on seniority]
 
-### [Title], [Company] — [Location] (optional)
-[Start date] – [End date or Present]
+# EXPERIENCE
+
+## [Company], [Location] - [Title]
+[MONTH YYYY] - [MONTH YYYY or PRESENT]
 - [Bullet 1, highest-confidence, LEAD_WITH applies if relevant]
 - [Bullet 2]
 - ...
 
-## Skills (optional, if Phase 1 called for keyword density)
-[Grouped or flat, depending on seniority]
-
-## Education
+# EDUCATION
 [Degree, School, Year]
 
-## [Optional sections: Projects, Publications, Speaking — only if Phase 1 flagged them as signal]
+# [Optional sections: PUBLICATIONS & PRESENTATIONS, AWARDS — ALL CAPS H1, only if Phase 1 flagged them as signal]
 ```
+
+**Heading rules:**
+
+- Top-level section headings are `# ` (H1) and **ALL CAPS** (`# SKILLS`, `# EXPERIENCE`, `# EDUCATION`). Do not title-case them.
+- Role headings are `## ` (H2) in the format `## Company, Location - Title`. No italics, no em-dashes in the heading itself (em-dashes in bullets are fine — but see ATS Tips below).
+- No `## Summary` heading. The template has no Summary style; the summary paragraph sits directly under the contact line as body text.
+- Dates go on the line immediately after the role heading, in `MONTH YYYY - MONTH YYYY` or `MONTH YYYY - PRESENT` format (three-letter month abbreviations like `FEB 2025` are also acceptable if used consistently).
 
 **Ordering rules within a role:**
 
