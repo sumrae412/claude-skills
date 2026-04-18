@@ -1,0 +1,46 @@
+{
+  "skill_name": "video-edit",
+  "evals": [
+    {
+      "id": 0,
+      "name": "local-mp4-basic-qc",
+      "prompt": "I recorded a screencast for a product demo and I'm afraid it's a mess — lots of 'ums' and I think I restarted a sentence a couple times. Can you review it and give me a timestamped list of what to cut? The file is at /tmp/video-edit-evals/test_demo.mp4.",
+      "files": [],
+      "assertions": [
+        {"text": "Response includes at least one timestamp in MM:SS or seconds format"},
+        {"text": "Response identifies at least one filler word (um, uh, basically) with a timestamp"},
+        {"text": "Response identifies the sentence restart (stumble / repeated phrase 'we are going to look at')"},
+        {"text": "Stumble for 'we are going to look at' is reported as a SINGLE event (or span), not 3+ overlapping trigram events"},
+        {"text": "Response distinguishes incident types (FILLER vs STUMBLE vs SILENCE) rather than lumping all as 'issues'"},
+        {"text": "Response is a usable cut list the user can act on (not just instructions to install tools)"},
+        {"text": "Silence ratio in the summary is a plausible percentage (0-100%), not >100%"},
+        {"text": "Response mentions visual-QC findings (FREEZE / static view / no visual change) since the test video is a static gray screen"}
+      ]
+    },
+    {
+      "id": 1,
+      "name": "frameio-private-url",
+      "prompt": "My editor sent me a private Frame.io link for pacing review: https://app.frame.io/reviews/2f8a-demo. I have a cookies.txt exported from my browser at ~/Downloads/frameio_cookies.txt. Can you generate a QC report focused on dead air and stumbles?",
+      "files": [],
+      "assertions": [
+        {"text": "Response shows it would pass --cookies to yt-dlp for the Frame.io URL"},
+        {"text": "Response demonstrates awareness of silence detection and stumble detection specifically"},
+        {"text": "Response does not pretend the download succeeded when yt-dlp is missing or URL is unreachable - it surfaces the blocker"},
+        {"text": "Response references the skill's canonical script or workflow (not a from-scratch reinvention)"}
+      ]
+    },
+    {
+      "id": 2,
+      "name": "resolve-json-cutlist",
+      "prompt": "I'm editing a tutorial in DaVinci Resolve and want a cut list I can feed into a Fusion script. Can you analyze /tmp/video-edit-evals/test_demo.mp4 and give me the incidents as structured data (JSON) — I need timestamps in seconds, not MM:SS strings.",
+      "files": [],
+      "assertions": [
+        {"text": "Response delivers JSON output (structured, parseable)"},
+        {"text": "Each incident has a numeric timestamp in seconds (not only MM:SS strings)"},
+        {"text": "JSON includes incident type and detail fields"},
+        {"text": "JSON includes at least one incident found in the test video (FILLER, STUMBLE, SILENCE, or FREEZE)"},
+        {"text": "Response either uses the --json flag of screencast_qc.py or produces equivalent structured output"}
+      ]
+    }
+  ]
+}
