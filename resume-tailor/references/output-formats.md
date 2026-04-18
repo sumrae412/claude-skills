@@ -115,7 +115,7 @@ Offered, not default. If the user says yes, write naturally and persuasively —
 
 Roughly 3–4 short paragraphs:
 
-- Paragraph 1 (the hook): one or two sentences on why this role and why now. No preamble, no self-introduction beyond what's functionally necessary.
+- Paragraph 1 (the hook): one or two sentences on why this role and why now. No preamble, no self-introduction beyond what's functionally necessary. **P1 is positioning, not evidence.** State why the role lands and what the user does about it — do not stack credentials ("fifteen years / past year / worked with X"). Credentials belong in P2/P3 bridges. Keep P1 tight enough that it works as a standalone hook; dumping evidence into it crowds out the reason the reader should keep reading.
 - Paragraph 2 (the strongest bridge): name the JD's top need, then give one specific, measurable thing from the resume that answers it.
 - Paragraph 3 (the second bridge, optional): second JD need, second specific answer. Or — if the user has a gap/pivot/short tenure to address (per Phase 4 gap plan), use this paragraph for that instead.
 - Paragraph 4 (the close): one concrete, non-generic thing that draws the user to this specific company. Not "your mission." Not "your culture." Something the user has actually noticed about the firm, the product, or the role.
@@ -147,6 +147,10 @@ Read the JD's voice and the company's public writing. Match it. A letter pitched
 ### Anti-patterns (reject in review)
 
 - **P1 comparative framing** ("rare to find a posting that asks for both") — rewrite to positive-personal ("I was excited to see…"). The hiring team is not the audience for market critique.
+- **P1 credential stacking.** P1 sentences stuffed with years, employer names, and stakeholder names ("fifteen years running AI functions for C-suite stakeholders, plus the past year working with Andrew Ng's team") are a P1 failure even when each fact is true. P1 positions; P2/P3 prove. If the hook paragraph carries numbers and named employers, cut them out and push them into the bridge paragraphs where they earn their keep.
+- **Aspirational-future framing in P1.** Phrases like "the blend I've been building toward", "the direction I've been working toward", "where I'm heading" read as LLM-generated and weaken owned claims. Prefer completed past tense: "this is exactly where I've spent the last few years" over "the blend I've been building toward." The user has done the thing — say so.
+- **Abstracted-away-from-the-posting language.** "A role asking for…" is one step removed; "your role posted for…" / "your posting for…" / "the X role you're hiring for" speaks directly to the reader. Keep P1 second-person-adjacent, not third-person about.
+- **Generic nouns where the user has distinctive ones.** "Combination", "intersection", "blend" are invisible; if the user offered a more specific word ("dual-modality", "two-track", "executive-plus-hands-on"), keep it. Don't smooth distinctive vocabulary into interchangeable filler.
 - **Any sentence restating the JD back at the reader** ("The JD emphasizes…", "Your posting highlights…", "As described in the role…"). They wrote it; answer the ask instead.
 - **Company-specific claims in P4 without verification** — do not infer the company's focus, methodology, or segment from the JD alone. WebFetch the company's own site (about page, services/products, careers) before naming anything specific. If the claim can't be verified, keep P4 generic or drop it.
 
