@@ -15,6 +15,15 @@ Multi-agent research team that explores a question in depth across codebase, git
 
 **Announce:** "Running research team — classifying task, dispatching researchers, synthesizing findings."
 
+## Flags
+
+| Flag | Effect |
+|------|--------|
+| `--lite` | Wave 1 only. Skip gap detection and Wave 2 fill. Dispatch 2 researchers instead of 2–4. Synthesizer produces a brief with an explicit `coverage: partial` marker. ~60% cheaper; use for early iterations, quick sanity checks, or "just tell me roughly" queries. Full research should still run before a plan is written. |
+| `--waves N` | Cap waves at N (default 2). `--waves 1` is equivalent to `--lite`. |
+
+`--lite` is the "lite version" of this skill — narrow scope, fewer researchers, no gap-filling. The confidence scoring still applies, so consumers can see which findings are shaky.
+
 ---
 
 ## Orchestrator (Inline Executor)
