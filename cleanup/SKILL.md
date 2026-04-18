@@ -197,9 +197,30 @@ git push origin --delete "$CURRENT_BRANCH" 2>/dev/null || true
 
 Proceed to **Step 7** (worktree cleanup). **Skip session-learnings and repo sync.**
 
-## Step 4.5: PR Merge Verification (Options 1 & 2 only)
+## Step 4.4: PR Merge Verification — every worktree, always
 
-<HARD-GATE>Before tearing down a worktree, verify any associated PR was actually merged — not just created.</HARD-GATE>
+<HARD-GATE>NEVER remove a worktree while its branch has an open PR. This applies to the current worktree AND every sibling worktree you're planning to clean up in the same pass.</HARD-GATE>
+
+Whenever you're about to remove one or more worktrees (current or sibling, audited in bulk), run this check for EACH one:
+
+```bash
+for wt in <each worktree path being removed>; do
+  br=$(git -C "$wt" branch --show-current)
+  state=$(gh pr list --state open --head "$br" --json number,state --jq '.[0].state' 2>/dev/null)
+  echo "$wt (branch: $br) — open PR: ${state:-none}"
+done
+```
+
+- **All `none`** → proceed with teardown.
+- **Any OPEN** → STOP. Do not remove that worktree. Merge the PR first (or ask the user what to do with it). A worktree removed with an open PR orphans the local branch state needed to address review comments, and the user has no signal that the PR still needs attention.
+
+This gate applies equally whether you reached cleanup via Option 1/2 on the current branch OR via a bulk sibling-worktree audit. Sibling worktrees are not exempt just because they look stale.
+
+**Why the rule is stated this bluntly:** "merge all PRs before removing a worktree" is a permanent user rule (2026-04-18). Not a suggestion, not a soft preference — a hard gate.
+
+## Step 4.5: PR Merge Verification — current branch deep check (Options 1 & 2)
+
+Step 4.4 gates every worktree removal. This step adds the extra diagnostics needed when the current-branch PR state is `OPEN` or `CONFLICTING` after Option 1/2:
 
 After executing Option 1 or 2, check if the current branch has an open PR:
 
