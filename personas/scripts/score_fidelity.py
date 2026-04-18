@@ -65,7 +65,7 @@ def pairwise_distances(positions: list[list[float]]) -> tuple[float, float]:
 
 def calibrate_k_radius(n_personas: int, n_axes: int) -> float:
     """Heuristic: 1.5× the expected nearest-neighbor distance under uniform N."""
-    if n_personas <= 0:
+    if n_personas <= 0 or n_axes <= 0:
         return 0.0
     return (1 / n_personas) ** (1 / n_axes) * 1.5
 
@@ -154,6 +154,8 @@ def cmd_score(args: argparse.Namespace) -> int:
     pool_doc = json.loads(Path(args.pool).read_text())
     personas = {p["id"]: p for p in _personas_from_pool(pool_doc)}
     evaluators = [e.strip() for e in args.evaluators.split(",") if e.strip()]
+    if not evaluators:
+        sys.exit("error: --evaluators must list at least one model (comma-separated)")
     if len(evaluators) < 2:
         print("warning: fewer than 2 evaluators — self-eval bias risk", file=sys.stderr)
 

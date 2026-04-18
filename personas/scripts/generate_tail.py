@@ -81,9 +81,19 @@ def nearest_distance(point: list[float], cloud: list[list[float]]) -> float:
 
 
 def farthest_first(candidates: list[list[float]], cloud: list[list[float]], count: int) -> list[list[float]]:
-    scored = [(nearest_distance(c, cloud), c) for c in candidates]
-    scored.sort(key=lambda x: -x[0])
-    return [c for _, c in scored[:count]]
+    """Iterative farthest-first: each pick augments the cloud before scoring the next."""
+    selected: list[list[float]] = []
+    remaining = list(candidates)
+    augmented = list(cloud)
+    for _ in range(min(count, len(remaining))):
+        best_idx = max(
+            range(len(remaining)),
+            key=lambda i: nearest_distance(remaining[i], augmented),
+        )
+        chosen = remaining.pop(best_idx)
+        selected.append(chosen)
+        augmented.append(chosen)
+    return selected
 
 
 def expand_persona(axes: list[dict], position: list[float], app_name: str, segments: list[str]) -> dict[str, Any]:
@@ -119,6 +129,11 @@ def main() -> int:
     args = ap.parse_args()
 
     cfg = yaml.safe_load(Path(args.config).read_text())
+    for key in ("diversity_axes", "app", "segments"):
+        if key not in cfg:
+            sys.exit(f"error: config missing required key: {key}")
+    if "name" not in cfg["app"]:
+        sys.exit("error: config missing required key: app.name")
     axes = cfg["diversity_axes"]
     app_name = cfg["app"]["name"]
     segments = cfg["segments"]
