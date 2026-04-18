@@ -94,6 +94,10 @@ Ask: *"Which headline angle? Does the narrative match how you want to be perceiv
 
 Final deliverables. Format details, ATS tips, change-log format, and optional DOCX export via `anthropic-skills:docx` in `references/output-formats.md`.
 
+**Output path:** all files go to `~/Documents/resumes/<Company>/` (one folder per target company). See `references/output-formats.md` §0.
+
+**Required step before any file write:** walk the user through the assembled resume **section by section** (header/summary, each role, tail sections) for approval. See `references/output-formats.md` §4.5. Cover letters get the same treatment paragraph-by-paragraph, and must also clear the anti-patterns checklist (positive framing, no JD restatement, P4 claim verified).
+
 Defaults:
 
 1. **Tailored resume** (markdown, ready to copy-paste or convert)
@@ -102,6 +106,8 @@ Defaults:
 4. **(Optional)** Cover letter draft — offered, not default
 
 Offer: *"Want me to convert to DOCX, draft a cover letter, or iterate on any section?"*
+
+**Post-write verification (when this skill's own files are edited):** after any Edit to `references/*.md` or `SKILL.md` in this skill, Read the written file and grep for the inserted anchor text. Do not trust the Edit tool's success signal alone — on hosts where `~/.claude/skills/resume-tailor/` is not a symlink to `claude_code/claude-skills/resume-tailor/`, edits can land in a stale copy while the canonical repo stays clean. Verify in the canonical path at `/Users/summerrae/claude_code/claude-skills/resume-tailor/` (or the host's equivalent).
 
 ---
 

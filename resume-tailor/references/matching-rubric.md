@@ -104,3 +104,32 @@ Before shipping a reframe to the checkpoint:
 - Every capability claimed in the reframe is substantiated by the same or an earlier bullet.
 - The reframe's verb matches the seniority register from `references/positioning.md` level-calibration table.
 - No reframe adds a first-person claim ("my team", "I architected") stronger than the original.
+
+## CAR Shape (Challenge → Action → Result)
+
+Strong bullets answer "so what?" — they name the context, the action, and the measurable outcome. Aim for **at least 60% of bullets** to land a quantified result (percent, dollars, volume, time, ranking). The rest can carry qualitative outcomes ("adopted org-wide", "established standard"), but a bullet that's pure activity with no result is a cut candidate.
+
+When reframing, check each bullet for all three slots. If a slot is missing, either (a) ask the user a discovery question to fill it, or (b) cut the bullet.
+
+## Action Verbs by Contribution Type
+
+Match the verb to the actual contribution. Mixing registers ("helped drive strategy") is a seniority tell.
+
+| Category | Verbs |
+|----------|-------|
+| Leadership | Led, directed, managed, oversaw, mentored, championed, established |
+| Creation | Developed, designed, built, launched, created, implemented, introduced, architected |
+| Improvement | Increased, improved, streamlined, optimized, reduced, enhanced, modernized |
+| Analysis | Analyzed, evaluated, assessed, identified, researched, investigated |
+| Communication | Presented, negotiated, facilitated, coordinated, advised, authored |
+| Technical | Engineered, automated, configured, deployed, integrated, migrated, shipped |
+
+**Banned openers** (describe proximity, not contribution):
+
+- "Responsible for"
+- "Helped with" / "Assisted in"
+- "Involved in" / "Participated in"
+- "Worked on"
+- "Tasked with"
+
+If an existing bullet starts with one of these, the reframe must replace the opener with a verb that names what the user actually did.
