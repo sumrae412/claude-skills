@@ -16,7 +16,7 @@ Shortlisting is the highest-leverage step in a job search — the difference bet
 Ask the user for:
 
 1. **JD list** — URLs, pasted snippets, or a mix. LinkedIn job URLs preferred; any text-readable posting works.
-2. **Profile source** — point to memory files (`user_<name>_profile.md` and related) if they exist, OR ask the user to paste a current resume. The skill will NOT proceed without a confirmed candidate profile.
+2. **Profile source** — point to memory files (`user_<name>_profile.md` and related) if they exist, OR ask the user to paste a current resume. The skill will NOT proceed without a confirmed candidate profile. If a `user_<name>_jd_screening_filters.md` memory file exists alongside the profile, load it and apply its skip-signals as Phase 3 deal-breaker pre-checks — these capture the user's learned screening pattern across prior sessions and short-circuit obvious NO_GOs before full scoring.
 3. **Preferences / deal-breakers** — comp floor, remote/hybrid/onsite, domain preferences, level range (IC / manager / director / VP / exec), locations, visa constraints, deal-breakers. Captured once, at session start, into a `search_preferences` block.
 
 If the list is empty or the profile is missing, ask once. Don't score with half the inputs.

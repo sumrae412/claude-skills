@@ -122,12 +122,43 @@ jd:
   raw_text: "… full posting text …"
 ```
 
+## Salary Recon (when `comp_band` is empty)
+
+Most LinkedIn postings omit compensation. When the user needs a comp estimate before the Phase 3 deal-breaker pre-check, run a parallel-batch recon in a single Agent call — do not serialize.
+
+**Query shape (3 parallel calls):**
+
+1. `WebSearch` — `<company> <title> salary Glassdoor` (Glassdoor is the broadest ground truth for named-company comp bands)
+2. `WebSearch` — `<company> <title> salary Ladders` (Ladders surfaces $100K+ postings and often has tighter role-specific bands)
+3. `WebFetch` — the company careers page or About/Comp page (signals internal comp philosophy, pay-transparency laws may force disclosure)
+
+Collate results into a single `comp_estimate` block:
+
+```yaml
+comp_estimate:
+  source: glassdoor | ladders | careers_page | triangulated
+  base_range: "$120K–$150K"
+  confidence: high | medium | low
+  notes: "Glassdoor Director ceiling $139K; Ladders estimated $120-150K for exact title; no careers-page disclosure."
+```
+
+**Caveats:**
+
+- **Small orgs:** Glassdoor may have <5 data points; mark `confidence: low` and surface the sample-size caveat.
+- **Non-profits / global-health / gov:** Bands often skew 20–40% below commercial tech. Do not benchmark CHAI-type roles against FAANG-adjacent medians — anchor to the sector.
+- **VP+ / exec roles:** Public-scrape data thins out above Director. If both sources return "insufficient data," report that and suggest the user ask the recruiter during screen.
+- **Geographic skew:** US median unless JD specifies region. Flag if role is region-locked (e.g., Bay Area, NYC, remote-US) since median assumptions diverge.
+
+**Failure fallback:** If all three queries return nothing usable, emit `comp_estimate: unavailable` and recommend the user ask the recruiter during the initial screen. Never invent a band.
+
+See memory `salary_recon_parallel_search_pattern.md` for the pattern's origin.
+
 ## Failure Modes to Surface (Not Silently Skip)
 
 - LinkedIn auth wall — surface and ask for paste.
 - 404 / expired posting — surface and confirm user wants to remove from list.
 - Company name is "confidential" / "stealth" — surface; user may still want to pursue.
-- Comp not listed — not a failure; note `comp_band: unknown` and let Phase 3 deal-breaker check warn.
+- Comp not listed — not a failure; note `comp_band: unknown` and let Phase 3 deal-breaker check warn. Optionally run §Salary Recon above.
 - Seniority unclear from title (e.g., "AI Lead" could be IC or director) — surface and ask user; don't guess.
 
 ## What NOT to Do
