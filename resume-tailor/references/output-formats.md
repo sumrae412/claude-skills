@@ -27,7 +27,7 @@ Every company folder must contain `jd.md` with:
 2. Date captured (ISO format, e.g. `2026-04-19`)
 3. The full JD text as pasted by the user
 
-Write `jd.md` as part of the Phase 5 output set — the same step that writes the resume and cover letter, not after.
+URL collection is a Phase 5 input-validation step that runs before any file write. `jd.md` is written as part of the Phase 5 output set once the URL is in hand — the same step that writes the resume and cover letter, not after.
 
 **Format:**
 
@@ -42,11 +42,11 @@ Write `jd.md` as part of the Phase 5 output set — the same step that writes th
 <full JD text as pasted>
 ```
 
-**Input-handling rules:**
+**Input-handling rules (Phase 5 input validation, before any file write):**
 
-- If the user pastes JD text only (no URL): ask for the URL before Phase 5. Do not silently write `jd.md` without the source.
-- If the user pastes a URL and the fetch worked: save the fetched text in `jd.md` with the URL at top.
-- If the user pastes a URL and the fetch failed: ask the user to paste the text, then save both.
+- If the user pastes JD text only (no URL): ask for the URL first. Do not silently write `jd.md` without the source.
+- If the user pastes a URL and the WebFetch worked (HTTP 200, non-empty body): save the fetched text in `jd.md` with the URL at top.
+- If the user pastes a URL and the WebFetch failed (non-200, timeout, empty, or JS-rendered page): ask the user to paste the text, then save both URL and pasted text.
 
 **Why this is required:**
 
