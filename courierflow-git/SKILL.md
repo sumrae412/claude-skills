@@ -114,6 +114,19 @@ git rebase --onto origin/main HEAD~1
 
 **When to use:** Your branch was based on a feature branch that got squash-merged. `git log` shows the original feature commits plus your fix commits, but main only has the single squash commit.
 
+### Stacked-PR: foundation merged mid-session
+
+When a foundation PR (#A) is squash-merged with `--delete-branch` while you're still shipping the follow-up (#B), `gh pr create --base feat/A` fails with `Base ref must be a branch` — the remote branch is gone. Plain `git rebase origin/main` produces conflict hell (the squash has a different patch ID than each individual pre-fork commit). Surgical fix: capture the foundation tip SHA **before starting the follow-up**, then use the three-argument form to replay only commits strictly after the fork point:
+
+```bash
+# <A-tip-sha> = the foundation branch's tip at the moment you branched off
+git rebase --onto origin/main <A-tip-sha> <B-branch>
+git push --force-with-lease
+gh pr create --base main --head <B-branch> ...
+```
+
+See `memory/pattern_rebase_onto_recovery_stacked_pr_base_deleted.md`.
+
 ## Dev Session Monitoring with `/loop`
 
 Use Claude Code scheduled tasks to poll long-running ops without leaving your session:

@@ -17,6 +17,16 @@ Automated ship-and-review pipeline: commit → push → PR → 10-step review �
 - User says "ship it", "done", "merge it", "push it", "deliver this", or similar.
 - You are finishing a branch and the user chooses "Ship it" (from /cleanup or claude-flow Phase 6B).
 
+## Ship tier: `/ship` vs inline vs `/claude-flow`
+
+When finishing a follow-up PR that replicates an approved foundation pattern, pick the tier by change shape, not by line count alone:
+
+- **Inline-ship (skip `/ship`'s review-pr stage):** template/CSS/Jinja diffs ≤20 lines that are a mechanical copy of an already-reviewed foundation (e.g., wiring a new page to an existing `page_context` block).
+- **`/ship` (this pipeline):** backend pattern-replication follow-ups — a new handler + helpers + tests mirroring an approved seed. These routinely clear 300–500 lines while staying low-risk, but the review-pr stage catches replication bugs (forgotten try/except wrap, mis-wired fallback dict, patch-site drift) that inline-ship would miss. Do NOT downgrade to inline just because the pattern is "the same as last PR".
+- **`/claude-flow`:** novel design work — when the follow-up introduces a new pattern, not replicates one. If the PR description says "first time we're doing X this way", it's claude-flow.
+
+See `memory/pattern_pattern_replication_followup_exceeds_inline_ship_threshold.md` and `pattern_inline_ship_vs_ship_skill_heuristic.md`.
+
 ## Prerequisites
 
 Before starting:

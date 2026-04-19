@@ -59,6 +59,22 @@ async def twilio_inbound(request: Request, ...):
 
 See MEMORY `pattern_webhook_handler_owns_session.md`.
 
+## CopilotKit Action Handlers
+
+CopilotKit action handlers in `app/routes/copilot.py` are route handlers with three distinguishing traits:
+
+- **Auth via ContextVar, not FastAPI DI.** Read the user with `_current_user_id.get()` at the top of the handler and return an error string if `None`. The ContextVar is populated per-request by the `/api/copilot` dispatch layer — handlers can't take `Depends(get_current_user)`.
+- **Direct coroutine call, not `.delay()`, for user-blocking ops.** When the action wraps a Celery-backed operation and the user is waiting for the return value (sidebar, `ConfirmationCard`), import the task's async body (`from app.tasks.X import _Y_async`) and `await` it directly. Bypasses the queue; the coroutine opens its own DB session. This is the exception to the external-IO-via-Celery rule — see CLAUDE.md.
+- **Deterministic fallback is part of the contract.** The sidebar's guarantee is "every call returns at least one usable result." Fallback must catch raised exceptions, not just `success=False` — `openai_service.chat_completion` raises on timeout / connection / circuit-breaker exhaustion. Wrap the coroutine call in try/except, log the exception, and return the empty sentinel that triggers the default path.
+
+**Testing CopilotKit action handlers:**
+- Set `_current_user_id` via `token = _current_user_id.set(uid); try: ...; finally: _current_user_id.reset(token)` — it's a `contextvars.ContextVar`, not a `patch` target.
+- Mock external dependencies (`openai_service.is_configured`, `_suggest_workflow_next_step_async`) at the handler's call-site import path, not at the definition site. See MEMORY `gotcha_mock_patch_where_lookedup.md`.
+- DB-free handlers (read-only actions that delegate to coroutines opening their own session) don't need a `patched_session_factory` fixture.
+- Add an explicit "coroutine raises" test alongside the "returns `success=False`" test — different code paths inside the handler.
+
+See `tests/integration/test_copilot_actions_gap_f.py` for the canonical test shape.
+
 ## Route-to-Template Gotcha
 
 Route URLs, handler names, and template filenames do not always match:
