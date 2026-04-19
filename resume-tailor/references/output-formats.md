@@ -13,10 +13,47 @@ All Phase 5 deliverables go to `~/Documents/resumes/<Company>/` — one folder p
 - `Summer_Rae_Resume_<Company>.md` and `.docx`
 - `Summer_Rae_CoverLetter_<Company>.md` and `.docx` (if drafted)
 - `Summer_Rae_<Company>_KeywordCoverage.md`
+- `jd.md` — **required** (see §0.1)
 
 `<Company>` matches the casing/spelling the user uses (e.g. `AHEAD`, `Anthropic`, `DeepMind`). Strip spaces and punctuation for directory and file names (`Acme Corp` → `AcmeCorp`).
 
 Ask once if the target folder already exists with content that wasn't written this session — otherwise overwrite freely (each session owns its company folder).
+
+## 0.1 `jd.md` — Save the JD Alongside Every Tailored Output (Required)
+
+Every company folder must contain `jd.md` with:
+
+1. The source URL (LinkedIn posting, company careers page, etc.) at the top
+2. Date captured (ISO format, e.g. `2026-04-19`)
+3. The full JD text as pasted by the user
+
+URL collection is a Phase 5 input-validation step that runs before any file write. `jd.md` is written as part of the Phase 5 output set once the URL is in hand — the same step that writes the resume and cover letter, not after.
+
+**Format:**
+
+```markdown
+# <Title> — <Company>
+
+**Source:** <URL>
+**Captured:** YYYY-MM-DD
+
+---
+
+<full JD text as pasted>
+```
+
+**Input-handling rules (Phase 5 input validation, before any file write):**
+
+- If the user pastes JD text only (no URL): ask for the URL first. Do not silently write `jd.md` without the source.
+- If the user pastes a URL and the WebFetch worked (HTTP 200, non-empty body): save the fetched text in `jd.md` with the URL at top.
+- If the user pastes a URL and the WebFetch failed (non-200, timeout, empty, or JS-rendered page): ask the user to paste the text, then save both URL and pasted text.
+
+**Why this is required:**
+
+- The tailored resume and cover letter are only legible months later if paired with the JD they were written against. Without the JD, the reframes look arbitrary.
+- LinkedIn postings disappear when filled — the URL alone is not durable. The full text must be captured at tailor time.
+- When the user asks "why did we lead with X for this role?" later, the JD is the only evidence that answers.
+- When the same company reappears, the saved JD lets us diff the new post against the old one.
 
 ## 1. Tailored Resume (Markdown, Default)
 
@@ -230,4 +267,5 @@ Before wrapping up:
 - [ ] Keyword coverage report
 - [ ] DOCX version (if requested)
 - [ ] Cover letter draft (if requested)
+- [ ] `jd.md` saved (source URL + captured date + full JD text)
 - [ ] User has signed off on each artifact or flagged what to revise

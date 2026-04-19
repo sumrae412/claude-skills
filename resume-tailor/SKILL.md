@@ -107,7 +107,8 @@ Defaults:
 
 1. **Tailored resume** (markdown, ready to copy-paste or convert)
 2. **Keyword coverage report** — must-haves + nice-to-haves hit/missed
-3. **(Optional)** Cover letter draft — offered, not default
+3. **`jd.md`** — source URL + captured date + full JD text. Required in every company folder so the tailored outputs remain legible months later. See `references/output-formats.md` §0.1.
+4. **(Optional)** Cover letter draft — offered, not default
 
 No change log. What was reframed and why is a conversation artifact, not a deliverable — if the skill itself should behave differently next time, that's a session-learnings update to the skill, not a file for the user.
 
