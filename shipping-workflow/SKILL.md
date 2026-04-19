@@ -102,6 +102,14 @@ Run the **10-step review process** on the PR. Prefer running this in the backgro
 
 **Full procedure:** See [reference.md](reference.md) for the 10 steps (eligibility → staleness → sweep → deep-dive triggers → conditional analysis → merge findings → re-check → fix → CI gate → ship), scoring rubric, false positive filters, and project-level customization (CI command, defensive patterns, deep-dive triggers).
 
+**Filter CR findings by PR scope first.** CR's `--type uncommitted` flags untracked files (e.g. `.claude/pre-compaction-*.md`, local notes) that aren't in the PR. Before triaging findings one-by-one, build the PR file list and drop any finding whose file isn't in it:
+
+```bash
+git diff --name-only origin/main...HEAD > /tmp/pr-files.txt
+```
+
+A finding on a path absent from that list is out-of-scope noise — don't fix, don't block merge. See memory `gotcha_coderabbit_uncommitted_flags_untracked_files.md`.
+
 #### CR rate-limit fallback
 
 If CodeRabbit returns `"Rate limit exceeded, please try after N minutes"`, don't wait blindly and don't ship blind.
