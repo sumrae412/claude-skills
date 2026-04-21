@@ -113,6 +113,10 @@ Run ALL applicable critics in parallel (one message, multiple tool calls):
 **Always run — DeepSeek Bug-Hunter + GPT-4o (role varies by artifact type, parallel Bash calls):**
 
 ```bash
+# Export tier so the review ledger captures which tier triggered this run.
+# Set REVIEW_TIER to the tier chosen in Step 1 (T1 / T2 / T3). Unset = tier null in telemetry.
+export REVIEW_TIER=T2
+
 # DeepSeek Bug-Hunter (always)
 python3 ~/.claude/scripts/plancraft_review.py \
   --reviewer deepseek \

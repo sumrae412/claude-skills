@@ -92,6 +92,10 @@ def convert(reviewer_output, registry_entry):
 
 See MEMORY `idempotent_aggregators.md`.
 
+## Workflow-Agnostic Schema for Multi-Consumer Shared Libs
+
+When a shared library is intended for multiple consumers from day one, design the schema generically up front: a `workflow: str` identifier + an open `metadata: dict[str, Any]`, plus only core fields that generalize. Avoids schema churn each time a new consumer onboards. Anti-pattern: consumer-specific column names (`debate_team_tier`, `deepseek_cost`). Pair with a shared emit helper in the lib itself (not in each caller) so guard/try-catch discipline doesn't drift across consumers. Reference: `scripts/review_ledger/schema.py`.
+
 ## Detailed Guidelines
 
 For specific patterns and examples, see:

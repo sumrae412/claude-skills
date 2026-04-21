@@ -60,6 +60,7 @@ Before finishing backend code, verify your code against the catalog. The Quick R
 | Escape XML/TwiML Substitutions | TwiML hijack via tag injection | AI/user content wrapped in `xml_escape()` before f-string? |
 | Context-Aware Sanitizers | "JSON.parse fails at position 1 after sanitize" | Sanitizer is a state-machine walk (tracks in-string vs structural), not a global regex? Fallback path doesn't silently release destructive action on parse failure? |
 | Stateful Callback Cleanup | "Feature works once, then wedges until restart" | Every return/raise/early-exit in a function that mutates module-level state clears that state? Prefer `try/finally`. |
+| Telemetry Fail-Open | Noisy telemetry bug breaks the critical path it measures | Emit guarded with try/except + env-var opt-out (`REVIEW_LEDGER=0`) + import availability check? Reference: `scripts/plancraft_review.py` `_emit_invocation_record()`. |
 
 ## Red Flags — STOP and Fix
 

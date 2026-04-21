@@ -131,6 +131,7 @@ Right-size each task using these indicators:
 - Exact commands with expected output
 - Reference relevant skills with @ syntax
 - DRY, YAGNI, TDD, frequent commits
+- Verify artifact persistence before planning calibration/backfill — if the plan assumes "N past runs/events/samples exist," run one targeted check (`ls`, `git log -S`) to confirm they were actually persisted. CLIs that print to stdout leave no trace; pivot to instrument-first if the answer is "none persisted"
 
 ## Gate Validation: Verify Every Script/Command Path Against the Target Repo
 

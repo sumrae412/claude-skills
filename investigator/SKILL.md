@@ -35,6 +35,8 @@ The caller provides:
 
 If the input is unclear, adopt the most reasonable interpretation and note: "Investigation target: interpreted as [X]"
 
+**Second-opinion pause.** When a premise assumes prior state exists (past runs, shipped scripts, labeled data, a config file, a DB column), verify it with one targeted check before building the investigation around it. Trigger phrases: "we already have…", "since we're already logging…", "the existing X table…". An assumed premise that's actually false burns more time than the check costs.
+
 ---
 
 ## Investigation Workflow
