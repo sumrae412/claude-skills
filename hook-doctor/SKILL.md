@@ -15,6 +15,43 @@ user-invocable: true
 
 ## The Process
 
+### Step 0: Resolve Active Hook Profile
+
+Before checking individual hooks, surface which profile is in effect. The profile selects which hooks actually run (minimal ⊂ standard ⊂ strict). A hook that's "working" but declared above the active profile will be silent — that's expected, not broken.
+
+```bash
+GUARD="$HOME/.claude/hooks/claude-flow/lib/profile-guard.sh"
+if [[ -f "$GUARD" ]]; then
+  # Source in a subshell to avoid polluting the main shell.
+  ( source "$GUARD" && cf_profile_summary )
+else
+  echo "standard|?|?"  # fallback: no profile-guard installed
+fi
+```
+
+Output format: `<active-profile>|<enabled-count>|<total-count>`. Example: `minimal|5|24` means profile=minimal with 5 of 24 registered hooks enabled.
+
+**Resolution precedence** (highest wins):
+1. `CLAUDE_FLOW_HOOK_PROFILE` env var
+2. `$CLAUDE_PROJECT_DIR/.claude/active-profile`
+3. `~/.claude/hooks/claude-flow/.active-profile`
+4. default: `standard`
+
+Also check the override env vars: `CLAUDE_FLOW_FORCE_HOOKS` (always run, wins over all) and `CLAUDE_FLOW_DISABLED_HOOKS` (always skip, loses to FORCE).
+
+To get per-hook enabled/disabled state:
+
+```bash
+( source "$HOME/.claude/hooks/claude-flow/lib/profile-guard.sh" && \
+  while IFS= read -r line; do
+    [[ -z "$line" || "$line" == \#* ]] && continue
+    hid="${line%%=*}"
+    if cf_hook_should_run "$hid"; then echo "✓ $hid"; else echo "✗ $hid"; fi
+  done < "$HOME/.claude/hooks/claude-flow/profile-lookup.txt" )
+```
+
+Report the profile header before the per-hook table in Step 3. Example: `Active profile: minimal (5/24 enabled)`.
+
 ### Step 1: Discover All Configured Hooks
 
 Run these commands to collect hook configuration:
@@ -70,6 +107,16 @@ Output a table in this format:
 ```
 Hook Health Report
 ==================
+
+Active profile: minimal (5/24 enabled)
+  Override env: CLAUDE_FLOW_FORCE_HOOKS=<unset>  CLAUDE_FLOW_DISABLED_HOOKS=<unset>
+
+Profile-gated hooks (from profile-lookup.txt):
+  ✓ secret-detection           (minimal)
+  ✓ dangerous-git-ops          (minimal)
+  ✗ decision-journal           (standard — skipped under minimal)
+  ✗ lint-on-save-python        (standard — skipped under minimal)
+  ... (17 more)
 
 Global hooks (~/.claude/settings.json):
   ✅ PostToolUse:Bash — post-commit-learnings.sh (working)
