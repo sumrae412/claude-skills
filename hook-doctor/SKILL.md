@@ -6,6 +6,8 @@ user-invocable: true
 
 # Hook Doctor
 
+> **Editor note:** This skill is standalone — `~/repos/claude-config/skills/hook-doctor/` does not exist, and edits here are NOT tracked by claude-config PRs until the file is mirrored into the repo. See the Day 3 decision point in `~/repos/claude-config/hooks/claude-flow/docs/2026-04-21-profile-handoff.md`.
+
 ## When to Invoke
 
 - Hooks are not firing as expected

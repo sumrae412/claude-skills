@@ -286,35 +286,34 @@ Invoke `/session-learnings` in the background. Every shipped branch should captu
 
 **After session-learnings resolves (Options 1 or 2), or after /ship's review agent completes.**
 
-Session-learnings and review agents often update files in `~/.claude/skills/` and `~/.claude/` (config, memory). These directories are separate git repos that need their own commit+push cycle — changes there are invisible to the project repo.
+Session-learnings and review agents often update files in `~/.claude/skills/` and per-project memory dirs. These are separate git repos that need their own commit+push cycle — changes there are invisible to the project repo.
 
-Check each repo for uncommitted changes and push them:
+**Topology note:** `~/.claude/skills/` IS a git repo. `~/.claude/` itself is NOT a git repo (it's the installation root; settings.json/hooks/CLAUDE.md live here but are not under version control at this level). Per-project memory dirs under `~/.claude/projects/<slug>/memory/` may or may not be git repos — check each.
+
+Guard every sync with a `.git` existence check so the loop silently no-ops on non-repos instead of silently swallowing `git status` failures:
 
 ```bash
-# 1. Claude skills repo
+# 1. Claude skills repo (IS a git repo)
 cd ~/.claude/skills
-if [ -n "$(git status --porcelain 2>/dev/null)" ]; then
+if [ -d .git ] && [ -n "$(git status --porcelain 2>/dev/null)" ]; then
   git add -A
   git commit -m "update skills from session-learnings"
   git push
 fi
 
-# 2. Claude config/memory repo (if it's a git repo)
-cd ~/.claude
-if [ -n "$(git status --porcelain 2>/dev/null)" ]; then
-  git add -A
-  git commit -m "update config from session-learnings"
-  git push
-fi
-
-# 3. Project memory repo (separate from project repo)
-MEMORY_DIR=~/.claude/projects/-Users-summerrae-courierflow/memory
-cd "$MEMORY_DIR"
-if [ -n "$(git status --porcelain 2>/dev/null)" ]; then
+# 2. Project memory repo (check per-project slug; may or may not be a git repo)
+MEMORY_DIR=~/.claude/projects/<slug>/memory
+if [ -d "$MEMORY_DIR/.git" ] && [ -n "$(cd "$MEMORY_DIR" && git status --porcelain 2>/dev/null)" ]; then
+  cd "$MEMORY_DIR"
   git add -A
   git commit -m "update memory from session-learnings"
-  git push
+  git push || true   # memory repos often lack a remote
 fi
+
+# 3. ~/.claude/ itself is NOT a git repo.
+# If settings.json / hooks / CLAUDE.md changed and need to be tracked,
+# promote the change into ~/repos/claude-config and re-run install.sh.
+# Do NOT attempt `cd ~/.claude && git ...` — it will silently no-op.
 ```
 
 **Why this matters:** Without this step, skill/config improvements discovered during a session evaporate when the worktree is removed, or worse, sit uncommitted and get lost when you switch machines.
