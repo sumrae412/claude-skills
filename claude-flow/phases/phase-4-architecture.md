@@ -11,6 +11,20 @@ The **executor (Sonnet)** drafts two competing architecture options. It has full
 
 ---
 
+## Step 0-pre: Pre-Plan Alignment Verdict (when a scoping doc exists)
+
+If a scoping/design doc already exists in `docs/plans/` covering this feature:
+
+1. Read the scoping doc end-to-end.
+2. For each decision/direction, classify as **Keep** / **Push back with alternatives** / **Unresolved with next action**.
+3. Grep every named Action/service/component symbol referenced in data-flow diagrams — design docs can cite non-existent symbols.
+4. Cross-check each proposed readable/UI surface against project CopilotKit/readable invariants (e.g. `memory/pattern_copilotkit_page_context_readables.md`) and CLAUDE.md §UI Patterns before adopting.
+5. Post the verdict to the user and wait for acceptance (or resolve push-backs) before drafting the plan.
+
+See `memory/pattern_alignment_verdict_before_plan_writing.md`.
+
+---
+
 ## Step 0a: Pre-Flight Namespace Collision Check
 
 Before drafting architecture or naming new files/enums, run cheap collision checks against the existing codebase. Mid-implementation reroutes (which subagents handle silently) waste plan-debate effort and force reviewer churn.

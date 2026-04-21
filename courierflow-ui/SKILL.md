@@ -108,6 +108,8 @@ Two conventions established in PRs #384 / #385 (2026-04-18):
 
 2. **Page context readables** — to expose per-page state to the AI, override `{% block page_context %}` in your page template with a JSON object. Publish IDs and UX state (tab, filters, counts) — **never PII**. Backend actions fetch the actual data. See MEMORY `pattern_copilotkit_page_context_readables.md`.
 
+3. **Read-Action replaces conditional readable** — when a proposed `useCopilotReadable` would require conditional registration (violates the no-conditional-hooks rule) or would exceed the 3-readable reference-only split, replace it with a targeted backend read Action (e.g. `getStepContent(step_id)`). The LLM calls it on-demand using IDs already in `pageData`. See MEMORY `pattern_read_action_replaces_conditional_readable.md`.
+
 ## Before Creating New CSS
 
 Check if existing component/page file already covers the need.
