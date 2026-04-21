@@ -25,6 +25,8 @@ When finishing a follow-up PR that replicates an approved foundation pattern, pi
 - **`/ship` (this pipeline):** backend pattern-replication follow-ups — a new handler + helpers + tests mirroring an approved seed. These routinely clear 300–500 lines while staying low-risk, but the review-pr stage catches replication bugs (forgotten try/except wrap, mis-wired fallback dict, patch-site drift) that inline-ship would miss. Do NOT downgrade to inline just because the pattern is "the same as last PR".
 - **`/claude-flow`:** novel design work — when the follow-up introduces a new pattern, not replicates one. If the PR description says "first time we're doing X this way", it's claude-flow.
 
+**Pattern-propagation beats LOC.** Whenever a change introduces or moves a pattern that future callers will copy (fail-open wrappers, shared emit helpers, schema fields with validation, retry/timeout decorators), ship through `/ship` regardless of line count. CodeRabbit and the review-pr stage exist to catch replication-drift bugs that inline-ship misses. Example: courierflow PR #447 was ~80 LOC refactoring a try/except into a lib helper — CR caught a TOCTOU race where a caller-side `stat()` call was left outside the new wrapper. Inline-ship would have shipped the regression.
+
 See `memory/pattern_pattern_replication_followup_exceeds_inline_ship_threshold.md` and `pattern_inline_ship_vs_ship_skill_heuristic.md`.
 
 ## Prerequisites

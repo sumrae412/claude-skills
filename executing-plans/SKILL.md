@@ -19,7 +19,8 @@ Load plan, review critically, execute tasks in batches, report for review betwee
 1. Read plan file
 2. Review critically - identify any questions or concerns about the plan
 3. If concerns: Raise them with your human partner before starting
-4. **Main-drift risk for plans touching shared infra:** Before a long-running worktree on shared infra (registries, hook configs, skill files, MEMORY indexes, anything under `skills/` or `~/.claude/`), check for in-flight refactors that could move/delete the paths the plan modifies:
+4. **Premise ambiguity in auto mode: pragmatic-interpret, surface in PR body.** When the plan cites symbols/fields that only partially exist in the target code (e.g. "validate `foo` on classes X and Y" when only Y has `foo`), pragmatic interpretation — validate what's present, apply a sensible defensive check on the other, flag the gap — beats blocking on clarification. Explicitly surface the interpretation in the PR description so reviewers can correct. Do NOT silently drop plan items or fabricate fields that don't exist. Applies only in auto mode; interactive mode should ask.
+5. **Main-drift risk for plans touching shared infra:** Before a long-running worktree on shared infra (registries, hook configs, skill files, MEMORY indexes, anything under `skills/` or `~/.claude/`), check for in-flight refactors that could move/delete the paths the plan modifies:
 
    ```bash
    gh pr list --state open --search "<infra-path>"
@@ -27,7 +28,7 @@ Load plan, review critically, execute tasks in batches, report for review betwee
    ```
 
    If a structural refactor is in flight (paths being moved/deleted), either ship the current plan faster, OR branch from the in-flight refactor's branch instead of main. See MEMORY `cross_repo_split_brain_salvage.md` for the salvage flow when this guidance was missed.
-5. If no concerns: Create TodoWrite and proceed
+6. If no concerns: Create TodoWrite and proceed
 
 ### Step 1.5: Memory Injection (if dispatching subagents)
 
