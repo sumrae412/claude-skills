@@ -9,6 +9,14 @@ Patterns distilled from the WithWoz/wozcode-plugin agent-prompt conventions and 
 - **Upstream license:** Proprietary ("© WozCode. All rights reserved. Use is subject to WozCode's Terms of Service" — see LICENSE in upstream plugin).
 - **Imported date:** 2026-04-20
 
+Pattern 11 (compress prose in always-loaded context files) was inspired by:
+
+- **Upstream:** https://github.com/JuliusBrussee/caveman — specifically the `caveman-compress` subcommand.
+- **Upstream license:** MIT.
+- **Inspiration date:** 2026-04-23
+- **What was taken:** the *idea* that always-loaded memory files pay a recurring token cost and benefit from one-time prose compression with a human-readable backup kept alongside. Nothing else.
+- **What was deliberately left behind:** caveman-speak style (articles dropped, fragment grammar, 文言文 mode). Our pattern calls for dense professional prose, not telegraphic shorthand — so the compressed file stays readable to humans and precise for downstream tooling.
+
 ## What was imported vs what wasn't
 
 **Distilled (transferable, this skill):**
