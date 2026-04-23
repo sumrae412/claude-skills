@@ -177,11 +177,13 @@ Load **only** what matches. Don't dump everything into context.
 
 | Condition | Action |
 |-----------|--------|
-| Feature uses external API | **REQUIRED:** Invoke `/fetch-api-docs` skill to get current API docs from Context Hub before any implementation. Do NOT code against external APIs from memory — formats change. |
+| Feature uses external API | **REQUIRED:** Check for an MCP server for the service first (e.g., GitHub, Sentry, Railway, Supabase, Slack) — MCP introspection beats web docs for freshness and auth. If no MCP exists, invoke `/fetch-api-docs` to get current docs from Context Hub. Do NOT code against external APIs from memory — formats change. |
 | Codebase >500 files or unfamiliar | Run `python scripts/generate_repo_outline.py app/` for signatures + `repomix --compress` for full compressed context |
 | Need symbol-level precision | Activate Serena project, read relevant memories |
 | MCP-heavy exploration (DB queries, Figma imports) | Set `MAX_MCP_OUTPUT_TOKENS=50000` to prevent truncated MCP responses that degrade exploration quality |
 | Small familiar codebase | Skip all |
+
+**External systems:** Follow the policy in `SKILL.md` §External Systems Access Policy — prefer MCP > CLI > direct HTTP. When loading a domain skill (UI, API, data, integrations), note which MCP servers pair with it so subagent dispatches can reach the same system.
 
 **Token-saving tools:** `generate_repo_outline.py` (signatures without bodies), `semgrep` (static analysis), `ast-grep` (AST search), `pyright` (type checking).
 

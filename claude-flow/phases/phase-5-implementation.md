@@ -72,20 +72,26 @@ Phase 5:    Implementation generates code + test output
 User must approve the plan before any implementation begins.
 </HARD-GATE>
 
-### Pre-Implementation: Fetch External API Docs
+### Pre-Implementation: Verify External API Contract
 
 <HARD-GATE>
-If ANY plan step involves calling an external API (Google Calendar, Twilio, OpenAI, DocuSeal, Stripe, etc.), invoke `/fetch-api-docs` BEFORE writing code. Do NOT code against external APIs from memory — endpoints, request formats, and auth patterns change between versions. This gate applies even if you loaded the integrations skill in Phase 0.
+If ANY plan step involves calling an external API (GitHub, Google Calendar, Twilio, OpenAI, DocuSeal, Stripe, Supabase, Railway, Sentry, Slack, etc.), verify the current API contract BEFORE writing code. Do NOT code against external APIs from memory — endpoints, request formats, and auth patterns change between versions. This gate applies even if you loaded the integrations skill in Phase 0.
 </HARD-GATE>
 
 ```
 Plan step touches external API?
-  YES → Invoke /fetch-api-docs skill
-      → Fetch current docs from Context Hub (or web if unavailable)
-      → Verify: endpoints, auth method, request/response shapes, rate limits
+  YES → Is there an MCP server for this service?
+          YES → Prefer the MCP server — portable, authed, standardized semantics.
+                Inspect available tools; they ARE the current contract.
+                Only fall back to raw HTTP if the MCP surface doesn't cover the need.
+          NO  → Invoke /fetch-api-docs skill
+              → Fetch current docs from Context Hub (or web if unavailable)
+              → Verify: endpoints, auth method, request/response shapes, rate limits
       → Pass verified API contract to implementation subagents
   NO  → Skip, proceed to implementation
 ```
+
+**Rationale:** Per Anthropic's guidance on connecting agents to external systems, MCP is the portable layer for production agents — auth, discovery, and rich semantics are handled by the protocol. When an MCP server exists for the target service, it beats web docs on freshness and eliminates a class of auth/boilerplate bugs. See SKILL.md §External Systems Access Policy.
 
 ### Create TodoWrite Items
 

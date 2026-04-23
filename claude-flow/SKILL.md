@@ -105,6 +105,20 @@ Load `phases/phase-1-discovery.md` for full path criteria and artifact requireme
 
 ---
 
+## External Systems Access Policy
+
+When a phase reaches outside the workspace (API docs, deployment logs, PR operations, DB introspection, error search), prefer access in this order:
+
+1. **MCP server** if one is connected — portable across clients, standardized auth, semantics cheaper than piping CLI output through the model
+2. **CLI** for local-first tools without an MCP equivalent (e.g., `ruff`, `pytest`, `semgrep`, project scripts)
+3. **Direct HTTP / web fetch** only as fallback when neither exists
+
+Examples: GitHub ops → `gh` CLI is fine locally; prefer GitHub MCP when dispatching subagents to remote clients. Railway → use `mcp__railway-mcp-server__*` (memory: `reference_config_repos`). Sentry → `sentry:seer` or `mcp__sentry-*`. Supabase → `mcp__30db93f5-*`. Before fetching public web docs, check whether the service has an MCP server that exposes introspection — avoids the staleness problem `/fetch-api-docs` exists to solve.
+
+**Programmatic tool calling for bulk/deterministic work:** If a tool returns a large JSON payload and you need to filter/aggregate/transform deterministically, do it in a Python script (see `scripts/select_reviewers.py`, `aggregate_reviewer_findings.py`) rather than piping raw output through the executor. Saves tokens and eliminates a class of LLM parsing errors.
+
+---
+
 ## Phase Output Contracts
 
 | Contract | Schema File | Produced By | Consumed By |
