@@ -12,6 +12,7 @@ Feed agents the right information at the right time. Context is the single bigge
 **Relationship to other skills:**
 - `smart-exploration` handles tactical codebase exploration (dispatch tuned subagents)
 - `claude-flow/references/memory-injection.md` handles injecting known gotchas into subagent prompts
+- `token-economy` pattern #11 handles *how densely* always-loaded files (CLAUDE.md, rules files) are encoded. This skill decides *which* files load; that pattern decides their per-byte density. Apply once per project when the rules file stabilizes.
 - This skill is the strategic layer — how to structure what the agent sees across a whole session
 
 ## When to Use
