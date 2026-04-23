@@ -1,6 +1,6 @@
 ---
 name: token-economy
-description: "Tool-call-level discipline for minimizing session token burn without sacrificing correctness. Use when starting a cost-constrained session, when noticing heavy token usage mid-session (file-slurping, serial searches, verbose tool narration), or when briefing a subagent on efficient tool use. Teaches combine-discover-and-read, batched edits, parallelized independent searches, entry-point-first exploration, targeted line ranges, don't-re-read-unchanged-files, cheap-subagent delegation, DB introspection over schema-file reads, and response-shape minimalism. NOT for production LLM API spend (use llm-cost-optimizer) or strategic per-session context curation (use context-engineering) or claude-flow Phase 2 exploration (use smart-exploration)."
+description: "Tool-call-level discipline for minimizing session token burn without sacrificing correctness. Use when starting a cost-constrained session, when noticing heavy token usage mid-session (file-slurping, serial searches, verbose tool narration), or when briefing a subagent on efficient tool use. Teaches combine-discover-and-read, batched edits, parallelized independent searches, entry-point-first exploration, targeted line ranges, don't-re-read-unchanged-files, cheap-subagent delegation, DB introspection over schema-file reads, response-shape minimalism, and dense-prose compression of always-loaded context files (CLAUDE.md and similar). NOT for production LLM API spend (use llm-cost-optimizer) or strategic decisions about *which* files/docs the agent should see (use context-engineering) or claude-flow Phase 2 exploration (use smart-exploration)."
 ---
 
 # Token Economy
@@ -15,7 +15,7 @@ Tactical, per-tool-call discipline for keeping a coding session's token burn low
 - Handing off long-running tasks (debugging, refactors, audits) where small wastes compound.
 
 **Sibling skills — don't overlap:**
-- `context-engineering` — strategic, across sessions (CLAUDE.md, doc structure, what the agent sees).
+- `context-engineering` — strategic decisions about *which* files/docs the agent sees, across sessions. Pattern 11 below is complementary: once you've decided a file is loaded every session, compress its prose densely.
 - `llm-cost-optimizer` — production LLM API spend (model routing, prompt caching infra, batching).
 - `smart-exploration` — workflow-internal, claude-flow Phase 2 subagent-prompt library.
 
@@ -103,12 +103,30 @@ When you dispatch a subagent, paste this verbatim into the prompt:
 
 Subagents inherit none of the orchestrator's discipline unless you tell them. A 300-word rambling subagent report costs more than the search that produced it.
 
+### 11. Compress prose in always-loaded context files
+
+`CLAUDE.md`, memory indexes, and rule files load on every session start — their token cost multiplies by session count. Rewrite prose sections densely *once*; the payoff compounds across every future read. A well-compressed `CLAUDE.md` is 30–50% smaller with zero semantic loss.
+
+**Compress:** paragraphs that hedge or restate, filler adverbs (`just`, `really`, `basically`, `essentially`), pleasantries ("please remember", "as a general rule"), multi-sentence rules that collapse to one line with a `Why:` / `How:` tail.
+
+**Never touch (lossless-only zones):** code blocks, commands, file paths, URLs, regex, exact identifiers, dates, version numbers, CVE/ticket IDs, config keys, headings (navigation anchors), or quoted user instructions (rewording changes the rule).
+
+**Workflow:**
+1. Keep an editable original alongside the compressed file: `CLAUDE.md` = agent-read (compressed), `CLAUDE.original.md` = human-edit (readable). Edit the original, regenerate the compressed copy.
+2. Recompress when the original changes materially.
+3. Measure with `wc -w` before/after. Target 30–50% reduction on prose-heavy files. Under 20% means it was already tight — leave it.
+
+**Skip if:** the file is mostly code/commands (no prose to squeeze), precision loss risks a bug (legal text, step-by-step setup where ambiguity breaks), or the file loads rarely (ROI comes from load frequency).
+
+**Keep it professional, not stylized.** The goal is *dense prose*, not *telegraphic shorthand* — a reader unfamiliar with the compression should still parse it on first read.
+
 ## How to apply in a session
 
 1. **At session start** for a read-heavy task, mentally flag patterns 1, 3, 4, 5.
 2. **Before dispatching a subagent**, apply 7 + 10.
 3. **Mid-session, if token usage spikes**, check against this list. The usual offenders: #1 (Glob then Read), #3 (serial when parallel was possible), #9 (verbose narration).
 4. **When the answer is in a DB**, reach for #8 before opening a single migration file.
+5. **Once per project** (not per session), apply #11 to `CLAUDE.md` and other always-loaded files. One-time prep, compounds forever.
 
 ## What NOT to do
 
