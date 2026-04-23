@@ -148,7 +148,12 @@ Present both options (post-advisor-refinement) to the user with the advisor's an
 After user chooses, write a structured plan using the `writing-plans` skill:
 - Numbered steps with specific files and changes
 - Test requirements per step
-- Dependencies between steps marked clearly
+- **`depends_on` populated on every step** per [plan.schema.md](../contracts/plan.schema.md). For each upstream step, set `type` to one of:
+  - `data` — needs the predecessor's runtime output (row IDs, migration-created columns). Strictly sequential.
+  - `build` — needs the predecessor's code to exist (imports, function calls). Strictly sequential.
+  - `knowledge` — only needs to know the predecessor's *shape* or *decision*. Parallelizable; the subagent records assumptions in its context.
+
+  If a step has no real upstream requirement, set `depends_on: []` (explicit empty list, not omitted). Phase 5 uses these types to fan out parallel implementers — an absent or empty-by-default `depends_on` drops the step into the heuristic-fallback path which conservatively serializes. Err toward `knowledge` over `build` when in doubt; the Phase 5 guard regression check at step 3b catches mis-typed parallel races.
 
 ---
 
