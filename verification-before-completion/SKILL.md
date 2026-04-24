@@ -120,6 +120,20 @@ Concrete example: PR #344 (analytics 404 hot-fix). The test asserts the exact `P
 
 See: `memory/pattern_orphan_edit_redirect.md`.
 
+## Features that only verify under live traffic
+
+Some features cannot be confirmed by unit tests — the instrumentation fires only against a real external service. Examples: prompt-cache hits (`usage.cache_read > 0`), webhook signature validation against a real provider, rate-limit headers, response-shape fields populated only by a specific model version.
+
+**Pattern:** unit tests prove the wiring compiles and parses; one live canary call proves it works. Before marking such a step "done":
+
+1. Run one real API call.
+2. Assert the specific field your change produces (`cache_read`, `cache_creation`, signature header, etc.) is non-zero / present.
+3. If the field is zero, the feature is no-op'd silently — NOT done. Investigate before marking complete.
+
+Shape-only test passes ("no schema error") are necessary but not sufficient for features whose entire value is a runtime side-effect.
+
+Concrete example: 2026-04-24 advisor-tool eval wired Anthropic `cache_control` breakpoints. Unit tests confirmed request shape; pilot showed `cache_read_input_tokens=0` on every live call because prompts sat below Anthropic's 1024-token minimum. The feature shipped green on unit tests but did nothing in production.
+
 ## Why This Matters
 
 From 24 failure memories:

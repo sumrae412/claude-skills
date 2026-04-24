@@ -40,6 +40,7 @@ Capture the publish/update date of every cited source. Re-verify (or drop) if ol
 | Active security advisories, CVEs, zero-days | 7 days (active) / 90 days (general) |
 | Framework/library APIs (JS, Python web frameworks) | 6–12 months |
 | Cloud/SaaS pricing, UI paths, console screenshots | 6 months |
+| LLM API pricing, model catalogs (Anthropic/OpenAI/Google) | 30 days — verify at start of every cost eval |
 | Language syntax and stdlib | 2–3 years |
 | Algorithms, data structures, math | Rarely stale |
 | Historical facts | Evergreen |
@@ -47,6 +48,8 @@ Capture the publish/update date of every cited source. Re-verify (or drop) if ol
 If the page has no visible date, treat it as unknown-age: either skip, or mark the claim "date unverified" in your response so the user can judge.
 
 Calibrate against today's date, not training cutoff. A "2024 guide" may already be stale.
+
+**Rule for cost analyses:** Before committing a pricing premise to a plan or cost estimate, triangulate against the provider's live pricing page AND a second provider surface (docs, console, API response). LLM vendor prices can move 50%+ between plan authoring and execution (Anthropic Opus 4.7 dropped 66% in ~6 weeks, Apr 2026). Record the verification date alongside the rates in code (e.g. `# verified YYYY-MM-DD against <url>`).
 
 ## Triangulation Rule
 

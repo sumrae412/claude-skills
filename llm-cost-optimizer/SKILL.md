@@ -88,6 +88,12 @@ Cache-eligible content: system prompts, static context, document chunks, few-sho
 
 Cache hit rates to target: >60% for document Q&A, >40% for chatbots with static system prompts.
 
+**Anthropic `cache_control` minimum:** Writes silently no-op if the cached block is under 1024 tokens (Sonnet/Opus) / 2048 (Haiku). This minimum is NOT surfaced in the top-level caching guide — you'll see `cache_creation=0, cache_read=0` in usage and no error. Before wiring caching, measure your system prompt + cached context with a tokenizer; if under the threshold, either inline more static context into the cached block or skip caching entirely.
+
+**Pre-flight checklist:** (1) Token-count the candidate cache block. (2) Run one live call and assert `usage.cache_creation_input_tokens > 0`. (3) Run a second call and assert `usage.cache_read_input_tokens > 0`. Unit tests cannot verify this — only live traffic shows cache fields populated.
+
+**Tool-use wrinkle:** With beta tool schemas (e.g. advisor-tool), each call may write a fresh cache instead of reading a prior one — verify `cache_read > 0` across consecutive calls, not just `cache_creation > 0` on the first.
+
 ### 3. Output Length Control (20-40% reduction)
 
 LLMs over-generate by default. Force conciseness:
