@@ -1,6 +1,6 @@
 ---
 name: startup-planner
-description: Guided 12-stage startup planning workshop — Kawasaki Conception (1-7) + execution planning (8-12) with BMC, MVP/PRD, Go/NoGo, pitch deck. Use on "startup planning", "business model", "pitch deck".
+description: Heavy, explicit-invocation startup planning workshop — 12 stages spanning Kawasaki Conception (genesis, sweet spot, mantra, business model, cofounder, MATT) and execution planning (Business Model Canvas, TAM/SAM/SOM, MVP/MoSCoW, Go/NoGo, Marp pitch deck). Also houses three optional add-on techniques: PRO/CON debate validation, AI stakeholder-clone rehearsal, and customer segmentation matrix. Heavy skill — ONLY invoke when the user explicitly says "/startup-planner", "run the startup planner", "work the startup planning workshop", or asks for Business Model Canvas / Kawasaki workshop / Marp pitch deck specifically. Do NOT auto-fire on vague phrases like "plan a startup" or "business idea" — use `startup-analysis` for brutal 6-step CLEARFRAME validation instead.
 license: MIT
 metadata:
   author: summerela
@@ -385,11 +385,22 @@ Completed: [date]
 Next stage: [X+1 name]
 ```
 
+## Optional Add-On Techniques
+
+Three techniques salvaged from the retired `product-sprint` skill. Load the reference on demand when the relevant stage benefits from the added structure:
+
+- **PRO/CON Debate Validation** → `references/debate-technique.md`. Pair at **Stage 2** (Sweet Spot) or **Stage 9** (Market Analysis) to pressure-test the opportunity against real user sentiment scraped from Reddit/forums. Runs Agent PRO vs Agent CON for 10 rounds; yields a defensible minimum-feature-set.
+- **Customer Segmentation Matrix** → `references/segmentation-matrix.md`. Pair at **Stage 9** (Market Analysis & Personas) when the market has multiple distinct user behaviors. Produces a 2x2 or 3x3 grid with named segments, percentage distribution, and upgrade/churn levers per segment.
+- **AI Stakeholder Clone + Rehearsal** → `references/stakeholder-clone.md`. Pair at **Stage 12** (Pitch Deck) to rehearse the pitch against an AI-simulated decision-maker, surface likely objections, and coach counter-responses before presenting to the real stakeholder.
+
 ## Files
 
 - `references/kawasaki-frameworks.md` - Kawasaki's Art of the Start 2.0 framework summaries
 - `references/business-frameworks.md` - BMC, Value Proposition Canvas, Market Analysis, MVP, Decision Framework, Pitch Deck
 - `references/project-context-template.md` - Template for capturing product context before starting
+- `references/debate-technique.md` - PRO/CON debate validation (optional add-on)
+- `references/segmentation-matrix.md` - Customer segmentation matrix (optional add-on)
+- `references/stakeholder-clone.md` - AI stakeholder clone + rehearsal (optional add-on)
 
 ---
 
