@@ -139,6 +139,20 @@ rg -n "class \w+Status\(.*Enum" app/models/
 
 If the unprefixed name already exists, prefix the new one with the feature/domain (`Concierge*`, `Workflow*`, `Document*`). PR #342 hit this — plan said `ConversationStatus`, `app/models/chat.py` already had it; renamed to `ConciergeConversationStatus`.
 
+## StrEnum Column Flip Drift
+
+Flipping a column from `String(N)` to `SQLEnum(MyStrEnum)` has three silent-failure sites — audit all three before shipping:
+
+1. **YAML export:** JSON response serialization works transparently (StrEnum is a str-subclass), but `yaml.safe_dump` emits `!!python/object/apply:app.models.foo.MyStrEnum` tags. Add explicit `.value` at every YAML serialization site (`template.category.value if template.category else default`) before `yaml.safe_dump`. JSON paths can stay as-is. See MEMORY `gotcha_sqlalchemy_enum_yaml_serialization.md`.
+2. **Test fixture sweep:** Enum validation fires at `session.commit`, not at the Python-side `db.add(model(col="old_value"))` call. Grep `<column>="<old_value>"` in `tests/` — fixtures AND assertions both need updates. See MEMORY `gotcha_free_text_to_enum_fixture_sweep.md`.
+3. **Pydantic schema defaults:** `Field(default="<old-string>")` on `BaseModel.<column>` drifts silently. Grep `Field(default="<old-value>"` in `app/schemas/`.
+
+## Taxonomy Unification Mapping Dicts
+
+When both an Alembic migration and a route handler need the same `NAME_MAPPING` / `LEGACY_FALLBACK` dict (e.g. for a taxonomy rename: old-label → new-enum-value), colocate constants in `app/models/<domain>.py` next to the enum. Both the migration and the route handler `from app.models.foo import NAME_MAPPING`.
+
+Migration-module imports (`from alembic.versions.<hash>_* import ...`) are brittle — revision-ID paths aren't stable package paths — and duplicating the dict violates Boundary #9 (single code path). Migration modules should not grow logic beyond upgrade/downgrade orchestration. See MEMORY `pattern_shared_mapping_constants_next_to_enum.md`.
+
 ## Performance Patterns
 
 1. **Cursor-based pagination** — No offset pagination in new code
