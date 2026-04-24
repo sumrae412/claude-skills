@@ -140,6 +140,7 @@ Offered, not default. If the user says yes, write naturally and persuasively —
 
 ### Hard rules
 
+- **Audience-centered paragraph openers.** Every body paragraph (P2, P3, P4) must open with the company's need, role pillar, or stated ask — NOT with the candidate's credential. "I did X at Y" openers produce letters that read as a tour of accomplishments instead of a map of fit. Acceptable opener shapes: *"[Role pillar] is [description]. My version of that is…"*, *"[Company-stated challenge]. The closest thing I've shipped is…"*, *"[JD domain] rewards [capability]. At [employer] I [credit]."* P1 may open with candidate-positioning (see opener patterns below), but P2/P3/P4 may not. **Diagnostic:** read only the first sentence of each paragraph. If 3 out of 4 first-sentence subjects are "I / my / me," the letter is candidate-focused — rewrite. See `feedback_cover_letter_need_first_paragraph_openers.md` for rationale and before/after examples. Also load `shared/communication-principles.md` before drafting — audience-centered framing is the cross-writing-skill rule this enforces at the paragraph level.
 - **Length:** 250–350 words total.
 - **Greeting:** always `Dear Hiring Manager,` unless the user names a specific recipient.
 - **Closing:** always `Regards,` followed by the user's name on the next line.
@@ -147,6 +148,17 @@ Offered, not default. If the user says yes, write naturally and persuasively —
 - **Voice:** sound like a real human wrote it. Plain language. Avoid "thrilled," "passionate," "synergy," "leverage," and other filler. No stacks of adjectives.
 - **Truth-preserving:** never fabricate or exaggerate. Every claim must be defensible from the resume or the user's stated experience. Same rule as Phase 2 reframes.
 - **Substance:** connect 2–3 specific, measurable achievements from the resume to the employer's stated needs. Not a resume rehash — a targeted bridge between what they need and what the user has done.
+
+### Pre-drafting: map JD to evidence
+
+Before drafting any paragraph, build a two-column map:
+
+- **Left column** — top 3–5 responsibilities or must-haves from the JD, in the JD's own wording.
+- **Right column** — one specific achievement from the resume or Phase 2 inventory that directly addresses each.
+
+Pick the two strongest matches for P2 and P3. If fewer than two strong matches exist, the candidate is mis-fit for this role — re-scope before drafting (lower the application's priority, or widen what the user is willing to reframe). Drafting a bridge on a weak match produces the "sounds relevant but leaves no evidence" failure mode called out in the Bridge Shape section.
+
+Diversify the two picks by interview theme — leadership, initiative, execution-under-constraint, problem-solving, cross-functional collaboration, frontier-learning. Two bridges on the same theme (e.g. both "scaled a team") signal narrow range; two on different themes show breadth. If the resume only supports one strong theme, use the single strongest bridge and let P3 carry the company-specific hook instead of forcing a second thin bridge.
 
 ### Structure
 
@@ -194,6 +206,23 @@ Read the JD's voice and the company's public writing. Match it. A letter pitched
 - **Any sentence restating the JD back at the reader** ("The JD emphasizes…", "Your posting highlights…", "As described in the role…"). They wrote it; answer the ask instead.
 - **Company-specific claims in P4 without verification** — do not infer the company's focus, methodology, or segment from the JD alone. WebFetch the company's own site (about page, services/products, careers) before naming anything specific. If the claim can't be verified, keep P4 generic or drop it.
 - **P4 self-focused openers** ("What excites me about working at…", "What drew me to…", "What I'd love about…"). These center the applicant's feelings, not the applicant's match to the role. Flip to audience-centered: lead with the role need (stated abstractly, not as a JD quote) then the candidate's evidence that answers it. Example: *"The full stack of enterprise agentic AI delivery — vision, execution, governance, adoption — is the work I've been running for years. At Govini…"* maps each JD pillar to a concrete credit without saying "your role calls for X." Describes the shape of the work, not the hiring team's stated ask.
+- **Dead-weight openers.** "My name is X and I am writing to apply for Y" carries zero information — the reader already has both facts from the application metadata. Open with a specific result, a direct role-to-work map, or a named referral, not a self-introduction.
+- **Stacked-noun "what pulled me to apply" hooks.** Sentences of the form *"A [noun phrase], a [noun phrase], and the [expectation/framing] are what pulled me to apply / drew me in"* read as LLM-generated even when every noun is accurate to the JD. Banned at both P1 and P4. If P1's first sentence already positions the fit, do NOT add a second sentence enumerating JD features that caught the candidate's eye.
+- **Generic company praise without evidence.** "I've long admired your culture / mission / innovative products" with nothing concrete behind it reads as filler. Either name a specific product, decision, hire, or piece of public writing the candidate actually noticed, or drop the praise. Same WebFetch-verification rule as the P4 company-specific-claim anti-pattern applies.
+- **Clichés.** "I am a hard worker," "I think outside the box," "I am a team player," "I am detail-oriented," "I consistently go above and beyond," "results-driven," "dynamic." These occupy space without adding signal. If a claim is true, it will show up in an achievement; if it can only be asserted, cut it.
+- **Resume paragraphs.** Rewriting resume bullets into prose does not add information — it removes density. The cover letter's job is context the resume can't carry: why this role, which specific achievements map to which JD needs, what the candidate's distinctive angle is. If a paragraph could be rewritten as resume bullets without loss, it's the wrong content for a letter.
+- **One-letter-fits-all.** Swapping only the company name between applications produces detectably generic letters. At minimum, P4 must be specific to the target company; ideally P2 and P3 pick different achievements per JD based on that JD's top needs, not a single "strongest" set that ships everywhere.
+- **Wrong length.** Under 200 words reads as effort-minimized. Over 400 rarely gets read end-to-end. The 250–350 target is the band where the reader absorbs the whole thing.
+
+### Closing variants
+
+The sign-off (`Regards,`) is fixed. The sentence immediately before it has three acceptable shapes — pick one based on what the candidate can actually back up:
+
+- **Soft offer to talk** (default): *"I'd welcome the chance to talk."* Short, direct, no presumption. Pairs with any P4 shape. Safest choice when no specific next-step context exists.
+- **Specific ask**: *"I'd welcome 30 minutes to walk through how the Govini RAG stack maps to your use cases."* Named specificity signals preparation — but only use when the candidate can back up the specificity in the actual call. Generic-specificity ("discuss the role in detail") is worse than the soft offer.
+- **Follow-up promise**: *"I'll plan to follow up next week."* Signals initiative but commits the candidate to actually following up. Use sparingly and only when the candidate will do it — unfollowed-up promises damage the next touch.
+
+Avoid: "Thank you for your consideration" as a standalone closer (filler unless paired with a next-step ask); "I look forward to hearing from you" (passive, no ask); "I would love the opportunity" (already banned in Hard Rules filler list).
 
 ### Process
 
