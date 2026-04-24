@@ -49,7 +49,9 @@ Before any fetching, normalize and dedupe. See `references/ingestion-patterns.md
 - **Workday:** extract `R-######` requisition number.
 - **Pasted text (no URL):** dedupe by `(company, title)` tuple; flag near-duplicates for user resolution.
 
-Report the dedupe result out loud: *"N URLs submitted, D duplicates removed, M unique to fetch."* Do NOT silently drop dupes — show which URLs were marked duplicates of which canonical entry.
+**Also check for prior-tailoring collisions:** for each unique URL, after Phase 2 Step 2 fetch identifies the company name, scan `~/Documents/resumes/<Company>/` — if a tailored resume markdown or cover letter already exists there, flag it in the dedupe report under a separate "Already tailored" section and ask the user: skip, re-tailor, or diff. This matters especially when the user re-pastes an old batch; silently re-running tailoring over prior work loses review history.
+
+Report the dedupe result out loud: *"N URLs submitted, D duplicates removed, T already tailored, M unique to fetch."* Do NOT silently drop dupes — show which URLs were marked duplicates of which canonical entry, and which companies already have outputs on disk.
 
 ### Step 2: Fetch
 
@@ -99,12 +101,27 @@ User selects which to pursue. Defaults: pursue all STRONG_FIT, opt-in STRETCH, s
 
 ---
 
-## Phase 5 — Sequential Tailoring
+## Phase 5 — Artifact Write + Sequential Tailoring
 
-For each confirmed JD, write one directory under `~/Documents/resumes/<Company>/`:
+**Ordering contract (critical):** No filesystem writes happen before Phase 4 approval. Directories and `jd.md` / `fit-analysis.md` files exist on disk if and only if the user approved that JD in Phase 4. No speculative directory creation; no empty directories.
 
-- `jd.md` — fetched posting + extracted structure (**`source_url` in the header is mandatory**)
-- `fit-analysis.md` — Phase 3 score breakdown + Phase 4 reasoning (include `source_url` at top)
+### Step 1 — Write artifacts for every approved JD (atomic per company)
+
+For each JD the user confirmed in Phase 4, write as one logical step:
+
+- Create `~/Documents/resumes/<Company>/`
+- Write `jd.md` — fetched posting + extracted structure (**`source_url` in the header is mandatory**; see `references/output-templates.md` §`jd.md template`)
+- Write `fit-analysis.md` — Phase 3 score breakdown + Phase 4 reasoning (include `source_url` at top)
+
+**Directory + both files happen together or not at all.** An empty `~/Documents/resumes/<Company>/` directory on disk is a skill violation — it means a write step failed or was interrupted. Recovery: write the missing `jd.md` + `fit-analysis.md` from in-memory Phase 2/3 state before any handoff.
+
+**Never pre-create directories during Phase 2 (fetch) or Phase 4 (triage).** Those phases hold state in memory only. Creating a directory per fetched JD generates orphans when the user skips that role at Phase 4 approval.
+
+### Step 2 — Validate before handoff
+
+Before invoking `/resume-tailor` on the first approved JD, verify every approved company has both files on disk. Any missing file blocks the handoff — write it first.
+
+### Step 3 — Sequential tailoring
 
 Then present the ordered list and begin sequential tailoring:
 
@@ -128,6 +145,8 @@ Invoke `/resume-tailor` on the first `jd.md`. Wait for that session to complete 
 6. **Fetch failures surface, not silently skip.** If a JD can't be fetched, tell the user and resolve (paste or skip) — don't quietly drop it from the ranked list.
 7. **Dedupe before work, report dedupe out loud.** Duplicate URLs in a user-supplied list get normalized away at the top of Phase 2 with visible accounting — never silent. Applies to every subsequent session, not just the first time the user notices a dupe.
 8. **Source URL is always retained.** Every ranked-table row and every handoff artifact cites the original URL. The user needs to know where to apply; the skill does not make that information harder to find.
+9. **Approval precedes filesystem writes.** No `~/Documents/resumes/<Company>/` directory exists on disk until Phase 4 approval. Directory creation + `jd.md` + `fit-analysis.md` happen as one atomic logical step per company — never pre-create speculative folders during fetch or triage. An empty company directory is always a bug, never a normal state.
+10. **Pre-dedupe against existing tailoring.** Before Phase 2 URL dedupe, check `~/Documents/resumes/` for companies that already have tailored outputs (resume markdown, keyword coverage, cover letter). If a submitted URL maps to an already-tailored company, surface it explicitly in the dedupe report and ask: skip, re-tailor, or diff against existing? Never silently re-tailor over prior work.
 
 ---
 
