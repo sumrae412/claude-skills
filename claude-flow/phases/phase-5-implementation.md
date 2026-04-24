@@ -276,8 +276,10 @@ Known context from earlier tasks (from $diff.context_facts):
 ### Advisor: Mid-Implementation (optional)
 
 Only at genuinely ambiguous decision points. Not routine steps.
-Dispatch Opus with: specific decision context from current `$plan` step.
+Dispatch Sonnet with: specific decision context from current `$plan` step.
 Question: focused on the specific ambiguity.
+
+Downgraded from Opus to Sonnet 2026-04-24 after a 15-trial dual-judge eval showed the two models tied on mid-implementation reasoning (both 0.989 judge score). See `decisions/2026-04-24-sonnet-vs-opus-phase-downgrade.md` in the claude_flow repo.
 
 **When to call:** non-obvious integration patterns, conflicting precedents, step diverging from plan in ways affecting later steps.
 **When NOT to call:** routine implementation, standard TDD cycles with clear requirements, unambiguous plan steps.

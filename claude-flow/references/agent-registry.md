@@ -11,7 +11,7 @@ Reference documentation for all agents, skills, and tools used within the claude
 | Exploration Review + Quality Gate | 2 | **sonnet** | "What's missing? + score 4 quality axes" | Yes |
 | Architecture Critique | 4 | **opus** | "Blind spots? Trade-offs underweighted?" | Yes |
 | Plan Stress-Test | 4b | **opus** | "Logic errors, scope creep?" | Yes |
-| Mid-Implementation | 5 | **opus** | "Which pattern at this decision point?" | Optional |
+| Mid-Implementation | 5 | **sonnet** | "Which pattern at this decision point?" | Optional |
 | Strategic Pre-Review | 6 | **opus** | "Does this fulfill requirements?" | Optional |
 
 All advisor calls use `subagent_type: "general-purpose"`. Phase 2 uses `model: "sonnet"` (gap-finding). Phase 4+ uses `model: "opus"` (trade-off analysis).

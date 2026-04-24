@@ -30,7 +30,7 @@ Read the diff. For each file changed, mentally trace the happy path AND the erro
 
 - **All clear** → Proceed to Phase 6
 - **Issues found** → Fix them. Re-run affected tests. Then proceed.
-- **Architectural concern** → Call Opus advisor (Mid-Implementation checkpoint) before proceeding
+- **Architectural concern** → Call Sonnet advisor (Mid-Implementation checkpoint) before proceeding — see `decisions/2026-04-24-sonnet-vs-opus-phase-downgrade.md` in the claude_flow repo
 
 ## Why This Saves Money
 
