@@ -358,3 +358,9 @@ If iteration limit reached, set status to "failed" and surface to user.
 ## Multi-surface features — phased commits
 
 For features spanning multiple surfaces (backend + client + infra, >500 LoC), Phase 5 MAY land as N logical phase commits on one branch rather than a single commit. Each phase must leave full test suites green. See `executing-plans` § "Multi-Surface Features: Phased Commits with Green Between" for the DAG-documentation convention, labeling (A–F), and skip criteria.
+
+---
+
+## Turn-closing summary discipline
+
+When closing a turn that includes Edit/Write tool calls, cite evidence in the summary: `path/to/file.md:L12-18` refs, `git diff --stat` output, or `gh pr view --json mergedAt`. The Edit tool's "updated successfully" response doesn't render prominently in the user transcript, so bare claims ("edits applied", "fixed", "shipped") read as unverifiable and trip approval-challenge hooks. Autocommit/stop hooks can also land work between your edits and the summary — cite the commit SHA or PR URL when that happens. Same bar for Phase 6 quality-gate summaries. Project-level analog: courierflow CLAUDE.md boundary #8.

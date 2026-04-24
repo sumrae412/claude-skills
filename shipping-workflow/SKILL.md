@@ -222,6 +222,7 @@ Applies when the session cwd is a worktree, not the main clone:
 - Use `gh pr create --head <branch>` and `gh pr view --repo <owner>/<name>` to bypass local-branch inference. Without `--head`, `gh pr create` infers the PR source from the current branch — which is the worktree's branch, not the one you just pushed.
 - `git checkout -b feat/X origin/main` issued via `cd /main/repo &&` creates the branch in the **main repo**, not the worktree. Subsequent absolute-path edits land in whichever working tree currently has the branch checked out. Use `git -C <worktree-path> checkout -b ...` if you want the branch in a specific worktree, or stay in the worktree entirely.
 - `git worktree list` to sanity-check which HEAD is where when state feels confused.
+- **Worktree venv gap before `quick_ci.sh`:** Worktree shells don't auto-activate the main repo's `.venv`. If `quick_ci.sh` fails with `No module named pytest/redis/sqlalchemy/pydantic/celery`, run `source .venv/bin/activate` (or invoke `.venv/bin/python -m pytest`) before re-running. Do NOT `pip install` into the worktree — same venv, just not on PATH.
 
 See MEMORY `bash_cwd_resets_after_chained_cd_in_worktree.md` and `git_checkout_b_from_worktree_affects_main_repo.md`.
 
