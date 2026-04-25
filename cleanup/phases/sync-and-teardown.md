@@ -20,9 +20,15 @@ Guard every sync with a `.git` existence check so the loop silently no-ops on no
 # 1. Claude skills repo (IS a git repo)
 cd ~/.claude/skills
 if [ -d .git ] && [ -n "$(git status --porcelain 2>/dev/null)" ]; then
-  git add -A
-  git commit -m "update skills from session-learnings"
-  git push
+  # Stage everything EXCEPT .claude/ — that dir contains embedded agent worktrees
+  # (each an independent git repo) which `git add -A` would otherwise commit as
+  # submodule gitlinks. .gitignore also excludes it as primary defense; the
+  # pathspec is defense-in-depth.
+  git add -A ':(exclude).claude'
+  if [ -n "$(git diff --cached --name-only)" ]; then
+    git commit -m "update skills from session-learnings"
+    git push
+  fi
 fi
 
 # 2. Project memory repo (check per-project slug; may or may not be a git repo)

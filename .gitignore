@@ -9,3 +9,7 @@ __pycache__/
 
 # OS
 .DS_Store
+
+# Claude Code harness state — embedded agent worktrees, not skill content.
+# `git add -A` would otherwise pick these up as submodule gitlinks (mode 160000).
+.claude/
