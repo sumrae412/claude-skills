@@ -13,6 +13,12 @@ user-invocable: true
 - User says "check hooks", "debug hooks", "hook doctor", or "why isn't my hook running"
 - After installing or updating hooks
 
+## Why This Matters
+
+Hook configs rot quietly. Project `.claude/hooks.json` entries can reference scripts that were renamed, moved, or never existed in the repo's history — there is no runtime warning when a `PreToolUse` hook points at a missing path. Real-world finding from a single `/hook-doctor` pass: 3 of 11 entries silently broken for unknown duration. Always run a script-existence check across all configured hooks after any hook-config edit, repo restructure, or skill-repo sync.
+
+Use `git log --all -- <script-path>` to distinguish "deleted, restore from history" from "never existed, remove the stale ref" when fixing each broken entry.
+
 ## The Process
 
 ### Step 0: Resolve Active Hook Profile
@@ -86,14 +92,18 @@ SCRIPT_PATH="/path/to/hook.sh"
 # Check shebang line
 head -1 "$SCRIPT_PATH" 2>/dev/null
 
-# Dry-run with mock env vars (timeout 5 seconds)
-timeout 5 env \
+# Dry-run with mock env vars. macOS ships without `timeout` —
+# use `gtimeout` (coreutils) if installed, else run bare.
+TIMEOUT_BIN="$(command -v timeout || command -v gtimeout || true)"
+${TIMEOUT_BIN:+$TIMEOUT_BIN 5} env \
   CLAUDE_FILE_PATH=/tmp/test.py \
   CLAUDE_PROJECT_DIR=$(pwd) \
   CLAUDE_COMMAND="echo test" \
   "$SCRIPT_PATH" </dev/null
 echo "Exit code: $?"
 ```
+
+**Note:** macOS does not include `timeout` in base install. With GNU coreutils (`brew install coreutils`), it's available as `gtimeout`. Without either, the snippet runs bare — well-behaved hooks exit promptly; Ctrl-C if one hangs. The dry-run is a smoke test, not a hang detector.
 
 Classify each hook as:
 - **working** — file exists, is executable, has valid shebang, exits 0
