@@ -42,6 +42,8 @@ URL collection is a Phase 5 input-validation step that runs before any file writ
 <full JD text as pasted>
 ```
 
+**Recommended fetcher for LinkedIn URLs:** prefer the `jd-prep` CLI (`tools/jd-prep/jd_prep.py <url>`) over WebFetch. It hits LinkedIn's unauthenticated guest endpoint, extracts structured metadata + deduplicated body, and writes `~/Documents/resumes/<Company>/jd.md` directly — satisfying this section's URL-retention rule in one step. WebFetch on LinkedIn job pages typically returns auth-walled content. See `reference_jd_prep_tool.md` in MEMORY for invocation pattern + batch mode.
+
 **Input-handling rules (Phase 5 input validation, before any file write):**
 
 - If the user pastes JD text only (no URL): ask for the URL first. Do not silently write `jd.md` without the source.

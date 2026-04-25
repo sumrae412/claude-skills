@@ -85,6 +85,21 @@ GAP HANDLING:
 Ask: "Which headline? Any narrative or level adjustments you want me to push harder or pull back?"
 ```
 
+## Reusing a Prior Cover Letter — Content vs Structure
+
+When the user says "use the letter we wrote for [prior company], update for [new company]" — they mean:
+
+- **REUSE** (structure): paragraph cadence, opening hook pattern, transition logic, P4 through-line shape, recipient-block format, sign-off, dash style. The voice is durable across letters.
+- **REPLACE** (content): every concrete claim, role-specific detail, JD-mapped evidence, and domain hook. P2's primary bridge, P3's secondary bridge, P4's domain hook all swap to match the new role's actual asks.
+
+**The trap:** carrying the prior letter's *specific evidence* (e.g., RAG-platform shipping, claude_flow agent orchestration from a prior AI-platform letter) into a new role where the JD's pain points are different. If P2 and P3 don't map to the new JD's must-haves, structural reuse is hollow — the letter looks polished but reads as a tour of the candidate's prior wins, not a map of fit.
+
+**Diagnostic — read just the nouns and proper names.** If the letter still mentions things the target role doesn't hire for ("RAG platform" for a measurement role, "loan workflows" for an edtech role), the content didn't actually swap — only the company name did. Rewrite.
+
+**Diagnostic — read just the first sentence of each body paragraph.** If 3 of 4 first sentences have "I/my/me" as subject, the letter is candidate-focused. P2 and P3 should open with the company's stated need or the actual pain, then bring the candidate evidence under it.
+
+---
+
 ## When Positioning Drifts Beyond Resume
 
 If the user starts asking about career direction, longer-term strategy, or whether to apply at all — stop and name the boundary. That's career-coaching territory, not resume tailoring. Suggest a licensed career coach.

@@ -101,6 +101,30 @@ Then invoke `/resume-tailor` pointing at a single generated folder, or `/jd-scre
 
 When the script fails, fall back to hand-writing `jd.md` from a paste — same shape as the auto-generated file.
 
+## Integration with skills
+
+### With `/jd-screener` (batch triage)
+
+```bash
+./jd_prep.py --batch ~/Documents/jd-batches/2026-04-24.txt
+# → ~/Documents/resumes/<Co>/jd.md per URL, idempotent skip on existing
+```
+
+Then invoke `/jd-screener` and point it at the company folders. Phase 2 dedupe + fetch is short-circuited because `jd.md` files already exist on disk — the screener moves straight to scoring + triage.
+
+### With `/resume-tailor` (single JD)
+
+```bash
+./jd_prep.py https://www.linkedin.com/jobs/view/<id>/
+# → ~/Documents/resumes/<Co>/jd.md
+```
+
+Then invoke `/resume-tailor` pointing at the generated folder. The skill's §0/§0.1 input-validation is satisfied — URL retained in the `jd.md` header, full JD body verbatim below it.
+
+### Token efficiency
+
+Replacing inline JD pastes with jd-prep saves ~3-5K tokens per JD on the orchestrator side. The full JD text lives on disk; downstream phases load only the part they need (key points for scoring, full body for keyword scanning) instead of carrying the entire posting in conversation context.
+
 ## Notes
 
 - **Terms of Service.** LinkedIn's ToS prohibits automated scraping. The guest endpoint is a semi-public preview URL; using it for your own job-search workflow is low-risk practically but not zero-risk legally. Low volume, personal use only.

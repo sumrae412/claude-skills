@@ -17,7 +17,7 @@ Ask the user for:
 
 1. **Resume source** — path to their canonical resume (markdown preferred; DOCX/PDF fine, converted in-memory) OR pasted text.
 2. **Job description** — URL, file path, or pasted text. If URL, fetch with WebFetch; fall back to asking the user to paste if fetch fails.
-3. **Target outcome** — "drop-in replacement bullets", "full rewrite", "cover-letter draft too", or "just show me gaps". Default: tailored resume + keyword coverage report.
+3. **Target outcome** — "drop-in replacement bullets", "full rewrite", or "just show me gaps". Default: tailored resume + keyword coverage report. Cover letters are opt-in only — see Phase 5 §4 and Principle 8. Do not offer one unless the user has explicitly asked.
 
 If any piece is missing, ask once. Don't proceed with half the inputs.
 
@@ -108,11 +108,11 @@ Defaults:
 1. **Tailored resume** (markdown, ready to copy-paste or convert)
 2. **Keyword coverage report** — must-haves + nice-to-haves hit/missed
 3. **`jd.md`** — source URL + captured date + full JD text. Required in every company folder so the tailored outputs remain legible months later. See `references/output-formats.md` §0.1.
-4. **(Optional)** Cover letter draft — offered, not default
+4. **Cover letter draft — opt-in only.** Do NOT offer, pre-announce, or auto-draft a cover letter at the end of Phase 5. Produce resume + keyword coverage + jd.md only. Draft a cover letter exclusively when the user explicitly requests one ("draft a cover letter", "write me a letter for this", etc.). The default closing prompt does NOT mention cover letters — its absence is what prevents an unwanted draft from being produced unprompted.
 
 No change log. What was reframed and why is a conversation artifact, not a deliverable — if the skill itself should behave differently next time, that's a session-learnings update to the skill, not a file for the user.
 
-Offer: *"Want me to convert to DOCX, draft a cover letter, or iterate on any section?"*
+Offer: *"Want me to convert to DOCX or iterate on any section?"*
 
 **Post-write verification (when this skill's own files are edited):** after any Edit to `references/*.md` or `SKILL.md` in this skill, Read the written file and grep for the inserted anchor text. Do not trust the Edit tool's success signal alone — on hosts where `~/.claude/skills/resume-tailor/` is not a symlink to `claude_code/claude-skills/resume-tailor/`, edits can land in a stale copy while the canonical repo stays clean. Verify in the canonical path at `/Users/summerrae/claude_code/claude-skills/resume-tailor/` (or the host's equivalent).
 
@@ -127,6 +127,7 @@ Offer: *"Want me to convert to DOCX, draft a cover letter, or iterate on any sec
 5. **Minimum viable dependencies.** Pure markdown by default. Optional DOCX via `anthropic-skills:docx`. No bun/node/React required.
 6. **Gap handling is disclosure, not manufacturing.** Visible gaps go to cover letters or discovery prompts — never filled with invented content.
 7. **Communication principles apply.** Resumes are author-to-audience writing. Audience-centered focus, lead with the strongest evidence, simple plain-language bullets, no ego residue. Load `shared/communication-principles.md` before Phase 2 matching and Phase 4 positioning — the bullet-level and headline-level decisions are where these principles bite hardest.
+8. **Cover letters are opt-in only.** The default Phase 5 deliverable set is resume + keyword coverage + jd.md. Cover letters are produced only on explicit user request — never offered proactively, never pre-announced, never drafted as a "while I'm at it" addition. The closing prompt deliberately omits cover-letter language so the user has to raise it.
 
 ## Professional Help Boundary
 

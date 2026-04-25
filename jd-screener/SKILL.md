@@ -55,6 +55,8 @@ Report the dedupe result out loud: *"N URLs submitted, D duplicates removed, T a
 
 ### Step 2: Fetch
 
+**Preferred path for LinkedIn URLs: `jd-prep` CLI** (`tools/jd-prep/jd_prep.py`). It hits LinkedIn's unauthenticated guest endpoint, extracts structured metadata + deduplicated body, and writes `~/Documents/resumes/<Company>/jd.md` directly. Batch mode (`./jd_prep.py --batch urls.txt`) handles full submitted lists at 1 req/sec with idempotent skip on existing folders. WebFetch on LinkedIn job pages is auth-walled; jd-prep is the durable replacement. See `reference_jd_prep_tool.md` in MEMORY for invocation pattern. Fall back to WebFetch + manual paste only when jd-prep fails (HTTP 403/429 or layout change — exit codes 2/3).
+
 For each unique JD, fetch and extract a structured posting. See `references/ingestion-patterns.md` for the fallback ladder (WebFetch → URL variants → manual paste). LinkedIn job pages often auth-gate; plan on partial fetch failures.
 
 For each JD, store:
