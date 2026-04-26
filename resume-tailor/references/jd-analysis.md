@@ -4,7 +4,7 @@ Parse the job description into a structured profile before touching the resume. 
 
 ## Output Schema
 
-**Phase 1 output order to the user:** JD recap first, then derived profile (weights + keywords + action codes). The user needs to see the JD content re-surfaced above the weights so they can evaluate fit without scrolling back to the JD file. The recap is plain-English, not YAML.
+**Phase 1 output order to the user:** JD recap first, then derived profile (weights + keywords + archetype + action codes). The user needs to see the JD content re-surfaced above the weights so they can evaluate fit without scrolling back to the JD file. The recap is plain-English, not YAML.
 
 ### 1. JD Recap (shown first, plain-English)
 
@@ -65,9 +65,28 @@ culture_signals:
   - "owner mentality, high agency"
   - "async-heavy comms"
 
+archetype:
+  primary: "Platform / Engineering Executive"
+  resume_story: "Frame the candidate as the leader who sets technical direction, scales AI platforms, and makes production systems reliable across teams."
+  downplay: ["education framing", "isolated prototypes", "tool-list-heavy skills sections"]
+
 risk_flags:
   - "no salary band disclosed"    # only surface genuine red flags
 ```
+
+### 3. Archetype Check (after derived profile fields)
+
+Load `references/role-archetypes.md` and classify the JD into one primary archetype. Then add three lines to the user-facing checkpoint:
+
+```markdown
+## Archetype
+
+- **Archetype selected:** Platform / Engineering Executive
+- **Resume story to foreground:** Frame the candidate as the leader who sets technical direction, scales AI platforms, and makes production systems reliable across teams.
+- **What to downplay:** education framing, isolated prototypes, tool-list-heavy skills sections
+```
+
+This forces the tailoring pass to pick a dominant story before it starts rewriting bullets.
 
 ## Action Codes
 

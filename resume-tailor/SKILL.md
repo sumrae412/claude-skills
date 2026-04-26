@@ -5,6 +5,16 @@ description: Tailor an existing resume to a specific job description with visibl
 
 # Resume Tailor — JD-Driven Resume Tailoring + Positioning
 
+## Token Economy
+
+Apply `token-economy` whenever this skill would otherwise trigger broad exploration, repeated file reads, multi-file scans, or heavy reference loading.
+
+- Load only the phase, reference, or script needed for the current step.
+- Prefer targeted search and line-range reads over whole-file slurping.
+- Batch independent tool calls and keep narration/results tight.
+- If the task is tiny or the file set is already known, apply the relevant patterns inline instead of loading extra material.
+
+
 Walks the user through a phased resume-tailoring session: JD analysis → matching pass with confidence scores → optional gap discovery → positioning pass → output. Truth-preserving — the skill selects, emphasizes, and reframes existing experience; it never fabricates.
 
 ## Mission
@@ -16,7 +26,7 @@ A person's ability to get a job should be based on their actual experience, not 
 Ask the user for:
 
 1. **Resume source** — path to their canonical resume (markdown preferred; DOCX/PDF fine, converted in-memory) OR pasted text.
-2. **Job description** — URL, file path, or pasted text. If URL, fetch with WebFetch; fall back to asking the user to paste if fetch fails.
+2. **Job description** — URL, file path, or pasted text. If it is a LinkedIn URL, prefer `tools/jd-prep/jd_prep.py` to capture `jd.md`. If it is another URL, fetch it with the host's available web tool. If fetch fails, ask the user to paste the JD text and keep the URL for `jd.md`.
 3. **Target outcome** — "drop-in replacement bullets", "full rewrite", or "just show me gaps". Default: tailored resume + keyword coverage report. Cover letters are opt-in only — see Phase 5 §4 and Principle 8. Do not offer one unless the user has explicitly asked.
 
 If any piece is missing, ask once. Don't proceed with half the inputs.
@@ -29,7 +39,7 @@ If any piece is missing, ask once. Don't proceed with half the inputs.
 
 ## Phase 1 — JD Analysis
 
-Produce a **structured job profile** before touching the resume. Output format, action codes, and extraction heuristics live in `references/jd-analysis.md` — load it now.
+Produce a **structured job profile** before touching the resume. Output format, action codes, and extraction heuristics live in `references/jd-analysis.md` — load it now. Also load `references/role-archetypes.md` so the JD is classified into the right resume-story type before weights and bullet rewrites begin.
 
 Output to user (checkpoint) — **in this order**:
 
@@ -38,7 +48,8 @@ Output to user (checkpoint) — **in this order**:
 3. Must-have keywords vs. nice-to-haves (ATS tier)
 4. Seniority signals + scope signals (team size, ownership, budget)
 5. Cultural signals (what kind of operator do they want?)
-6. Action-code plan per focus area: `LEAD_WITH` / `EMPHASIZE` / `QUANTIFY` / `DOWNPLAY`
+6. Archetype selected + resume story to foreground + what to downplay
+7. Action-code plan per focus area: `LEAD_WITH` / `EMPHASIZE` / `QUANTIFY` / `DOWNPLAY`
 
 **Rationale for JD-first ordering:** Users often can't evaluate whether a weight is right without re-anchoring in the JD content. Placing the JD recap immediately above the weights means the user sees the *evidence* and the *derived profile* together, without scrolling back to the JD file.
 
@@ -48,7 +59,7 @@ Ask: *"Does this profile match how you read the role? Anything I over- or under-
 
 ## Phase 2 — Matching Pass
 
-For each bullet and role in the resume, assign a confidence band vs. the JD profile and propose a reframe if appropriate. Rubric + four reframing strategies are in `references/matching-rubric.md` — load it. Also load `shared/communication-principles.md` — reframed bullets must lead with the conclusion, stay in plain language, and serve the reader (hiring manager / ATS), not the author.
+For each bullet and role in the resume, assign a confidence band vs. the JD profile and propose a reframe if appropriate. Rubric + four reframing strategies are in `references/matching-rubric.md` — load it. Also load `shared/communication-principles.md` — reframed bullets must lead with the conclusion, stay in plain language, and serve the reader (hiring manager / ATS), not the author. If the target role is Head/VP/executive level, also load `references/executive-bullets.md` so bullet rewrites surface decisions, tradeoffs, governance, and leverage rather than just implementation.
 
 Output to user (checkpoint):
 
@@ -80,7 +91,7 @@ Then fold new bullets into the matching pass and update the roll-up.
 
 ## Phase 4 — Positioning
 
-Always runs. This is where the skill's second promise lives. Covers headline/summary, narrative arc, level calibration, and gap handling. Load `references/positioning.md` and `shared/communication-principles.md` — the "I help" framing (principle 6) applies directly to headlines and summaries; audience-centered focus (principle 1) drives the narrative arc.
+Always runs. This is where the skill's second promise lives. Covers headline/summary, narrative arc, level calibration, and gap handling. Load `references/positioning.md`, `shared/communication-principles.md`, `references/writing-quality.md`, `references/headline-library.md`, and `references/summary-patterns.md` — the "I help" framing (principle 6) applies directly to headlines and summaries; audience-centered focus (principle 1) drives the narrative arc; the headline and summary libraries keep the prose specific instead of generic.
 
 Output to user (checkpoint):
 
@@ -95,7 +106,7 @@ Ask: *"Which headline angle? Does the narrative match how you want to be perceiv
 
 ## Phase 5 — Output
 
-Final deliverables. Format details, ATS tips, and optional DOCX export via `anthropic-skills:docx` in `references/output-formats.md`. **Load `references/templates/README.md` now** — it captures the user's canonical resume + cover-letter layout, heading style, date format, and DOCX style source. Every Phase 5 output must follow those conventions unless the user explicitly deviates.
+Final deliverables. Format details, ATS tips, and optional DOCX export are in `references/output-formats.md`. **Load `references/templates/README.md`, `references/writing-quality.md`, `references/resume-bullet-bans.md`, and `references/resume-qa.md` now** — the template file captures the user's canonical resume + cover-letter layout, heading style, date format, and DOCX style source; the other references keep the prose specific, ban low-signal bullet patterns, and force a final coherence pass. Every Phase 5 output must follow those conventions unless the user explicitly deviates.
 
 **Template-compliant markdown is mandatory.** Resume markdown must use pandoc `custom-style` divs for the name (`::: {custom-style="Title"} ... :::`) and headline (`::: {custom-style="Subtitle"} ... :::`), ALL-CAPS H1 section headers (`# SKILLS`, `# EXPERIENCE`, `# EDUCATION`), plain-text H2 role headings (`## Company, Location - Title`, no italics), and `MONTH YYYY - PRESENT` date lines. Do NOT write the name as `# Name` or add a `## Summary` heading — both break the template's style mapping. Cover letters use the top-block format in `references/templates/README.md` (bold name, city/phone/email, ordinal date, recipient block, `Dear ...`, body, `Regards,`, bold signature name).
 
@@ -124,10 +135,11 @@ Offer: *"Want me to convert to DOCX or iterate on any section?"*
 2. **Visible scoring.** Every recommendation shows its confidence band and strategy. No black-box rewrites.
 3. **Collaborative, not autopilot.** Every phase ends with a checkpoint. The user edits, vetoes, and corrects before the next phase runs.
 4. **Solo-user scope.** One person, one resume, one JD at a time. No batch mode, no library management, no external infra.
-5. **Minimum viable dependencies.** Pure markdown by default. Optional DOCX via `anthropic-skills:docx`. No bun/node/React required.
+5. **Minimum viable dependencies.** Pure markdown by default. Optional DOCX via `pandoc` with the template reference docs in `references/templates/`. If `pandoc` is unavailable, stop at reviewed markdown instead of inventing another render path. No bun/node/React required.
 6. **Gap handling is disclosure, not manufacturing.** Visible gaps go to cover letters or discovery prompts — never filled with invented content.
 7. **Communication principles apply.** Resumes are author-to-audience writing. Audience-centered focus, lead with the strongest evidence, simple plain-language bullets, no ego residue. Load `shared/communication-principles.md` before Phase 2 matching and Phase 4 positioning — the bullet-level and headline-level decisions are where these principles bite hardest.
 8. **Cover letters are opt-in only.** The default Phase 5 deliverable set is resume + keyword coverage + jd.md. Cover letters are produced only on explicit user request — never offered proactively, never pre-announced, never drafted as a "while I'm at it" addition. The closing prompt deliberately omits cover-letter language so the user has to raise it.
+9. **Final prose must not sound templated.** Lists and tables are for analysis checkpoints only. Headlines, summaries, and cover letters must read like authored prose with a governing idea, specific evidence, and no buzzword stacking. Load `references/writing-quality.md` before writing them.
 
 ## Professional Help Boundary
 

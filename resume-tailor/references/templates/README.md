@@ -91,7 +91,7 @@ pandoc /path/to/Summer_Rae_CoverLetter_<Company>.md \
 
 The `--reference-doc` flag pulls styles (Heading 1, Heading 2, body font, page margins) from the template and applies them to the generated DOCX. Content comes from the markdown; visual presentation comes from the template.
 
-If the `anthropic-skills:docx` plugin is used instead of pandoc, pass the template path as the style source if the plugin supports it; otherwise fall back to pandoc for template-driven renders.
+If `pandoc` is unavailable, stop at reviewed markdown unless the user explicitly asks for a different conversion path you can verify in the current host.
 
 ## When to deviate
 

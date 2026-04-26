@@ -4,13 +4,19 @@ Phase 4 of the tailoring flow — always runs. Positioning is about how the resu
 
 ## Headline + Summary
 
-Offer 2–3 headline options at different angles. Show the framing choice so the user can pick intentionally.
+Offer 2–3 headline options at different angles. Show the framing choice so the user can pick intentionally. Load `references/writing-quality.md` and `references/headline-library.md` first: the options should sound like something a sharp person would actually use, not like slogan fragments or LinkedIn branding copy.
 
 - **Function-forward:** "Product Manager specializing in 0 to 1 B2B SaaS"
 - **Outcome-forward:** "Product leader who has shipped 4 products to $1M+ ARR"
 - **Angle-forward:** "PM/eng hybrid — ships product fast and unblocks the team"
 
-Summary (2–3 sentences): optional for PMs and execs, often skippable for engineers. Include only if it adds a dimension the bullets can't — e.g., cross-functional trajectory, industry focus, operating mode.
+Summary (2–3 sentences): optional for PMs and execs, often skippable for engineers. Include only if it adds a dimension the bullets can't — e.g., cross-functional trajectory, industry focus, operating mode. Load `references/summary-patterns.md` before writing one.
+
+Quality bar:
+
+- The first sentence should name the candidate's real lane, not a pile of adjectives.
+- The second sentence should prove that lane with one concrete kind of work, constraint, or outcome.
+- If the summary reads like three resume bullets melted together, cut it.
 
 ## Narrative Arc
 
@@ -23,6 +29,47 @@ Read the resume top to bottom and tell the user what story it tells. Then name w
 - **Founder/operator:** mix of scale and 0-to-1. Lean into the specific mix the JD wants.
 
 **Common arc problem:** strong early career, weaker recent. Fix — lead with outcomes not titles; re-emphasize the recent role's impact with quantifiables from Phase 2's matching pass.
+
+## Special Case — DeepLearning.AI Transition
+
+When the resume includes a move from building or leading AI systems into a curriculum product role at DeepLearning.AI, do **not** frame it as a retreat into education content. Frame it as a shift in leverage, pattern visibility, and field-shaping scope.
+
+What is actually happening in that move:
+
+- the candidate is operating as a translator between frontier research and production teams
+- the candidate is seeing pattern emergence across many teams, not just one org
+- the candidate is influencing far more builders than in a single-team delivery role
+
+That is often a scope-of-influence expansion even if the title looks lateral.
+
+### Approved framing directions
+
+- **Strategic / clean:** moved from leading AI system development in regulated or high-stakes environments into shaping how AI is built and adopted at scale
+- **Narrative / through-line:** shifted from shipping individual systems to identifying repeatable patterns in LLMs and agentic architectures, then turning those into tools, frameworks, and training other teams can use
+- **Field-shaping / bolder:** moved to the intersection of emerging AI research and real-world adoption, with the work focused on scaling how AI gets built rather than scaling only one team or system
+
+### Strong framing primitives
+
+Prefer language like:
+
+- "standardizing patterns"
+- "accelerating adoption"
+- "reducing time-to-production for AI systems"
+- "bridging research and production"
+- "translating frontier workflows into reusable tooling and training"
+
+### Mistake to avoid
+
+Do not reduce the role to "creating courses", "building educational content", or other instructional-design phrasing unless the target role is specifically education-facing. That language down-levels the work and obscures the strategic and technical layer.
+
+### Evidence the bullets should surface
+
+To keep enterprise or traditional hiring managers from reading "curriculum" as non-technical, make the experience bullets counter it with specifics:
+
+- tooling or open-source contributions
+- architectural decisions or system patterns
+- interaction with frontier workflows, LLM systems, or agentic design
+- evidence of reuse, adoption, or leverage across many builders or teams
 
 ## Level Calibration
 
@@ -42,6 +89,41 @@ Calibration output:
 - List 3–5 specific phrases to adjust, with before/after.
 
 **Don't over-correct upward.** A resume pitched two levels above actual experience fails the interview. The goal is accurate match, not inflation.
+
+## Special Case — Executive Skills Section
+
+If the target role is Head of AI, VP, or another strategy-owning executive title, the skills section must signal judgment, scope, and leverage rather than implementation coverage.
+
+The key shift is:
+
+- from capabilities listed as things the candidate can do
+- to decision authority and organizational leverage
+
+At that level, a tool-heavy skills section can make the candidate look like an implementer rather than the person deciding what gets built, why it gets built, and how the risk is managed.
+
+### Default structure for executive-targeted skills sections
+
+Use grouped categories like:
+
+- **AI Strategy & Systems**: roadmap ownership, LLM and generative AI strategy, agentic systems, build-vs-buy decision-making, AI productization, platform strategy, model evaluation, risk management, responsible AI
+- **Production & Governance**: regulated AI systems, lifecycle oversight, quality gates, release governance, auditability, reliability, failure-mode awareness
+- **Technical Depth (Working Knowledge)**: Python, SQL, PyTorch, TensorFlow, APIs, microservices, cloud or data platforms
+- **Leadership**: executive advisory, stakeholder alignment, cross-functional leadership, organizational scaling, team design, vendor evaluation, enablement
+
+The point is not to copy those exact phrases every time. The point is to organize the section around strategic authority first, technical depth second.
+
+### Framing rules
+
+- De-emphasize tools by explicitly framing them as working knowledge when the target role is VP or Head level.
+- Elevate strategy language only when it is grounded in real decisions the candidate has owned.
+- Give governance its own pillar when the candidate has real production, compliance, or regulated-system experience.
+- Collapse overlapping implementation buzzwords into strategic scope. Do not list "LLMs", "GenAI", "RAG", and "agentic" as though they are four unrelated checkboxes.
+
+### What matters more than the skills list
+
+If the experience section does not show decisions made, tradeoffs owned, or problems that broke under the candidate's watch and how they were fixed, the skills section cannot rescue the positioning. The skills section is reinforcement, not the primary proof.
+
+For executive-targeted rewrites, load `references/executive-bullets.md` before revising experience bullets.
 
 ## Gap Handling
 
