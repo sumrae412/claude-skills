@@ -5,6 +5,16 @@ description: User-story-driven E2E testing via Playwright MCP — fills forms, c
 
 # Playwright Test Skill - Interactive E2E Testing from User Stories
 
+## Token Economy
+
+Apply `token-economy` whenever this skill would otherwise trigger broad exploration, repeated file reads, multi-file scans, or heavy reference loading.
+
+- Load only the phase, reference, or script needed for the current step.
+- Prefer targeted search and line-range reads over whole-file slurping.
+- Batch independent tool calls and keep narration/results tight.
+- If the task is tiny or the file set is already known, apply the relevant patterns inline instead of loading extra material.
+
+
 Execute comprehensive end-to-end tests using Playwright MCP tools, driven by user stories. This skill provides interactive browser testing with visual verification, screenshots, and detailed reporting.
 
 ## Overview

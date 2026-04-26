@@ -5,7 +5,18 @@ description: Fetch API docs before coding
 
 # Fetch API Documentation
 
-Before writing code that integrates with external APIs or SDKs, use Context Hub to get curated, accurate documentation.
+## Token Economy
+
+Apply `token-economy` whenever this skill would otherwise trigger broad exploration, repeated file reads, multi-file scans, or heavy reference loading.
+
+- Load only the phase, reference, or script needed for the current step.
+- Prefer targeted search and line-range reads over whole-file slurping.
+- Batch independent tool calls and keep narration/results tight.
+- If the task is tiny or the file set is already known, apply the relevant patterns inline instead of loading extra material.
+
+
+Before writing code that integrates with external APIs or SDKs, use
+Context Hub to get curated, accurate documentation.
 
 ## When to Use This Skill
 

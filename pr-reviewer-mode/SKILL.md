@@ -7,6 +7,16 @@ allowed-tools: Bash, Read, Grep, Glob
 
 # PR Reviewer Mode — Pick the Right Strategy
 
+## Token Economy
+
+Apply `token-economy` whenever this skill would otherwise trigger broad exploration, repeated file reads, multi-file scans, or heavy reference loading.
+
+- Load only the phase, reference, or script needed for the current step.
+- Prefer targeted search and line-range reads over whole-file slurping.
+- Batch independent tool calls and keep narration/results tight.
+- If the task is tiny or the file set is already known, apply the relevant patterns inline instead of loading extra material.
+
+
 The claude-flow PR reviewer (`agent-sdk/pr-reviewer/`) has five meaningfully different ways to run. This skill picks one based on the PR and the ask, then either recommends or executes.
 
 ## When to use

@@ -5,6 +5,16 @@ description: Use when running WebSearch, WebFetch, or browser navigation on the 
 
 # Web Search Quality
 
+## Token Economy
+
+Apply `token-economy` whenever this skill would otherwise trigger broad exploration, repeated file reads, multi-file scans, or heavy reference loading.
+
+- Load only the phase, reference, or script needed for the current step.
+- Prefer targeted search and line-range reads over whole-file slurping.
+- Batch independent tool calls and keep narration/results tight.
+- If the task is tiny or the file set is already known, apply the relevant patterns inline instead of loading extra material.
+
+
 ## Overview
 
 Web results are noisy — SEO farms, stale tutorials, AI-generated summary sites, and single-author opinions all rank on page one. Unfiltered citations degrade answer quality and introduce wrong facts. This skill sets minimum quality gates for any web-sourced claim.

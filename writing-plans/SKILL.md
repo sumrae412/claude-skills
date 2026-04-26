@@ -5,6 +5,16 @@ description: Plan for multi-step tasks
 
 # Writing Plans
 
+## Token Economy
+
+Apply `token-economy` whenever this skill would otherwise trigger broad exploration, repeated file reads, multi-file scans, or heavy reference loading.
+
+- Load only the phase, reference, or script needed for the current step.
+- Prefer targeted search and line-range reads over whole-file slurping.
+- Batch independent tool calls and keep narration/results tight.
+- If the task is tiny or the file set is already known, apply the relevant patterns inline instead of loading extra material.
+
+
 ## Overview
 
 Write comprehensive implementation plans assuming the engineer has zero context for our codebase and questionable taste. Document everything they need to know: which files to touch for each task, code, testing, docs they might need to check, how to test it. Give them the whole plan as bite-sized tasks. DRY. YAGNI. TDD. Frequent commits.

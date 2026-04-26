@@ -1,0 +1,115 @@
+{
+  "version": "1.1",
+  "description": "Default reviewer registry bundled with claude-flow. Project-local overrides in .claude/reviewer-registry.json replace entries by id.",
+  "reviewers": [
+    {
+      "id": "coderabbit",
+      "tier": "always",
+      "cascade_tier": 1,
+      "min_budget": "low",
+      "subagent_type": "coderabbit:code-reviewer",
+      "model": "sonnet",
+      "description": "Broad first-pass code review"
+    },
+    {
+      "id": "safety-reviewer",
+      "tier": "always",
+      "cascade_tier": 2,
+      "min_budget": "medium",
+      "subagent_type": "safety-reviewer",
+      "model": "sonnet",
+      "description": "Merged silent-failure and security review"
+    },
+    {
+      "id": "test-coverage-analyzer",
+      "tier": "always",
+      "cascade_tier": 2,
+      "min_budget": "medium",
+      "subagent_type": "pr-review-toolkit:pr-test-analyzer",
+      "model": "sonnet",
+      "description": "Test gap and assertion-quality review"
+    },
+    {
+      "id": "curmudgeon-review",
+      "tier": "always",
+      "cascade_tier": 2,
+      "min_budget": "high",
+      "runner": "codex-cli",
+      "runner_script": "scripts/curmudgeon_review.sh",
+      "model": "gpt-5-codex",
+      "description": "Optional non-Anthropic second opinion; self-skips if unavailable"
+    },
+    {
+      "id": "adversarial-breaker",
+      "tier": "always",
+      "cascade_tier": 2,
+      "min_budget": "high",
+      "subagent_type": "general-purpose",
+      "model": "sonnet",
+      "description": "Adversarial break-case reviewer with scored output",
+      "score_threshold": 7,
+      "scored_criteria": [
+        "input_validation",
+        "error_handling",
+        "concurrency_safety",
+        "data_consistency",
+        "failure_modes",
+        "test_coverage_gaps"
+      ],
+      "persona_file": "scripts/adversarial_breaker_persona.txt"
+    },
+    {
+      "id": "migration-reviewer",
+      "tier": "conditional",
+      "cascade_tier": 3,
+      "min_budget": "high",
+      "file_patterns": [
+        "alembic/**/*.py",
+        "**/migrations/**/*.py"
+      ],
+      "subagent_type": "migration-reviewer",
+      "model": "sonnet",
+      "description": "Alembic and migration safety checks"
+    },
+    {
+      "id": "google-api-reviewer",
+      "tier": "conditional",
+      "cascade_tier": 3,
+      "min_budget": "high",
+      "file_patterns": [
+        "**/*.py",
+        "**/*.ts",
+        "**/*.js"
+      ],
+      "content_pattern": "googleapiclient|Google Calendar|Google Drive|Gmail|calendarId|google\\.(calendar|drive|gmail)",
+      "threshold": 1,
+      "subagent_type": "google-api-reviewer",
+      "model": "sonnet",
+      "description": "Google API contract and auth review"
+    },
+    {
+      "id": "async-reviewer",
+      "tier": "conditional",
+      "cascade_tier": 3,
+      "min_budget": "medium",
+      "file_patterns": [
+        "**/*.py"
+      ],
+      "content_pattern": "async def|await ",
+      "threshold": 3,
+      "subagent_type": "async-reviewer",
+      "model": "sonnet",
+      "description": "Async I/O and concurrency review"
+    },
+    {
+      "id": "lightweight-reviewer",
+      "tier": "always",
+      "cascade_tier": 3,
+      "min_budget": "low",
+      "subagent_type": "general-purpose",
+      "model": "haiku",
+      "description": "Batched lightweight review with dynamic checklist",
+      "dynamic_prompt": true
+    }
+  ]
+}

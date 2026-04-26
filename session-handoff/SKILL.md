@@ -6,6 +6,16 @@ user-invocable: true
 
 # Session Handoff — Abandon Mode
 
+## Token Economy
+
+Apply `token-economy` whenever this skill would otherwise trigger broad exploration, repeated file reads, multi-file scans, or heavy reference loading.
+
+- Load only the phase, reference, or script needed for the current step.
+- Prefer targeted search and line-range reads over whole-file slurping.
+- Batch independent tool calls and keep narration/results tight.
+- If the task is tiny or the file set is already known, apply the relevant patterns inline instead of loading extra material.
+
+
 Archive failed approaches so future sessions don't re-explore them. The record becomes
 visible as "previously ruled out" context at the next SessionStart.
 

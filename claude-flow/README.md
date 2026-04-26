@@ -114,8 +114,14 @@ On a new machine: clone this repo to `~/claude-config/`, install the claude-flow
 skills/claude-flow/
 ├── SKILL.md                          # Main workflow definition
 ├── README.md                         # This file
+├── workflow-profiles.json            # Canonical path + transition metadata
+├── reviewer-registry.json            # Bundled Phase 6 reviewer defaults
 └── references/
-    └── hook-templates.md             # Template library for hook generation
+    ├── hook-templates.md             # Template library for hook generation
+    ├── review-budgets.md             # Phase 6 review-budget heuristics
+    ├── workflow-profiles.md          # Human summary of path metadata
+    ├── workflow-state-lifecycle.md   # Lazy-loaded state machine details
+    └── project-bootstrap.md          # Lazy-loaded memory + hook bootstrap
 
 scripts/hooks/
 ├── cleanup-worktrees.sh              # Prune orphaned worktrees on session start

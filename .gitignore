@@ -6,6 +6,8 @@ __pycache__/
 .ruff_cache/
 .benchmarks/
 .mypy_cache/
+**/.venv/
+**/node_modules/
 
 # OS
 .DS_Store

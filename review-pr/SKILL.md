@@ -7,6 +7,16 @@ allowed-tools: Bash, Read, Grep, Glob, Task
 
 # Review PR — Unified Pipeline
 
+## Token Economy
+
+Apply `token-economy` whenever this skill would otherwise trigger broad exploration, repeated file reads, multi-file scans, or heavy reference loading.
+
+- Load only the phase, reference, or script needed for the current step.
+- Prefer targeted search and line-range reads over whole-file slurping.
+- Batch independent tool calls and keep narration/results tight.
+- If the task is tiny or the file set is already known, apply the relevant patterns inline instead of loading extra material.
+
+
 Two-stage code review. Stage 1 runs CodeRabbit externally (doesn't spend Claude tokens).
 Stage 2 runs Claude only on what CodeRabbit's blind spots are, conditional on what the diff
 actually contains. Final output is one merged report.

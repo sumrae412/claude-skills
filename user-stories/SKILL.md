@@ -5,6 +5,16 @@ description: Generate Playwright-testable user stories by crawling a web app's r
 
 # User Story Generator - Test-Ready Stories from Codebase Analysis
 
+## Token Economy
+
+Apply `token-economy` whenever this skill would otherwise trigger broad exploration, repeated file reads, multi-file scans, or heavy reference loading.
+
+- Load only the phase, reference, or script needed for the current step.
+- Prefer targeted search and line-range reads over whole-file slurping.
+- Batch independent tool calls and keep narration/results tight.
+- If the task is tiny or the file set is already known, apply the relevant patterns inline instead of loading extra material.
+
+
 Generate detailed, Playwright-testable user stories by exploring the codebase and asking targeted questions. This skill crawls the project to understand existing features, then collaboratively builds comprehensive user stories with acceptance criteria.
 
 ## How This Works

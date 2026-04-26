@@ -6,6 +6,16 @@ user-invocable: true
 
 # Production Readiness Check
 
+## Token Economy
+
+Apply `token-economy` whenever this skill would otherwise trigger broad exploration, repeated file reads, multi-file scans, or heavy reference loading.
+
+- Load only the phase, reference, or script needed for the current step.
+- Prefer targeted search and line-range reads over whole-file slurping.
+- Batch independent tool calls and keep narration/results tight.
+- If the task is tiny or the file set is already known, apply the relevant patterns inline instead of loading extra material.
+
+
 Checks infrastructure and ops-level production readiness that code-level security review (OWASP, injection, XSS) does not cover. Runs as a parallel reviewer in Phase 6 alongside the code reviewer, silent failure hunter, security reviewer, and test coverage analyzer.
 
 > Running production readiness check — scanning for auth, data protection, and monitoring gaps.

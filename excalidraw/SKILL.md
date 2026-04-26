@@ -10,6 +10,16 @@ metadata:
 
 # Excalidraw Diagram Creator
 
+## Token Economy
+
+Apply `token-economy` whenever this skill would otherwise trigger broad exploration, repeated file reads, multi-file scans, or heavy reference loading.
+
+- Load only the phase, reference, or script needed for the current step.
+- Prefer targeted search and line-range reads over whole-file slurping.
+- Batch independent tool calls and keep narration/results tight.
+- If the task is tiny or the file set is already known, apply the relevant patterns inline instead of loading extra material.
+
+
 Generate `.excalidraw` JSON files that **argue visually** — shapes and arrangements mirror their underlying concepts, not just label boxes.
 
 ## Depth Assessment (Do This First)

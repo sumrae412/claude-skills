@@ -5,6 +5,16 @@ description: "Use when you need to reduce LLM API spend, control token usage, ro
 
 # LLM Cost Optimizer
 
+## Token Economy
+
+Apply `token-economy` whenever this skill would otherwise trigger broad exploration, repeated file reads, multi-file scans, or heavy reference loading.
+
+- Load only the phase, reference, or script needed for the current step.
+- Prefer targeted search and line-range reads over whole-file slurping.
+- Batch independent tool calls and keep narration/results tight.
+- If the task is tiny or the file set is already known, apply the relevant patterns inline instead of loading extra material.
+
+
 > Originally contributed by [chad848](https://github.com/chad848) — enhanced and integrated by the claude-skills team.
 
 You are an expert in LLM cost engineering with deep experience reducing AI API spend at scale. Your goal is to cut LLM costs by 40-80% without degrading user-facing quality -- using model routing, caching, prompt compression, and observability to make every token count.

@@ -4,291 +4,88 @@ description: Comprehensive coding standards for Python, JavaScript, APIs, testin
 license: MIT
 metadata:
   author: summerela
-  version: "1.0.0"
+  version: "1.1.0"
 user-invocable: false
 ---
 
 # Coding Best Practices
 
-Apply these principles when writing, reviewing, or debugging code across any project.
-
-## Quick Decision Matrix
-
-| Question | Answer |
-|----------|--------|
-| Write a test? | **Always**, before implementation |
-| Use async/await? | **Always** for I/O operations |
-| Create migration? | **Always** when changing DB schema |
-| Add type hints? | **Always** on function signatures |
-| Use service layer? | **Always** for business logic |
-| Using external API? | **Always** fetch docs first: `chub get <api-id> --lang py\|js` |
-| Cache data? | When frequently accessed, rarely changed |
-| Add index? | When queries slow or tables > 1000 rows |
-| Add rate limiting? | **Always** for new endpoints |
-| Use circuit breaker? | **Always** for external API calls |
-| Renaming symbol? | Grep all usages across Python, templates (Jinja), and JS — same attribute name can be wrong in multiple layers silently |
-| Finding all usages? | Use Grep tool to find all references |
-
-## Risk Levels for Changes
-
-- **HIGH** (research first): DB types/migrations, event loops, auth, test fixtures
-- **MEDIUM**: API changes, service layer, async additions, integrations
-- **LOW**: UI templates, CSS, docs, config
-
-## Core Principles
-
-1. **Simple > Clever** - Readable code beats clever code
-2. **Test First** - Write tests before implementation
-3. **Fail Fast** - Validate early, provide clear errors
-4. **DRY** - Extract repeated patterns (but don't over-abstract)
-5. **Single Responsibility** - Each function does one thing well
-
-## Single-Roundtrip Aggregate Counts
-
-When a page needs multiple independent count queries, combine them into a single SELECT using `scalar_subquery()`:
-```python
-q1 = select(func.count(M1.id)).where(...).scalar_subquery()
-q2 = select(func.count(M2.id)).where(...).scalar_subquery()
-result = await db.execute(select(q1.label("c1"), q2.label("c2")))
-row = result.one()
-```
-This avoids N+1 roundtrips. See `app/services/counts_service.py` for a 7-subquery example.
-
-## Aggregators in Retry-Prone Pipelines Must Be Idempotent
-
-Any function that fans in subagent outputs, appends to a persisted artifact, or enriches a shared record will be called more than once per run — Phase 5/6 retries, resume-after-crash, parallel sessions, and cron re-fires all trigger re-invocation. Naive `list.append()` doubles findings; dashboards look like regressions, alert queues flood, and downstream consumers see stuttered duplicates.
-
-**Rule:** stamp every output record with a stable dedup key and use read-modify-write to skip duplicates on re-entry.
-
-```python
-# BAD: second call doubles findings
-def convert(reviewer_output, registry_entry):
-    findings = list(reviewer_output.get("findings", []))
-    for score in reviewer_output.get("scores", []):
-        if score["score"] < registry_entry["score_threshold"]:
-            findings.append({"criterion": score["criterion"], "severity": "blocking"})
-    return {**reviewer_output, "findings": findings}
-
-# GOOD: stamped + deduped — safe to call N times
-_MARKER = "adversarial-breaker-aggregator"
-
-def convert(reviewer_output, registry_entry):
-    findings = list(reviewer_output.get("findings", []))
-    already = {f.get("criterion") for f in findings if f.get("source") == _MARKER}
-    for score in reviewer_output.get("scores", []) or []:
-        criterion = score.get("criterion")
-        if criterion in already:
-            log.debug("dedup: %s already aggregated; skipping", criterion)
-            continue
-        if score.get("score", 10) < registry_entry.get("score_threshold", 11):
-            findings.append({"source": _MARKER, "criterion": criterion, "severity": "blocking"})
-            already.add(criterion)
-    return {**reviewer_output, "findings": findings}
-```
-
-**Dedup-key choices:** `(source, criterion)` for reviewer aggregators; `(table, row_id)` for DB backfills; `(event_type, external_id, timestamp_bucket)` for webhook processors. Pick a key that survives the specific re-entry mode you expect.
-
-**Audit:** `rg -n '\.append\(' -g '*.py' services/ scripts/` — every append inside a function that could be called twice per run is a candidate.
-
-See MEMORY `idempotent_aggregators.md`.
-
-## Workflow-Agnostic Schema for Multi-Consumer Shared Libs
-
-When a shared library is intended for multiple consumers from day one, design the schema generically up front: a `workflow: str` identifier + an open `metadata: dict[str, Any]`, plus only core fields that generalize. Avoids schema churn each time a new consumer onboards. Anti-pattern: consumer-specific column names (`debate_team_tier`, `deepseek_cost`). Pair with a shared emit helper in the lib itself (not in each caller) so guard/try-catch discipline doesn't drift across consumers. Reference: `scripts/review_ledger/schema.py`.
-
-## Detailed Guidelines
-
-For specific patterns and examples, see:
-
-- [Python Patterns](docs/python-patterns.md) - SQLAlchemy, async, transactions, migrations
-- [JavaScript Safety](docs/javascript-safety.md) - DOM, events, WebSocket
-- [API Design](docs/api-design.md) - REST, routing, HTTP methods
-- [Testing Guide](docs/testing.md) - Test types and when to use them
-- [Performance](docs/performance.md) - Caching, circuit breakers, optimization
-- [Security](docs/security.md) - OWASP top 10, input validation, secrets
-
-## Shell Scripts That Call External LLM CLIs
-
-Three discipline rules for any bash script that shells out to an external LLM (Codex CLI, Gemini CLI, etc.) or passes user/LLM-generated content through shell:
-
-### 1. Put the prompt in a sibling `.txt` file, not an inline string
-
-Bash single-quoted strings break on apostrophes. A multi-line `PERSONA='You are a staff engineer. You have seen it all. Don\'t...'` appears to work until the next editor adds "don't" or "it's" somewhere and the string closes mid-sentence. Silently. Double-quoted strings break on `$`, `` ` ``, and `"`.
-
-```bash
-# BAD — one apostrophe away from silent breakage
-PERSONA='You are a staff engineer. You have seen it all. Do not praise. ...'
-
-# GOOD — persona lives in a sibling file, immune to bash quoting
-PERSONA_FILE="$SCRIPT_DIR/curmudgeon_persona.txt"
-```
-
-Pattern: any LLM prompt longer than a single line or likely to be edited should live in a sibling `.txt` file, `cat`'d into the prompt assembly.
-
-### 2. Pipe large prompts to stdin, not argv
-
-`codex exec "$(cat prompt.txt)"` passes the entire prompt as a single argv. `ARG_MAX` on macOS is ~128KB; large diffs blow past that silently and fail with `E2BIG` or truncate. If the external CLI accepts stdin, prefer it:
-
-```bash
-# BAD — prompt as argv; ARG_MAX risk on large diffs
-RAW=$(codex exec --quiet "$(cat "$PROMPT_FILE")")
-
-# GOOD — prompt on stdin; no ARG_MAX
-RAW=$(codex exec --quiet --output-format json < "$PROMPT_FILE")
-```
-
-If the CLI only accepts argv, log a warning and cap the prompt size before handoff.
-
-### 3. Cross the shell → Python boundary with env vars, not interpolation
-
-Passing CLI output into Python via heredoc interpolation (`raw = """$RAW"""`) is shell-injection-vulnerable: if RAW contains `"""`, `` ` ``, or `$(...)`, the shell sees it before Python does. Use a quoted heredoc (`<<'PY'`) and read the value from `os.environ`:
-
-```bash
-# BAD — unquoted heredoc interpolates $RAW; quote-bomb in RAW breaks it
-python3 <<PY
-raw = """$RAW"""
-data = json.loads(raw)
-PY
-
-# GOOD — quoted heredoc, Python reads from env; injection-safe
-RAW=$RAW python3 <<'PY'
-import os, json
-raw = os.environ.get("RAW", "")
-data = json.loads(raw)
-PY
-```
-
-Adversarial verification: pass a payload containing `"""`, `` `rm -rf /` ``, and `$(whoami)` through the boundary. It should land as literal JSON string content on the Python side.
-
-## Shell Script Cleanup Traps
-
-When a shell script creates a side effect that must be cleaned up (temp file, symlink, background process, PID file), register the `trap` BEFORE the side effect is created — not after.
-
-```bash
-# BAD — if ln -sf fails the trap never registers; if ln -sf succeeds but
-# a later assertion fails, the symlink leaks.
-ln -sf "$FIX/mock-codex" "$FIX/codex"
-trap 'rm -f "$FIX/codex"' EXIT
-
-# GOOD — trap registered first; side effect has an unconditional cleanup path
-trap 'rm -f "$FIX/codex"' EXIT
-ln -sf "$FIX/mock-codex" "$FIX/codex"
-```
-
-Same rule for `mktemp`, background `&` jobs, `lockfile`, and anything else that persists past the script's happy path. The invariant is: **from the moment the side effect exists, there is a registered cleanup for it.**
-
-## Path Traversal via `/` Operator
-
-When a script takes a relative path from LLM output, user input, or any untrusted source and joins it with a trusted project root, `project_root / user_rel` does NOT guard against `../` escape.
-
-```python
-# BAD — --files ../../etc/passwd reads outside the project root
-path = project_root / rel
-tree = ast.parse(path.read_text())
-
-# GOOD — resolve first, then verify containment
-def _safe_resolve(project: Path, rel: str) -> Path | None:
-    try:
-        candidate = (project / rel).resolve()
-    except (OSError, ValueError):
-        return None
-    try:
-        candidate.relative_to(project)
-    except ValueError:
-        return None
-    return candidate
-```
-
-The invariant: **any path derived from untrusted input must be resolved and verified to land inside the trusted root before being read, parsed, or globbed.** Silent `continue` on failure is usually the right call — don't error on traversal attempts, just ignore them. See memory: `path_traversal_project_root`.
-
-## Type Hint Discipline
-
-**Every function gets type hints** — parameters, return types, and `None` where applicable:
-
-```python
-# GOOD - fully annotated
-async def get_workflow_by_id(
-    db: AsyncSession,
-    workflow_id: UUID,
-    user_id: UUID,
-) -> Optional[WorkflowTemplate]:
-    ...
-
-# GOOD - explicit None return
-async def delete_workflow(
-    db: AsyncSession,
-    workflow_id: UUID,
-) -> None:
-    ...
-
-# BAD - missing annotations
-async def get_workflow_by_id(db, workflow_id, user_id):
-    ...
-```
-
-**Rules:**
-- All function parameters: annotated
-- All return types: annotated (including `-> None`)
-- Use `Optional[X]` or `X | None` for nullable values
-- Use `TYPE_CHECKING` block for import-only types to avoid circular imports
-- Collection types: `list[Step]`, `dict[str, Any]`, `set[UUID]` (Python 3.9+)
-
-## Pre-Commit Checklist
-
-Before committing code changes:
-
-### Python
-- [ ] Type hints on function signatures (params + return)
-- [ ] `AsyncMock` for async method mocking
-- [ ] `pattern=` not `regex=` in Pydantic v2
-- [ ] Service layer for business logic (not in routes)
-- [ ] **Mocking Pydantic `BaseSettings`:** `mock.patch("mod.settings.attr", new=..., create=True)` fails with `AttributeError: can't set attribute` — BaseSettings freezes attrs. Replace the whole reference: `patch.object(mod, "settings", MagicMock(attr=value, ...))`. See memory/gotcha_pydantic_settings_mock_patch.md.
-- [ ] **Lazy imports defeat module-level patching:** `from X import Y` inside a function binds Y in the function's local scope, not the module's. `patch.object(mod, "Y", fake)` raises or silently no-ops with `create=True`. Hoist the import to module top or use DI. See memory/gotcha_lazy_import_hides_module_patch.md.
-
-### JavaScript
-- [ ] DOM elements null-checked before use
-- [ ] Event handlers accept `event` parameter
-- [ ] WebSocket client handles all server message types
-- [ ] `Promise.all()` for parallel API calls
-
-### Database
-- [ ] Migration created for schema changes
-- [ ] `foreign_keys` and `overlaps` for multiple FKs to same table
-- [ ] Indexes on frequently queried columns
-
-### API
-- [ ] Route has `name=` parameter for `url_for()`
-- [ ] HTTP method matches frontend expectations (PATCH vs PUT)
-- [ ] Content-Type matches (JSON vs Form data)
-
-## Alembic Migration Heads
-
-Never parse Alembic migration files manually (e.g., with Python scripts reading `down_revision`) to determine heads. The migration chain has complex branches and merges. Use `alembic heads` CLI command, which correctly resolves the DAG. Manual parsing produces false positives.
-
-## CI/CD Script Structure
-
-Scripts in `scripts/` for CI/CD operations follow this structure:
-
-1. **Docstring** with usage examples and exit codes
-2. **Result dataclass** for structured output (success, message, error, dry_run, timestamp)
-3. **Manager class** with all operations as methods
-4. **Dry-run mode** throughout (never modify state if `--dry-run`)
-5. **argparse CLI** with `--dry-run`, `--format json|text`, and operation-specific flags
-6. **Exit codes**: 0=success, 1=operation failed, 2=invalid arguments
-
-```python
-@dataclass
-class DeployResult:
-    success: bool
-    message: str
-    dry_run: bool = False
-    error: Optional[str] = None
-    timestamp: str = field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
-
-class DeployManager:
-    def __init__(self, dry_run: bool = False, timeout: int = 30):
-        self.dry_run = dry_run
-        self.timeout = timeout
-```
-
-**Examples:** scripts/release.py, scripts/rollback.py, scripts/canary_deploy.py
+## Token Economy
+
+Apply `token-economy` whenever this skill would otherwise trigger broad
+exploration, repeated file reads, multi-file scans, or heavy reference
+loading.
+
+- Load only the phase, reference, or script needed for the current step.
+- Prefer targeted search and line-range reads over whole-file slurping.
+- Batch independent tool calls and keep narration/results tight.
+- If the task is tiny or the file set is already known, apply the relevant
+  patterns inline instead of loading extra material.
+
+## Overview
+
+Cross-project coding standards router for implementation, review,
+debugging, and design work. This file should stay resident; detailed
+language and domain guidance should be loaded on demand.
+
+## Always-On Rules
+
+- Write tests for behavior changes.
+- Use async for I/O-bound Python work.
+- Put business logic in services, not routes.
+- Add type hints on function signatures.
+- Create migrations for schema changes.
+- Fetch external API docs before integrating.
+
+## Risk Gate
+
+- High risk: DB schema/types, auth, event loops, async boundaries, test
+  fixtures, external integrations
+- Medium risk: API changes, service layer changes, caching, rate limiting
+- Low risk: templates, CSS, docs, config
+
+For high-risk work, load the relevant phase file before making changes.
+
+## Load Strategy
+
+1. Identify the dominant surface area.
+2. Load only the matching phase file from `phases/`.
+3. Pull the linked doc or reference only when the phase calls for it.
+4. Apply repo-specific gotchas only when they match the current change.
+
+## Phase Map
+
+1. `phases/phase-1-python-and-data.md`
+2. `phases/phase-2-javascript-and-api.md`
+3. `phases/phase-3-testing-and-release.md`
+4. `phases/phase-4-repo-gotchas.md`
+
+## Reference Map
+
+- Python:
+  `docs/python-patterns.md`
+- JavaScript:
+  `docs/javascript-safety.md`
+- API design:
+  `docs/api-design.md`
+- Testing:
+  `docs/testing.md`
+- Performance:
+  `docs/performance.md`
+- Security:
+  `docs/security.md`
+
+## Quick Checks
+
+- Renaming a symbol: grep Python, templates, and JS.
+- Multiple independent count queries: prefer one aggregated SELECT.
+- Shared-library schemas: keep them workflow-agnostic.
+- Any retry-prone aggregator: make it idempotent.
+- Any path from untrusted input: resolve and verify containment.
+
+## Guardrails
+
+- Prefer simple, readable code over abstraction by default.
+- Avoid manual Alembic head parsing; use `alembic heads`.
+- Design cleanup for shell side effects before the side effect exists.
+- Prefer deterministic scripts and checks over prose-only assurance.

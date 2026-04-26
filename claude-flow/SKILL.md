@@ -6,6 +6,16 @@ user-invocable: true
 
 # Code Creation Workflow
 
+## Token Economy
+
+Apply `token-economy` whenever this skill would otherwise trigger broad exploration, repeated file reads, multi-file scans, or heavy reference loading.
+
+- Load only the phase, reference, or script needed for the current step.
+- Prefer targeted search and line-range reads over whole-file slurping.
+- Batch independent tool calls and keep narration/results tight.
+- If the task is tiny or the file set is already known, apply the relevant patterns inline instead of loading extra material.
+
+
 Agentic multi-phase workflow for building features. **Executor/Advisor strategy:** Sonnet executor runs the main loop (exploring, drafting, implementing). Opus advisor fires on-demand at 3-5 decision points. Project-agnostic — works for any codebase or greenfield project.
 
 **Announce:** "Running claude-flow — loading context, exploring codebase, then building with you."
@@ -25,12 +35,12 @@ Agentic multi-phase workflow for building features. **Executor/Advisor strategy:
 
 ## How to Use This Workflow
 
-1. **This file** (router) is always resident (~2.5K tokens)
-2. **Load `contracts/*.schema.md`** at start — always resident (~800 tokens total)
-3. **On entering each phase:** load `phases/phase-N-*.md` via Read tool
-4. **On completing each phase:** the phase file can be dropped — the populated contract (`$exploration`, `$requirements`, `$plan`, `$diff`) carries forward at 1/10th the size
-5. **Reference files** in `references/` are lazy-loaded only when a phase needs them
-6. **Architecture diagrams** in `diagrams/*.mmd` are lazy-loaded — read when reasoning about path selection (`triage-paths.mmd`), token budget behavior (`phase-lifecycle.mmd`), or contract data flow (`contract-flow.mmd`). Not resident.
+1. **This file** (router) is always resident.
+2. **Load `phases/phase-N-*.md`** only when entering that phase.
+3. **Load contract schemas** only when a phase produces or consumes that contract.
+4. **Drop the phase file after transition**; keep only the populated contract (`$exploration`, `$requirements`, `$plan`, `$diff`).
+5. **Load references lazily** — especially bootstrap/state docs and large review/testing doctrine.
+6. **Load diagrams lazily** only when reasoning about path selection, lifecycle, or contract flow.
 
 ---
 
@@ -69,6 +79,9 @@ NEAR-IDENTICAL FEATURE? (2-3 grep/glob checks)
 1-2 FILES? (no new endpoints, no schema, no new models)
   → LITE PATH: Phases 2-6 with inline architecture
 
+AUDIT / CLEANUP? ("audit", "cleanup", "tech debt", "find issues in")
+  → AUDIT PATH: read-only path, skip Phase 5
+
 EXPLORATORY? ("try this", "spike", "prototype", "proof of concept")
   → EXPLORE PATH: sandbox (60/100 bar, no TDD, no Phase 6)
     Graduate → full workflow from Phase 4
@@ -77,31 +90,15 @@ EXPLORATORY? ("try this", "spike", "prototype", "proof of concept")
 ELSE → FULL WORKFLOW (all phases)
 ```
 
-Load `phases/phase-1-discovery.md` for full path criteria and artifact requirements table.
+Load `phases/phase-1-discovery.md` for full criteria. Canonical path and
+transition metadata lives in `workflow-profiles.json`.
 
 ---
 
 ## Phase Transition Map
 
-| From → To | Condition |
-|-----------|-----------|
-| phase-0 → phase-0.5 | No hooks.json exists |
-| phase-0 → phase-1 | hooks.json exists |
-| phase-0.5 → phase-1 | Always |
-| phase-1 → EXIT | Fast path |
-| phase-1 → phase-2 | Full or lite path |
-| phase-1 → phase-5 | Clone or plan path |
-| phase-2 → phase-3 | Always |
-| phase-3 → phase-4 | Always |
-| phase-4 (includes plan stress-test) → phase-4d | Full path only |
-| phase-4 (includes plan stress-test) → phase-5 | Lite path |
-| phase-4d → phase-5 | Always |
-| phase-5 → phase-5 | Retry: tests/lint failed, iteration < 3 |
-| phase-5 → phase-6 | Tests + lint pass |
-| phase-6 → phase-5 | High/critical findings, iteration < 2 |
-| phase-6 → COMPLETE | No high/critical findings |
-
-**Iteration limits:** Phase 5: max 3 (then surface to user). Phase 6: max 2 (then ship with known issues). All others: forward only.
+Canonical transitions and iteration limits live in `workflow-profiles.json`.
+Hot-path phase files should cite that file instead of carrying duplicate tables.
 
 ---
 

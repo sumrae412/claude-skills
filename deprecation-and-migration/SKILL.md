@@ -5,6 +5,16 @@ description: Manages deprecation and migration. Use when removing old systems, A
 
 # Deprecation and Migration
 
+## Token Economy
+
+Apply `token-economy` whenever this skill would otherwise trigger broad exploration, repeated file reads, multi-file scans, or heavy reference loading.
+
+- Load only the phase, reference, or script needed for the current step.
+- Prefer targeted search and line-range reads over whole-file slurping.
+- Batch independent tool calls and keep narration/results tight.
+- If the task is tiny or the file set is already known, apply the relevant patterns inline instead of loading extra material.
+
+
 ## Overview
 
 Code is a liability, not an asset. Every line has ongoing maintenance cost — bugs to fix, dependencies to update, security patches to apply, new engineers to onboard. Deprecation is the discipline of removing code that no longer earns its keep. Migration is the process of moving consumers safely from old to new.

@@ -5,262 +5,89 @@ description: GDPR and German DSGVO compliance automation. Scans codebases for pr
 
 # GDPR/DSGVO Expert
 
-Tools and guidance for EU General Data Protection Regulation (GDPR) and German Bundesdatenschutzgesetz (BDSG) compliance.
+## Token Economy
 
----
+Apply `token-economy` whenever this skill would otherwise trigger broad
+exploration, repeated file reads, multi-file scans, or heavy reference
+loading.
 
-## Table of Contents
+- Load only the phase, reference, or script needed for the current step.
+- Prefer targeted search and line-range reads over whole-file slurping.
+- Batch independent tool calls and keep narration/results tight.
+- If the task is tiny or the file set is already known, apply the relevant
+  patterns inline instead of loading extra material.
 
-- [Tools](#tools)
-  - [GDPR Compliance Checker](#gdpr-compliance-checker)
-  - [DPIA Generator](#dpia-generator)
-  - [Data Subject Rights Tracker](#data-subject-rights-tracker)
-- [Reference Guides](#reference-guides)
-- [Workflows](#workflows)
+## Overview
 
----
+Privacy compliance toolkit for GDPR and German BDSG/DSGVO workflows:
+codebase assessments, DPIAs, data-subject request handling, and
+Germany-specific compliance checks.
 
-## Tools
+This file is a router. Do not keep all privacy doctrine resident.
 
-### GDPR Compliance Checker
+## When to Use
 
-Scans codebases for potential GDPR compliance issues including personal data patterns and risky code practices.
+- Running a GDPR compliance assessment on a system or codebase
+- Determining whether a DPIA is required
+- Handling data-subject rights requests
+- Checking German-specific BDSG obligations
+- Designing privacy remediation or compliance tracking
 
-```bash
-# Scan a project directory
-python scripts/gdpr_compliance_checker.py /path/to/project
+## Load Strategy
 
-# JSON output for CI/CD integration
-python scripts/gdpr_compliance_checker.py . --json --output report.json
-```
+1. Identify the user's current privacy workflow.
+2. Load only the matching phase file from `phases/`.
+3. Load only the relevant reference guide.
+4. Prefer scripts for deterministic scans, reports, and trackers.
 
-**Detects:**
-- Personal data patterns (email, phone, IP addresses)
-- Special category data (health, biometric, religion)
-- Financial data (credit cards, IBAN)
-- Risky code patterns:
-  - Logging personal data
-  - Missing consent mechanisms
-  - Indefinite data retention
-  - Unencrypted sensitive data
-  - Disabled deletion functionality
+Do not preload all rights, legal-basis, and BDSG guidance.
 
-**Output:**
-- Compliance score (0-100)
-- Risk categorization (critical, high, medium)
-- Prioritized recommendations with GDPR article references
+## Phase Map
 
----
+1. `phases/phase-1-processing-assessment.md`
+2. `phases/phase-2-dpia.md`
+3. `phases/phase-3-data-subject-rights.md`
+4. `phases/phase-4-german-bdsg.md`
 
-### DPIA Generator
+## Reference Map
 
-Generates Data Protection Impact Assessment documentation following Art. 35 requirements.
-
-```bash
-# Get input template
-python scripts/dpia_generator.py --template > input.json
+- GDPR implementation guidance:
+  `references/gdpr_compliance_guide.md`
+- DPIA methodology:
+  `references/dpia_methodology.md`
+- German BDSG requirements:
+  `references/german_bdsg_requirements.md`
 
-# Generate DPIA report
-python scripts/dpia_generator.py --input input.json --output dpia_report.md
-```
+## Script Map
 
-**Features:**
-- Automatic DPIA threshold assessment
-- Risk identification based on processing characteristics
-- Legal basis requirements documentation
-- Mitigation recommendations
-- Markdown report generation
+- Codebase/privacy scan:
+  `scripts/gdpr_compliance_checker.py`
+- DPIA generation:
+  `scripts/dpia_generator.py`
+- Data-subject request tracking:
+  `scripts/data_subject_rights_tracker.py`
 
-**DPIA Triggers Assessed:**
-- Systematic monitoring (Art. 35(3)(c))
-- Large-scale special category data (Art. 35(3)(b))
-- Automated decision-making (Art. 35(3)(a))
-- WP29 high-risk criteria
+## Session Rules
 
----
+- Start from the actual processing activity, not generic policy text.
+- Separate legal basis questions from technical-control questions.
+- Treat DPIA threshold assessment explicitly, not implicitly.
+- Keep Germany-specific BDSG obligations separate from baseline GDPR
+  duties.
 
-### Data Subject Rights Tracker
+## Deliverables
 
-Manages data subject rights requests under GDPR Articles 15-22.
+Produce only what the user needs:
 
-```bash
-# Add new request
-python scripts/data_subject_rights_tracker.py add \
-  --type access --subject "John Doe" --email "john@example.com"
+- privacy risk assessment
+- DPIA recommendation or report
+- data-subject request workflow
+- BDSG applicability review
+- remediation plan
 
-# List all requests
-python scripts/data_subject_rights_tracker.py list
+## Guardrails
 
-# Update status
-python scripts/data_subject_rights_tracker.py status --id DSR-202601-0001 --update verified
-
-# Generate compliance report
-python scripts/data_subject_rights_tracker.py report --output compliance.json
-
-# Generate response template
-python scripts/data_subject_rights_tracker.py template --id DSR-202601-0001
-```
-
-**Supported Rights:**
-
-| Right | Article | Deadline |
-|-------|---------|----------|
-| Access | Art. 15 | 30 days |
-| Rectification | Art. 16 | 30 days |
-| Erasure | Art. 17 | 30 days |
-| Restriction | Art. 18 | 30 days |
-| Portability | Art. 20 | 30 days |
-| Objection | Art. 21 | 30 days |
-| Automated decisions | Art. 22 | 30 days |
-
-**Features:**
-- Deadline tracking with overdue alerts
-- Identity verification workflow
-- Response template generation
-- Compliance reporting
-
----
-
-## Reference Guides
-
-### GDPR Compliance Guide
-`references/gdpr_compliance_guide.md`
-
-Comprehensive implementation guidance covering:
-- Legal bases for processing (Art. 6)
-- Special category requirements (Art. 9)
-- Data subject rights implementation
-- Accountability requirements (Art. 30)
-- International transfers (Chapter V)
-- Breach notification (Art. 33-34)
-
-### German BDSG Requirements
-`references/german_bdsg_requirements.md`
-
-German-specific requirements including:
-- DPO appointment threshold (§ 38 BDSG - 20+ employees)
-- Employment data processing (§ 26 BDSG)
-- Video surveillance rules (§ 4 BDSG)
-- Credit scoring requirements (§ 31 BDSG)
-- State data protection laws (Landesdatenschutzgesetze)
-- Works council co-determination rights
-
-### DPIA Methodology
-`references/dpia_methodology.md`
-
-Step-by-step DPIA process:
-- Threshold assessment criteria
-- WP29 high-risk indicators
-- Risk assessment methodology
-- Mitigation measure categories
-- DPO and supervisory authority consultation
-- Templates and checklists
-
----
-
-## Workflows
-
-### Workflow 1: New Processing Activity Assessment
-
-```
-Step 1: Run compliance checker on codebase
-        → python scripts/gdpr_compliance_checker.py /path/to/code
-
-Step 2: Review findings and compliance score
-        → Address critical and high issues
-
-Step 3: Determine if DPIA required
-        → Check references/dpia_methodology.md threshold criteria
-
-Step 4: If DPIA required, generate assessment
-        → python scripts/dpia_generator.py --template > input.json
-        → Fill in processing details
-        → python scripts/dpia_generator.py --input input.json --output dpia.md
-
-Step 5: Document in records of processing activities
-```
-
-### Workflow 2: Data Subject Request Handling
-
-```
-Step 1: Log request in tracker
-        → python scripts/data_subject_rights_tracker.py add --type [type] ...
-
-Step 2: Verify identity (proportionate measures)
-        → python scripts/data_subject_rights_tracker.py status --id [ID] --update verified
-
-Step 3: Gather data from systems
-        → python scripts/data_subject_rights_tracker.py status --id [ID] --update in_progress
-
-Step 4: Generate response
-        → python scripts/data_subject_rights_tracker.py template --id [ID]
-
-Step 5: Send response and complete
-        → python scripts/data_subject_rights_tracker.py status --id [ID] --update completed
-
-Step 6: Monitor compliance
-        → python scripts/data_subject_rights_tracker.py report
-```
-
-### Workflow 3: German BDSG Compliance Check
-
-```
-Step 1: Determine if DPO required
-        → 20+ employees processing personal data automatically
-        → OR processing requires DPIA
-        → OR business involves data transfer/market research
-
-Step 2: If employees involved, review § 26 BDSG
-        → Document legal basis for employee data
-        → Check works council requirements
-
-Step 3: If video surveillance, comply with § 4 BDSG
-        → Install signage
-        → Document necessity
-        → Limit retention
-
-Step 4: Register DPO with supervisory authority
-        → See references/german_bdsg_requirements.md for authority list
-```
-
----
-
-## Key GDPR Concepts
-
-### Legal Bases (Art. 6)
-
-- **Consent**: Marketing, newsletters, analytics (must be freely given, specific, informed)
-- **Contract**: Order fulfillment, service delivery
-- **Legal obligation**: Tax records, employment law
-- **Legitimate interests**: Fraud prevention, security (requires balancing test)
-
-### Special Category Data (Art. 9)
-
-Requires explicit consent or Art. 9(2) exception:
-- Health data
-- Biometric data
-- Racial/ethnic origin
-- Political opinions
-- Religious beliefs
-- Trade union membership
-- Genetic data
-- Sexual orientation
-
-### Data Subject Rights
-
-All rights must be fulfilled within **30 days** (extendable to 90 for complex requests):
-- **Access**: Provide copy of data and processing information
-- **Rectification**: Correct inaccurate data
-- **Erasure**: Delete data (with exceptions for legal obligations)
-- **Restriction**: Limit processing while issues are resolved
-- **Portability**: Provide data in machine-readable format
-- **Object**: Stop processing based on legitimate interests
-
-### German BDSG Additions
-
-| Topic | BDSG Section | Key Requirement |
-|-------|--------------|-----------------|
-| DPO threshold | § 38 | 20+ employees = mandatory DPO |
-| Employment | § 26 | Detailed employee data rules |
-| Video | § 4 | Signage and proportionality |
-| Scoring | § 31 | Explainable algorithms |
+- Do not treat a high compliance score as proof of legal sufficiency.
+- Call out missing legal basis, retention rules, or deletion paths
+  explicitly.
+- Treat special-category data and employee data as elevated-risk areas.

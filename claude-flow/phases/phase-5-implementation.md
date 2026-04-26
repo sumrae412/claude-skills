@@ -6,63 +6,31 @@
 
 ---
 
-## Context Management Strategy
+## Context Management
 
-The full workflow (Phases 0-6) is a long-running agentic session that reads 8-15+ files, dispatches advisor calls, and runs multi-tier reviews. Without active context management, the session will hit limits. Three composable strategies apply here most intensely.
+Load `references/phase-5-context-management.md` only when:
 
-### Strategy 1: Tool-Result Clearing (Automatic, Zero-Cost)
+- the loop is long enough to threaten context limits
+- you are dispatching multiple implementer subagents
+- compaction behavior itself becomes relevant
 
-Phase 2 reads 8-15 files. By Phase 5, those old file reads are stale context bloat — the executor already synthesized the relevant patterns. Tool-result clearing drops old Read/Grep results while keeping the tool_use records (so the model remembers *what* it read and *why*).
+Phase 5 consumes:
 
-**When to apply:** Automatically during Phases 4-6 when context grows.
+- `$verified_plan` or `$plan`
+- `$exploration`
+- `$requirements`
+- `$test_skeletons` on full path
 
-```
-Trigger:     Context exceeds ~50K tokens (roughly end of Phase 2)
-Keep:        4 most recent tool results (active working set)
-Exclude:     Memory tool results (MEMORY.md reads must survive)
-Clear:       At least 10K tokens per clearing event (avoid thrashing)
-```
+Phase 5 produces:
 
-- **Cleared:** Content of old file reads, grep results, API responses (replaced with `[cleared — re-read if needed]`)
-- **Retained:** The tool_use records, all agent reasoning, user messages, advisor responses
+- `$diff`
 
-### Strategy 2: Phase-Aware Compaction (At Threshold)
+Never pass to subagents:
 
-**Soft threshold:** At ~60% capacity, mentally prepare a session summary — note current phase, completed steps, key decisions, active working files.
-
-**Hard threshold:** At ~80% capacity, compact with phase-specific instructions:
-
-```
-During Phase 5 (mid-implementation):
-  Preserve: plan with completion status per step, test results,
-            files modified so far, current step context,
-            any advisor guidance still relevant
-  Drop:     completed step details (code is in git), old test output
-```
-
-### Strategy 3: Phase Output Contracts (Explicit Data Flow)
-
-See `contracts/` files for full definitions. Phase 5 consumes:
-
-- `$verified_plan` (use when Phase 4c ran, else `$plan`) — steps assigned
-- `$exploration` — key file paths + patterns (not full file contents)
-- `$requirements` — resolved edge cases and constraints
-- `$test_skeletons` — skeleton file paths + criterion mapping (Full path only)
-
-Phase 5 produces: `$diff` — git diff of all changes + files modified list → consumed by Phase 6 reviewers.
-
-**What to NEVER pass to subagents:** advisor transcripts, rejected architecture details, Phase 0 loading decisions, raw clarification Q&A.
-
-### Composing the Strategies
-
-```
-Phase 5:    Implementation generates code + test output
-            → Tool-result clearing drops old test runs
-            → Subagent pruning for parallel dispatch
-            → If approaching 80%, compact with Phase 5 instructions
-            → Each subagent starts with FRESH context (step assigned,
-               key file paths, defensive patterns — no prior history)
-```
+- advisor transcripts
+- rejected architecture details
+- Phase 0 loading decisions
+- raw clarification Q&A
 
 ---
 
@@ -78,20 +46,8 @@ User must approve the plan before any implementation begins.
 If ANY plan step involves calling an external API (GitHub, Google Calendar, Twilio, OpenAI, DocuSeal, Stripe, Supabase, Railway, Sentry, Slack, etc.), verify the current API contract BEFORE writing code. Do NOT code against external APIs from memory — endpoints, request formats, and auth patterns change between versions. This gate applies even if you loaded the integrations skill in Phase 0.
 </HARD-GATE>
 
-```
-Plan step touches external API?
-  YES → Is there an MCP server for this service?
-          YES → Prefer the MCP server — portable, authed, standardized semantics.
-                Inspect available tools; they ARE the current contract.
-                Only fall back to raw HTTP if the MCP surface doesn't cover the need.
-          NO  → Invoke /fetch-api-docs skill
-              → Fetch current docs from Context Hub (or web if unavailable)
-              → Verify: endpoints, auth method, request/response shapes, rate limits
-      → Pass verified API contract to implementation subagents
-  NO  → Skip, proceed to implementation
-```
-
-**Rationale:** Per Anthropic's guidance on connecting agents to external systems, MCP is the portable layer for production agents — auth, discovery, and rich semantics are handled by the protocol. When an MCP server exists for the target service, it beats web docs on freshness and eliminates a class of auth/boilerplate bugs. See SKILL.md §External Systems Access Policy.
+Load `references/phase-5-external-api-gate.md` only when the current step
+touches an external API.
 
 ### Create TodoWrite Items
 
@@ -118,103 +74,20 @@ For each plan step:
      Review the evidence matrix BEFORE attempting a fix.
      (Prevents fix-retry loops on complex failures.)
 
-3a'. **Implementer pushback protocol:** When a code-quality or spec-review reviewer makes claims about external-tool behavior (CLI flag semantics, config discovery order, exit-code meanings), implementers MUST verify empirically before applying the fix. Record verification in-code as a comment. Reviewer authority does not override tool output. See `reviewer_claims_need_verification.md`.
+   3a'. **Implementer pushback protocol:** When a code-quality or spec-review reviewer makes claims about external-tool behavior (CLI flag semantics, config discovery order, exit-code meanings), implementers MUST verify empirically before applying the fix. Record verification in-code as a comment. Reviewer authority does not override tool output. See `reviewer_claims_need_verification.md`.
 
-3a. Explain-before-fix (retry iter 2 gate):
-    When a fix has already been attempted once and the test still fails,
-    BEFORE writing any new code, ask the executor (same model) to explain
-    WHY the first attempt failed. Prompt shape:
+   3a. If one fix attempt already failed, load
+       `references/phase-5-retry-and-facts.md` and apply the
+       explain-before-fix gate before iter-2.
 
-      "The previous fix didn't resolve the failure. Explain why the
-       current code still fails the test. Don't write any code."
+   3b. After the target test passes, load
+       `references/phase-5-retry-and-facts.md` and run the scoped
+       regression guard before proceeding.
 
-    Read the explanation. Only then attempt iter-2. This breaks the
-    confirmation-bias loop where iter-2 rewrites variants of iter-1's
-    mental model. Cheap (~1 call, no code change) and complements the
-    iter-3 cross-model escalation documented in the state transition.
-
-3b. GUARD — scoped regression check
-    After the target test passes, run a broader check to catch
-    regressions introduced by the fix:
-
-    Guard scope (choose the narrowest that covers the change):
-    a) Same test module: pytest <test_module> (single module changed)
-    b) Affected package: pytest <package>/tests/ (multi-file change)
-    c) Full suite: only if changes span packages
-
-    Default to (a) — it's fast and catches most regressions.
-
-    Guard MUST pass before proceeding to step 4.
-    If guard fails:
-    - The fix introduced a regression — fix it (don't revert target fix)
-    - Re-run BOTH the target test AND the guard
-    - Max 2 guard-fix cycles → then escalate to user
-    - Emit failure event with tag: guard-regression
-
-    Why separate from step 6: Step 6 catches cross-TASK regressions
-    (after the task is marked complete). Step 3b catches within-FIX
-    regressions before you move on — cheaper to fix in place.
-
-3e. CONTEXT EXTRACTION — capture reusable domain facts
-    After tests pass and the guard clears, before static analysis,
-    extract reusable domain facts discovered during this task. Runs INLINE
-    (Sonnet executor, no subagent spawn) so facts are available immediately
-    for the next task and survive context compaction.
-
-    Run this extraction prompt against the just-completed task:
-
-    ```
-    Review the task you just completed. Extract reusable domain facts in
-    these categories:
-
-    1. SCHEMA: Column names, table relationships, enum values discovered
-    2. API: Endpoint signatures, response shapes, error codes encountered
-    3. PATTERN: Code patterns that worked (import paths, service method
-       signatures, conventions)
-    4. GOTCHA: Anything that failed first and required a different approach
-
-    Output as structured YAML matching the $diff.context_facts schema.
-    Max 10 facts per task. Only NOVEL discoveries — skip facts already
-    in $plan, $requirements, or earlier $diff.context_facts entries.
-    ```
-
-    Append the YAML output to $diff.context_facts under a new entry keyed
-    by the current task identifier:
-
-    ```yaml
-    context_facts:
-      - task: "<task-id-from-plan>"
-        facts:
-          - type: SCHEMA
-            fact: "HouseholdMember.is_primary_contact (not is_primary)"
-          - type: PATTERN
-            fact: "household_service.ensure_client_for_member() required after create"
-          - type: GOTCHA
-            fact: "scalar_one_or_none() crashes on email lookup — use scalars().first()"
-    ```
-
-    Skip conditions (no facts to extract; do not block):
-    - Task changed zero test files (documentation-only / config-only task)
-    - Task is a pure refactor with no new domain knowledge
-    - Extraction returned an empty array (no novel facts)
-
-    Performance budget:
-    - ~200 tokens in, ~100 tokens out per task
-    - Estimated overhead: 5-10 seconds per task (no subagent spawn)
-    - Hard cap: skip if extraction takes >30 seconds (log and continue)
-
-    Consumption points (no action needed here — downstream consumers handle):
-    - Next-task executor injects facts as "known context" in the task prompt
-      (see "Parallel Subagent Dispatch" section below)
-    - Phase 6 reviewers receive facts via $diff contract
-    - Session-learnings dedupes against context_facts before promoting to MEMORY.md
-    - GOTCHA-tagged facts are candidates for memory-injection promotion
-
-    Why separate from session-learnings: session-learnings runs at end of
-    workflow (or end of session) — facts captured there are lost across
-    context compaction and unavailable to subsequent in-workflow tasks.
-    Step 3e captures facts WHILE they are fresh and propagates them
-    forward.
+   3e. After tests and guard pass, load
+       `references/phase-5-retry-and-facts.md` and extract reusable
+       context facts into `$diff.context_facts` when the task discovered
+       new domain knowledge.
 
 4. Run static analysis on changed files (catch issues early):
    semgrep --config=.semgrep.yml <changed-files>
@@ -232,46 +105,13 @@ For each plan step:
    If gate fails → fix regression → re-verify → then proceed.
 ```
 
-### Fresh Context for Long Implementation Loops
+### Long Loops and Fresh Context
 
-When a plan has 5+ steps, context accumulates across the TDD cycle. Apply when: plan has 5+ sequential steps AND context exceeds ~60% capacity mid-implementation.
+If the plan has 5+ steps or context pressure is noticeable, load
+`references/phase-5-context-management.md` and compact the working set.
 
-```
-Steps 1-3: Execute normally (context is fresh)
-Step 4+:   If context is growing heavy:
-  1. Capture step completion state:
-     - Plan with checkmarks per completed step
-     - Files modified so far (paths only)
-     - Current step number and requirements
-     - Any advisor guidance still relevant
-  2. Trigger phase-aware compaction (Strategy 2)
-     with Phase 5 preservation rules
-  3. Continue with clean working context
-
-For parallel subagent dispatch:
-  Each subagent starts with FRESH context:
-  - The specific step(s) assigned to it
-  - Key file paths + patterns (not full file contents)
-  - Defensive patterns to apply
-  - $diff.context_facts entries from prior completed tasks
-    (injected as "Known context from earlier tasks: ..." preamble;
-    populated by Step 3e after each task)
-  No prior step history — the plan is the contract.
-```
-
-**Inter-task fact injection (sequential dispatch too):** When the
-controller dispatches the NEXT task's subagent (sequential or parallel),
-prepend a "Known context from earlier tasks" section to the prompt
-containing all `$diff.context_facts` entries from prior tasks. This
-makes prior-task discoveries available without re-discovery and is the
-primary consumer of Step 3e output. Format the injected block as:
-
-```
-Known context from earlier tasks (from $diff.context_facts):
-- [task-1] SCHEMA: HouseholdMember.is_primary_contact (not is_primary)
-- [task-1] GOTCHA: scalar_one_or_none() crashes on email lookup — use scalars().first()
-- [task-2] PATTERN: ensure_client_for_member() required after create
-```
+When dispatching the next task's subagent, include prior
+`$diff.context_facts` as a short "Known context from earlier tasks" preamble.
 
 ### Advisor: Mid-Implementation (optional)
 
@@ -329,31 +169,10 @@ MEDIUM/LOW findings defer to Phase 6 review. Agents that ran in Phase 5 are **sk
 | Data migrations | defensive-backend-flows: copy before delete, reversible ops |
 | Cross-module calls | defensive-backend-flows: respect encapsulation, public wrappers |
 
-**State transition:** If tests+lint pass, transition to phase-5.5. If failed and iteration < 3, increment iteration and retry phase-5 following the retry ladder:
-- **iter 1:** same executor, same thinking budget
-- **iter 2:** same executor, escalated thinking budget — **preceded by the Step 3a explain-before-fix gate**
-- **iter 3:** cross-model investigator (Sonnet executor → Opus, or vice versa); see `memory/cross_model_retry_ladder.md`
-
-**Retry inputs (iter N+1 receives all applicable):**
-- Test failures from iter N (pytest output, failing assertions)
-- Lint failures from iter N (ruff/eslint output)
-- **Adversarial blockers from Phase 6** (sub-threshold scored findings) — formatted as
-  `{criterion}: {break_case}` entries in the iter-N+1 prompt under a "Break cases to address" section
-- Explain-before-fix analysis from iter-1 (if transitioning to iter-2)
-
-**Iter-N+1 prompt template — Break Cases to Address (from adversarial evaluator):**
-
-OMIT this entire section if `{adversarial_blockers}` is empty (no sub-threshold scores).
-When present, render as:
-
-> The following break cases were scored below 7/10 in the prior iteration:
->
->     {adversarial_blockers}
->
-> Address each break case in this iteration. A break case is a SPECIFIC concrete scenario —
-> reproduce it mentally, then patch the code so it no longer breaks.
-
-If iteration limit reached, set status to "failed" and surface to user.
+**State transition:** If tests+lint pass, transition to phase-5.5. If failed
+and iteration < 3, load `references/phase-5-retry-and-facts.md` and follow the
+retry ladder. If iteration limit is reached, set status to "failed" and surface
+it to the user.
 
 ---
 

@@ -1,0 +1,182 @@
+{
+  "version": "1.0",
+  "paths": {
+    "bug": {
+      "summary": "Dedicated bug workflow; route out to /bug-fix immediately.",
+      "state_machine": false,
+      "mutation_allowed": true,
+      "review_budget_default": "medium",
+      "phases": ["phase-1"],
+      "handoff": "/bug-fix",
+      "review_ceiling": "Owned by /bug-fix"
+    },
+    "fast": {
+      "summary": "Single-file or trivially contained change.",
+      "state_machine": false,
+      "mutation_allowed": true,
+      "review_budget_default": "low",
+      "phases": ["phase-1"],
+      "handoff": "Inline change, targeted test, finish",
+      "review_ceiling": "Tests only"
+    },
+    "plan": {
+      "summary": "Existing approved plan or PRP already exists.",
+      "state_machine": true,
+      "mutation_allowed": true,
+      "review_budget_default": "medium",
+      "phases": ["phase-1", "phase-5", "phase-5.5", "phase-6"],
+      "handoff": "Read plan, then execute",
+      "review_ceiling": "Tier 1-3 plus specialists as needed"
+    },
+    "clone": {
+      "summary": "Near-identical existing feature can be adapted.",
+      "state_machine": true,
+      "mutation_allowed": true,
+      "review_budget_default": "low",
+      "phases": ["phase-1", "phase-5", "phase-5.5", "phase-6"],
+      "handoff": "Clone, adapt, TDD the delta",
+      "review_ceiling": "Tier 1-2 plus triggered specialists"
+    },
+    "lite": {
+      "summary": "Contained 1-2 file change that still benefits from phased execution.",
+      "state_machine": false,
+      "mutation_allowed": true,
+      "review_budget_default": "low",
+      "phases": [
+        "phase-1",
+        "phase-2",
+        "phase-3",
+        "phase-4",
+        "phase-5",
+        "phase-5.5",
+        "phase-6"
+      ],
+      "handoff": "Direct reads, inline architecture, full TDD loop",
+      "review_ceiling": "Tier 1-3"
+    },
+    "audit": {
+      "summary": "Read-only assessment or cleanup planning flow.",
+      "state_machine": true,
+      "mutation_allowed": false,
+      "review_budget_default": "medium",
+      "phases": ["phase-1", "phase-2", "phase-3", "phase-4", "phase-6"],
+      "handoff": "Assessment only; no Phase 5",
+      "review_ceiling": "Tier 1-3 in file-list mode"
+    },
+    "explore": {
+      "summary": "Prototype or spike with an explicit graduate/archive choice.",
+      "state_machine": false,
+      "mutation_allowed": true,
+      "review_budget_default": "low",
+      "phases": ["phase-1"],
+      "handoff": "Exploration sandbox; graduate later if it earns it",
+      "review_ceiling": "No Phase 6 until graduation"
+    },
+    "full": {
+      "summary": "Default multi-phase feature workflow.",
+      "state_machine": true,
+      "mutation_allowed": true,
+      "review_budget_default": "medium",
+      "phases": [
+        "phase-1",
+        "phase-2",
+        "phase-3",
+        "phase-4",
+        "phase-4c",
+        "phase-4d",
+        "phase-5",
+        "phase-5.5",
+        "phase-6"
+      ],
+      "handoff": "Full discovery, architecture, implementation, and review",
+      "review_ceiling": "Full cascade"
+    }
+  },
+  "phase_transitions": [
+    {
+      "from": "phase-0",
+      "to": "phase-0.5",
+      "condition": "No .claude/hooks.json exists"
+    },
+    {
+      "from": "phase-0",
+      "to": "phase-1",
+      "condition": ".claude/hooks.json exists"
+    },
+    {
+      "from": "phase-0.5",
+      "to": "phase-1",
+      "condition": "Always"
+    },
+    {
+      "from": "phase-1",
+      "to": "exit",
+      "condition": "Fast or bug path"
+    },
+    {
+      "from": "phase-1",
+      "to": "phase-2",
+      "condition": "Full, lite, or audit path"
+    },
+    {
+      "from": "phase-1",
+      "to": "phase-5",
+      "condition": "Clone or plan path"
+    },
+    {
+      "from": "phase-2",
+      "to": "phase-3",
+      "condition": "Always"
+    },
+    {
+      "from": "phase-3",
+      "to": "phase-4",
+      "condition": "Always"
+    },
+    {
+      "from": "phase-4",
+      "to": "phase-4d",
+      "condition": "Full path only"
+    },
+    {
+      "from": "phase-4",
+      "to": "phase-5",
+      "condition": "Lite path"
+    },
+    {
+      "from": "phase-4",
+      "to": "phase-6",
+      "condition": "Audit path"
+    },
+    {
+      "from": "phase-4d",
+      "to": "phase-5",
+      "condition": "Always"
+    },
+    {
+      "from": "phase-5",
+      "to": "phase-5",
+      "condition": "Retry when tests or lint fail and iteration < 3"
+    },
+    {
+      "from": "phase-5",
+      "to": "phase-6",
+      "condition": "Tests and lint pass"
+    },
+    {
+      "from": "phase-6",
+      "to": "phase-5",
+      "condition": "High or critical findings and iteration < 2"
+    },
+    {
+      "from": "phase-6",
+      "to": "complete",
+      "condition": "No high or critical findings"
+    }
+  ],
+  "iteration_limits": {
+    "phase-5": 3,
+    "phase-6": 2,
+    "default": 1
+  }
+}

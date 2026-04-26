@@ -18,7 +18,7 @@ Vocabulary mapping each phase to its multi-agent pattern
 ## Patterns NOT used (and why)
 
 - **Agent teams (persistent workers):** Sessions are bounded — workers don't accumulate context across plans.
-- **Message bus:** Phase transitions are deterministic (see transition map in SKILL.md); no dynamic routing.
+- **Message bus:** Phase transitions are deterministic (see `workflow-profiles.json`); no dynamic routing.
 - **Shared state:** Contracts (`$exploration`, `$requirements`, `$plan`, `$diff`) are passed explicitly between phases, not read-write shared.
 
 ## When to reach for an unused pattern

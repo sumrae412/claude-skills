@@ -5,6 +5,16 @@ description: Run simulated alpha or beta user testing on apps using diverse synt
 
 # Personas — Simulated Alpha & Beta User Testing
 
+## Token Economy
+
+Apply `token-economy` whenever this skill would otherwise trigger broad exploration, repeated file reads, multi-file scans, or heavy reference loading.
+
+- Load only the phase, reference, or script needed for the current step.
+- Prefer targeted search and line-range reads over whole-file slurping.
+- Batch independent tool calls and keep narration/results tight.
+- If the task is tiny or the file set is already known, apply the relevant patterns inline instead of loading extra material.
+
+
 Generate a diverse synthetic user population, run it against an alpha- or beta-stage app, and produce an actionable report: bugs triggered, flows where personas got stuck, UI snags they flagged, usefulness ratings by user type, and which segments the app underserves.
 
 **This pre-vets an app; it does not replace real user testing.** Use findings to prioritize fixes, sharpen the UI, and shape the real user-testing session that follows.

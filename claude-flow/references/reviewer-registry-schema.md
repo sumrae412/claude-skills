@@ -1,6 +1,15 @@
 # Reviewer Registry Schema
 
-Reference documentation for `reviewer-registry.json` — the declarative config that drives Phase 6's cascading review. This file is for documentation; the runtime parser is `skills/claude-flow/scripts/select_reviewers.py`.
+Reference documentation for `reviewer-registry.json` — the declarative config
+that drives Phase 6's cascading review. This file is documentation; the runtime
+parser is `scripts/select_reviewers.py`.
+
+The bundled default registry ships with this skill at
+`claude-flow/reviewer-registry.json`. Effective runtime order is:
+
+1. bundled default
+2. `~/.claude/reviewer-registry.json` override
+3. project `.claude/reviewer-registry.json` override
 
 ## Top-level shape
 
@@ -23,6 +32,7 @@ Two flavors of entry coexist: **agent-dispatched** (the default — a subagent r
 | `id` | string | yes | Unique identifier, kebab-case. Used in logs and as the reviewer reference in Phase 6 output. |
 | `tier` | `"always"` \| `"conditional"` | yes | `always`: runs every review pass. `conditional`: runs only if `file_patterns` match the diff. |
 | `cascade_tier` | integer | yes | Phase 6 dispatch bucket (1-5). **Tier 1 is reserved for the broad first-pass sweep (CodeRabbit) that enables early-exit. New `always` reviewers go at Tier ≥ 2.** |
+| `min_budget` | `"low"` \| `"medium"` \| `"high"` | no | Smallest review budget that may run this reviewer. Default `low`. |
 | `description` | string | yes | One-line summary for humans. |
 | `model` | string | no | Model identifier for observability. Not runtime-consumed for CLI-backed entries. |
 
@@ -45,6 +55,10 @@ Use when the reviewer is a shell script that shells out to an external tool (non
 |---|---|---|---|
 | `runner` | string | yes | Runner kind, used for dispatch routing (`"codex-cli"` today; future: `"gemini-cli"`, `"semgrep-cli"`, etc.). |
 | `runner_script` | string (repo-relative path) | yes | Path to the script Phase 6 invokes with the diff file as `$1`. |
+
+`runner_script` is resolved relative to the registry file that declared the
+entry. The selector emits `resolved_runner_script` so dispatchers do not have to
+reconstruct that path.
 
 The runner script's contract:
 
@@ -69,9 +83,18 @@ Reference implementation (`scripts/curmudgeon_review.sh`) emits skip envelopes f
 
 Future CLI-backed runners should emit the envelope from the same three branches at minimum.
 
+## Budget filtering
+
+The selector computes a `review_budget` (`low`, `medium`, `high`) from workflow
+path plus diff signals, unless the caller passes an explicit override.
+
+Reviewers whose `min_budget` exceeds the selected budget are omitted and
+reported under `budget_skipped`. This keeps Phase 6 proportional to change
+risk instead of paying the full review tax on every contained diff.
+
 ## Early-exit invariant
 
-Phase 6 cascades Tier 1 → Tier 2-4 with an early-exit gate: **if Tier 1 (CodeRabbit) returns no HIGH+ findings, Tiers 2-4 are skipped entirely**. Any `always` reviewer whose cost should be avoided on clean diffs must therefore be at `cascade_tier >= 2`. The test `tests/test_reviewer_registry.py::test_all_always_reviewers_have_cascade_tier` guards against future entries that omit `cascade_tier` and land in an un-early-exit-able bucket.
+Phase 6 cascades Tier 1 → Tier 2-4 with an early-exit gate: **if Tier 1 (CodeRabbit) returns no HIGH+ findings, Tiers 2-4 are skipped entirely**. Any `always` reviewer whose cost should be avoided on clean diffs must therefore be at `cascade_tier >= 2`. Keep that invariant covered in `scripts/test_select_reviewers.py`.
 
 ## Scored Reviewers (v1.1+)
 
@@ -122,14 +145,14 @@ If the persona file is in the same repo as the registry, omit `persona_file_root
 
 1. Pick an `id` (kebab-case, domain prefix if extending a family).
 2. Decide agent-dispatched vs CLI-backed (default to agent-dispatched; CLI-backed only when the reviewer is not a Claude agent — non-Anthropic models, external linters, security scanners).
-3. For CLI-backed: author the runner script per the contract above. Test missing-CLI, missing-input, and happy paths. See `scripts/curmudgeon_review.sh` and `tests/test_curmudgeon_review.sh` for the reference.
-4. Add the entry to `reviewer-registry.json`. Default `cascade_tier: 2` unless there's a specific reason otherwise.
-5. Extend `tests/test_reviewer_registry.py` with an assertion that the new entry is registered + lands in the expected `by_tier` bucket.
+3. For CLI-backed: author the runner script per the contract above. Test missing-CLI and missing-input paths at minimum. The bundled `scripts/curmudgeon_review.sh` is the reference skip-first implementation.
+4. Add the entry to `claude-flow/reviewer-registry.json` or to a project override.
+5. Extend `scripts/test_select_reviewers.py` with an assertion that the new entry is registered and lands in the expected `by_tier` bucket.
 6. Document in `phase-6-quality.md`'s Default Reviewers table.
 
 ## See also
 
-- `reviewer-registry.json` (canonical config at repo root)
-- `skills/claude-flow/scripts/select_reviewers.py` (runtime parser)
-- `skills/claude-flow/phases/phase-6-quality.md` (dispatch behavior)
+- `claude-flow/reviewer-registry.json` (bundled default config)
+- `scripts/select_reviewers.py` (runtime parser)
+- `phases/phase-6-quality.md` (dispatch behavior)
 - `scripts/curmudgeon_review.sh` (CLI-backed reference implementation)
