@@ -93,3 +93,14 @@ def test_bundled_registry_reviewers_define_min_budget():
 
     for reviewer in registry["reviewers"]:
         assert reviewer["min_budget"] in {"low", "medium", "high"}
+
+
+def test_phase_6_reference_docs_exist():
+    assert (SKILL_ROOT / "references" / "phase-6-review-operations.md").exists()
+    assert (SKILL_ROOT / "references" / "phase-6-design-review.md").exists()
+
+
+def test_run_manifest_and_capability_refs_exist():
+    assert (SKILL_ROOT / "references" / "run-manifest.md").exists()
+    assert (SKILL_ROOT / "references" / "project-capability-matrix.md").exists()
+    assert (SKILL_ROOT / "scripts" / "run_manifest.py").exists()

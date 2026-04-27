@@ -30,9 +30,12 @@ Present an organized question list to the user. Group questions by category. Wai
 
 **Before** presenting the question list to the user, run the audit:
 
+Resolve helper scripts from the loaded `claude-flow` skill directory, not from
+the target project's cwd.
+
 ```
 echo '["<question 1>", "<question 2>", ...]' | \
-    python skills/claude-flow/scripts/audit_phase3_questions.py --json
+    python3 <claude-flow-root>/scripts/audit_phase3_questions.py --json
 ```
 
 For each question flagged `self_answerable: true`:
@@ -48,8 +51,9 @@ Only present genuinely ambiguous (user-intent, preference, policy) questions
 to the user. This reduces Phase 3 friction and accelerates the hard gate.
 
 **Signal:** if the audit flags >50% of questions as self-answerable, that's a
-signal Phase 2 exploration was shallow — consider running an additional
-explorer rather than pestering the user.
+signal Phase 2 exploration was shallow — consider another firsthand
+exploration pass (or a full-path research pass) rather than pestering the
+user.
 
 The audit is conservative: questions containing intent markers ("should", "do
 you want", "how should we handle") are NEVER flagged self-answerable, even if
@@ -78,9 +82,34 @@ If the Phase 2 advisor already scored all 4 quality axes as PASS (carried forwar
 
 After all ambiguities are resolved and the quality gate passes, populate the `$requirements` contract (see `contracts/requirements.schema.md`).
 
+Include a `risk_class` entry with:
+
+- `level`: `low` / `medium` / `high`
+- `flags`: any of `auth`, `privacy`, `money`, `data_loss`,
+  `external_side_effects`, `public_api`
+- `rationale`: one short paragraph explaining the classification
+
+If `risk_class.level == high`, the change may not proceed on a fast or lite
+implementation path unless the user explicitly narrows scope to planning-only
+or documentation-only work.
+
 This contract flows downstream to Phase 4 (architecture references it), Phase 4c (validates plan coverage against it), and Phase 6 (reviewers check adherence).
 
 **Present to user for approval.** The structured requirements are the contract for everything downstream. If the user provides feedback, revise and re-present.
+
+After approval, record a stable hash of the approved `$requirements` artifact in
+the run manifest from `references/run-manifest.md`. This is the replayable
+contract for later review and reruns.
+
+Preferred command:
+
+```bash
+python3 <claude-flow-root>/scripts/run_manifest.py record-approval \
+  --manifest .claude/runs/<session-id>.json \
+  --kind requirements \
+  --content-file /tmp/requirements.json \
+  --state-file .claude/workflow-state.json
+```
 
 ```
 ◆ USER APPROVES structured requirements before architecture ◆

@@ -74,7 +74,7 @@ For each plan step:
      Review the evidence matrix BEFORE attempting a fix.
      (Prevents fix-retry loops on complex failures.)
 
-   3a'. **Implementer pushback protocol:** When a code-quality or spec-review reviewer makes claims about external-tool behavior (CLI flag semantics, config discovery order, exit-code meanings), implementers MUST verify empirically before applying the fix. Record verification in-code as a comment. Reviewer authority does not override tool output. See `reviewer_claims_need_verification.md`.
+   3a'. **Implementer pushback protocol:** When a code-quality or spec-review reviewer makes claims about external-tool behavior (CLI flag semantics, config discovery order, exit-code meanings), implementers MUST verify empirically before applying the fix. Record that verification in the run manifest or review notes, not in product code comments. Reviewer authority does not override tool output. See `reviewer_claims_need_verification.md`.
 
    3a. If one fix attempt already failed, load
        `references/phase-5-retry-and-facts.md` and apply the

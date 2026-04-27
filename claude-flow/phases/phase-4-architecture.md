@@ -148,6 +148,8 @@ Present both options (post-advisor-refinement) to the user with the advisor's an
 After user chooses, write a structured plan using the `writing-plans` skill:
 - Numbered steps with specific files and changes
 - Test requirements per step
+- If `$requirements.risk_class.level == high`, include explicit rollback,
+  observability, and blast-radius containment steps
 - **`depends_on` populated on every step** per [plan.schema.md](../contracts/plan.schema.md). For each upstream step, set `type` to one of:
   - `data` — needs the predecessor's runtime output (row IDs, migration-created columns). Strictly sequential.
   - `build` — needs the predecessor's code to exist (imports, function calls). Strictly sequential.
@@ -207,7 +209,7 @@ Optional UI-mockup loop that runs after `$plan` is finalized and before the user
 
 2. **Refactor-path extract (conditional).** If `$requirements.task_type == "refactor"` AND `$requirements.target_url` is set, seed the `default` state from the live page before generating other states:
    ```
-   python skills/claude-flow/scripts/extract_mockup.py \
+   python3 <claude-flow-root>/scripts/extract_mockup.py \
        --url <target_url> \
        --output docs/design/<feature>/mockups/<screen>__default.excalidraw
    ```
@@ -239,6 +241,20 @@ Independent of `--visual` and independent of the guard above: if `$plan` has a `
 
 ```
 ◆ USER APPROVES final plan (post-advisor-review) before implementation ◆
+```
+
+After approval, write the approved `$plan` hash to the run manifest from
+`references/run-manifest.md`. If the plan is revised later, append a new
+approval record rather than overwriting the earlier one.
+
+Preferred command:
+
+```bash
+python3 <claude-flow-root>/scripts/run_manifest.py record-approval \
+  --manifest .claude/runs/<session-id>.json \
+  --kind plan \
+  --content-file /tmp/plan.md \
+  --state-file .claude/workflow-state.json
 ```
 
 **State transition:** Write `artifacts.implementation_plan` with steps array, then transition to phase-4d (full path) or phase-5 (lite path).

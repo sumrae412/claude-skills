@@ -28,16 +28,16 @@ The caller provides a list of file paths that will be touched during this task. 
 **Use the script — do not do this work in prose.** File-pattern matching and key lookup are mechanical operations. The LLM's job is to format and prioritize the result, not to walk the table.
 
 ```bash
-python3 skills/claude-flow/scripts/match_memory_domains.py \
+python3 <claude-flow-root>/scripts/match_memory_domains.py \
     <memory_dir> \
-    --reference skills/claude-flow/references/memory-injection.md \
+    --reference <claude-flow-root>/references/memory-injection.md \
     file1.py file2.py file3.html
 ```
 
 Or via stdin:
 
 ```bash
-echo -e "file1.py\nfile2.py" | python3 skills/claude-flow/scripts/match_memory_domains.py <memory_dir>
+echo -e "file1.py\nfile2.py" | python3 <claude-flow-root>/scripts/match_memory_domains.py <memory_dir>
 ```
 
 Output (JSON) gives you everything you need:

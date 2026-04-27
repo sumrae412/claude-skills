@@ -13,7 +13,7 @@ Each detector returns (result_str, skipped_reason) and never raises.
 See skills/claude-flow/references/lookup-detectors.md for the registry.
 
 Usage:
-    python skills/claude-flow/scripts/inject_lookups.py \\
+    python3 <claude-flow-root>/scripts/inject_lookups.py \\
         --scope plan \\
         --files alembic/versions/new.py app/routes/new.py \\
         --json

@@ -71,13 +71,13 @@ SMALL? (single file, no schema, no new endpoints)
   → FAST PATH: make change → test → commit → EXIT
 
 HAS PLAN/PRP? (existing plan file or PRP document)
-  → PLAN PATH: read plan → skip to Phase 5
+  → PLAN PATH: read plan → Phase 4c verification → Phase 5
 
 NEAR-IDENTICAL FEATURE? (2-3 grep/glob checks)
-  → CLONE PATH: clone + adapt → Phase 6 review
+  → CLONE PATH: clone + adapt → Phase 4c-lite verification → Phase 5
 
 1-2 FILES? (no new endpoints, no schema, no new models)
-  → LITE PATH: Phases 2-6 with inline architecture
+  → LITE PATH: Phases 2-6 with inline architecture + 4c-lite verification
 
 AUDIT / CLEANUP? ("audit", "cleanup", "tech debt", "find issues in")
   → AUDIT PATH: read-only path, skip Phase 5
@@ -89,6 +89,11 @@ EXPLORATORY? ("try this", "spike", "prototype", "proof of concept")
 
 ELSE → FULL WORKFLOW (all phases)
 ```
+
+Before finalizing `fast`, `clone`, or `lite`, run a provisional risk screen.
+Signals like `auth`, `privacy`, `money`, `data_loss`,
+`external_side_effects`, or `public_api` can force the task onto the full path
+even when the diff is small.
 
 Load `phases/phase-1-discovery.md` for full criteria. Canonical path and
 transition metadata lives in `workflow-profiles.json`.
@@ -138,13 +143,14 @@ Contracts are the interface between phases. When dispatching subagents, pass the
 | Phase | Name | Model | Key Pattern | Gate |
 |-------|------|-------|-------------|------|
 | 0 | Context | executor | Trigger matrix → load relevant skills only | None |
-| 1 | Discovery | executor | 7-path triage (bug/fast/clone/plan/lite/explore/full) | Auto |
+| 1 | Discovery | executor | 8-path triage (bug/fast/clone/plan/lite/audit/explore/full) | Auto |
 | 2 | Exploration | executor + **sonnet advisor** | Executor explores → advisor reviews gaps + scores quality gate | Advisor confirms |
 | 3 | Requirements | executor | Ambiguities + $requirements (quality gate skipped if Phase 2 passed) | User approves |
 | 4 | Architecture + Plan | executor + **opus advisor** | 2 options → advisor critiques → plan → advisor stress-tests | User approves plan |
+| 4c | Plan Verification | executor + scripts | Mechanical ref check + coverage/scope verification | Verified plan |
 | 5 | Implementation | executor (+ advisor optional) | TDD per step, defensive patterns, parallel dispatch | Tests + lint pass |
 | 5.5 | Reflection | executor | RARV self-check before expensive reviews | Auto |
-| 6 | Quality + Finish | sonnet/haiku | Cascading 5-tier review → verify → commit → retrospective | Verification |
+| 6 | Quality + Finish | sonnet/haiku | Risk-budgeted review cascade → verify → commit → retrospective | Verification |
 
 **Pattern vocabulary:** See `references/multi-agent-patterns.md` for which multi-agent pattern each phase implements. Load when designing a new phase or debating whether a phase's coordination approach is the right fit.
 

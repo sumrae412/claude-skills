@@ -22,6 +22,11 @@ edge_cases:
   - case: string
     resolution: string
 
+risk_class:
+  level: low | medium | high
+  flags: string[]       # auth | privacy | money | data_loss | external_side_effects | public_api
+  rationale: string
+
 nonfunctional:          # optional
   - type: string        # performance | backward_compat | security
     constraint: string
@@ -31,4 +36,7 @@ nonfunctional:          # optional
 - Populated after user approves requirements in Phase 3
 - acceptance_criteria is the primary input for Phase 4c coverage mapping
 - scope.out items are enforced in Phase 4c as scope-creep detection
+- risk_class forces path/review escalation when the change can affect
+  authentication, privacy, money movement, data loss, external side effects,
+  or public API contracts
 - Phase 6 reviewers receive only acceptance_criteria (not full contract) for payload slimming

@@ -1,12 +1,14 @@
 # Phase 4c: Pre-Implementation Plan Verification
 
-<!-- Loaded: after Phase 4 (full path only) | Dropped: after verification -->
+<!-- Loaded: after Phase 4 on full/lite paths, or after Phase 1 on plan/clone paths | Dropped: after verification -->
 
 <HARD-GATE>
 After user approves the plan and before any implementation begins, verify the plan's factual claims against the actual codebase. The Phase 4b stress-test catches logical issues — this step catches factual inaccuracies (stale file paths, renamed functions, changed API contracts).
 </HARD-GATE>
 
-**Skip condition:** Fast path, clone path, and lite path skip this. Only runs on the Full workflow path where there's a meaningful gap between exploration and implementation.
+**Skip condition:** Fast path only. Full path runs the full gate below. Lite,
+plan, and clone paths run the 4c-lite variant so even cheap paths still get a
+mechanical reality check before Phase 5.
 
 ---
 
@@ -15,10 +17,15 @@ After user approves the plan and before any implementation begins, verify the pl
 Run the verification script instead of LLM reasoning:
 
 ```bash
-python scripts/verify_plan.py <plan-file> --project-root . --json
+python3 <claude-flow-root>/scripts/verify_plan.py <plan-file-or-stdin> --project-root . --json
 ```
 
 The script extracts file paths, function references, and pattern claims from the plan markdown, then verifies each against the codebase using grep/glob. Returns JSON with ok/missing/warning counts.
+
+- On **full path**: verify the approved plan document.
+- On **plan path**: verify the inherited plan or PRP before implementation.
+- On **lite/clone path**: if the plan only exists inline, pass it on stdin with
+  `-` as the plan file placeholder.
 
 **Interpret results:**
 - Exit 0 (all ok): proceed to coverage mapping below
@@ -52,6 +59,24 @@ Summary table format:
   AC-2: "WHEN no results THEN empty state shown"  → T3 (value_unit) ✓
   AC-3: "WHEN API fails THEN error message"       → UNCOVERED ✗
 ```
+
+---
+
+## 4c-Lite Minimum Gate (Lite / Clone / Plan Paths)
+
+Cheap paths do not skip verification entirely. They run the same three minimum
+checks before implementation:
+
+1. mechanical plan verification via `verify_plan.py`
+2. acceptance-criteria coverage scan against `$requirements`
+3. scope-boundary and edge-case coverage scan
+
+For lite or clone paths, this can stay inline and brief. The rule is not "write
+less"; it is "verify the smaller plan proportionally."
+
+If the path is `plan` or `clone` and the inherited artifact is stale enough to
+change files, symbols, or acceptance coverage materially, re-present the
+corrected plan slice to the user before Phase 5.
 
 ---
 
@@ -97,5 +122,18 @@ TASK GRANULARITY CHECK:
 - **Multiple granularity flags** → Present recommendations (split/merge specific tasks), revise plan, get re-approval.
 - **Minor mismatches** (renamed variable, moved function) → Fix the plan silently. Log the corrections.
 - **Material mismatches** (deleted file, changed API contract, restructured module) → Re-present the affected plan steps to the user with corrections. Get re-approval before proceeding.
+- **For lite/clone/plan paths:** log the verification result in the run manifest
+  even if the plan stayed inline rather than in a committed markdown file.
+
+Preferred command:
+
+```bash
+python3 <claude-flow-root>/scripts/run_manifest.py record-verification \
+  --manifest .claude/runs/<session-id>.json \
+  --phase phase-4c \
+  --status ok \
+  --summary-file /tmp/verify-plan.json \
+  --plan-file /tmp/plan.md
+```
 
 **Why this exists:** Plans are drafted against Phase 2 exploration findings. Between exploration and implementation, the codebase can drift (especially in multi-session work or when other contributors merge changes). A 30-60 second mechanical check prevents building on false assumptions — the most expensive kind of bug to find in Phase 6.

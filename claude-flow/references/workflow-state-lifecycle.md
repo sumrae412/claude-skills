@@ -8,6 +8,9 @@ Load this reference only when:
 Fast, lite, bug, and explore paths do not initialize workflow state by
 default.
 
+Load `references/run-manifest.md` alongside this file when you need to persist
+approvals, verification commands, or review-base metadata.
+
 ## State File
 
 Path: `.claude/workflow-state.json`
@@ -25,11 +28,27 @@ current user request.
 
 ```json
 {
-  "schema_version": 1,
+  "schema_version": 2,
   "workflow_id": "claude-flow",
   "session_id": "SESSION_TIMESTAMP",
   "status": "running",
   "started_at": "SESSION_TIMESTAMP",
+  "review_base_sha": null,
+  "run_manifest_path": ".claude/runs/SESSION_TIMESTAMP.json",
+  "capability_matrix": {
+    "test_command": null,
+    "lint_command": null,
+    "typecheck_command": null,
+    "static_analysis_command": null,
+    "analysis_roots": [],
+    "dev_server_command": null,
+    "ci_present": false,
+    "diff_base_strategy": null
+  },
+  "approvals": {
+    "requirements_sha256": null,
+    "plan_sha256": null
+  },
   "current_phase": {
     "id": "phase-1",
     "name": "Discovery",
@@ -74,6 +93,10 @@ At the first state-aware checkpoint:
    - do nothing in Phase 0
    - initialize later only if the chosen profile enables state
 
+If the branch changed or the stored `review_base_sha` is no longer an ancestor
+of `HEAD`, recompute it before Phase 6 and update both the state file and run
+manifest.
+
 Resume summary format:
 
 `Resuming workflow: "<task_summary>" / <phase.name> Step <step> (<step_label>) / Path: <path>`
@@ -115,6 +138,11 @@ jq '
 Step updates:
 
 - `jq '.current_phase.step = N | .current_phase.step_label = "LABEL"'`
+- approvals:
+  - `jq '.approvals.requirements_sha256 = "HASH"'`
+  - `jq '.approvals.plan_sha256 = "HASH"'`
+- review base:
+  - `jq '.review_base_sha = "SHA"'`
 - workflow complete: `jq '.status = "completed"'`
 
 ## Iteration Limits
