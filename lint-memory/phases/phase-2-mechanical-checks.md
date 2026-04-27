@@ -28,6 +28,9 @@ index entries when applicable.
 - Keep filename matching broad for top-level `*.md`.
 - Ignore known exclusions such as `MEMORY.md`, JSON/JSONL, and subdir
   runtime state where the check says to.
+- Exclude review/operational artifacts from orphan checks:
+  `IMPORT_REVIEW.md`, `REVIEW_QUEUE.md`, `.claude/memory-archives/**`,
+  `memory-archives/**`, and `knowledge/**` derived articles.
 
 ## Output
 
