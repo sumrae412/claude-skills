@@ -1,6 +1,6 @@
 ---
 name: verification-before-completion
-description: Verify work before claiming done
+description: Use before any "applied", "shipped", "fixed", "merged", "deployed", "done", "complete", or "ready" claim — verify behavior at runtime, not just code state. Check the actual output (endpoint response, UI render, deployed PR state), cite concrete evidence (file_path:line link, git diff --stat, gh pr view, fenced command output), and surface gaps. Required when the claim involves runtime behavior; especially after Edit/Write tool successes (which do not render in the user transcript and are not evidence by themselves).
 ---
 
 # Verification Before Completion
