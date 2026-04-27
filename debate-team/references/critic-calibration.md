@@ -44,3 +44,17 @@ Don't tune after every round. Aggregate over 5+ debate rounds, then:
 
 This is the evaluator-optimizer loop applied to the debate team's own critics.
 
+## Calibration data points
+
+### PR #534 — Phase 2.1c (single-file canary fix, CourierFlow, 2026-04-28)
+
+Tier 3 invocation surfaced two operational gotchas:
+
+1. `~/.claude/scripts/plancraft_review.py` accepts `--reviewer {deepseek, codex}` only. **No `codex-docs` role for non-code artifacts.** Strategy docs fall back to `--reviewer codex` (architecture critic) — still produces signal (~14 of 18 findings adopted on PR #534's strategy doc, including taxonomy ambiguity, pre-authorization concerns, vague pass criteria) but the role isn't role-matched. The `tier-gate-and-proposal.md` text mentioning `codex-docs` is aspirational, not present in the script.
+
+2. `~/.claude/scripts/batch_review.py` (Claude batch reviewer) was absent on this machine. **Tier 3 gracefully degrades to DeepSeek + GPT-4o codex** — useful verdict still produced. Surface the missing leg in the verdict synthesis so the user knows the review was 2-of-3, not 3-of-3.
+
+**Speculative-finding rule held a SECOND iteration:** PR #533's DeepSeek-flagged "third blocker may exist" materialized in PR #534 with a different shape (empty-messages on `/connect` rather than duplicate non-consecutive system messages). Had the Tier 1 DEFER speculation been ADOPTed as a preemptive defense, it would have masked the real failure shape. **Empirical:** DEFER speculative findings; the next smoke names the real shape in minutes.
+
+**PR #534 review split:** 8 ADOPT / 5 REJECT / 0 DEFER (Tier 3 critics had concrete artifacts to cite because the smoke run was bundled in the same PR). Compare PR #533: 2/2/6. The bundling-with-smoke pattern produces a healthier review distribution.
+
