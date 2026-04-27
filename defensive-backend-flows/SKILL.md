@@ -119,6 +119,23 @@ Before finishing backend code, verify your code against the catalog. The Quick R
 - Webhook signature validator with a no-token branch that returns `True` unconditionally — must hard-fail in production
 - F-string interpolation of AI/user content into XML/TwiML/RSS without `xml.sax.saxutils.escape`
 
+## Pre-flight Construction Smoke (Third-Party SDK Migration)
+
+Before committing to a third-party SDK migration, in a scratch script
+verify against the production-pinned versions:
+
+1. The symbol is exported (`from pkg import X` succeeds).
+2. The symbol's constructor / wrapper accepts the kwargs you plan to pass.
+3. Any wrapping class (e.g. `LangGraphAGUIAgent(graph=create_agent(...))`)
+   accepts the resulting object cleanly.
+
+Saves a wasted commit cycle if the SDK shape doesn't match your plan.
+
+**Always `pip install -r requirements.txt` against the venv before
+pre-flighting.** Local venv drift is silent — a stale venv (older
+pinned version, missing pinned packages) produces false-positive smokes
+that let no-op code ship.
+
 ## When NOT to Use
 
 - Simple CRUD with no error handling complexity

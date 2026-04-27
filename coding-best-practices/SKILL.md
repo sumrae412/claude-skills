@@ -83,6 +83,19 @@ For high-risk work, load the relevant phase file before making changes.
 - Any retry-prone aggregator: make it idempotent.
 - Any path from untrusted input: resolve and verify containment.
 
+## Cold-boot circular-import test pattern
+
+`importlib.reload()` does NOT simulate a cold boot for circular-import
+detection. Modules stay in `sys.modules` across reloads, so Python skips
+the partial-init re-entry path that bites first prod boot. Cold-boot
+regression tests must `monkeypatch.delitem(sys.modules, "<module>", raising=False)`
+for **every** module in the suspected import cycle, then re-import the
+entry module fresh. To repro a cold-boot crash locally: pop both
+`app.services.X` and `app.routes.X` from `sys.modules`, then
+`importlib.import_module("app.services.X")`. See
+`test_canary_builds_under_cold_boot_module_ordering` in
+`tests/routes/test_copilot_runtime.py` for the canonical shape.
+
 ## Guardrails
 
 - Prefer simple, readable code over abstraction by default.
