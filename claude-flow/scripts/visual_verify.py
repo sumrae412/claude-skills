@@ -17,7 +17,7 @@ Exit codes:
     2 — internal error
 
 Usage:
-    python skills/claude-flow/scripts/visual_verify.py \\
+    python3 <claude-flow-root>/scripts/visual_verify.py \\
         --url http://localhost:3000/dashboard \\
         --mockup docs/design/dashboard/mockups/dashboard.excalidraw \\
         --json

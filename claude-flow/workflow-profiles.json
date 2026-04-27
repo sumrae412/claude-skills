@@ -24,8 +24,8 @@
       "state_machine": true,
       "mutation_allowed": true,
       "review_budget_default": "medium",
-      "phases": ["phase-1", "phase-5", "phase-5.5", "phase-6"],
-      "handoff": "Read plan, then execute",
+      "phases": ["phase-1", "phase-4c", "phase-5", "phase-5.5", "phase-6"],
+      "handoff": "Read approved plan, verify it against the live codebase, then execute",
       "review_ceiling": "Tier 1-3 plus specialists as needed"
     },
     "clone": {
@@ -33,8 +33,8 @@
       "state_machine": true,
       "mutation_allowed": true,
       "review_budget_default": "low",
-      "phases": ["phase-1", "phase-5", "phase-5.5", "phase-6"],
-      "handoff": "Clone, adapt, TDD the delta",
+      "phases": ["phase-1", "phase-4c", "phase-5", "phase-5.5", "phase-6"],
+      "handoff": "Clone, adapt, verify the delta plan, then TDD it",
       "review_ceiling": "Tier 1-2 plus triggered specialists"
     },
     "lite": {
@@ -47,6 +47,7 @@
         "phase-2",
         "phase-3",
         "phase-4",
+        "phase-4c",
         "phase-5",
         "phase-5.5",
         "phase-6"
@@ -120,7 +121,7 @@
     },
     {
       "from": "phase-1",
-      "to": "phase-5",
+      "to": "phase-4c",
       "condition": "Clone or plan path"
     },
     {
@@ -135,13 +136,18 @@
     },
     {
       "from": "phase-4",
+      "to": "phase-4c",
+      "condition": "Full or lite path"
+    },
+    {
+      "from": "phase-4c",
       "to": "phase-4d",
       "condition": "Full path only"
     },
     {
-      "from": "phase-4",
+      "from": "phase-4c",
       "to": "phase-5",
-      "condition": "Lite path"
+      "condition": "Plan, clone, or lite path"
     },
     {
       "from": "phase-4",

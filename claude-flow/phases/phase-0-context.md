@@ -11,6 +11,7 @@ Load only the context that changes how the workflow should behave:
 - project identity and boundaries
 - task-scoped skills
 - enforcement skills
+- capability signals that affect testing and verification
 - bootstrap helpers only when the project actually needs them
 
 Do not initialize the workflow state machine by default. That decision is
@@ -105,6 +106,35 @@ Follow the policy from `SKILL.md`:
 
 Verify you are on a feature branch before proceeding.
 
+### Step 6.5: Capability Snapshot
+
+Load `references/project-capability-matrix.md` and record the minimum runtime
+facts later phases need:
+
+- test command
+- lint command
+- typecheck / static-analysis command
+- analysis roots
+- dev-server command (if any)
+- CI presence
+- diff-base strategy
+
+Prefer project-owned declarations first (`CLAUDE.md`, `package.json`,
+`pyproject.toml`, CI config). Only probe the filesystem when the docs are
+silent. Persist the snapshot to workflow state when state is active; otherwise
+persist it to the run manifest described in `references/run-manifest.md`.
+
+Preferred command:
+
+```bash
+python3 <claude-flow-root>/scripts/run_manifest.py init \
+  --manifest .claude/runs/<session-id>.json \
+  --workflow-path <path-or-provisional-path> \
+  --task-summary "<user request>" \
+  --capability-matrix-file /tmp/capability-matrix.json \
+  --state-file .claude/workflow-state.json
+```
+
 ### Step 7: Optional Bootstrap
 
 Load `references/project-bootstrap.md` only if either of these is true:
@@ -116,6 +146,8 @@ If `MEMORY.md` is missing, create it using the bootstrap reference.
 
 **State handoff:** transition to Phase 0.5 if hooks are missing; otherwise go to
 Phase 1. Canonical transitions live in `../workflow-profiles.json`.
+If a run manifest already exists, keep it attached to the current workflow
+session rather than starting a second one.
 
 ---
 

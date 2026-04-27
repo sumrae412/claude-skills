@@ -5,7 +5,7 @@ Zero-token Phase 4c verification — runs as a script instead of LLM reasoning.
 Checks that files, functions, and patterns referenced in the plan actually exist.
 
 Usage:
-    python scripts/verify_plan.py <plan_file> [--project-root .]
+    python3 <claude-flow-root>/scripts/verify_plan.py <plan_file|-> [--project-root .]
 
 Output: JSON with verified/missing/stale entries. Non-zero exit if material mismatches found.
 """
@@ -137,19 +137,28 @@ def verify_symbol(symbol: str, file_path: str, project_root: Path) -> dict:
 
 def main():
     parser = argparse.ArgumentParser(description="Verify plan references against codebase")
-    parser.add_argument("plan_file", help="Path to the plan markdown file")
+    parser.add_argument(
+        "plan_file",
+        help="Path to the plan markdown file, or '-' to read markdown from stdin",
+    )
     parser.add_argument("--project-root", default=".", help="Project root directory")
     parser.add_argument("--json", action="store_true", help="Output as JSON")
     args = parser.parse_args()
 
     project_root = Path(args.project_root).resolve()
+    plan_source = args.plan_file
     plan_path = Path(args.plan_file)
 
-    if not plan_path.exists():
-        print(f"Error: Plan file not found: {plan_path}", file=sys.stderr)
-        sys.exit(2)
-
-    plan_text = plan_path.read_text()
+    if args.plan_file == "-":
+        plan_text = sys.stdin.read()
+        if not plan_text.strip():
+            print("Error: No plan markdown provided on stdin", file=sys.stderr)
+            sys.exit(2)
+    else:
+        if not plan_path.exists():
+            print(f"Error: Plan file not found: {plan_path}", file=sys.stderr)
+            sys.exit(2)
+        plan_text = plan_path.read_text()
 
     # Extract and verify
     file_paths = extract_file_paths(plan_text)
@@ -167,7 +176,7 @@ def main():
     ok = [r for r in all_results if r["status"] == "ok"]
 
     output = {
-        "plan_file": str(plan_path),
+        "plan_file": plan_source,
         "project_root": str(project_root),
         "summary": {
             "total_checks": len(all_results),

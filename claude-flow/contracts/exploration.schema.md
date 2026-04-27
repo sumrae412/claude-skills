@@ -30,6 +30,7 @@ quality_gate:               # scored by Phase 2 Sonnet advisor, carried to Phase
 ## Notes
 
 - Populated by executor at end of Phase 2
-- For full/complex path with research team: confidence scores come from synthesis
+- On the full path, research can supplement firsthand exploration but never
+  replace it entirely
 - Persists after phase-2-exploration.md is unloaded — this is the surviving artifact
 - Target size: 100-200 tokens when populated

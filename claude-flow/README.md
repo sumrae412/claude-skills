@@ -12,11 +12,11 @@ This skill (and all its siblings in `claude-skills`) is installed via symlink, n
 Phase 0    Context Loading — load project identity, core skill, classify task
 Phase 0.5  Bootstrap Hooks — auto-detect stack, generate hooks (one-time)
 Phase 1    Discovery — fast-path escape for small changes
-Phase 2    Exploration — 2-3 parallel code-explorer subagents
+Phase 2    Exploration — executor explores firsthand; research supplements on full path
 Phase 3    Clarification + Requirements — resolve ambiguities, synthesize structured requirements (hard gate)
-Phase 4    Architecture — 2 parallel code-architect proposals → user picks
+Phase 4    Architecture — executor drafts 2 options, advisor critiques, user picks
 Phase 5    Implementation — TDD per step, parallel dispatch for independent work
-Phase 6    Quality + Ship — parallel reviewers → verify → /ship
+Phase 6    Quality + Finish — risk-budgeted review cascade → verify → /cleanup
 ```
 
 ## Hook Bootstrap (Phase 0.5)
@@ -118,7 +118,11 @@ skills/claude-flow/
 ├── reviewer-registry.json            # Bundled Phase 6 reviewer defaults
 └── references/
     ├── hook-templates.md             # Template library for hook generation
+    ├── phase-6-design-review.md      # Lazy-loaded live UI review doctrine
+    ├── phase-6-review-operations.md  # Lazy-loaded Phase 6 review-loop doctrine
+    ├── project-capability-matrix.md  # Capability snapshot fields for later phases
     ├── review-budgets.md             # Phase 6 review-budget heuristics
+    ├── run-manifest.md               # Replayable per-run workflow metadata
     ├── workflow-profiles.md          # Human summary of path metadata
     ├── workflow-state-lifecycle.md   # Lazy-loaded state machine details
     └── project-bootstrap.md          # Lazy-loaded memory + hook bootstrap
@@ -130,3 +134,16 @@ scripts/hooks/
 ├── post-commit-memory-update.sh      # Update memory files after commits
 └── guard-worktree-remove.sh          # Safety check before worktree removal
 ```
+
+### Workflow Maintenance
+
+When changing `claude-flow` itself, run both:
+
+```bash
+python3 claude-flow/scripts/lint_workflow.py --json
+python3 -m pytest -q claude-flow/scripts
+```
+
+The linter catches hot-path doc drift, mutating-path sequence regressions,
+missing workflow references, and review-base helper breakage. The pytest suite
+covers the helper scripts and bundled workflow assets in more detail.

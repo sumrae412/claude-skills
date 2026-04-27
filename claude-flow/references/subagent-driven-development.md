@@ -109,7 +109,7 @@ Before dispatching each implementer subagent, run the **step-scope** lookup
 pass to inject file-level facts the implementer needs for THIS task:
 
 ```
-python skills/claude-flow/scripts/inject_lookups.py \
+python3 <claude-flow-root>/scripts/inject_lookups.py \
     --scope step \
     --files <files-this-task-touches> \
     --json

@@ -1,7 +1,7 @@
 # Lookup Detector Registry
 
 Deterministic authoring-time lookups that prevent hallucination. Consumed by
-`skills/claude-flow/scripts/inject_lookups.py`.
+`<claude-flow-root>/scripts/inject_lookups.py`.
 
 Principle (Brian Lovin, Notion): *"Anytime the AI asks you to do something,
 before responding, try your best to see if you could teach the AI to answer

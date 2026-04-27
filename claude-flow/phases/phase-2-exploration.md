@@ -9,20 +9,21 @@ The **executor (Sonnet)** explores the codebase directly — reading files, trac
 
 ---
 
-## Research Team Branch (Full/Complex Path Only)
+## Research Team Branch (Full Path Only)
 
-When the task path is `full` or `complex` (set in Phase 1 Discovery):
+When the task path is `full` (set in Phase 1 Discovery):
 
 1. **Run Step 0** (Prior Knowledge Check) — still runs; prior knowledge reduces redundant research
 2. **Invoke `/research` skill** with the task description as the research question (plus any prior knowledge found in Step 0)
 3. The research skill runs its full pipeline (classify → Wave 1 → gap detection → Wave 2 → synthesize)
-4. **Receive the research brief** — this replaces the exploration output from Steps 1-2
-5. **Skip to Step 3** (Advisor Checkpoint) — the Opus advisor reviews the research brief instead of raw exploration findings
-6. The research brief's confidence scores are included in the `$exploration` variable
+4. **Receive the research brief** — use it to widen coverage, compare approaches, and identify likely blind spots
+5. **Still run Steps 1-2 firsthand** — read at least one representative file per touched layer so the executor is not relying only on delegated output
+6. **Use Step 3** to review the combined artifact: firsthand findings plus the research brief
+7. The research brief's confidence scores are included in the `$exploration` variable, but firsthand file reads remain the primary evidence source
 
 When the task path is `lite` or `fast`, the single-executor exploration (Steps 0-2 below) runs unchanged.
 
-> **Why branch here:** Research adds depth, breadth, and quality verification — but costs 3-6 agent round-trips. Lite/fast tasks don't need this overhead. The branch respects the existing path classification without replacing what works for simpler tasks.
+> **Why branch here:** Research adds depth, breadth, and quality verification — but costs 3-6 agent round-trips. Lite/fast tasks don't need this overhead. On full-path work it supplements firsthand exploration instead of replacing it, which keeps later phases grounded in verified local evidence.
 
 ### Wave 1 dispatch shape: task-typed vs. N-per-entity
 
@@ -133,7 +134,7 @@ Pass 3: TEST + UI PATTERNS (if relevant)
 Dispatch **Sonnet** (`model: "sonnet"`, `subagent_type: "general-purpose"`) with:
 - Input: populated `$exploration` contract (key_files, patterns, integration_points, concerns)
 - Question: "What's missing from this exploration before I move to requirements? Also score these 4 quality axes as pass/fail: (1) Objective Clarity — deliverable stateable as one-sentence outcome? (2) Service Scope — affected files/modules identifiable? (3) Testability — all behaviors expressible as WHEN/THEN? (4) Completeness — all edge cases from exploration have resolutions?"
-- If research brief was produced: include full brief with confidence scores instead of raw exploration
+- If a research brief was produced: include the brief alongside the firsthand exploration summary, not instead of it
 - Act on response: explore identified gaps. If all 4 quality axes pass, carry scores forward to Phase 3 (skip quality gate re-check). If any fail, Phase 3 will re-score after ambiguity resolution.
 
 **Why Sonnet, not Opus:** Exploration review is gap-finding and checklist scoring — broad pattern matching, not deep trade-off analysis. Opus is reserved for Phase 4 architecture critique and plan stress-test where it earns its cost.
@@ -145,12 +146,9 @@ Dispatch **Sonnet** (`model: "sonnet"`, `subagent_type: "general-purpose"`) with
 | Step | Label (standard path) | Label (research team path) |
 |------|----------------------|---------------------------|
 | 1 | Prior knowledge check | Prior knowledge check |
-| 2 | Compressed codebase context | Task classification |
-| 3 | Executor explores directly | Wave 1 dispatch |
-| 4 | Advisor checkpoint | Gap detection |
-| 5 | — | Wave 2 dispatch (if needed) |
-| 6 | — | Synthesis |
-| 7 | — | Advisor checkpoint |
+| 2 | Compressed codebase context | Task classification + research dispatch |
+| 3 | Executor explores directly | Firsthand exploration informed by research |
+| 4 | Advisor checkpoint | Combined advisor checkpoint |
 
 When the research team is active, update `agents_spawned`, `agents_completed`, and `agents_failed` in the workflow state as researchers are dispatched and return. The existing state schema supports this — no schema changes needed.
 

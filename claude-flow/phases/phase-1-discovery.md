@@ -11,12 +11,25 @@ Use the first matching route:
 
 1. **Bug** -> invoke `/bug-fix`, exit `claude-flow`
 2. **Fast** -> inline change, targeted test, finish
-3. **Plan** -> read existing plan, start at Phase 5
-4. **Clone** -> adapt an existing near-identical feature, start at Phase 5
-5. **Lite** -> run phases 2-6 with inline architecture
+3. **Plan** -> read existing plan, run Phase 4c verification, then implement
+4. **Clone** -> adapt an existing near-identical feature, run 4c-lite verification, then implement
+5. **Lite** -> run phases 2-6 with inline architecture and 4c-lite verification
 6. **Audit** -> read-only assessment path, skip Phase 5
 7. **Explore** -> sandbox spike, graduate later if it earns it
 8. **Else** -> full workflow
+
+Before locking in `fast`, `clone`, or `lite`, run a provisional risk screen.
+If the task appears to touch any of these classes, do not stay on a cheap path
+without an explicit user constraint:
+
+- `auth`
+- `privacy`
+- `money`
+- `data_loss`
+- `external_side_effects`
+- `public_api`
+
+High-risk work defaults to the full path even when the diff is small.
 
 ## Path Criteria
 
@@ -54,4 +67,8 @@ Use the first matching route:
 1. Set `current_phase.path` if workflow state is already active.
 2. If the chosen path's profile has `state_machine: true` and no state file
    exists yet, load `references/workflow-state-lifecycle.md` and initialize it.
+   Initialization must include:
+   - `review_base_sha`
+   - `run_manifest_path`
+   - the Phase 0 capability snapshot
 3. Transition using the canonical map in `../workflow-profiles.json`.
