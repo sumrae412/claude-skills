@@ -1183,3 +1183,58 @@ Prefer `try / finally` for cleanup. When `finally` doesn't fit (cleanup must be 
 
 **Learned from:** ToneGuard PR #22 (UI layer; same principle applies to backend). CodeRabbit caught a nack path that forgot to clear `pendingEditor`, wedging the feature permanently after the first failure.
 
+
+### 45. Never `print()` from AI Agent Code Paths — Use Structured `logger.debug(..., extra={...})`
+
+`print()` in tool-call handlers, model-wrapping middleware, LLM router code, or any AI-agent execution path leaks operational state and (worse) tenant payloads to stdout, which deploy platforms persist as production logs. The asymmetry is severe: prints look like local debugging during development but are an active privacy leak in production.
+
+**Case study — CourierFlow PR #541 (2026-04-27):**
+
+19 `print()` statements in `app/services/copilot_agent.py` had been shipped to production. Two were leaking full tool call args + result payloads on every chat invocation — typical payload was 1300+ characters of tenant data per call (phone numbers, emails, household IDs). Captured live in Railway stdout:
+
+```
+🔧 _run_tool_calls: searchTenants FULL PAYLOAD:
+[1329 chars of tenant records...]
+```
+
+Railway-style platforms surface every stdout/stderr write as a production log. There is no "debug mode" toggle that suppresses prints — they ship.
+
+**Replacement contract:**
+
+```python
+# BAD — leaks payload
+print(f"🔧 _run_tool_calls: {name} executing with args={args}", flush=True)
+print(f"🔧 _run_tool_calls: {name} FULL PAYLOAD:", flush=True)
+print(payload, flush=True)
+
+# GOOD — counts and types only, no raw payload
+logger.debug(
+    "default agent: executing backend action",
+    extra={"tool_name": name, "arg_count": len(args)},
+)
+logger.debug(
+    "default agent: backend action payload prepared",
+    extra={
+        "tool_name": name,
+        "payload_type": type(payload).__name__,
+        "payload_len": len(str(payload)) if payload else 0,
+    },
+)
+```
+
+**Conversion rules:**
+- Bare debug `print(f"...{value}")` → `logger.debug(msg, extra={"field": ..., "field_type": type(value).__name__})`. Counts and types only, NEVER raw payload contents.
+- `except: print(repr(exc))` → `logger.exception(msg)`. The traceback captures the exception properly; `repr(exc)` can include the offending call args.
+- Iteration-cap prints / max-retry markers → `logger.warning()`. These are operational signals, not debug noise.
+
+**Audit grep:**
+
+```bash
+rg -n '^\s*print\(' app/services/ app/routes/
+```
+
+Any hit in code that an LLM, webhook, or background worker can reach is a leak risk. Single-pass cleanup commit (don't bundle with feature work) so the privacy fix is reviewable and revertable on its own.
+
+**Memory companion:** PR #541's structured-logger conversion deleted the `🔧` emoji that production audit queries had been using as a search anchor. After conversion, audit filters must use the new structured-log substring (e.g. `default agent: tool call`). See CourierFlow CLAUDE.md "Railway log retention" gotcha.
+
+**Learned from:** CourierFlow PR #541 (2026-04-27) and the Railway log audit that captured the leak in active deployment.
