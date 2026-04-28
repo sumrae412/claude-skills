@@ -74,6 +74,16 @@ Produce only what the current phase needs:
 - GTM mode selection
 - overall verdict
 
+## Companion Skills
+
+After the verdict, the natural follow-on is `pitch-deck` to turn the
+validation into investor / sales / launch slides. The `pitch-deck` skill
+reuses ICP, wedge, and GTM outputs from this analysis directly.
+
+For pre-validation brainstorming, use `superpowers:brainstorming` or
+`product-management:product-brainstorming` instead — this skill is for
+pressure-testing, not generation.
+
 ## Guardrails
 
 - no hedging without logical need
