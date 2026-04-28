@@ -1,6 +1,6 @@
 ---
 name: debate-team
-description: Unified review skill with auto-tiering — absorbs PlanCraft. Tier 1 (DeepSeek scope check), Tier 2 (DeepSeek + GPT-4o dual critic), Tier 3 (full tri-model debate with Sonnet Generator + Opus Lead). Conditional Haiku Style critic for frontend.
+description: Unified review skill with auto-tiering — absorbs PlanCraft. Tier 1 (DeepSeek scope check), Tier 2 (DeepSeek + second critic), Tier 3 (full debate). In Codex, use Claude/Anthropic as the second external critic instead of GPT-4o unless the user explicitly requests GPT-4o. Conditional Haiku Style critic for frontend.
 ---
 
 # Unified Review — Debate Team
@@ -21,7 +21,7 @@ Cross-model adversarial review for plans and code. Three tiers auto-selected by 
 
 ## Setup
 
-- Set **DEEPSEEK_API_KEY** and **OPENAI_API_KEY** in your environment (or a documented secure source). The script reads keys only from the environment; never put keys in plan files, scope files, or logs.
+- Set **DEEPSEEK_API_KEY** and either **ANTHROPIC_API_KEY** (Codex default) or **OPENAI_API_KEY** (Claude Code default / explicit GPT-4o request) in your environment. Scripts read keys only from the environment; never put keys in plan files, scope files, or logs.
 - The debate protocol is **single-user and serial** (one debate at a time). Fixed paths `/tmp/debate_artifact.md` and `/tmp/debate_scope.md` are acceptable; for parallel runs use unique paths (e.g. timestamp or UUID).
 
 ## When to Use
@@ -54,14 +54,15 @@ Cross-model adversarial review for plans and code. Three tiers auto-selected by 
 |------|-------|------|------|
 | Generator | Sonnet (teammate) | Agent Teams | Always |
 | Bug-Hunter | DeepSeek (API) | External | Always |
-| Architecture | GPT-4o via `--reviewer codex` (API) | External | Code artifacts only |
-| Completeness | GPT-4o via `--reviewer codex-docs` (API) | External | Non-code artifacts only |
+| Architecture / Completeness | Claude/Anthropic critic (Codex default) or GPT-4o via `--reviewer codex` (Claude Code default / explicit request) | External | Always as second external critic |
 | Style/UI | Haiku (teammate) | Agent Teams | Frontend changes only |
 | Lead/Judge | Opus (you) | Lead | Always |
 
-**GPT-4o role routing:** The artifact type determines which GPT-4o critic role runs (never both):
-- **Code artifacts** (touches `app/`, `tests/`, `*.py`, `*.js`, `*.css`, `*.html`) → Architecture critic (`--reviewer codex`): separation of concerns, abstraction quality, pattern consistency.
-- **Non-code artifacts** (skills, docs, CLAUDE.md, MEMORY.md, process specs) → Completeness critic (`--reviewer codex-docs`): missing steps, contradictions, stale references, term consistency.
+**Second critic routing:**
+- **Codex runtime:** use Claude/Anthropic as the second external critic instead of GPT-4o, unless the user explicitly requests GPT-4o. Prompt Claude to review both architecture and completeness for the artifact type.
+- **Claude Code runtime:** use the existing GPT-4o reviewer path unless the user explicitly requests Claude/Anthropic.
+- **Code artifacts** (touches `app/`, `tests/`, `*.py`, `*.js`, `*.css`, `*.html`) → focus on separation of concerns, abstraction quality, API boundaries, schema/security risks, and project pattern consistency.
+- **Non-code artifacts** (skills, docs, AGENTS.md, CLAUDE.md, MEMORY.md, process specs) → focus on missing steps, contradictions, stale references, term consistency, and operational clarity.
 
 
 ## Workflow
@@ -72,7 +73,7 @@ This skill uses progressive disclosure. Load the phase file for the step you're 
    Step 1 (complexity gate — auto-tiering logic, file/schema thresholds, plan vs code routing) and Step 2 (generate the proposal to review). Always runs.
 
 2. **Critic dispatch + synthesis → load [`phases/critics-and-synthesis.md`](phases/critics-and-synthesis.md).**
-   Step 3 (parallel critic dispatch: DeepSeek / GPT-4o / Haiku Style, prompts per critic) and Step 4 (synthesize: anti-sycophancy protocol, classification). Always runs.
+   Step 3 (parallel critic dispatch: DeepSeek / second external critic / Haiku Style, prompts per critic) and Step 4 (synthesize: anti-sycophancy protocol, classification). Always runs.
 
 3. **Tier 3 extras + presentation → load [`phases/tier3-and-present.md`](phases/tier3-and-present.md).**
    Step 4.5 (Devil's Advocate challenge — Tier 3 only), Step 5 (present to user), Step 6 (auto-fix loop for PR review).
