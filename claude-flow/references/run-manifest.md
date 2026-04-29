@@ -40,6 +40,34 @@ Store the path in workflow state as `run_manifest_path`.
 - reviewer selection, budget, skipped reviewers, and redaction count
 - any empirical tool-behavior checks that overruled reviewer claims
 
+## Optional Trajectory Export
+
+Use `scripts/export_run_timeline.py` when you need to inspect or visualize a
+run as an ordered event stream instead of a nested manifest.
+
+```bash
+python3 <claude-flow-root>/scripts/export_run_timeline.py \
+  --manifest .claude/runs/<session-id>.json \
+  --output .claude/runs/<session-id>.timeline.jsonl
+```
+
+If `--output` is omitted, the script writes JSONL to stdout. The export is
+read-only and must not mutate the manifest or workflow state.
+
+Each line is a JSON object with:
+
+- `sequence`: monotonic event number in export order
+- `type`: `metadata`, `approval`, `verification_run`, `review_run`, or
+  `command`
+- `timestamp`: best available event timestamp, or `null`
+- `payload`: the original manifest fields relevant to that event
+
+Export order is deterministic: metadata first, then timestamped events in
+chronological order, with untimestamped events kept after timestamped events in
+their manifest order. This format is intentionally close to trajectory logs in
+recursive inference runtimes: a thin append-style stream that can feed a local
+viewer without teaching the viewer the full manifest schema.
+
 ## Rules
 
 - Append new approval records; do not overwrite earlier ones.

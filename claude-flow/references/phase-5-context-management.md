@@ -58,6 +58,47 @@ Drop:
 - old test output
 - already-completed step narration
 
+## Strategy 2.5: Compaction History Ledger
+
+When compaction happens during implementation, keep a structured ledger
+alongside the prose summary. The summary helps the next executor reorient;
+the ledger preserves exact facts that should not be paraphrased away.
+
+Record ledger entries for:
+
+- completed plan steps and their status
+- exact intermediate results: IDs, file paths, command exit codes, hashes,
+  generated names, failing assertions, and reviewer finding IDs
+- current file state: files modified, files intentionally left untouched, and
+  any user-owned changes observed in the worktree
+- decisions that affect future steps, with the rejected alternative when it
+  prevents re-litigation
+- unresolved blockers and the next concrete command or file read
+
+Use compact, machine-readable shapes where possible:
+
+```json
+{
+  "type": "phase5_compaction_ledger",
+  "completed_steps": [1, 2],
+  "current_step": 3,
+  "modified_files": ["scripts/export_run_timeline.py"],
+  "facts": [
+    {
+      "kind": "command",
+      "value": "pytest scripts/test_export_run_timeline.py -q",
+      "exit_code": 0
+    }
+  ],
+  "next_action": "Run workflow asset tests"
+}
+```
+
+Do not rely on memory of prior narration after compaction. Reconstruct from the
+ledger first, then use the prose summary for nuance. This mirrors recursive
+inference systems that compact the visible conversation while keeping a
+retrievable history object for exact intermediate values.
+
 ## Strategy 3: Contract-Scoped Subagent Context
 
 Phase 5 consumes:
