@@ -85,14 +85,34 @@ Before classifying findings, the Lead MUST:
 2. **Weight lone dissent heavily** — If all critics flag the same issue, that's signal. If only ONE critic flags it, give it EXTRA attention (not less) — lone dissent often catches what groupthink misses.
 3. **Challenge your own ADOPTs** — For each ADOPT decision, ask: "Would I still adopt this if no critic had flagged it?" If no, downgrade to DEFER.
 
+#### Judge Bias Guard
+
+When synthesizing critic findings, prioritize in this order:
+
+1. **Correctness and scope fit** — Does the finding identify a real behavioral,
+   architectural, usability, security, or operational risk within the stated
+   scope?
+2. **Actionability and evidence** — Does it name the concrete failure mode,
+   affected step/file, or user-visible consequence?
+3. **Elegance, minimality, cleanliness, and "gold-like" shape** — Use these
+   only as tiebreakers after the risk is established.
+
+Do NOT ADOPT a finding merely because it sounds like a polished review comment,
+prefers a cleaner abstraction, reflects a style preference, or resembles a
+canonical best-practice answer.
+Do NOT REJECT a valid finding merely because the proposed fix is verbose,
+redundant, less elegant, or messier than a gold answer. A messy complete fix
+beats a clean partial fix. A clean critique without an executable or
+user-relevant risk is REJECT or DEFER, not ADOPT.
+
 #### Classification
 
 Read all critic outputs. For EACH finding:
 
 | Decision | When |
 |----------|------|
-| **ADOPT** | Finding is valid, actionable, in-scope |
-| **REJECT** | False positive or already addressed |
+| **ADOPT** | Finding is valid, actionable, in-scope, and tied to concrete risk |
+| **REJECT** | False positive, already addressed, or only aesthetic/gold-like preference |
 | **DEFER** | Valid but needs user decision (trade-off, preference, or pre-existing fix that would significantly expand the PR) |
 
 Produce a **Changelog table**:

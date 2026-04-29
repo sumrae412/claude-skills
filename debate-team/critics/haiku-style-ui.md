@@ -37,6 +37,10 @@ Ignore backend logic, security, architecture. Focus exclusively on:
 6. FRAMEWORK MIGRATION: If removing Bootstrap/Tailwind utilities,
    are ALL implicit styles replaced with explicit declarations?
 
+Bias guardrail: Style findings still need a user-facing or design-system
+reason. Tie every issue to usability, consistency, accessibility, responsive
+behavior, cascade safety, or explicit design-token rules.
+
 OUTPUT FORMAT:
 Markdown table: | UI Issue | Severity (Critical/High/Medium) | File:Line | Fix |
 
@@ -65,6 +69,10 @@ Ignore backend logic, security, architecture. Focus exclusively on:
    semantic HTML (h1-h6 hierarchy)?
 6. FRAMEWORK MIGRATION: If removing Bootstrap/Tailwind utilities,
    are ALL implicit styles replaced with explicit declarations?
+
+Bias guardrail: Style findings still need a user-facing or design-system
+reason. Tie every issue to usability, consistency, accessibility, responsive
+behavior, cascade safety, or explicit design-token rules.
 
 OUTPUT FORMAT:
 Markdown table: | UI Issue | Severity (Critical/High/Medium) | File:Line | Fix |

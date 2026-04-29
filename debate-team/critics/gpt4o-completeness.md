@@ -32,6 +32,12 @@ Ignore code architecture, performance, and security (other reviewers handle thos
 5. SCOPE ADHERENCE: Flag any recommendations that would expand beyond the
    defined scope (IN_SCOPE or OUT_OF_SCOPE).
 
+Bias guardrail: Do not prefer an artifact merely because it is shorter,
+cleaner, more polished, or more canonical. Completeness and consistency are
+about whether the reader can execute the process correctly. Only flag
+verbosity, redundancy, or structure when it creates concrete reader confusion,
+maintenance risk, contradiction, stale guidance, or scope creep.
+
 OUTPUT FORMAT:
 Markdown table: | Issue | Category (Completeness/Consistency/Contradiction/Staleness/Scope) | Severity (Critical/Important/Suggestion) | Specific Recommendation |
 Do NOT rewrite the artifact. Provide intelligence for the Lead reviewer.
