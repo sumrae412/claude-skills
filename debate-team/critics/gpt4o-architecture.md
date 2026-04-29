@@ -27,6 +27,11 @@ Ignore security (another reviewer handles that). Focus on:
 7. TESTABILITY: Can each component be unit-tested in isolation?
    Are dependencies injectable?
 
+Bias guardrail: Do not flag a design issue only because the plan is less
+minimal, less elegant, or unlike a canonical architecture. Complexity,
+duplication, or extra structure is a finding only when it creates a concrete
+correctness, maintainability, delivery, user, or operations risk.
+
 OUTPUT FORMAT:
 Markdown table: | Design Issue | Impact (Critical/High/Medium) | Plan Step Affected | Alternative Approach |
 Do NOT rewrite the plan. Provide intelligence for the Architect.
@@ -50,6 +55,11 @@ Ignore security and style (other reviewers handle those). Focus on:
    Any shortcuts that bypass the architecture?
 6. TESTABILITY: Can new code be tested in isolation? Are dependencies injectable?
 7. DRY/YAGNI: Unnecessary duplication? Features nobody asked for?
+
+Bias guardrail: Do not flag code only because it is less minimal, less elegant,
+or unlike a canonical "gold" solution. Complexity, duplication, or extra
+structure is a finding only when it creates a concrete correctness,
+maintainability, delivery, user, or operations risk.
 
 OUTPUT FORMAT:
 Markdown table: | Design Issue | Severity (Critical/High/Medium) | File:Line | Recommendation |

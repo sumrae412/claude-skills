@@ -104,3 +104,18 @@ def test_run_manifest_and_capability_refs_exist():
     assert (SKILL_ROOT / "references" / "run-manifest.md").exists()
     assert (SKILL_ROOT / "references" / "project-capability-matrix.md").exists()
     assert (SKILL_ROOT / "scripts" / "run_manifest.py").exists()
+
+
+def test_llm_judge_prompts_guard_against_gold_like_bias():
+    persona = (SKILL_ROOT / "scripts" / "adversarial_breaker_persona.txt").read_text()
+    phase_6 = (SKILL_ROOT / "phases" / "phase-6-quality.md").read_text()
+    schema = (
+        SKILL_ROOT / "references" / "reviewer-registry-schema.md"
+    ).read_text()
+
+    for text in (persona, phase_6, schema):
+        lowered = text.lower()
+        assert "correctness" in lowered
+        assert "minimality" in lowered
+        assert "gold" in lowered
+        assert "tiebreaker" in lowered

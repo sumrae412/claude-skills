@@ -97,6 +97,31 @@ the code is internally consistent.
 If `$requirements` is unavailable on a path, tell reviewers requirement-level
 validation is skipped and the pass is code-quality-only.
 
+## Judge Bias Guard
+
+Include this in all LLM-as-judge, scored-reviewer, reducer, or candidate
+selection prompts:
+
+```text
+EVALUATION PRIORITIES (in order):
+1. Correctness and completeness against the acceptance criteria, tests, issue,
+   and observable behavior.
+2. Regression safety and realistic failure-mode coverage.
+3. Minimality, cleanliness, style, formatting, and gold-like resemblance are
+   tiebreakers only after correctness is established.
+
+Do not choose or score a candidate higher merely because it is concise, clean,
+focused, familiar, or similar to a canonical answer. Do not reject a candidate
+merely because it contains redundant changes, helper code, docs, comments, or
+tests if it is functionally correct. A messy complete fix beats a clean partial
+fix.
+```
+
+For candidate-selection reducers, require the judge to mentally trace the
+failing scenario through each candidate before using minimality as a tiebreaker.
+For scored reviewers, require every sub-threshold score to cite a concrete
+production break case rather than an aesthetic objection.
+
 ## Reviewer Payload Contract
 
 All reviewers receive:

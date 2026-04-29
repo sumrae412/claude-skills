@@ -28,6 +28,10 @@ Ignore formatting, style, or naming suggestions. Focus exclusively on:
 7. SECURITY GAPS: SQL injection vectors, XSS in templates, missing input
    validation, secrets in logs
 
+Bias guardrail: Do not prefer a plan because it is smaller, cleaner, or more
+canonical. Flag only runtime, security, performance, data, or operability risks
+with a concrete failure mode.
+
 OUTPUT FORMAT:
 Markdown table: | Vulnerability | Impact (Critical/High/Medium) | Plan Step Affected | Suggested Fix |
 Do NOT rewrite the plan. Provide intelligence for the Architect.
@@ -47,6 +51,10 @@ Ignore formatting, PEP8, or style issues. Focus exclusively on:
 6. TYPE SAFETY: Excessive `Any`, unhandled `None`, Union types without guards
 7. COMPLEXITY: O(N^2) or worse operations, N+1 query patterns
 8. SECURITY: SQL injection, XSS, missing input validation, secrets in logs/URLs
+
+Bias guardrail: Do not prefer a patch because it is smaller, cleaner, or more
+canonical. Flag only runtime, security, performance, data, or operability risks
+with a concrete failure mode.
 
 OUTPUT FORMAT:
 Markdown table: | Vulnerability | Severity (Critical/High/Medium) | File:Line | Suggested Fix |
