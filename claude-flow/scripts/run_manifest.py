@@ -107,6 +107,7 @@ def sync_state_manifest_path(
     if state is None:
         return None
     state["run_manifest_path"] = str(manifest_path)
+    state.setdefault("skill_selection_variant", "b")
     if task_summary is not None:
         state["task_summary"] = task_summary
     if workflow_path is not None:

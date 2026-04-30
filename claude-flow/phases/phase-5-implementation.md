@@ -124,6 +124,34 @@ Downgraded from Opus to Sonnet 2026-04-24 after a 15-trial dual-judge eval showe
 **When to call:** non-obvious integration patterns, conflicting precedents, step diverging from plan in ways affecting later steps.
 **When NOT to call:** routine implementation, standard TDD cycles with clear requirements, unambiguous plan steps.
 
+### Subagent Skill Loading
+
+When a Phase 5 subagent dispatch could plausibly use ≥2 domain skills (UI / API / data / integrations / security), check `skill_selection_variant` in workflow-state. Default is `"b"` (shipped 2026-04-29 — see [decision record](../../docs/decisions/2026-04-29-ship-forced-selection-phase5.md)).
+
+- **Variant B (forced selection — DEFAULT):** Prepend the following block to the subagent prompt:
+
+  ```
+  Before any tool calls, output exactly one line:
+  SELECTED_SKILL: <name|none>
+
+  Available skills (pick one):
+  - courierflow-ui — Frontend code: Jinja templates, CSS, Alpine.js, React components, workflow builder pages, dashboards, layouts
+  - courierflow-api — Backend route and service code: FastAPI routes, service layer, business logic, request handlers
+  - courierflow-data — Database layer: SQLAlchemy ORM models, Alembic migrations, schema design, eager-loading, Household/HouseholdMember domain
+  - courierflow-integrations — External services: Google Calendar, Twilio SMS, OpenAI, DocuSeal, Gmail, onboarding wizard
+  - courierflow-security — Auth, registration, login, secrets, permissions, session handling, landlord/tenant access
+
+  Pick "none" only if the task is fully solvable with built-in tools.
+  After your SELECTED_SKILL line, the orchestrator will inject that skill's
+  full content (or none). One commit per dispatch — no mid-task switching.
+  ```
+
+  After the subagent emits `SELECTED_SKILL:`, the orchestrator parses the line, injects the chosen SKILL.md, and the subagent resumes. Log the selection + ground-truth gold via `scripts/log_skill_selection.py`.
+
+- **Variant A (opt-out / progressive disclosure):** Pre-2026-04-29 behavior — list available skills as "you may invoke if useful." Use only for re-running the A/B experiment (set `skill_selection_variant: "a"` in workflow-state). Do not use for production work.
+
+Variant B's curated 5-skill menu is hand-selected to be domain-coherent. Per the [scale experiment](../../docs/plans/2026-04-29-skill-selection-at-scale.md), retrieving from a broader corpus (BM25 / rerank) under-performed this curated menu. Do not replace the menu with retrieval without re-running the experiment.
+
 ### Parallel Subagent Dispatch (For Independent Steps)
 
 When the plan has 3+ steps with no dependencies between them:

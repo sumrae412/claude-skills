@@ -71,4 +71,6 @@ High-risk work defaults to the full path even when the diff is small.
    - `review_base_sha`
    - `run_manifest_path`
    - the Phase 0 capability snapshot
+   - `skill_selection_variant: "b"` (default; controls Phase 5 subagent
+     skill-loading prompt — see workflow-state-lifecycle.md §"`skill_selection_variant` field")
 3. Transition using the canonical map in `../workflow-profiles.json`.

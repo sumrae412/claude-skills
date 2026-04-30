@@ -15,6 +15,14 @@ Apply `token-economy` whenever this skill would otherwise trigger broad explorat
 - Batch independent tool calls and keep narration/results tight.
 - If the task is tiny or the file set is already known, apply the relevant patterns inline instead of loading extra material.
 
+## Phase 5 Subagent Skill Selection
+
+Phase 5 dispatches use **forced single-skill selection** (variant B) by default — set in `run_manifest.py:sync_state_manifest_path` via `state.setdefault("skill_selection_variant", "b")`. Backed by a 60-trial A/B + scale experiment (curated 5-skill menu beat BM25/rerank over 205 skills). See `docs/decisions/2026-04-29-ship-forced-selection-phase5.md` for the decision record and `docs/plans/2026-04-29-skill-selection-*.md` for the experiments. Override with `skill_selection_variant: "a"` only to re-run the A/B.
+
+## Auto-mode discipline
+
+When auto mode is active and the user has approved a plan, do not ask permission for each routine sub-step (commits between approval gates, picking which row to swap, choosing one of two equivalent paths). The user's "yes" is durable until the next gate. If the user says "you select one," make the call and ship — presenting options instead of acting wastes a turn.
+
 
 Agentic multi-phase workflow for building features. **Executor/Advisor strategy:** Sonnet executor runs the main loop (exploring, drafting, implementing). Opus advisor fires on-demand at 3-5 decision points. Project-agnostic — works for any codebase or greenfield project.
 

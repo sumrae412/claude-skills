@@ -49,6 +49,46 @@ def test_init_manifest_creates_file_and_syncs_state(tmp_path: Path):
     assert state["capability_matrix"]["test_command"] == "pytest -q"
 
 
+def test_init_manifest_sets_skill_selection_variant_default_to_b(tmp_path: Path):
+    """Fresh state files default skill_selection_variant to 'b' (shipped 2026-04-29)."""
+    manifest_path = tmp_path / ".claude" / "runs" / "session.json"
+    state_path = tmp_path / ".claude" / "workflow-state.json"
+    _write_state(state_path)
+
+    init_manifest(
+        manifest_path=manifest_path,
+        workflow_path="full",
+        state_path=state_path,
+    )
+    state = json.loads(state_path.read_text())
+    assert state["skill_selection_variant"] == "b"
+
+
+def test_init_manifest_preserves_explicit_variant_a(tmp_path: Path):
+    """Explicit skill_selection_variant='a' is preserved across init (experiment reproducibility)."""
+    manifest_path = tmp_path / ".claude" / "runs" / "session.json"
+    state_path = tmp_path / ".claude" / "workflow-state.json"
+    state_path.parent.mkdir(parents=True, exist_ok=True)
+    state_path.write_text(
+        json.dumps(
+            {
+                "approvals": {},
+                "current_phase": {"path": None},
+                "capability_matrix": {},
+                "skill_selection_variant": "a",
+            }
+        )
+    )
+
+    init_manifest(
+        manifest_path=manifest_path,
+        workflow_path="full",
+        state_path=state_path,
+    )
+    state = json.loads(state_path.read_text())
+    assert state["skill_selection_variant"] == "a"
+
+
 def test_record_approval_appends_hash_and_syncs_state(tmp_path: Path):
     manifest_path = tmp_path / "run.json"
     state_path = tmp_path / "workflow-state.json"
