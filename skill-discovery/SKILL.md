@@ -53,3 +53,7 @@ Return one of:
 - **Match** — skill name + one-line reason + how to invoke (`Skill` tool or slash command)
 - **Candidate** — external skill + provenance + proposed install command (await user OK)
 - **No match** — confirm all three passes ran, suggest closest adjacent skills, offer to build one via `superpowers:writing-skills`
+
+## Scaling notes
+
+For small-to-medium curated skill menus (≤ ~50 skills), forced single-skill selection over a hand-curated menu beats BM25 retrieval and BM25+rerank — validated on the 2026-04-29 claude-flow Phase 5 experiment (variant B beat B-150, C1, C3 across 60 trials over a 205-skill corpus). Description hygiene was the dominant retrieval lever (5 edits moved BM25 recall@1 25% → 87.5%). See `claude-flow/docs/plans/2026-04-29-skill-selection-at-scale.md`.
