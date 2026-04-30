@@ -6,6 +6,12 @@
 
 ---
 
+## Streaming watches (Monitor tool)
+
+For long-running tests, dev-server tails, or worker logs during implementation, use `Monitor` instead of polling via Bash. Each stdout line streams as a notification while the executor keeps drafting. Filter must include failure signatures (`ERROR|Traceback|FAILED|Killed|OOM`), not just success markers — silence is not success. See `references/monitor-tool-patterns.md` §Phase 5 for recipes (test loops, dev-server tails, worker watches) and decision rules vs. `Bash run_in_background`.
+
+---
+
 ## Context Management
 
 Load `references/phase-5-context-management.md` only when:

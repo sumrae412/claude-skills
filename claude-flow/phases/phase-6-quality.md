@@ -209,6 +209,10 @@ python3 <claude-flow-root>/scripts/run_manifest.py record-command \
 
 Optional: if CI exists, run a headless smoke check before finishing.
 
+### Streaming watches (Monitor tool)
+
+For PR check progression, post-deploy soak, and CodeRabbit review polling, use `Monitor` instead of polling via Bash. Each terminal-state event streams as a notification while finishing tasks proceed in parallel. PR check loop must emit on every terminal state (`success|failure|cancelled|timed_out`), not just success — silence ≠ pass. See `references/monitor-tool-patterns.md` §Phase 6 for the canonical PR-checks loop and post-deploy log-tail recipes.
+
 ## Finish Branch
 
 Invoke `/cleanup`:
