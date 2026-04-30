@@ -1,6 +1,6 @@
 ---
 name: defensive-backend-flows
-description: Use when writing or reviewing Python backend code that involves error handling, data migrations, service-layer functions, cross-module API calls, or constant definitions
+description: Defensive patterns for Python backend code — typed exceptions over bare except, idempotent migrations with reversible down(), service-layer boundary validation, retry-with-backoff for cross-module API calls, and centralized constants over magic strings. Use when writing or reviewing Python backend code involving error handling, data migrations, service-layer functions, cross-module API calls, or constant definitions. Triggers "review this Python", "is this safe", "error handling", "migration safety", "service-layer review", or any backend Python diff. NOT for frontend/UI patterns (use defensive-ui-flows) or general style (use coding-best-practices).
 license: MIT
 metadata:
   author: summerela

@@ -179,6 +179,17 @@ This is non-negotiable.
 
 ---
 
+## Out of Scope
+
+This skill does NOT:
+- Diagnose or fix the failures verification surfaces—use `bug-fix` or `investigator`.
+- Run pre-ship security/database/deployment audits—use `production-readiness-check`.
+- Execute the commit/push/PR/merge pipeline—use `shipping-workflow`.
+- Write or design the regression test itself—use `superpowers:test-driven-development`.
+- Replace human review of subjective or design correctness—evidence here means runtime behavior, not aesthetics.
+
+---
+
 ## Next Steps
 
 - **All checks pass?** Use `/ship` to commit, push, create PR, run review, and merge to main.

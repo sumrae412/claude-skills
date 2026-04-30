@@ -1,6 +1,6 @@
 ---
 name: smart-exploration
-description: Task-typed codebase exploration. Classifies the task and returns tuned subagent prompts instead of generic ones. Use when exploring a codebase before implementation — standalone or from any workflow.
+description: Task-typed codebase exploration — classifies a task into one of 9 categories (endpoint, ui, data, integration, refactor, bugfix, config, exploration, general) and returns tuned subagent dispatch prompts instead of generic "go look around the codebase" prompts. Use when exploring before implementation, dispatching parallel explorer subagents, or before writing a plan. Triggers: "explore the codebase", "where does X live", "before I plan this". Also called by `claude-flow` Phase 2 and `research`. Returns prompt templates ready to paste into Agent dispatch. NOT for actually running the exploration (use research or dispatch the returned prompts via Agent tool) or single-file lookups (grep/Read).
 user-invocable: false
 ---
 
@@ -143,6 +143,15 @@ Always fill these in from the user's request before dispatching. If the request 
 See `prompt-library.md` in this skill directory for the complete set of subagent dispatch prompts organized by category.
 
 ---
+
+## Out of Scope
+
+This skill does NOT:
+- Actually run the exploration—returns prompt templates; dispatch via Agent tool or use `research`.
+- Write the implementation plan after exploration finishes—use `writing-plans`.
+- Execute a written plan—use `executing-plans` or `claude-flow`.
+- Curate which always-loaded files/docs the agent should see—use `context-engineering`.
+- Look up a single known file or symbol—use Grep/Read directly.
 
 ## Fallback Behavior
 

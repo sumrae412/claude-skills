@@ -90,3 +90,12 @@ Produce only the deliverable the user needs:
   management-review evidence.
 - Call out unowned assets, untreated high risks, and missing metrics.
 - Prefer concrete evidence over policy-on-paper claims.
+
+## Out of Scope
+
+This skill does NOT:
+- Cover SOC 2 Trust Service Criteria or audit-evidence collection—use `soc2-compliance`.
+- Cover GDPR/DSGVO data-subject rights or DPIAs—use `gdpr-dsgvo-expert`.
+- Provide FDA medical-device regulatory pathway guidance—use `fda-consultant-specialist`.
+- Audit application source code for OWASP/injection vulnerabilities—use `review-pr` or `production-readiness-check`.
+- Run actual external certification audits—engage an accredited certification body.

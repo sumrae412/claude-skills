@@ -1,6 +1,6 @@
 ---
 name: debate-team
-description: Unified review skill with auto-tiering — absorbs PlanCraft. Tier 1 (DeepSeek scope check), Tier 2 (DeepSeek + GPT-4o dual critic), Tier 3 (full tri-model debate with Sonnet Generator + Opus Lead). Conditional Haiku Style critic for frontend.
+description: Cross-model adversarial review for plans and code with auto-tiering. Tier 1 (DeepSeek scope check, ~10x cheaper), Tier 2 (DeepSeek + GPT-4o dual critic), Tier 3 (full tri-model debate with Sonnet Generator + Opus Lead). Conditional Haiku Style critic for frontend. Use when reviewing plans or architecture decisions ("debate this", "review this plan", "second opinion", "is this approach right"), or for code reviews touching 3+ files / schema / security. Plans always get Tier 3. Also called by claude-flow Phase 3 (plan review) and Phase 6 (pre-merge review). Supports `--lite` and `--tier N` flags. NOT for brainstorming (stays interactive), TDD inner loop (own feedback), or single-file PR reviews (use review-pr).
 ---
 
 # Unified Review — Debate Team

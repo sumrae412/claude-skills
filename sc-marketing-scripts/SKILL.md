@@ -38,6 +38,15 @@ This skill uses progressive disclosure. Load the reference file for the task you
 
 ---
 
+## Out of Scope
+
+This skill does NOT:
+- Record, narrate, or produce the actual video—use `automated-screencast-director`.
+- QC a recorded screencast for stumbles, dead air, or AV mismatches—use `video-edit`.
+- Author general marketing copy outside DeepLearning.AI course materials—out of domain; ask the user.
+- Design slides or visual layout for the talking-head video—use `anthropic-skills:pptx` or `anthropic-skills:canvas-design`.
+- Generate course curriculum or lesson plans—scripts only; pair with course design work elsewhere.
+
 ## After Every Session
 
 At the end of any session where this skill was used, always run the session learnings skill to capture new patterns, fixes, and examples discovered during the session. Update this skill's SKILL.md and repackage it before closing.

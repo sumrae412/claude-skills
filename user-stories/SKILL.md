@@ -1,6 +1,6 @@
 ---
 name: user-stories
-description: Generate Playwright-testable user stories by crawling a web app's routes, templates, and models. Pairs with `playwright-test` for execution.
+description: Generate Playwright-testable user stories by crawling a web app's routes, templates, and models — produces structured "As a / I want / So that" stories with explicit acceptance criteria, target URLs, and form fields ready for E2E execution. Use when user says "generate user stories", "/user-stories", "what should we test", "create acceptance criteria", or before running `playwright-test`. Reads Flask/Django/Express/Next.js routes, Jinja/JSX templates, and ORM models. NOT for executing tests (use playwright-test) or PRD/spec authoring (use writing-plans).
 ---
 
 # User Story Generator - Test-Ready Stories from Codebase Analysis
@@ -80,6 +80,15 @@ Save to: `tests/e2e/[feature-name].spec.ts`
 
 ### Test Plan
 Save to: `docs/test-plans/[feature-name]-test-plan.md`
+
+## Out of Scope
+
+This skill does NOT:
+- Execute user stories as live browser tests—use `playwright-test` (which consumes this skill's output).
+- Run exploratory functional testing without acceptance criteria—use `website-tester`.
+- Author PRDs, design specs, or implementation plans—use `writing-plans`.
+- Write unit or integration tests—use the project's test runner.
+- Audit the rendered UI's visual quality—use `design-audit`.
 
 ## Example Session
 

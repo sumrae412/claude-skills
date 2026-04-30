@@ -1,6 +1,6 @@
 ---
 name: github-search
-description: Search GitHub code, repositories, issues, and PRs via gh CLI
+description: Search GitHub code, repositories, issues, and PRs via the `gh` CLI — finds prior art, related discussions, and existing implementations across public and authenticated repos. Use when the user says "search GitHub for", "find a repo that does X", "has anyone built", "is there an issue about", "find prior PRs", or when researching how other projects solved a similar problem before reinventing it. Returns ranked results with repo, file path, line, and link. NOT for searching the local repo (use grep/Read) or general web search (use WebSearch).
 allowed-tools:
   - Bash
   - Read
@@ -51,6 +51,15 @@ gh search issues "bug label:critical" --owner "anthropics"
 # Search pull requests in a repo
 gh search prs "is:open review:required" --repo "cli/cli"
 ```
+
+## Out of Scope
+
+This skill does NOT:
+- Search the local repo or working tree—use Grep/Read directly.
+- Search the open web for articles, docs, or blog posts—use `web-search-quality` with WebSearch.
+- Fetch and verify external API/library documentation—use `fetch-api-docs`.
+- Open, review, or merge pull requests—use `review-pr` or `shipping-workflow`.
+- Discover available Claude skills across registries—use `skill-discovery`.
 
 ## Requirements
 

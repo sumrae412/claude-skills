@@ -1,6 +1,6 @@
 ---
 name: fetch-api-docs
-description: Fetch API docs before coding
+description: Fetch curated, accurate external API/SDK documentation via Context Hub (`chub`) before writing integration code — prevents hallucinated method signatures and import paths. Use BEFORE coding against Stripe, AWS, Anthropic, OpenAI, Auth0, Clerk, Cloudflare, ChromaDB, or any third-party SDK. Triggers: "integrate with", "use the X API", "wire up X", "add X SDK", "before I code this", or any new external-service integration. Also called by claude-flow Phase 3 (Plan) when external services are referenced. NOT for internal repo APIs (use Read/grep) or general web research (use research skill or WebSearch).
 ---
 
 # Fetch API Documentation
@@ -76,6 +76,14 @@ chub feedback <doc-id> down  # If it was problematic
 | `chub annotate --list` | View all your annotations |
 | `chub feedback <id> up/down` | Rate a doc |
 | `chub update` | Refresh the registry cache |
+
+## Out of Scope
+
+This skill does NOT:
+- Document internal repo APIs — use Read/grep on the codebase.
+- Replace general web research — use `research` or WebSearch for non-API context.
+- Modify code — fetches docs only; the caller writes the integration.
+- Cover services without `chub` registry entries — `chub search` first; if empty, fall back to WebFetch on the official docs URL.
 
 ## Available Docs (Sample)
 

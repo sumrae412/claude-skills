@@ -92,3 +92,12 @@ Produce only what the user needs:
 - Distinguish designed controls from operating controls.
 - Call out missing vendor governance and observation-window gaps
   explicitly.
+
+## Out of Scope
+
+This skill does NOT:
+- Run ISO 27001 ISMS scoping or risk assessment—use `information-security-manager-iso27001`.
+- Cover GDPR/DSGVO data-subject rights or DPIAs—use `gdpr-dsgvo-expert`.
+- Provide FDA medical-device pathway guidance—use `fda-consultant-specialist`.
+- Replace an external CPA auditor—planning support only; engage a licensed audit firm for the attestation.
+- Audit application source code for vulnerabilities—use `review-pr` or `production-readiness-check`.

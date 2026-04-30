@@ -104,6 +104,15 @@ If the content doesn't mention something, don't hallucinate that it does. If you
 
 ---
 
+## Out of Scope
+
+This skill does NOT:
+- Apply the approved Pull items itself—hands off to `superpowers:writing-skills`, `claude-md-management:claude-md-improver`, or `anthropic-skills:skill-creator`.
+- Review pasted content without a named target—ask the user for the target first.
+- Summarize content or do general analysis—triage only against a specific target.
+- Audit pasted code for bugs or quality—use `review-pr` or `bug-fix`.
+- Search the source repo/article for additional context not in the paste—use `github-search`, `fetch-api-docs`, or `web-search-quality`.
+
 ## Handoff
 
 When the user approves a Pull item, the next step is usually one of:

@@ -198,3 +198,15 @@ Contracts are the interface between phases. When dispatching subagents, pass the
 | Running 10-step plans without context breaks | Fresh context for subagents at 5+ steps |
 | Carrying stale session context across unrelated tasks | `/clear` at task boundaries — auto-compaction only fires at ~80%; a small new task on top of a large done one pays for irrelevant history on every turn |
 | Running silent-failure-hunter and security-reviewer separately | Use merged `safety-reviewer` (Tier 2) — they're consolidated |
+
+---
+
+## Out of Scope
+
+This skill does NOT:
+- Fix isolated bugs or regressions — use `bug-fix` (Reproduce → Diagnose → Fix → Verify) instead.
+- Run interactive brainstorming — use `superpowers:brainstorming` first when requirements are fuzzy.
+- Review existing PRs from GitHub — use `review-pr` or `/ultrareview <PR#>`.
+- Ship/merge code — Phase 6B hands off to `shipping-workflow` or `cleanup`.
+- Document dead ends — use `session-handoff --abandon`.
+- Replace TDD discipline — Phase 5 still requires test-first per `test-driven-development`.

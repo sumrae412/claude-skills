@@ -1,6 +1,6 @@
 ---
 name: lint-memory
-description: Run health checks on project memory files — broken links, orphan memories, stale entries, contradictions, oversized index lines
+description: Health check for project memory files in `~/.claude/projects/.../memory/` — finds broken links from MEMORY.md, orphan memory files not indexed, stale entries (dates passed, fixed bugs), contradictions between memories, oversized index lines (>150 chars), and duplicate topics. Use when user says "lint memory", "check my memory", "audit memory files", "/lint-memory", or after a long stretch of memory writes. Reports issues with file path + line and proposes specific edits. NOT for writing new memories (auto-memory in system prompt) or merging (use anthropic-skills:consolidate-memory).
 user-invocable: true
 ---
 
@@ -78,3 +78,12 @@ Include errors, warnings, auto-fixes applied, and clean yes/no summary.
 - Do not auto-fix stale references or contradictions.
 - Keep quick lint mechanical; avoid expensive grep or LLM judgment unless
   full mode explicitly calls for it.
+
+## Out of Scope
+
+This skill does NOT:
+- Write or generate new memory entries—auto-memory in the system prompt handles capture.
+- Merge duplicate memories or restructure the index—use `anthropic-skills:consolidate-memory`.
+- Audit hook configuration or check that hooks fire—use `hook-doctor`.
+- Update `CLAUDE.md` content quality—use `claude-md-management:claude-md-improver`.
+- Commit changes to memory files—report proposed fixes and let the user commit.

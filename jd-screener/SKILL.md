@@ -162,6 +162,15 @@ Invoke `/resume-tailor` on the first `jd.md`. Wait for that session to complete 
 
 ---
 
+## Out of Scope
+
+This skill does NOT:
+- Draft, tailor, or rewrite resumes/cover letters—hands off to `resume-tailor` one approved JD at a time.
+- Submit applications, send messages, or fill application forms on the user's behalf—the user applies manually.
+- Provide career direction, salary negotiation strategy, or legal advice on visas/non-competes—engage a licensed coach or employment attorney.
+- Build or update the candidate's canonical profile from scratch—ask the user to confirm or paste a current resume first.
+- Re-tailor companies that already have outputs in `~/Documents/resumes/<Company>/` without surfacing the collision—flag and ask first.
+
 ## Professional Help Boundary
 
 This skill helps triage job postings. It does **not** replace professional help for:

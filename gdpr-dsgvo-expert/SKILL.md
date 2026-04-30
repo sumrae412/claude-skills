@@ -91,3 +91,12 @@ Produce only what the user needs:
 - Call out missing legal basis, retention rules, or deletion paths
   explicitly.
 - Treat special-category data and employee data as elevated-risk areas.
+
+## Out of Scope
+
+This skill does NOT:
+- Provide binding legal advice or replace a Data Protection Officer—ask the user to engage qualified counsel.
+- Cover SOC 2 Trust Service Criteria or audit-evidence collection—use `soc2-compliance`.
+- Run ISO 27001 ISMS design or security risk assessment—use `information-security-manager-iso27001`.
+- Cover FDA/HIPAA medical-device privacy specifics—use `fda-consultant-specialist`.
+- File submissions with supervisory authorities or respond to data-subject requests on the user's behalf—the user must act.

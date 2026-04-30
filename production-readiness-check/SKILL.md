@@ -51,6 +51,15 @@ This skill uses progressive disclosure. Load the reference file for the phase yo
 3. **Generate IaC remediation snippets → load [`references/iac-templates.md`](references/iac-templates.md) only when needed.**
    Terraform stubs for AWS Cognito MFA, RDS encryption-at-rest, S3 encryption, automated backups, CloudWatch anomaly detection; markdown stubs for Incident Response Plans and Security Audit Schedules. Skip this file when no findings need scaffolded remediation.
 
+## Out of Scope
+
+This skill does NOT:
+- Perform code-level OWASP/injection/XSS review—use `review-pr` or `security-review`.
+- Run the actual ship pipeline (commit/push/PR/merge)—use `shipping-workflow`.
+- Apply the recommended fixes—advisory only; user decides and remediates via `bug-fix` or `claude-flow`.
+- Plan zero-downtime database/service migrations—use `migration-architect`.
+- Audit third-party dependencies for CVEs/license risk—use `dependency-auditor`.
+
 ## Next Steps
 
 - **Critical findings?** Fix them before shipping — each finding includes a specific remediation action.

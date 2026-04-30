@@ -79,3 +79,12 @@ Produce only what the current phase needs:
 - no hedging without logical need
 - no invented numbers presented as facts
 - no flattering validation when the analysis points to no-go
+
+## Out of Scope
+
+This skill does NOT:
+- Run the heavy 12-stage Kawasaki workshop or build a Marp pitch deck—use `startup-planner`.
+- Provide legal, financial, or accounting advice—engage qualified professionals.
+- Build the actual MVP, prototype, or codebase—use `claude-flow` or `executing-plans` after Go decision.
+- Validate market assumptions with real customer interviews—the user must run live customer discovery.
+- Author marketing scripts or pitch deck slides—use `sc-marketing-scripts` or `anthropic-skills:pptx`.

@@ -97,3 +97,12 @@ Produce only what the user needs:
 - Call out evidence gaps, missing design controls, and untested response
   plans explicitly.
 - Keep regulatory guidance framed as planning support, not legal advice.
+
+## Out of Scope
+
+This skill does NOT:
+- Provide legal advice or substitute for an FDA regulatory attorney—ask the user to engage counsel for binding guidance.
+- Cover GDPR/DSGVO data-protection obligations—use `gdpr-dsgvo-expert`.
+- Run ISO 27001 ISMS or general cybersecurity governance—use `information-security-manager-iso27001`.
+- Prepare SOC 2 audits or Trust Service Criteria mapping—use `soc2-compliance`.
+- Submit filings to FDA or interact with the eSubmitter portal—the user must execute submissions themselves.

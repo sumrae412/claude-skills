@@ -47,6 +47,15 @@ Use [references/matching.md](references/matching.md) for intent-→-skill heuris
 
 **All of these mean: restart at step 1.**
 
+## Out of Scope
+
+This skill does NOT:
+- Audit a candidate skill for malicious code or prompt injection before install—use `skill-security-auditor`.
+- Author or edit skill content—use `superpowers:writing-skills` or `anthropic-skills:skill-creator`.
+- Install skills automatically—surface candidates and wait for user confirmation.
+- Diagnose why a skill isn't firing at the trigger level (hooks, settings)—use `hook-doctor` or `update-config`.
+- Search GitHub code or repos generically—use `github-search`.
+
 ## Output Shape
 
 Return one of:

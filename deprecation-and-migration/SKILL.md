@@ -203,6 +203,15 @@ Zombie code is code that nobody owns but everybody depends on. Signs:
 | "We'll deprecate it after the new system is done" | Deprecation planning starts at design time. Plan now. |
 | "Users will migrate on their own" | They won't. Provide tooling, docs, and incentives — or do it yourself (Churn Rule). |
 
+## Out of Scope
+
+This skill does NOT:
+- Plan zero-downtime database/service cutover patterns or write rollback runbooks—use `migration-architect`.
+- Generate Alembic migration files for schema changes—use `new-migration`.
+- Execute the migration code edits across consumers—use `executing-plans` or `claude-flow`.
+- Audit deprecated dependencies for CVEs/license risk—use `dependency-auditor`.
+- Decide which legacy skills/files are dead—pair with `lint-memory` for memory hygiene or `cleanup` for branch teardown.
+
 ## Verification
 
 After completing a deprecation:

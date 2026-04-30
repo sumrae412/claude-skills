@@ -76,6 +76,15 @@ Fix issues in the JSON → re-render → repeat until clean. Typically 2-4 itera
 cd references && uv sync && uv run playwright install chromium
 ```
 
+## Out of Scope
+
+This skill does NOT:
+- Generate raster images, illustrations, or photographs—use `image-generation`.
+- Produce editable round-trip mockups of UI layouts paired with code—use `excalidraw-canvas`.
+- Author UI/UX design plans or component audits—use `design-audit`.
+- Render slide decks or presentation graphics—use `anthropic-skills:pptx` or `anthropic-skills:canvas-design`.
+- Build a system architecture by exploring the codebase—use `smart-exploration` first, then diagram the result here.
+
 ## Quality Checklist
 
 - [ ] Isomorphism: visual structure mirrors conceptual structure

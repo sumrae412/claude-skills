@@ -1,6 +1,6 @@
 ---
 name: new-migration
-description: Create and validate Alembic database migrations with safety checks
+description: Create and validate Alembic database migrations with built-in safety checks — autogenerates revision, validates schema against models, runs upgrade then downgrade roundtrip, and flags destructive operations (DROP, NOT NULL on existing rows, type narrowing). Use when user says "create a migration", "new alembic migration", "/new-migration", "add a column to X table", or after editing SQLAlchemy models. Triggers also include "schema change", "DB migration", "alembic revision". NOT for raw SQL migrations (use `migration-architect` for zero-downtime planning) or non-Alembic frameworks (Django, Prisma, Drizzle have their own tooling).
 user-invocable: true
 license: MIT
 metadata:
@@ -182,3 +182,12 @@ Reference: `alembic/versions/20260424_014459_unify_workflow_template_category.py
 - Always create a backup or test on a branch database before running destructive migrations
 - Never add NOT NULL columns without a server_default on tables with existing data
 - Test migrations both up and down before committing
+
+## Out of Scope
+
+This skill does NOT:
+- Plan zero-downtime expand-contract or blue-green migration strategies—use `migration-architect`.
+- Handle Django, Prisma, Drizzle, or non-Alembic migration frameworks—use the framework's own tooling.
+- Decide whether legacy schema/code should be deprecated or maintained—use `deprecation-and-migration`.
+- Ship the migration through commit/PR/merge—use `shipping-workflow`.
+- Run pre-ship safety review (production-readiness, security)—use `production-readiness-check`.

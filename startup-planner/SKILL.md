@@ -103,3 +103,12 @@ Next stage: [X+1 name]
 - Validate market assumptions with real customers, not only framework
   exercises.
 - Go/NoGo decisions should involve real stakeholders.
+
+## Out of Scope
+
+This skill does NOT:
+- Run brutal 6-step CLEARFRAME idea validation—use `startup-analysis`.
+- Provide legal, financial, tax, or accounting advice—engage qualified professionals.
+- Build the actual MVP or codebase—use `claude-flow` or `executing-plans` after Stage 11 Go decision.
+- Author marketing scripts or course content for the launch—use `sc-marketing-scripts`.
+- Auto-fire on vague phrases like "plan a startup"—heavy skill; explicit invocation required.

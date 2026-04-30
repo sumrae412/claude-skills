@@ -69,3 +69,12 @@ Produce only what the user needs:
 - Do not bless hardcoded production prompts without calling out the risk.
 - Do not recommend prompt deploys without eval or rollback plans.
 - Distinguish prompt quality governance from model-cost optimization.
+
+## Out of Scope
+
+This skill does NOT:
+- Reduce LLM API spend or pick model tiers by cost—use `llm-cost-optimizer`.
+- Design RAG retrieval pipelines or chunking strategies—use `rag-architect`.
+- Optimize claude-flow internal subagent prompt variants—use `prompt-optimization`.
+- Write or tune individual prompts from scratch—use `claude-api`.
+- Build/tune the eval framework's harness code itself—governance defines the policy; implementation is engineering work.

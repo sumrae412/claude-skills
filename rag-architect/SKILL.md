@@ -93,3 +93,12 @@ Produce only what the user needs:
   would beat RAG.
 - Treat source attribution and hallucination control as first-class
   requirements.
+
+## Out of Scope
+
+This skill does NOT:
+- Reduce LLM API spend on the generation calls inside RAG—use `llm-cost-optimizer`.
+- Govern prompt versioning, evals, or A/B tests for the generator—use `prompt-governance`.
+- Build/tune the Anthropic SDK code with prompt caching—use `claude-api`.
+- Search the open web at query time—pair with `web-search-quality` if external sources are needed.
+- Migrate an existing vector store to a new schema/provider—use `migration-architect`.

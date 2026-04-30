@@ -141,6 +141,15 @@ Offer: *"Want me to convert to DOCX or iterate on any section?"*
 8. **Cover letters are opt-in only.** The default Phase 5 deliverable set is resume + keyword coverage + jd.md. Cover letters are produced only on explicit user request — never offered proactively, never pre-announced, never drafted as a "while I'm at it" addition. The closing prompt deliberately omits cover-letter language so the user has to raise it.
 9. **Final prose must not sound templated.** Lists and tables are for analysis checkpoints only. Headlines, summaries, and cover letters must read like authored prose with a governing idea, specific evidence, and no buzzword stacking. Load `references/writing-quality.md` before writing them.
 
+## Out of Scope
+
+This skill does NOT:
+- Triage/score a batch of JDs against a profile—use `jd-screener` first, then hand winners here one at a time.
+- Submit applications, send messages, or interact with employer portals on the user's behalf—the user applies manually.
+- Fabricate experience or invent skills/dates/numbers not in the source resume—truth-preserving by design.
+- Provide career direction, salary negotiation, or legal advice (visa, non-competes)—engage a licensed coach or employment attorney.
+- Offer or auto-draft a cover letter—opt-in only on explicit user request (Principle 8).
+
 ## Professional Help Boundary
 
 This skill helps with resume content and positioning for a specific role. It does **not** replace professional help for:

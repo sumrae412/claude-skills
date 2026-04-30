@@ -1,6 +1,6 @@
 ---
 name: writing-plans
-description: Plan for multi-step tasks
+description: Write comprehensive, TDD-structured implementation plans with bite-sized tasks (2-5 min each), exact file paths, complete code blocks, and explicit commit points. Saves to `docs/plans/YYYY-MM-DD-<feature>.md`. Use BEFORE touching code on any multi-step feature, refactor, or migration. Triggers: "write a plan", "plan this out", "implementation plan", "/plan", or after brainstorming when ready to scope work. Also called by claude-flow Phase 3. Validates that every script/command in the plan exists in the target repo (not borrowed from a sibling project's CLAUDE.md). NOT for one-shot edits, exploratory questions (use research), or verbatim ports where source-of-truth lives in another file.
 ---
 
 # Writing Plans
@@ -177,6 +177,15 @@ Instead, write:
 > Port `path/to/source.py` verbatim. See source for exact CLI flags, env vars, and error messages.
 
 Reserve plan prose for scaffolding, intent, and explicit deviation points. This applies to any "mirror upstream behavior" task — external API clients, compatibility shims, reimplemented CLIs.
+
+## Out of Scope
+
+This skill does NOT:
+- Execute the plan — hands off to `executing-plans` or `superpowers:subagent-driven-development`.
+- Brainstorm requirements — run `superpowers:brainstorming` first if scope is fuzzy.
+- Do the research — feed `research` output into the plan; don't re-explore from scratch.
+- Replace ad-hoc bug fixes — use `bug-fix` for single-defect work.
+- Write code blocks the implementer should pull from source (verbatim ports) — point at the source file instead.
 
 ## Execution Handoff
 

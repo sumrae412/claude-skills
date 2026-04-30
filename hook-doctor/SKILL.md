@@ -178,6 +178,17 @@ If all hooks are healthy, confirm: "All configured hooks are working correctly."
 
 ---
 
+## Out of Scope
+
+This skill does NOT:
+- Author new hook scripts or design new automations—use `update-config` or `claude-code-setup:claude-automation-recommender`.
+- Modify `settings.json` permissions, env vars, or hook entries—use `update-config`.
+- Lint memory files or detect stale memory references—use `lint-memory`.
+- Audit a hook script for security/malicious patterns before installing—use `skill-security-auditor`.
+- Diagnose why a slash command/skill itself isn't firing—use `skill-discovery`.
+
+---
+
 ## Next Steps
 
 - **Regenerate hooks for this project?** Run `./install.sh --generate-hooks` to re-detect your stack and rebuild hook config.

@@ -71,6 +71,15 @@ Reference: docs/plans/<handoff-file>.md
 
 The handoff doc is the source of truth; the pasted prompt is the entry point.
 
+## Out of Scope
+
+This skill does NOT:
+- Run the commit/push/PR/merge pipeline itself—delegates Step 2 to `shipping-workflow`.
+- Capture session-learnings, sync repos, or tear down worktrees—delegates Step 3 to `cleanup`.
+- Document an abandoned dead-end approach—use `session-handoff --abandon`.
+- Verify that work is actually complete before shipping—use `verification-before-completion` first.
+- Create a handoff for an exploratory session with no meaningful work—stop and tell the user instead.
+
 ## Guardrails
 
 - Step 1 MUST complete before Step 2. If the handoff doc can't be written (no obvious next task, current work is exploratory-only), say so and STOP — do not ship without a handoff.

@@ -118,6 +118,17 @@ If a design improvement requires a functional change, flag it:
 
 ---
 
+## Out of Scope
+
+This skill does NOT:
+- Touch application logic, state, API calls, or data models—flag the need and hand off to `bug-fix` or `claude-flow`.
+- Enforce typography rules (curly quotes, dashes, entities)—use `typography`.
+- Run E2E functional tests of the rendered UI—use `playwright-test` or `website-tester`.
+- Generate visual mockups or wireframes from scratch—use `excalidraw-canvas` or `image-generation`.
+- Implement approved changes without explicit per-phase user approval—stop after presenting the plan.
+
+---
+
 ## Next Steps
 
 - Use `/typography` for HTML entity and text correctness enforcement

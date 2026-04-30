@@ -76,3 +76,12 @@ Produce only what the current shipping phase needs:
 - No silent shortcut around review or CI.
 - If a workflow step must be skipped, tell the user exactly which step and
   what risk remains.
+
+## Out of Scope
+
+This skill does NOT:
+- Write the implementation or fix bugs—use `bug-fix`, `claude-flow`, or `executing-plans` first.
+- Verify behavior at runtime before shipping—use `verification-before-completion`.
+- Run pre-ship security/database/deployment audits—use `production-readiness-check`.
+- Capture session-learnings, sync repos, or remove worktrees—delegates to `cleanup`.
+- Write a continuation/handoff doc for the next session—use `next`.

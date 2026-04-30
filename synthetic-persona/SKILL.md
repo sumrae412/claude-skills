@@ -89,3 +89,12 @@ Produce only what the user needs:
 - If dynamics analysis crosses into harassment, crisis, or mental-health
   territory, stop at communication advice and point toward real human
   support.
+
+## Out of Scope
+
+This skill does NOT:
+- Run alpha/beta usability testing with a diverse synthetic user population—use `personas`.
+- Use confidential, private, or non-public information to construct the persona—public data only.
+- Replace real customer interviews or user research—pre-vetting only.
+- Provide therapy, mediation, or mental-health guidance—stop and point to real human support.
+- Build product UI/UX mockups for the persona to react to—use `design-audit` or `excalidraw-canvas` for the artifact, then bring it here.

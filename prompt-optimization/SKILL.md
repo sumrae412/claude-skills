@@ -1,6 +1,6 @@
 ---
 name: prompt-optimization
-description: Analyze prompt performance across explorers, architects, and reviewers. Promote winners, generate challengers. Triggered by session-learnings or manually.
+description: A/B-style optimizer for the claude-flow subagent prompt registry — analyzes prompt performance across explorers (Phase 2), architects (Phase 4), and reviewers (Phase 6) using win/loss telemetry, promotes winners to default, and generates challenger variants for the next round. Use when user says "optimize prompts", "tune the registry", "/prompt-optimization", or after a `session-learnings` run flags a prompt as underperforming. Reads from `prompt-registry.json` and writes versioned challengers. NOT for production LLM prompt versioning (use prompt-governance) or general prompt writing (use claude-api skill).
 user-invocable: true
 ---
 
@@ -80,3 +80,12 @@ Produce only what the run needs:
   expects it.
 - Keep manual review focused on earliest observable failure, not
   downstream noise.
+
+## Out of Scope
+
+This skill does NOT:
+- Govern production LLM prompts (versioning, A/B in user traffic, rollback)—use `prompt-governance`.
+- Write general-purpose prompts for new Claude API features—use `claude-api`.
+- Tune model selection or routing for cost—use `llm-cost-optimizer`.
+- Run the claude-flow exploration phase itself—use `smart-exploration` (this skill optimizes its prompts post-hoc).
+- Capture session learnings or memory updates—use `anthropic-skills:session-learnings`.

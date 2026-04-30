@@ -152,6 +152,15 @@ When the user needs actual image generation (not just prompt optimization), reco
 
 If no generation tool is connected, this skill still improves prompts for any external image model.
 
+## Out of Scope
+
+This skill does NOT:
+- Generate the image itself when no generation tool is connected—it only optimizes the prompt for an external model.
+- Produce architecture or workflow diagrams—use `excalidraw` or `excalidraw-canvas`.
+- Run UI/UX visual audits of an existing app—use `design-audit`.
+- Set up Sentry, observability, or any non-image tooling—out of domain.
+- Generate prompts depicting real, identifiable individuals without explicit user confirmation—ask the user first.
+
 ## Example
 
 **Input:** "A happy dog in a park"

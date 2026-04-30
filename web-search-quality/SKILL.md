@@ -91,6 +91,15 @@ If any answer is shaky, say so in your response: `per [source], published [date]
 - **Silently resolving disagreement.** If sources conflict, surface it; don't pick.
 - **Forgetting to date-stamp in the reply.** Users can't assess freshness of claims you don't date.
 
+## Out of Scope
+
+This skill does NOT:
+- Run the actual WebSearch/WebFetch calls—it sets quality gates; you call the tools.
+- Search GitHub code, repos, issues, or PRs—use `github-search`.
+- Fetch/cache versioned API docs for coding tasks—use `fetch-api-docs`.
+- Validate facts inside the user's own repo or internal docs—skip the gates for those.
+- Replace primary-source verification when stakes are legal/medical/financial—escalate to `gdpr-dsgvo-expert`, `fda-consultant-specialist`, or qualified counsel.
+
 ## Red Flags — Stop and Re-search
 
 - Stating a version number, API signature, CLI flag, or price without a Tier 1 check

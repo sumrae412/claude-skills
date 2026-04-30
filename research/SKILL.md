@@ -1,6 +1,6 @@
 ---
 name: research
-description: Multi-agent research team
+description: Multi-agent research team that explores a question across codebase, git history, external docs, and API references — dispatches 2-4 parallel researchers in waves, detects gaps, and produces a confidence-scored research brief. Use when the user asks to "research", "investigate", "explore the codebase", "figure out how X works", "deep dive on X", needs context before writing a plan, or when claude-flow Phase 2 runs the `full`/`complex` path. Supports `--lite` (single wave, ~60% cheaper) and `--waves N` flags. NOT for simple one-file lookups (use grep/Read directly) or production debugging (use bug-fix).
 user-invocable: true
 ---
 
@@ -103,6 +103,15 @@ When called standalone:
 4. No workflow integration, no phase transitions
 
 ---
+
+## Out of Scope
+
+This skill does NOT:
+- Propose fixes or write code — output is a research brief only.
+- Replace single-file lookups — for "where is X defined", use grep/Read directly.
+- Run production debugging — use `bug-fix` (composes `investigator` for evidence).
+- Plan implementation work — hand the brief to `writing-plans`.
+- Persist findings beyond the session — capture decisions in `MEMORY.md` or a plan doc.
 
 ## Next Steps
 

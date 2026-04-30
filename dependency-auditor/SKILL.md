@@ -90,3 +90,12 @@ Produce only what the user needs:
   planning.
 - Call out missing lockfiles and nondeterministic builds explicitly.
 - Treat unknown licenses as real risk until resolved.
+
+## Out of Scope
+
+This skill does NOT:
+- Audit AI-agent skills or detect prompt injection in SKILL.md files—use `skill-security-auditor`.
+- Plan zero-downtime upgrade rollouts or write rollback runbooks—use `migration-architect`.
+- Execute the actual upgrade or apply patches—open a PR and run through `executing-plans` or `bug-fix`.
+- Review application code for OWASP/injection issues—use `review-pr` or `production-readiness-check`.
+- Track GDPR/HIPAA implications of a dependency's data handling—use `gdpr-dsgvo-expert` or `fda-consultant-specialist`.

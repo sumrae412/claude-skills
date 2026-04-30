@@ -184,6 +184,15 @@ for skill in skills/*/; do
 done
 ```
 
+## Out of Scope
+
+This skill does NOT:
+- Find an unknown skill by name or capability—use `skill-discovery`.
+- Audit application source code (not skills) for OWASP/injection issues—use `review-pr` or `production-readiness-check`.
+- Audit npm/pip/etc. dependencies of an application for CVEs—use `dependency-auditor`.
+- Execute the candidate skill to detect dynamic/runtime payloads—static analysis only; flag suspicious patterns.
+- Install or remove skills—reports verdict; the user decides whether to install.
+
 ## Threat Model Reference
 
 For the complete threat model, detection patterns, and known attack vectors against AI agent skills, see [references/threat-model.md](references/threat-model.md).

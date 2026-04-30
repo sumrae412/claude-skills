@@ -132,6 +132,15 @@ When generating any HTML/JSX with text, automatically fix:
 - When auditing, flag violations but do not change meaning or content
 - Enforcement applies only to visible text — do not alter code identifiers, variable names, or string literals that are not user-facing
 
+## Out of Scope
+
+This skill does NOT:
+- Audit visual design, layout, spacing, or color—use `design-audit`.
+- Run accessibility/WCAG compliance review—use `/design:accessibility-review`.
+- Edit copy, tone, or content meaning—only fix character/entity correctness.
+- Change variable names, code identifiers, or non-user-facing strings—visible text only.
+- Generate UI mockups or new components—use `excalidraw-canvas` or `frontend-design:frontend-design`.
+
 ## Next Steps
 
 - Use `/design-audit` for systematic visual review of existing interfaces

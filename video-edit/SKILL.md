@@ -147,6 +147,15 @@ Invariants to preserve:
 - **Stumble heuristic is lexical, not semantic.** "Save the file and save the state" is two different sentences that share a 3-word prefix — it will false-positive. Review the log, don't apply it blindly.
 - **Freeze detection is track-wide.** If the app under demo legitimately holds still for 30 seconds (reading a long doc, waiting for a build), that will be flagged. The user decides whether each FREEZE is a problem or just the pacing.
 
+## Out of Scope
+
+This skill does NOT:
+- Record, narrate, or produce a new screencast—use `automated-screencast-director`.
+- Cut, trim, or re-encode the source video—report only; the user edits in their NLE.
+- Author or review the script driving the screencast—use `sc-marketing-scripts`.
+- Read on-screen text or identify wrong-tab/wrong-icon visually—heuristic detection only; pair flagged timestamps with a vision-capable model for true visual review.
+- Transcribe non-English narration with the default filler/transition word lists—extend the lists first or accept reduced signal.
+
 ## When to use which skill
 
 - **Recording a new screencast** → use `automated-screencast-director` (script → automated narrated recording).

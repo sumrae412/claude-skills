@@ -89,3 +89,12 @@ Produce only the deliverable the user needs:
 - Prefer reversible phases over big-bang changes.
 - Highlight missing monitoring, rollback, or reconciliation before calling
   a plan ready.
+
+## Out of Scope
+
+This skill does NOT:
+- Generate the actual Alembic migration file or run autogenerate—use `new-migration`.
+- Decide whether to deprecate vs maintain legacy code—use `deprecation-and-migration`.
+- Execute the migration against a production DB—the user runs cutover manually with the runbook.
+- Audit dependencies blocking the upgrade—use `dependency-auditor`.
+- Run pre-ship readiness checks (secrets, monitoring, backups)—use `production-readiness-check`.

@@ -199,6 +199,15 @@ All output follows the structured standard:
 | Treating cost optimization as a one-time project | Model pricing changes, traffic patterns shift, and new features launch — costs drift | Set up continuous cost monitoring with weekly spend reports and anomaly alerts |
 | Compressing prompts to the point of ambiguity | Over-compressed prompts cause the model to hallucinate or produce low-quality output, requiring retries | Compress filler words and redundant context but preserve all task-critical instructions |
 
+## Out of Scope
+
+This skill does NOT:
+- Design RAG retrieval pipelines, chunking, or embedding choice—use `rag-architect`.
+- Manage prompt versioning, A/B tests, or eval pipelines in production—use `prompt-governance`.
+- Trim per-session Claude Code tool-call token burn—use `token-economy`.
+- Curate which files/docs the agent should see—use `context-engineering`.
+- Build/tune Anthropic SDK code with prompt caching—pair with `claude-api`.
+
 ## Related Skills
 
 - **rag-architect**: Use when designing retrieval pipelines. NOT for cost optimization of the LLM calls within RAG (that is this skill).

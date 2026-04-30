@@ -1,6 +1,6 @@
 ---
 name: playwright-test
-description: User-story-driven E2E testing via Playwright MCP — fills forms, captures screenshots, pass/fail vs acceptance criteria. Pairs with `user-stories`.
+description: User-story-driven E2E testing via the Playwright MCP — navigates the app, fills forms, clicks through flows, captures screenshots at each step, and reports pass/fail against each story's acceptance criteria. Use when user says "run the user stories", "playwright test this", "/playwright-test", "E2E test the app", or "verify these stories work". Pairs with `user-stories` (which generates the stories) — feed its output here. NOT for unit tests (use the project's test runner), code-only review (use review-pr), or design audits (use design-audit).
 ---
 
 # Playwright Test Skill - Interactive E2E Testing from User Stories
@@ -72,6 +72,15 @@ When user invokes `/playwright-test`:
 2. **After configuration**, begin testing systematically
 3. **Report results** as tests complete
 4. **Provide summary** at end of session
+
+## Out of Scope
+
+This skill does NOT:
+- Generate user stories or acceptance criteria—use `user-stories` to produce them, then feed here.
+- Run unit tests or component tests—use the project's test runner.
+- Audit visual design, spacing, or typography—use `design-audit` or `typography`.
+- Review code quality or PR diffs—use `review-pr`.
+- Crawl an unknown app to discover forms without user-story input—use `website-tester` for exploratory functional tests.
 
 ## Integration with User Stories
 

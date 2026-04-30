@@ -1,6 +1,6 @@
 ---
 name: investigator
-description: Evidence matrix for debugging
+description: Evidence-gathering protocol for debugging — collects facts from logs, code, git, env, and docs into a structured evidence matrix WITHOUT proposing fixes or ranking hypotheses. Use when investigating unexpected behavior, unclear TDD failures, production incidents, environment mismatches, regressions, or "why is this broken" questions before diagnosis. Composed by bug-fix and claude-flow Phase 1 (Diagnose path). Triggers: "investigate", "gather evidence", "what do we know about", "before we guess". NOT for proposing solutions (that's bug-fix's Diagnose phase) or planning fixes (writing-plans).
 user-invocable: true
 ---
 

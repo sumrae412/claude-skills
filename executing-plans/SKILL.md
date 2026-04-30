@@ -1,6 +1,6 @@
 ---
 name: executing-plans
-description: Execute a written plan
+description: Execute a written implementation plan from `docs/plans/` task-by-task in batches with checkpoints, inter-task test/lint/build gates, memory-injection of project gotchas before subagent dispatch, and cleanup hand-off when complete. Use when the user says "execute the plan", "implement the plan", "run the plan", "/execute-plan", or after writing-plans hands off. Also called by claude-flow Phase 5. Supports phased commits for multi-surface features (>500 LoC). NOT for ad-hoc tasks without a saved plan (use bug-fix or direct implementation) or for writing the plan itself (use writing-plans).
 ---
 
 # Executing Plans
@@ -139,6 +139,15 @@ Surface integration assumptions **before** merge, not during review.
 **Verification between phases (hard gate):** full test suite passes after each phase commit. If a phase breaks tests, fix before the next phase — never let green drift across multiple phases.
 
 **Learned from:** ToneGuard v0.3.0 (PR #23). 6 phases (A–F), 1,633 insertions, 22 files, all tests green between each. User reviewed phase-by-phase; CodeRabbit only needed to look at the final diff. Zero regressions between phases.
+
+## Out of Scope
+
+This skill does NOT:
+- Write the plan — use `writing-plans` first; this skill consumes a saved plan.
+- Run ad-hoc tasks without a plan doc — use `bug-fix` or direct implementation.
+- Skip verification gates — inter-task tests/lint/build are mandatory between tasks.
+- Ship/merge — hand off to `cleanup` (Step 5) which routes to `shipping-workflow` if requested.
+- Brainstorm or replan mid-execution — stop, return to `writing-plans` if approach needs rethinking.
 
 ## Integration
 

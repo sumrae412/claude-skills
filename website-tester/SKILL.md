@@ -1,6 +1,6 @@
 ---
 name: website-tester
-description: End-to-end functional testing for web apps — fills forms, clicks buttons, verifies CRUD. Use for "test my website", "test all the forms", or "functional test my app".
+description: Exploratory end-to-end functional testing for web apps — discovers forms, fields, and buttons on each page, fills them with realistic data, exercises CRUD flows, and reports broken submits, 500s, validation gaps, and missing feedback. Lower-ceremony than `playwright-test` (no user-story input required). Use when user says "test my website", "test all the forms", "functional test my app", "click through everything", or "smoke-test this site". NOT for story-driven verification (use playwright-test + user-stories), unit tests (project test runner), or visual/design audits (design-audit).
 ---
 
 # Website Functional Tester
@@ -69,3 +69,12 @@ Produce only what the run needs:
 - Do not enable destructive tests casually.
 - Call out authentication and file-upload limits explicitly.
 - Treat false-positive success indicators as a real risk in interpretation.
+
+## Out of Scope
+
+This skill does NOT:
+- Run user-story-driven E2E tests with explicit acceptance criteria—use `playwright-test` paired with `user-stories`.
+- Replace unit/integration tests—use the project's test runner.
+- Audit visual design, typography, or layout—use `design-audit` or `typography`.
+- Review code for OWASP/injection vulnerabilities—use `review-pr` or `security-review`.
+- Execute destructive workflows in production—keep destructive runs to staging or non-destructive default mode.
