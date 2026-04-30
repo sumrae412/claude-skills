@@ -119,6 +119,8 @@ Examples: GitHub ops → `gh` CLI is fine locally; prefer GitHub MCP when dispat
 
 **Programmatic tool calling for bulk/deterministic work:** If a tool returns a large JSON payload and you need to filter/aggregate/transform deterministically, do it in a Python script (see `scripts/select_reviewers.py`, `aggregate_reviewer_findings.py`) rather than piping raw output through the executor. Saves tokens and eliminates a class of LLM parsing errors.
 
+**Streaming watches via the `Monitor` tool:** When a phase needs one-notification-per-occurrence (PR check progression, prod log errors during deploy soak, dev-server errors during UI verification, long-running test loops), use `Monitor` instead of polling via Bash. Each stdout line is a conversation event; the executor keeps working in parallel. See `references/monitor-tool-patterns.md` for filter discipline (silence is not success — include failure signatures, not just success markers), Phase 5 / Phase 6 recipes, and decision rules vs. `Bash run_in_background`. Load only when a phase actually needs a streaming watch.
+
 ---
 
 ## Phase Output Contracts
