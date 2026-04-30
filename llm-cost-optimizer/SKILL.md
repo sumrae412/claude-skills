@@ -199,6 +199,10 @@ All output follows the structured standard:
 | Treating cost optimization as a one-time project | Model pricing changes, traffic patterns shift, and new features launch — costs drift | Set up continuous cost monitoring with weekly spend reports and anomaly alerts |
 | Compressing prompts to the point of ambiguity | Over-compressed prompts cause the model to hallucinate or produce low-quality output, requiring retries | Compress filler words and redundant context but preserve all task-critical instructions |
 
+## Reranker caveats
+
+- **Haiku-as-reranker on small candidate sets can degrade ranking.** Validated 2026-04-29 (claude-flow scale experiment): Haiku reranking BM25 top-3 produced more reordering noise than signal vs. raw BM25 ordering. Threshold for rerank to help: candidate set should be large enough that BM25 top-K loses real signal at K (typically K≥10 over a corpus of hundreds).
+
 ## Related Skills
 
 - **rag-architect**: Use when designing retrieval pipelines. NOT for cost optimization of the LLM calls within RAG (that is this skill).
