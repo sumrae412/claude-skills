@@ -11,6 +11,21 @@ The **executor (Sonnet)** drafts two competing architecture options. It has full
 
 ---
 
+<HARD-GATE>
+**Do NOT draft Option A/B until you have:**
+
+1. Read the Phase 2 exploration output (the `$exploration` contract). If you cannot cite specific files/symbols from it, exploration was insufficient — go back.
+2. Read the Phase 3 acceptance criteria (the `$requirements` contract). The architectures are evaluated against these, not against generic quality.
+3. Run the namespace + cross-doc consistency checks below (Step 0a, Step 0).
+
+**Failure modes this gate catches:**
+- **Single-orchestrator drift** — drafting one "obvious" architecture instead of two genuinely different optimization targets. If Option B is "Option A but cleaner," start over.
+- **Static-chain drift** — copying the last feature's shape (same service split, same file layout) without re-deriving from this feature's data flow.
+- **Scaffold-before-verify** — proposing files/services without confirming the underlying patterns from Phase 2 actually exist. Hallucinated reuse becomes mid-Phase-5 reroutes.
+</HARD-GATE>
+
+---
+
 ## Step 0-pre: Pre-Plan Alignment Verdict (when a scoping doc exists)
 
 If a scoping/design doc already exists in `docs/plans/` covering this feature:
