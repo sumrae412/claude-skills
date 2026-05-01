@@ -1,6 +1,6 @@
 ---
 name: resume-tailor
-description: Tailor an existing resume to a specific job description with visible confidence scoring, structured reframing, and positioning help. Triggers on "tailor my resume", "update my resume for this job", "resume to job", "match resume to JD", "help me apply to", "resume keywords", "ATS alignment", "position my experience", "reframe my resume", or pasting a JD alongside a resume.
+description: Tailor an existing resume to one or several job descriptions with visible confidence scoring, structured reframing, and positioning help. Triggers on "tailor my resume", "update my resume for this job", "resume to job", "match resume to JD", "resume multiplier", "three resume versions", "multiple job descriptions", "resume keywords", "ATS alignment", "position my experience", "reframe my resume", or pasting JDs alongside a resume.
 ---
 
 # Resume Tailor — JD-Driven Resume Tailoring + Positioning
@@ -33,7 +33,39 @@ If any piece is missing, ask once. Don't proceed with half the inputs.
 
 **If no resume exists yet:** offer to run Phase 3 (discovery) first to generate source bullets from scratch, then return to Phase 1 with the drafted material as the "resume".
 
-**If the user pastes multiple JDs:** pick one and defer the others. This skill is one-JD-at-a-time by design (see Principle 4). Say so and let the user choose.
+**If the user pastes multiple JDs:** choose the correct path:
+
+- If the user asks to compare roles, rank fit, or decide which roles to pursue, route to `jd-screener`.
+- If the user explicitly asks for multiple tailored resume versions from one resume (`resume multiplier`, `3 versions`, `tailor this resume to these JDs`), run Multi-JD Mode below for 2-5 JDs.
+- Otherwise, pick one JD and defer the others. Full file-writing and DOCX export remain one-JD-at-a-time.
+
+## Multi-JD Mode - Resume Multiplier
+
+Use only when the user provides one resume and 2-5 job descriptions and explicitly wants separate tailored versions in one pass. This mode produces truth-preserving text drafts and comparative fit notes; it does not write final files unless the user later selects one version for the standard Phase 1-5 flow.
+
+Workflow:
+
+1. Parse each JD into title, company, must-haves, nice-to-haves, keywords, level signals, and differentiators.
+2. Build one shared fact inventory from the resume. Every tailored bullet must trace back to this inventory.
+3. For each JD, produce:
+   - tailored headline/summary
+   - reordered experience emphasis
+   - rewritten bullets using the JD's language where truthful
+   - de-emphasized or removed material, with reason
+   - significant gaps the cover letter or interview must address
+4. After all versions, compare:
+   - strongest fit
+   - biggest gap
+   - highest-risk keyword mismatch
+   - recommended role to tailor fully first
+
+Rules:
+
+- Do not invent, inflate, or imply experience not present in the resume.
+- Keep materially important experience visible somewhere unless the user explicitly wants a shorter version.
+- Use numbers only when present in the source resume or supplied by the user.
+- Mark each risky reframe as `verify`.
+- If one JD needs a materially different resume architecture, recommend running the standard single-JD flow for that role.
 
 ---
 
@@ -134,7 +166,7 @@ Offer: *"Want me to convert to DOCX or iterate on any section?"*
 1. **Truth-preserving.** Select, emphasize, reframe — never fabricate. A reframe must be defensible from the user's actual experience.
 2. **Visible scoring.** Every recommendation shows its confidence band and strategy. No black-box rewrites.
 3. **Collaborative, not autopilot.** Every phase ends with a checkpoint. The user edits, vetoes, and corrects before the next phase runs.
-4. **Solo-user scope.** One person, one resume, one JD at a time. No batch mode, no library management, no external infra.
+4. **Solo-user scope.** One person and one canonical resume. Default to one JD at a time. Multi-JD Mode is allowed only for explicit 2-5 JD resume-multiplier requests and produces comparative drafts, not final file-writing or DOCX export.
 5. **Minimum viable dependencies.** Pure markdown by default. Optional DOCX via `pandoc` with the template reference docs in `references/templates/`. If `pandoc` is unavailable, stop at reviewed markdown instead of inventing another render path. No bun/node/React required.
 6. **Gap handling is disclosure, not manufacturing.** Visible gaps go to cover letters or discovery prompts — never filled with invented content.
 7. **Communication principles apply.** Resumes are author-to-audience writing. Audience-centered focus, lead with the strongest evidence, simple plain-language bullets, no ego residue. Load `shared/communication-principles.md` before Phase 2 matching and Phase 4 positioning — the bullet-level and headline-level decisions are where these principles bite hardest.

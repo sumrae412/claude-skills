@@ -1,0 +1,4 @@
+interface:
+  display_name: "Life Planner"
+  short_description: "Plan meals, money, travel, and docs."
+  default_prompt: "Help me plan or analyze this life admin task."

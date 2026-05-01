@@ -1,0 +1,4 @@
+interface:
+  display_name: "Adversarial Thinking"
+  short_description: "Pressure-test ideas with devil's advocate and steelman modes."
+  default_prompt: "Pressure-test or steelman this idea."

@@ -1,0 +1,4 @@
+interface:
+  display_name: "Learning Coach"
+  short_description: "Tutor, question, and build curricula."
+  default_prompt: "Help me learn this topic or skill."
