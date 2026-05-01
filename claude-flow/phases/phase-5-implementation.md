@@ -141,7 +141,7 @@ When a Phase 5 subagent dispatch could plausibly use ≥2 domain skills (UI / AP
   SELECTED_SKILL: <name|none>
 
   Available skills (pick one):
-  - courierflow-ui — Frontend code: Jinja templates, CSS, Alpine.js, React components, workflow builder pages, dashboards, layouts
+  - courierflow-ui — Frontend code: Jinja templates, CSS, Vue workflow builder pages, dashboards, calendar/sidebar layouts
   - courierflow-api — Backend route and service code: FastAPI routes, service layer, business logic, request handlers
   - courierflow-data — Database layer: SQLAlchemy ORM models, Alembic migrations, schema design, eager-loading, Household/HouseholdMember domain
   - courierflow-integrations — External services: Google Calendar, Twilio SMS, OpenAI, DocuSeal, Gmail, onboarding wizard
@@ -157,6 +157,11 @@ When a Phase 5 subagent dispatch could plausibly use ≥2 domain skills (UI / AP
 - **Variant A (opt-out / progressive disclosure):** Pre-2026-04-29 behavior — list available skills as "you may invoke if useful." Use only for re-running the A/B experiment (set `skill_selection_variant: "a"` in workflow-state). Do not use for production work.
 
 Variant B's curated 5-skill menu is hand-selected to be domain-coherent. Per the [scale experiment](../../docs/plans/2026-04-29-skill-selection-at-scale.md), retrieving from a broader corpus (BM25 / rerank) under-performed this curated menu. Do not replace the menu with retrieval without re-running the experiment.
+
+Keep `courierflow-troubleshooter`, `courierflow-skill-sync`, and
+`courierflow-skill-reviewer` out of the implementation forced-selection menu.
+Use them in Phase 0 or maintenance/diagnosis tasks; Phase 5 implementers should
+select one code-surface skill above.
 
 ### Parallel Subagent Dispatch (For Independent Steps)
 

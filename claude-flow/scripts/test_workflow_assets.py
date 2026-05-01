@@ -106,6 +106,38 @@ def test_run_manifest_and_capability_refs_exist():
     assert (SKILL_ROOT / "scripts" / "run_manifest.py").exists()
 
 
+def test_courierflow_skill_menu_has_backing_skill_folders():
+    workspace_root = SKILL_ROOT.parent
+    phase_5 = (SKILL_ROOT / "phases" / "phase-5-implementation.md").read_text()
+
+    implementation_skills = {
+        "courierflow-ui",
+        "courierflow-api",
+        "courierflow-data",
+        "courierflow-integrations",
+        "courierflow-security",
+    }
+    support_skills = {
+        "courierflow-troubleshooter",
+        "courierflow-skill-reviewer",
+        "courierflow-skill-sync",
+    }
+
+    for skill in implementation_skills | support_skills:
+        skill_dir = workspace_root / skill
+        assert (skill_dir / "SKILL.md").exists(), skill
+        assert (skill_dir / "references").is_dir(), skill
+
+    for skill in implementation_skills:
+        assert f"- {skill} " in phase_5
+
+    menu_start = phase_5.index("Available skills (pick one):")
+    menu_end = phase_5.index('Pick "none" only', menu_start)
+    menu = phase_5[menu_start:menu_end]
+    for skill in support_skills:
+        assert skill not in menu
+
+
 def test_llm_judge_prompts_guard_against_gold_like_bias():
     persona = (SKILL_ROOT / "scripts" / "adversarial_breaker_persona.txt").read_text()
     phase_6 = (SKILL_ROOT / "phases" / "phase-6-quality.md").read_text()

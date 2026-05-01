@@ -6,11 +6,14 @@ Scan explored files and task description. For each trigger match, load the skill
 
 | File Pattern | Skills | Artifact Size |
 |---|---|---|
-| `*.html`, `*.css`, `*.js`, `templates/` | `/courierflow-ui` (patterns; include ui-standards: CSS layer ordering, Alpine.js reactivity — `fill()` doesn't trigger `x-model`, HTMX conventions, monochrome design, Inter-only typography) + `/defensive-ui-flows` (5-10 rules) | ~35 lines |
-| `routes/*`, `services/*` | `/courierflow-api` + `/defensive-backend-flows` (5-10 rules) | ~35 lines |
-| `models/*`, `alembic/*` | `/courierflow-data` + `/defensive-backend-flows` | ~35 lines |
-| `import twilio/openai/docuseal`, external URLs | `/fetch-api-docs` (API signatures) + `/courierflow-integrations` | ~50 lines |
-| Auth middleware, `@require_role`, JWT validation, User permission fields | `/courierflow-security` (NOT triggered by merely using `current_user`) | ~20 lines |
+| `app/templates/**`, `app/static/**`, `*.html`, `*.css`, `*.js`, Vue workflow builder | `/courierflow-ui` + `/defensive-ui-flows` (interactive-state rules only) | ~35 lines |
+| `app/routes/**`, `app/services/**`, `app/schemas/**` | `/courierflow-api` + `/defensive-backend-flows` (service/error/state rules only) | ~35 lines |
+| `app/models/**`, `alembic/**`, query helpers, scheduler indexes | `/courierflow-data` + `/defensive-backend-flows` (migration/query rules only) | ~35 lines |
+| Google Calendar, Twilio, OpenAI, SMTP/Gmail, Drive, DocuSeal, OAuth provider code, external URLs | `/fetch-api-docs` (current provider signatures) + `/courierflow-integrations` | ~50 lines |
+| Auth middleware, CSRF, JWT/refresh tokens, webhook validators, OAuth secrets, PromptSanitizer, file permissions | `/courierflow-security` (NOT triggered by merely using `current_user`) | ~25 lines |
+| Production/staging incident, missed automation, scheduler failure, webhook issue, provider send failure, Railway logs | `/courierflow-troubleshooter` + relevant domain skill above | ~60 lines |
+| Editing `courierflow-*` skills or `claude-flow` skill menus/routing | `/courierflow-skill-reviewer` | ~40 lines |
+| Syncing skills after CourierFlow app changes or `CLAUDE.md`/`AGENTS.md` drift | `/courierflow-skill-sync` then `/courierflow-skill-reviewer` | ~60 lines |
 | Always | `/coding-best-practices` (applicable patterns only) | ~10 lines |
 
 **Return:** merged numbered checklist, max 100 lines.

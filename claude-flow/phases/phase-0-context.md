@@ -64,12 +64,14 @@ local conventions.
 Use the project's trigger matrix to load only the skills relevant to this task:
 
 ```text
-templates / CSS / HTML?     -> UI skill
-routes / services?          -> API skill
-models / migrations?        -> data skill
-external APIs?              -> integrations skill
-git / deploy / PR?          -> git skill
-auth / security?            -> security skill
+templates / CSS / HTML?       -> courierflow-ui
+routes / services?            -> courierflow-api
+models / migrations?          -> courierflow-data
+external APIs / providers?    -> courierflow-integrations
+auth / security / webhooks?   -> courierflow-security
+prod incident / missed job?   -> courierflow-troubleshooter
+skill drift / routing edits?  -> courierflow-skill-sync or reviewer
+git / deploy / PR?            -> git skill
 ```
 
 Do not bulk-load unrelated skills.
