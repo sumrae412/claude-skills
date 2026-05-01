@@ -100,6 +100,11 @@ def test_phase_6_reference_docs_exist():
     assert (SKILL_ROOT / "references" / "phase-6-design-review.md").exists()
 
 
+def test_frontend_design_context_assets_exist():
+    assert (SKILL_ROOT / "contracts" / "design-context.schema.md").exists()
+    assert (SKILL_ROOT / "references" / "frontend-design-context.md").exists()
+
+
 def test_run_manifest_and_capability_refs_exist():
     assert (SKILL_ROOT / "references" / "run-manifest.md").exists()
     assert (SKILL_ROOT / "references" / "project-capability-matrix.md").exists()

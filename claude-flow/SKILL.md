@@ -137,10 +137,15 @@ Examples: GitHub ops → `gh` CLI is fine locally; prefer GitHub MCP when dispat
 |----------|-------------|-------------|-------------|
 | `$exploration` | `contracts/exploration.schema.md` | Phase 2 | Phases 3, 4, advisors |
 | `$requirements` | `contracts/requirements.schema.md` | Phase 3 | Phases 4, 4c, 5, 6 |
+| `$design_context` | `contracts/design-context.schema.md` | Phase 0/4 UI preflight | Phases 4, 5, 6 |
 | `$plan` | `contracts/plan.schema.md` | Phase 4b | Phases 4c, 4d, 5, 6 |
 | `$diff` | `contracts/diff.schema.md` | Phase 5 | Phase 6 |
 
 Contracts are the interface between phases. When dispatching subagents, pass the named contract — not raw conversation. See each schema file for field definitions and notes.
+
+For UI-affecting work, `$design_context` carries the project design system and
+the task-specific design brief; project-local UI instructions override generic
+frontend-design guidance.
 
 **Never pass to subagents:** advisor transcripts, rejected architecture details, Phase 0 skill loading decisions, raw clarification Q&A (pass `$requirements` instead).
 
