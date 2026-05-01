@@ -102,6 +102,27 @@
       "description": "Async I/O and concurrency review"
     },
     {
+      "id": "impeccable-detector",
+      "tier": "conditional",
+      "cascade_tier": 3,
+      "min_budget": "medium",
+      "file_patterns": [
+        "**/*.html",
+        "**/*.css",
+        "**/*.scss",
+        "**/*.js",
+        "**/*.ts",
+        "**/*.tsx",
+        "**/*.vue",
+        "**/*.svelte",
+        "**/templates/**",
+        "**/static/**"
+      ],
+      "runner": "shell",
+      "runner_script": "scripts/impeccable_detect.sh",
+      "description": "Optional Impeccable CLI anti-pattern and frontend design-quality detector"
+    },
+    {
       "id": "lightweight-reviewer",
       "tier": "always",
       "cascade_tier": 3,
