@@ -144,12 +144,14 @@ The capability snapshot in 6.5 reads project-owned declarations. This step probe
 Run a single JSON dump:
 
 - which MCP servers loaded this session (deferred-tool list + connected-tool list)
-- which provider API keys are present in env (`ANTHROPIC_API_KEY`, `OPENAI_API_KEY`, `GOOGLE_*`, project-specific)
+- whether provider API keys are set in env — **presence only, never values** (`ANTHROPIC_API_KEY`, `OPENAI_API_KEY`, `GOOGLE_*`, project-specific). Record booleans only; never log, persist, or export the secret values.
 - which CLIs are on `$PATH` and their versions (`gh --version`, `node -v`, `python3 --version`, project-specific tools)
 - which models the current session can reach (declared in environment block)
 - recommended defaults for this session (e.g. "use `coderabbit` CLI not subagent — CLI is faster and on $PATH")
 
 Persist alongside the capability snapshot. Phases 2/4/5/6 read this when deciding whether to dispatch a subagent vs use a CLI, whether a doc-fetch is feasible, whether a reviewer is reachable.
+
+The probe runner is intentionally not specified — projects vary in what they need to introspect. Until a shared `run_session_probe.py` exists, perform the probe inline (env reads, `command -v`, MCP tool list from the session reminder) and dump to `/tmp/session-probe.json`. Add a concrete script here once the shape stabilizes across projects.
 
 **Do not infer from MEMORY.** Memory may say "use `mcp__scheduled-tasks__create_scheduled_task`" but the tool may not be loaded this session — the probe returns runtime truth, MEMORY does not.
 
