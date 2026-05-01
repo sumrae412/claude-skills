@@ -29,6 +29,7 @@ Triggers:
 - User pastes content + asks "can we use anything from this to improve <X>"
 - User says "search this repo/article/transcript for skills that would improve <X>"
 - User shares a link/paste and names a target project or skill
+- User asks "should we adopt <external framework> patterns into <our system>" — this skill triages the framework's surface against the target's existing coverage. Validated 2026-05-01 against github/spec-kit (~80-item extension catalog) → claude-flow Phase 0–6: 2 real gaps surfaced (phantom-completion audit, spec-references-as-context gate, both shipped in claude-skills PR #67), rest skipped as overlap.
 
 Do NOT invoke for:
 - Content review without a named target ("what do you think of this article")
