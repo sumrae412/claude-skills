@@ -212,7 +212,15 @@ MEDIUM/LOW findings defer to Phase 6 review. Agents that ran in Phase 5 are **sk
 | Data migrations | defensive-backend-flows: copy before delete, reversible ops |
 | Cross-module calls | defensive-backend-flows: respect encapsulation, public wrappers |
 
-**State transition:** If tests+lint pass, transition to phase-5.5. If failed
+### Phantom-Completion Audit (HARD GATE before Phase 5.5)
+
+After the final task in the plan is marked complete and tests+lint pass, run the phantom-completion audit from `executing-plans/SKILL.md` § "Step 4.5: Phantom-Completion Audit" before transitioning to Phase 5.5.
+
+For each `[X]` task in the plan, verify the promised artifacts (files, symbols, migration revisions) actually exist on disk and the diff against `origin/main` is non-empty. Downgrade unverified `[X]` to `[~]` and either complete the work or amend the plan with justification — never silently ship a hollow checkmark.
+
+**Skip:** Lite-mode plans with <3 tasks where the per-task inter-task verification gate already inspected each diff.
+
+**State transition:** If tests+lint pass AND phantom-completion audit is clean, transition to phase-5.5. If failed
 and iteration < 3, load `references/phase-5-retry-and-facts.md` and follow the
 retry ladder. If iteration limit is reached, set status to "failed" and surface
 it to the user.

@@ -147,3 +147,23 @@ See `prompt-library.md` in this skill directory for the complete set of subagent
 ## Fallback Behavior
 
 If the category is unclear after reviewing both signals, use the `general` prompts. Do not guess aggressively — a well-scoped general exploration is more useful than a narrowly-scoped exploration aimed at the wrong category.
+
+---
+
+## Spec-References-as-Context Gate
+
+When invoked from a downstream phase that has a written plan or decision document available (claude-flow Phase 4 → Phase 5, or any executing-plans dispatch), check the plan for a `## References` section before injecting prior-art file paths into the subagent prompt.
+
+**Rule:** If the plan has a `## References` section, treat it as the **whitelist** of source files / external docs the implementer or follow-up explorer is allowed to read. Do NOT inject adjacent files that the explorer "happened to find" but that the plan author did not list.
+
+**Procedure:**
+
+1. Parse the plan's `## References` section. Extract bullet items as `(path, rationale)` pairs.
+2. Build the subagent prompt's "Files to consult" / "Prior art" block from this list **only**.
+3. If a Phase 2 explorer surfaced a file that's not on the list AND the implementer plausibly needs it, do not silently add it — surface a one-line gap to the orchestrator: `REFERENCES_GAP: <path> — <reason>`. The orchestrator can amend the plan's References before dispatching, or accept the gap and proceed.
+4. If the plan has no `## References` section (legacy plans, or section literally absent), fall back to the prior behavior: include Phase 2 exploration findings as the prior-art block. Log this as `REFERENCES_MISSING: <plan path>` so the orchestrator can prompt the plan author to add one.
+5. If the plan declares `- (none — greenfield)`, the prior-art block is empty by design — do not backfill from exploration findings.
+
+**Why:** Without this gate, Phase 5 implementers drift into adjacent code the plan didn't endorse, exploration findings inflate context for every subagent, and "the plan said this is the surface area" stops being a real contract. The References section is a deliberate context budget — honor it.
+
+**Skip criteria:** Standalone `/smart-exploration` invocation outside any plan context (the gate has nothing to gate on). Bug-fix mode where the plan is the bug report and the surface area is "wherever the bug lives."
