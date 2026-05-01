@@ -106,6 +106,99 @@ def test_cli_writes_jsonl_output(tmp_path: Path):
     assert json.loads(lines[0])["type"] == "metadata"
 
 
+def test_cli_includes_sibling_event_log(tmp_path: Path):
+    manifest_path = tmp_path / "run.json"
+    event_log_path = tmp_path / "run.events.jsonl"
+    output_path = tmp_path / "timeline.jsonl"
+    manifest_path.write_text(json.dumps(_manifest()))
+    event_log_path.write_text(
+        json.dumps(
+            {
+                "recorded_at": "2026-04-29T10:12:00+00:00",
+                "type": "decision",
+                "category": "decision",
+                "payload": {"summary": "Use append-only continuity events"},
+            }
+        )
+        + "\n"
+    )
+
+    completed = subprocess.run(
+        [
+            sys.executable,
+            str(SCRIPT),
+            "--manifest",
+            str(manifest_path),
+            "--output",
+            str(output_path),
+        ],
+        capture_output=True,
+        text=True,
+    )
+
+    assert completed.returncode == 0
+    events = [
+        json.loads(line) for line in output_path.read_text().splitlines()
+    ]
+    session_events = [
+        event for event in events if event["type"] == "session_event"
+    ]
+    assert session_events[0]["payload"]["category"] == "decision"
+    assert session_events[0]["payload"]["payload"]["summary"].startswith("Use")
+
+
+def test_cli_resolves_configured_relative_event_log_from_manifest_dir(
+    tmp_path: Path,
+):
+    project_dir = tmp_path / "project"
+    other_cwd = tmp_path / "other"
+    runs_dir = project_dir / ".claude" / "runs"
+    manifest_path = runs_dir / "run.json"
+    event_log_path = runs_dir / "custom.events.jsonl"
+    output_path = tmp_path / "timeline.jsonl"
+    other_cwd.mkdir(parents=True)
+    runs_dir.mkdir(parents=True)
+    manifest = _manifest()
+    manifest["event_log_path"] = "custom.events.jsonl"
+    manifest_path.write_text(json.dumps(manifest))
+    event_log_path.write_text(
+        json.dumps(
+            {
+                "recorded_at": "2026-04-29T10:12:00+00:00",
+                "type": "decision",
+                "category": "decision",
+                "payload": {"summary": "Resolved relative to manifest"},
+            }
+        )
+        + "\n"
+    )
+
+    completed = subprocess.run(
+        [
+            sys.executable,
+            str(SCRIPT),
+            "--manifest",
+            str(manifest_path),
+            "--output",
+            str(output_path),
+        ],
+        cwd=other_cwd,
+        capture_output=True,
+        text=True,
+    )
+
+    assert completed.returncode == 0
+    events = [
+        json.loads(line) for line in output_path.read_text().splitlines()
+    ]
+    session_events = [
+        event for event in events if event["type"] == "session_event"
+    ]
+    assert session_events[0]["payload"]["payload"]["summary"] == (
+        "Resolved relative to manifest"
+    )
+
+
 def test_cli_reports_missing_manifest(tmp_path: Path):
     completed = subprocess.run(
         [

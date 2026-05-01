@@ -63,6 +63,8 @@ Drop:
 When compaction happens during implementation, keep a structured ledger
 alongside the prose summary. The summary helps the next executor reorient;
 the ledger preserves exact facts that should not be paraphrased away.
+Prefer storing exact details in the run event log and keeping the visible
+ledger as a table of contents with lookup handles.
 
 Record ledger entries for:
 
@@ -83,6 +85,11 @@ Use compact, machine-readable shapes where possible:
   "completed_steps": [1, 2],
   "current_step": 3,
   "modified_files": ["scripts/export_run_timeline.py"],
+  "event_log_path": ".claude/runs/2026-04-29T10-00-00.events.jsonl",
+  "lookup_queries": [
+    "scripts/export_run_timeline.py command exit_code",
+    "phase5 blocker current_step"
+  ],
   "facts": [
     {
       "kind": "command",
@@ -98,6 +105,13 @@ Do not rely on memory of prior narration after compaction. Reconstruct from the
 ledger first, then use the prose summary for nuance. This mirrors recursive
 inference systems that compact the visible conversation while keeping a
 retrievable history object for exact intermediate values.
+
+Before asking the user to repeat prior context after resume, inspect:
+
+1. `.claude/workflow-state.json`
+2. the manifest path stored as `run_manifest_path`
+3. the manifest's `event_log_path`
+4. project memory or Context Mode search, if available
 
 ## Strategy 3: Contract-Scoped Subagent Context
 

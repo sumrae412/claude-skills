@@ -37,6 +37,7 @@ def default_manifest() -> dict[str, Any]:
         "task_summary": None,
         "review_base_sha": None,
         "review_base": None,
+        "event_log_path": None,
         "capability_matrix": dict(DEFAULT_CAPABILITY_MATRIX),
         "requirements_approvals": [],
         "plan_approvals": [],
@@ -62,6 +63,35 @@ def write_json_file(path: Path, payload: Any) -> None:
     """Write pretty JSON to path."""
     ensure_parent(path)
     path.write_text(json.dumps(payload, indent=2) + "\n")
+
+
+def default_event_log_path(manifest_path: Path) -> Path:
+    """Return the sibling append-only event log path for a manifest."""
+    return manifest_path.with_name(f"{manifest_path.stem}.events.jsonl")
+
+
+def resolve_event_log_path(
+    manifest_path: Path,
+    manifest: dict[str, Any],
+) -> Path:
+    """Resolve and initialize the manifest event log path."""
+    configured = manifest.get("event_log_path")
+    if configured:
+        event_log_path = Path(str(configured))
+        if event_log_path.is_absolute():
+            return event_log_path
+        return manifest_path.parent / event_log_path
+
+    event_log_path = default_event_log_path(manifest_path)
+    manifest["event_log_path"] = event_log_path.name
+    return event_log_path
+
+
+def append_jsonl(path: Path, payload: dict[str, Any]) -> None:
+    """Append one JSON object to a JSONL file."""
+    ensure_parent(path)
+    with path.open("a") as handle:
+        handle.write(json.dumps(payload, sort_keys=True) + "\n")
 
 
 def load_manifest(path: Path) -> dict[str, Any]:
@@ -332,8 +362,54 @@ def record_command(
         entry["cwd"] = cwd
     manifest.setdefault("commands_run", []).append(entry)
     manifest["last_updated_at"] = now_iso()
+    event_log_path = resolve_event_log_path(manifest_path, manifest)
     write_json_file(manifest_path, manifest)
+    append_jsonl(
+        event_log_path,
+        {
+            "recorded_at": entry["recorded_at"],
+            "type": "command",
+            "category": category or "command",
+            "source": "run_manifest",
+            "payload": dict(entry),
+        },
+    )
     return entry
+
+
+def record_event(
+    manifest_path: Path,
+    event_type: str,
+    category: str | None = None,
+    source: str | None = None,
+    payload: dict[str, Any] | None = None,
+) -> dict[str, Any]:
+    """Append a generic continuity event to the run event log."""
+    manifest = load_manifest(manifest_path)
+    recorded_at = now_iso()
+    event = {
+        "recorded_at": recorded_at,
+        "type": event_type,
+        "payload": payload or {},
+    }
+    if category is not None:
+        event["category"] = category
+    if source is not None:
+        event["source"] = source
+
+    event_log_path = resolve_event_log_path(manifest_path, manifest)
+    manifest["last_updated_at"] = recorded_at
+    write_json_file(manifest_path, manifest)
+    append_jsonl(event_log_path, event)
+    return event
+
+
+def parse_json_object(value: str) -> dict[str, Any]:
+    """Parse a CLI JSON object argument."""
+    payload = json.loads(value)
+    if not isinstance(payload, dict):
+        raise ValueError("payload must be a JSON object")
+    return payload
 
 
 def print_result(payload: dict[str, Any], as_json: bool) -> None:
@@ -402,6 +478,14 @@ def build_parser() -> argparse.ArgumentParser:
     command_parser.add_argument("--category")
     command_parser.add_argument("--cwd")
     command_parser.add_argument("--json", action="store_true")
+
+    event_parser = subparsers.add_parser("record-event")
+    event_parser.add_argument("--manifest", type=Path, required=True)
+    event_parser.add_argument("--event-type", required=True)
+    event_parser.add_argument("--category")
+    event_parser.add_argument("--source")
+    event_parser.add_argument("--payload", default="{}")
+    event_parser.add_argument("--json", action="store_true")
     return parser
 
 
@@ -476,6 +560,17 @@ def main() -> int:
             exit_code=args.exit_code,
             category=args.category,
             cwd=args.cwd,
+        )
+        print_result(payload, args.json)
+        return 0
+
+    if args.command == "record-event":
+        payload = record_event(
+            manifest_path=args.manifest,
+            event_type=args.event_type,
+            category=args.category,
+            source=args.source,
+            payload=parse_json_object(args.payload),
         )
         print_result(payload, args.json)
         return 0

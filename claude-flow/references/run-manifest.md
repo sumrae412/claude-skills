@@ -20,6 +20,7 @@ Store the path in workflow state as `run_manifest_path`.
   "workflow_path": null,
   "task_summary": null,
   "review_base_sha": null,
+  "event_log_path": null,
   "capability_matrix": {},
   "requirements_approvals": [],
   "plan_approvals": [],
@@ -40,10 +41,41 @@ Store the path in workflow state as `run_manifest_path`.
 - reviewer selection, budget, skipped reviewers, and redaction count
 - any empirical tool-behavior checks that overruled reviewer claims
 
+## Append-Only Event Log
+
+Each run may have a sibling JSONL event log:
+
+`.claude/runs/<session-id>.events.jsonl`
+
+Use it for session-continuity facts that are too granular for the manifest but
+important after compaction or resume:
+
+- files read, created, edited, or intentionally left untouched
+- user decisions and rejected alternatives
+- blockers and unblockers
+- subagent launch/completion summaries
+- failing assertions and later resolutions
+- command outcomes that should be searchable as exact facts
+
+Preferred writer:
+
+```bash
+python3 <claude-flow-root>/scripts/run_manifest.py record-event \
+  --manifest .claude/runs/<session-id>.json \
+  --event-type decision \
+  --category decision \
+  --source user \
+  --payload '{"summary":"Use append-only continuity events"}'
+```
+
+`record-command` automatically mirrors command outcomes into the event log. The
+manifest stores `event_log_path` so later tools can discover the event stream.
+
 ## Optional Trajectory Export
 
 Use `scripts/export_run_timeline.py` when you need to inspect or visualize a
-run as an ordered event stream instead of a nested manifest.
+run as an ordered event stream instead of a nested manifest. If the event log
+exists, the exporter includes those JSONL records as `session_event` entries.
 
 ```bash
 python3 <claude-flow-root>/scripts/export_run_timeline.py \

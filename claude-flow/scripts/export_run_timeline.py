@@ -25,6 +25,47 @@ def load_manifest(path: Path) -> dict[str, Any]:
     return payload
 
 
+def default_event_log_path(manifest_path: Path) -> Path:
+    """Return the sibling append-only event log path for a manifest."""
+    return manifest_path.with_name(f"{manifest_path.stem}.events.jsonl")
+
+
+def load_event_log(path: Path) -> list[dict[str, Any]]:
+    """Load JSONL run events from path."""
+    if not path.exists():
+        return []
+    events = []
+    for line_number, line in enumerate(path.read_text().splitlines(), start=1):
+        if not line.strip():
+            continue
+        try:
+            event = json.loads(line)
+        except json.JSONDecodeError as exc:
+            raise ValueError(
+                f"event log is not valid JSONL at {path}:{line_number}"
+            ) from exc
+        if not isinstance(event, dict):
+            raise ValueError(
+                f"event log line must be a JSON object at {path}:{line_number}"
+            )
+        events.append(event)
+    return events
+
+
+def resolve_event_log_path(
+    manifest_path: Path,
+    manifest: dict[str, Any],
+) -> Path:
+    """Resolve the event log path configured by the manifest."""
+    configured = manifest.get("event_log_path")
+    if configured:
+        event_log_path = Path(str(configured))
+        if event_log_path.is_absolute():
+            return event_log_path
+        return manifest_path.parent / event_log_path
+    return default_event_log_path(manifest_path)
+
+
 def _event(
     event_type: str,
     timestamp: str | None,
@@ -116,6 +157,9 @@ def manifest_to_events(manifest: dict[str, Any]) -> list[dict[str, Any]]:
     ordered_events.extend(
         _list_events(manifest, "commands_run", "command", 40_000)
     )
+    ordered_events.extend(
+        _list_events(manifest, "run_events", "session_event", 50_000)
+    )
 
     ordered_events.sort(
         key=lambda event: (
@@ -161,6 +205,8 @@ def main() -> int:
     args = parser.parse_args()
     try:
         manifest = load_manifest(args.manifest)
+        event_log_path = resolve_event_log_path(args.manifest, manifest)
+        manifest["run_events"] = load_event_log(event_log_path)
         events = manifest_to_events(manifest)
         write_jsonl(events, args.output)
     except (FileNotFoundError, ValueError, OSError) as exc:

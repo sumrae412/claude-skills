@@ -1,4 +1,6 @@
 import json
+import subprocess
+import sys
 from pathlib import Path
 
 from run_manifest import (
@@ -6,10 +8,14 @@ from run_manifest import (
     load_manifest,
     record_approval,
     record_command,
+    record_event,
     record_review,
     record_verification,
     set_review_base,
 )
+
+
+SCRIPT = Path(__file__).with_name("run_manifest.py")
 
 
 def _write_state(path: Path) -> None:
@@ -175,3 +181,85 @@ def test_record_verification_review_and_command_append(tmp_path: Path):
     assert manifest["review_runs"][0]["reviewers_run"] == ["coderabbit"]
     assert manifest["commands_run"][0]["command"] == "python3 -m pytest -q"
     assert manifest["commands_run"][0]["exit_code"] == 0
+
+
+def test_record_event_appends_jsonl_and_stores_event_log_path(tmp_path: Path):
+    manifest_path = tmp_path / ".claude" / "runs" / "session.json"
+    init_manifest(manifest_path=manifest_path)
+
+    event = record_event(
+        manifest_path=manifest_path,
+        event_type="decision",
+        category="decision",
+        source="user",
+        payload={"summary": "Use append-only continuity events"},
+    )
+    manifest = load_manifest(manifest_path)
+    event_log_path = Path(manifest["event_log_path"])
+    if not event_log_path.is_absolute():
+        event_log_path = manifest_path.parent / event_log_path
+    events = [
+        json.loads(line) for line in event_log_path.read_text().splitlines()
+    ]
+
+    assert event["type"] == "decision"
+    assert events == [event]
+
+
+def test_record_command_mirrors_to_event_log(tmp_path: Path):
+    manifest_path = tmp_path / "run.json"
+    init_manifest(manifest_path=manifest_path)
+
+    command = record_command(
+        manifest_path=manifest_path,
+        command="python3 -m pytest -q",
+        exit_code=0,
+        category="tests",
+        cwd="/repo",
+    )
+    manifest = load_manifest(manifest_path)
+    event_log_path = Path(manifest["event_log_path"])
+    if not event_log_path.is_absolute():
+        event_log_path = manifest_path.parent / event_log_path
+    events = [
+        json.loads(line) for line in event_log_path.read_text().splitlines()
+    ]
+
+    assert command["command"] == "python3 -m pytest -q"
+    assert events[0]["type"] == "command"
+    assert events[0]["category"] == "tests"
+    assert events[0]["payload"]["exit_code"] == 0
+
+
+def test_cli_record_event_appends_jsonl(tmp_path: Path):
+    manifest_path = tmp_path / "run.json"
+    init_manifest(manifest_path=manifest_path)
+
+    completed = subprocess.run(
+        [
+            sys.executable,
+            str(SCRIPT),
+            "record-event",
+            "--manifest",
+            str(manifest_path),
+            "--event-type",
+            "decision",
+            "--category",
+            "decision",
+            "--source",
+            "user",
+            "--payload",
+            '{"summary":"Use append-only continuity events"}',
+            "--json",
+        ],
+        capture_output=True,
+        text=True,
+    )
+    manifest = load_manifest(manifest_path)
+    event_log_path = Path(manifest["event_log_path"])
+    if not event_log_path.is_absolute():
+        event_log_path = manifest_path.parent / event_log_path
+
+    assert completed.returncode == 0
+    assert json.loads(completed.stdout)["source"] == "user"
+    assert event_log_path.exists()
