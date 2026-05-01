@@ -17,6 +17,14 @@ Pattern 11 (compress prose in always-loaded context files) was inspired by:
 - **What was taken:** the *idea* that always-loaded memory files pay a recurring token cost and benefit from one-time prose compression with a human-readable backup kept alongside. Nothing else.
 - **What was deliberately left behind:** caveman-speak style (articles dropped, fragment grammar, 文言文 mode). Our pattern calls for dense professional prose, not telegraphic shorthand — so the compressed file stays readable to humans and precise for downstream tooling.
 
+Pattern 12 (preserve high-signal categories during compaction / handoff) was inspired by:
+
+- **Upstream:** https://github.com/Opencode-DCP/opencode-dynamic-context-pruning — specifically its `protectedTools` default list (`task, skill, todowrite, todoread, compress, batch, plan_enter, plan_exit, write, edit`) and its `purgeErrors` strategy (drop errored tool *inputs* after N turns, keep the error message).
+- **Upstream license:** AGPL-3.0-or-later.
+- **Inspiration date:** 2026-05-01
+- **What was taken:** two principles — (1) some tool-output categories carry irreplaceable signal and should never be compressed away, and (2) errored tool calls have a high-bulk / low-signal asymmetry where the error message is the load-bearing part and the input payload can be dropped. Translated to the Claude Code surface (TodoWrite, skill outputs, Write/Edit results, Plan content).
+- **What was deliberately left behind:** DCP's actual implementation — the `compress` tool, range/message modes, nested compressions, decompress-by-ID, soft-threshold nudge frequency, per-model context overrides. All of that operates at the LLM-request-rewrite layer, which Claude Code's harness owns; skills can't intercept and rewrite messages this way. AGPL code was not copied — only the ideas, which are not copyrightable (17 U.S.C. § 102(b)).
+
 ## What was imported vs what wasn't
 
 **Distilled (transferable, this skill):**
