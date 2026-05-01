@@ -56,7 +56,10 @@ def read_json_file(path: Path, fallback: Any) -> Any:
     """Read JSON from path, returning fallback when the file is absent."""
     if not path.exists():
         return fallback
-    return json.loads(path.read_text())
+    try:
+        return json.loads(path.read_text())
+    except json.JSONDecodeError as exc:
+        raise ValueError(f"Invalid JSON in {path}: {exc}") from exc
 
 
 def write_json_file(path: Path, payload: Any) -> None:

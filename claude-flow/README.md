@@ -145,5 +145,6 @@ python3 -m pytest -q claude-flow/scripts
 ```
 
 The linter catches hot-path doc drift, mutating-path sequence regressions,
-missing workflow references, and review-base helper breakage. The pytest suite
-covers the helper scripts and bundled workflow assets in more detail.
+missing workflow references, skill metadata drift, guidance-doc security
+patterns, and review-base helper breakage. The pytest suite covers the helper
+scripts and bundled workflow assets in more detail.
