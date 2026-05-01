@@ -176,6 +176,17 @@ Fix ERROR-level issues before continuing.
 Prefer the commands discovered in the Phase 0 capability snapshot over guessed
 tool names when the project has a declared lint/typecheck setup.
 
+## Verification Ladder
+
+Run these checks **in order**. Any failure halts the ladder — do not proceed to handoff or claim "done" until every rung passes.
+
+1. **Health** — the thing starts/loads/imports without error. (Process boots, module imports, page renders 200.)
+2. **Registered** — the new artifact is discoverable by the system that's supposed to consume it. (Route registered, model migrated, skill listed, hook fired.)
+3. **Discoverable via the durable contract** — the consumer can find the artifact through the same interface the rest of production uses, not through a debug or status endpoint. (See `references/lookup-detectors.md` § "Durable vs version-dependent introspection.")
+4. **Real answer** — exercise the feature end-to-end with realistic input and verify the observable output matches acceptance criteria. Reading source and concluding "it looks correct" does not satisfy this rung.
+
+A rung that "passes silently" (try/except returns None, mocked DB execute, log says "OK" with no body check) does not pass — it has no signal.
+
 ## Verification Gate
 
 Invoke `verification-before-completion`:
