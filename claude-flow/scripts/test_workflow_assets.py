@@ -111,6 +111,26 @@ def test_run_manifest_and_capability_refs_exist():
     assert (SKILL_ROOT / "scripts" / "run_manifest.py").exists()
 
 
+def test_tool_error_taxonomy_is_documented_in_manifest():
+    taxonomy = (SKILL_ROOT / "references" / "failure-taxonomy.md").read_text()
+    manifest = (SKILL_ROOT / "references" / "run-manifest.md").read_text()
+    error_classes = {
+        "unknown-tool-error",
+        "invalid-arguments",
+        "unexpected-environment",
+        "provider-error",
+        "timeout",
+        "user-aborted",
+    }
+
+    for error_class in error_classes:
+        assert f"`{error_class}`" in taxonomy
+        assert error_class in manifest
+
+    assert "tool_error" in manifest
+    assert "subagent_error" in manifest
+
+
 def test_courierflow_skill_menu_has_backing_skill_folders():
     workspace_root = SKILL_ROOT.parent
     phase_5 = (SKILL_ROOT / "phases" / "phase-5-implementation.md").read_text()

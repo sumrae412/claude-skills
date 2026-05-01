@@ -56,6 +56,8 @@ important after compaction or resume:
 - subagent launch/completion summaries
 - failing assertions and later resolutions
 - command outcomes that should be searchable as exact facts
+- tool and subagent errors with the class names from
+  `references/failure-taxonomy.md`
 
 Preferred writer:
 
@@ -70,6 +72,41 @@ python3 <claude-flow-root>/scripts/run_manifest.py record-event \
 
 `record-command` automatically mirrors command outcomes into the event log. The
 manifest stores `event_log_path` so later tools can discover the event stream.
+
+### Tool and Subagent Error Events
+
+Record failed tool calls and subagent dispatches as explicit events instead of
+leaving the failure only in chat history. This keeps later compaction, resume,
+and retrospective analysis grounded in exact facts.
+
+Use `event_type` values:
+
+- `tool_error` for a local tool, MCP tool, CLI helper, or external API call
+- `subagent_error` for a spawned agent, reviewer, implementer, or advisor
+
+Allowed `error_class` values are `unknown-tool-error`, `invalid-arguments`,
+`unexpected-environment`, `provider-error`, `timeout`, and `user-aborted`.
+
+The payload must include:
+
+```json
+{
+  "tool_name": "grep",
+  "subagent_role": null,
+  "phase": "phase-2",
+  "error_class": "timeout",
+  "expected": true,
+  "failure_tag": "tool-selection",
+  "summary": "Repository-wide grep timed out on an unbounded pattern",
+  "recovery": "Reran with a narrower rg query under app/services"
+}
+```
+
+For `subagent_error`, set `tool_name` to `null` and fill `subagent_role`.
+`error_class` must be one of the classes in
+`references/failure-taxonomy.md`. Use `unknown-tool-error` only when no
+existing class fits; those events should be investigated rather than accepted
+as normal workflow noise.
 
 ## Optional Trajectory Export
 

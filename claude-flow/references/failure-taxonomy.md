@@ -1,6 +1,8 @@
 # Workflow Failure Taxonomy
 
-Tag failures to behavioral categories when they occur. These tags feed into the Workflow Retrospective (Phase 6) and session-learnings to detect patterns across runs.
+Tag failures to behavioral categories when they occur. These tags feed into
+the Workflow Retrospective (Phase 6), session-learnings, and run-manifest
+event-log analysis.
 
 | Tag | Description | Example |
 |-----|-------------|---------|
@@ -17,3 +19,24 @@ Tag failures to behavioral categories when they occur. These tags feed into the 
 | `tool-selection` | Wrong tool or pattern chosen for the job | Used raw SQL when the ORM had a built-in method |
 | `over-engineering` | Built more than was needed | Added abstraction layer for a one-time operation |
 | `under-specification` | Requirements were technically met but user intent was missed | Implemented delete but user wanted soft-delete |
+
+## Tool and Subagent Error Classes
+
+Use these classes for `tool_error` and `subagent_error` events in the run
+manifest event log. The class goes in `payload.error_class`; the workflow
+failure tag goes in `payload.failure_tag` when the error reflects a workflow
+mistake.
+
+| Error class | Expected? | When to use | Failure tag |
+|-------------|-----------|-------------|-------------|
+| `unknown-tool-error` | No | A tool fails in a way not covered by the classes below. Treat every occurrence as a workflow or harness bug until classified. | `tool-selection` unless a sharper tag applies |
+| `invalid-arguments` | Yes | The executor or subagent called the right tool with malformed, incomplete, or unsupported arguments. | `tool-selection` |
+| `unexpected-environment` | Yes | The call was valid, but the local workspace, missing binary, stale file path, permissions, or repository state contradicted the expected environment. | `plan-verification-miss` or `exploration-gap` |
+| `provider-error` | Yes | An external provider, MCP server, hosted tool, or API was unavailable, rate-limited, or returned a transient 5xx-style failure. | Leave unset unless the workflow mishandled recovery |
+| `timeout` | Yes | A tool or subagent exceeded its time budget. | `tool-selection` when the query or scope was inefficient |
+| `user-aborted` | Yes | The user intentionally stopped, redirected, or cancelled the work. | Leave unset |
+
+Expected errors are still worth recording because spikes can expose a broken
+prompt, stale phase instruction, or weak plan verification. Unknown errors are
+bugs in the workflow surface: classify or fix them before treating them as
+normal noise.
