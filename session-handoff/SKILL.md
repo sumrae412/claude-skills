@@ -91,6 +91,12 @@ Tell the user:
 The `claude-flow` MCP server exposes `.claude/abandoned/*.md` as resources; MCP-speaking
 clients can read abandon records programmatically without parsing files.
 
+## Recovery: app crash mid-session
+
+When the Claude Code app crashes and a session is lost, the JSONL transcript is recoverable on disk at `~/.claude/projects/<project-slug>/<session-uuid>.jsonl`. Read it to determine what shipped vs. what was pending — the transcript captures every tool call and message so you can reconstruct the in-flight commits, branch state, and outstanding user corrections without re-exploring. Cross-check against `git log --oneline -20` + `gh pr list --state all --search "merged:>=<date>"`.
+
+To find the right transcript, list `~/.claude/projects/<project-slug>/*.jsonl` sorted by mtime; the most recent file matching the project is usually the lost session. `head -3` of the JSONL gives you the cwd + sessionId so you can `claude --resume <sessionId>` from the original directory.
+
 ## Related
 
 - `next` — writes durable narrative handoffs for active work streams (different artifact, different purpose)

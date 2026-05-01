@@ -52,6 +52,13 @@ Any UI that arms, pauses, deletes, archives, or overrides a workflow must show:
 - If changing Vue workflow-builder state, verify the DOM updates after array
   or nested-object mutations.
 
+## CopilotKit and GenUI cards
+
+- The SPA shell (`app/templates/spa_shell.html`) must `<link>` all three CSS layers in order before `spa.css`: `design-system/index.css` (tokens) → `components/_copilot-gen-cards.css` (card rules using `--ds-*`) → CopilotKit's bundled CSS via `{% for href in vite_asset_css('src/spa.tsx') %}<link rel="stylesheet" href="{{ href }}">{% endfor %}`.
+- CopilotKit class-name contract (stable, safe to target/portal-into): `.copilotKitChat`, `.copilotKitChatBody`, `.copilotKitMessages` (scroll container), `.copilotKitInput`, `.copilotKitInputContainer`. `.copilotKitMessages` ships with `justify-content: space-between` — override to `flex-start !important` when portaling content into it.
+- Cache-bust `spa.css` (`?v=YYYYMMDD-N`) when the cascade ordering changes; CopilotKit-rendered chat history is also browser-cached, so verify CSS deploys via Playwright in a fresh session before assuming "still broken" reports are real.
+- Unit-prefix double-up: when backend serializers emit fields like `unit_label = "Unit B"`, components must strip a case-insensitive leading "Unit " before re-prefixing in JSX (see `TenantSearchCard.tsx`).
+
 ## Search Checks
 
 Run these before finishing template work:
