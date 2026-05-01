@@ -114,17 +114,47 @@ Dispatch Opus (`model: "opus"`, `subagent_type: "general-purpose"`) with:
 
 ---
 
+## Step 2.4: Frontend Design Context (UI Features)
+
+Before proposing durable UI architecture, load project-local design context.
+
+**Guard - run this step only if one of these signals is present:**
+- `--visual` flag on the workflow invocation
+- Task description contains "UI mockup", "visual review", "wireframe", or
+  "mockup"
+- The expected plan touches frontend files (`*.html`, `*.jsx`, `*.tsx`,
+  `*.vue`, `*.svelte`, template directories, static assets, or CSS files)
+- The task changes visible layout, copy, interaction states, responsive
+  behavior, or visual hierarchy
+
+When the guard passes:
+
+1. Load `references/frontend-design-context.md`.
+2. Produce `$design_context` using `contracts/design-context.schema.md`.
+3. Identify whether the surface is `product` or `brand`.
+4. Extract project-local design rules before borrowing generic frontend
+   guidance.
+5. Create a task-specific design brief before mockups or final plan writing.
+
+For CourierFlow-like product UI, prefer predictable grids, reusable macros and
+shared CSS, complete states, restrained color unless the surface has a specific
+reason, and standard controls over decorative reinvention. Project-local UI
+rules override generic anti-pattern guidance.
+
 ## Step 2.5: Offer Visual Mockup (UI Features)
 
 If the feature includes a visual/UI component, ask the user before proceeding:
 
 > "Would you like to see a mockup or diagram before I start building?"
 
-If yes: create a standalone HTML mockup (write to `/tmp/`) showing the proposed UI layout, interactions, and visual design. Use the project's design system colors and patterns. Present for feedback before moving to Step 3.
+If yes: create a standalone HTML mockup (write to `/tmp/`) showing the proposed UI layout, interactions, and visual design. Use `$design_context` when available, especially the project's design system colors, component patterns, and task-specific design brief. Present for feedback before moving to Step 3.
 
 If no: proceed directly to Step 3.
 
 **Why this matters:** Validating visual design before writing code prevents wasted effort when the UX direction is wrong. A 10-minute mockup can save hours of rework.
+
+If both Step 2.5 and Step 6 run, the Step 2.5 HTML mockup is exploratory only;
+the Step 6 manifest/mockups are the verification source.
 
 ---
 
@@ -206,6 +236,11 @@ Optional UI-mockup loop that runs after `$plan` is finalized and before the user
 ### Substeps (when guard passes)
 
 1. **Load skill.** Read `skills/excalidraw-canvas/SKILL.md` — it routes to `references/excalidraw-schema.md` (JSON subset), `references/mockup-prompts.md` (generation + drift-detection prompts), and `skills/claude-flow/contracts/mockup-manifest.schema.md` (state-matrix manifest).
+
+   If `$design_context` exists, pass its task-specific design brief and
+   design-system rules into the mockup prompt. The mockups should cover the
+   required states and anti-goals from `$design_context`, not just the happy
+   path.
 
 2. **Refactor-path extract (conditional).** If `$requirements.task_type == "refactor"` AND `$requirements.target_url` is set, seed the `default` state from the live page before generating other states:
    ```
