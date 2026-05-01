@@ -1,6 +1,6 @@
 ---
 name: token-economy
-description: "Tool-call-level discipline for minimizing session token burn without sacrificing correctness. Use when starting a cost-constrained session, when noticing heavy token usage mid-session (file-slurping, serial searches, verbose tool narration), or when briefing a subagent on efficient tool use. Teaches combine-discover-and-read, batched edits, parallelized independent searches, entry-point-first exploration, targeted line ranges, don't-re-read-unchanged-files, cheap-subagent delegation, DB introspection over schema-file reads, response-shape minimalism, and dense-prose compression of always-loaded context files (CLAUDE.md and similar). NOT for production LLM API spend (use llm-cost-optimizer) or strategic decisions about *which* files/docs the agent should see (use context-engineering) or claude-flow Phase 2 exploration (use smart-exploration)."
+description: "Tool-call-level discipline for minimizing session token burn without sacrificing correctness. Use when starting a cost-constrained session, when noticing heavy token usage mid-session (file-slurping, serial searches, verbose tool narration), before /compact or session handoff, or when briefing a subagent on efficient tool use. Teaches combine-discover-and-read, batched edits, parallelized independent searches, entry-point-first exploration, targeted line ranges, don't-re-read-unchanged-files, cheap-subagent delegation, DB introspection over schema-file reads, response-shape minimalism, dense-prose compression of always-loaded context files (CLAUDE.md and similar), and preserve-vs-drop categories during compaction (preserve skill outputs / todos / edits / plans; drop errored tool inputs and stale reads first). NOT for production LLM API spend (use llm-cost-optimizer) or strategic decisions about *which* files/docs the agent should see (use context-engineering) or claude-flow Phase 2 exploration (use smart-exploration)."
 ---
 
 # Token Economy
@@ -120,6 +120,25 @@ Subagents inherit none of the orchestrator's discipline unless you tell them. A 
 
 **Keep it professional, not stylized.** The goal is *dense prose*, not *telegraphic shorthand* — a reader unfamiliar with the compression should still parse it on first read.
 
+### 12. Preserve high-signal categories during compaction / handoff
+
+When context shrinks — `/compact`, session handoff, summarizing for a fresh session, or briefing a subagent on prior work — some categories carry irreplaceable signal and others carry bulk that can be dropped without loss.
+
+**Preserve verbatim** (don't summarize away):
+- Skill outputs (a skill's resolved guidance — re-deriving costs another invocation).
+- TodoWrite state (current task list and statuses).
+- Write / Edit results (the actual change that landed; the diff is the truth).
+- Plan content (decisions already made — paraphrasing risks drift).
+- The user's literal instructions and explicit corrections.
+
+**Drop first** (high bulk, low residual signal):
+- **Errored tool inputs** — keep the error message, drop the input payload. A 10K-line file that failed to parse: the error tells you what went wrong; the file body adds nothing once you know the call failed. Same for failed Bash output, failed migrations, failed API calls.
+- Stale file reads of files you've since edited (the post-edit state is what matters).
+- Verbose tool narration ("I'm going to read X, then Y, then…").
+- Duplicated tool calls — if you ran the same Grep twice with the same args, only the latest output matters.
+
+**Why:** compression decisions made under pressure default to "summarize everything proportionally," which is the wrong shape — high-signal items get diluted and bulk items get retained at lower density. Pre-decide the categories.
+
 ## How to apply in a session
 
 1. **At session start** for a read-heavy task, mentally flag patterns 1, 3, 4, 5.
@@ -127,6 +146,7 @@ Subagents inherit none of the orchestrator's discipline unless you tell them. A 
 3. **Mid-session, if token usage spikes**, check against this list. The usual offenders: #1 (Glob then Read), #3 (serial when parallel was possible), #9 (verbose narration).
 4. **When the answer is in a DB**, reach for #8 before opening a single migration file.
 5. **Once per project** (not per session), apply #11 to `CLAUDE.md` and other always-loaded files. One-time prep, compounds forever.
+6. **Before `/compact` or session handoff**, apply #12: pre-decide what's preserved (skills, todos, edits, plans, user instructions) vs dropped first (errored tool inputs, stale reads, verbose narration).
 
 ## What NOT to do
 
