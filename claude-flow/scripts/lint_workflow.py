@@ -17,6 +17,8 @@ import subprocess
 import sys
 from pathlib import Path
 
+from lint_skill_metadata import lint_skill_metadata
+from lint_skill_security import lint_skill_security
 from resolve_review_base import resolve_review_base
 
 
@@ -198,6 +200,25 @@ def lint_workflow(
     errors.extend(lint_active_docs(skill_root))
     errors.extend(lint_mutating_paths(skill_root))
     errors.extend(lint_reference_assets(skill_root))
+
+    metadata_result = lint_skill_metadata(
+        skill_root=skill_root,
+        workspace_root=skill_root.parent,
+    )
+    errors.extend(
+        f"skill metadata: {error}" for error in metadata_result["errors"]
+    )
+    warnings.extend(
+        f"skill metadata: {warning}" for warning in metadata_result["warnings"]
+    )
+
+    security_result = lint_skill_security(skill_root=skill_root)
+    errors.extend(
+        f"skill security: {error}" for error in security_result["errors"]
+    )
+    warnings.extend(
+        f"skill security: {warning}" for warning in security_result["warnings"]
+    )
 
     review_base_result = None
     if include_review_base:

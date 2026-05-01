@@ -1,7 +1,12 @@
 ---
 name: claude-flow
 description: Use when creating new features, implementing complex changes, or executing implementation plans. Agentic workflow with fast, clone, lite, explore, and full paths. Executor/Advisor strategy — Sonnet executes, Opus advises at key decision points.
+version: 4.1.0
 user-invocable: true
+metadata:
+  hermes:
+    tags: [coding, workflow, planning, review, verification]
+    related_skills: [smart-exploration, executing-plans, verification-before-completion, coding-best-practices]
 ---
 
 # Code Creation Workflow
