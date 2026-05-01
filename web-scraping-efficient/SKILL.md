@@ -13,17 +13,23 @@ Raw HTML is huge — a single article page can be 100k+ tokens of nav, scripts, 
 
 ## Bundled scripts — use these first
 
-Three helpers cover the common cases. Run them with `python <skill-path>/scripts/<name>.py <url>` and write the output to disk. **The agent should reach for these before writing custom scrapers.**
+Four helpers cover the common cases. **Default to `dispatch.py`** — it picks the right script from the URL. Use a specific script only when you want to override the dispatch.
 
 | URL shape | Script | Output |
 |---|---|---|
+| **Don't know / mixed** | `scripts/dispatch.py` | Routes to the right script below by URL pattern |
 | News, blog post, Substack, Medium, any article-shaped page | `scripts/article.py` | `{url, title, author, date, text, word_count, lang}` |
 | `github.com/owner/repo` | `scripts/github_repo.py` | `{full_name, description, stars, tree, files: {README.md: ...}}` |
 | Anything else — generic webpage, table, structured data | `scripts/webpage.py` | `{title, headings, paragraphs, links, jsonld, og}` |
 
+Dispatch rules (see `scripts/dispatch.py`): GitHub URL → `github_repo.py --files`; URL contains `/blog/`, `/post/`, `/p/`, `substack.com`, `medium.com`, or a `/YYYY/MM/` date → `article.py`; otherwise → `webpage.py`. Override the dispatch only if you have a specific reason.
+
 ### One-line invocations
 
 ```bash
+# Default: let dispatch pick
+python /path/to/web-scraping-efficient/scripts/dispatch.py "<any-url>" > /tmp/out.json
+
 # Article → clean text
 python /path/to/web-scraping-efficient/scripts/article.py "https://example.com/post" > /tmp/article.json
 wc -l /tmp/article.json && jq '{title, word_count, date}' /tmp/article.json
@@ -39,16 +45,25 @@ jq '{title, headings: (.headings | length), paragraphs: (.paragraphs | length), 
 
 For GitHub repos, **always prefer `gh api` over scraping** — the script does this for you. Never WebFetch a `github.com` URL when `gh api repos/<owner>/<repo>` will return clean JSON.
 
-### Reporting back
+### Reporting back — strict 4-line contract
 
-After running a script, give the user a 4-line report:
+After running a script, return **exactly** these four lines and stop. No preamble, no JSON dump, no "here's what I did."
+
 ```
-path: /tmp/article.json
-rows/sections: 1 article, 1,247 words
-key fields: title, author, date, text
-sample: "<title> by <author>, <date>"
+path: <abs/path/to/out.json>
+rows: <n>  fields: <key1, key2, key3>
+sample: <one-line summary of the first row — e.g. "Title by Author, 2024-12-01, 1,247 words">
+failures: <n urls failed | none>
 ```
-The full data lives on disk. Don't paste the JSON into chat.
+
+The user reads the file if they want detail. Pasting JSON inline is the most common way agents leak HTML-equivalent bloat back into context.
+
+### Budget your exploration
+
+Before writing any custom code: **state in one line what you'll try, then write it in one pass.** Don't iterate on selectors interactively in chat — each round costs tokens and rarely improves the answer. Two budgets to respect:
+
+- **One probe script max** before committing to an approach. If the first probe doesn't tell you enough, write a second — don't read the page.
+- **Three tool calls max** for a single-page extraction (one fetch, one parse, one report). If you're past three, you're either solving the wrong problem or you should have used `dispatch.py`.
 
 ## When the bundled scripts aren't enough
 
@@ -74,16 +89,21 @@ Fall through to custom scraping in this order:
 
 ## Reconnaissance — when you must explore
 
-One `curl`. No browser.
+One `curl`. No browser. **Cache to a stable path so subsequent steps don't refetch.**
 
 ```bash
-curl -sL -A "Mozilla/5.0 (compatible; research-bot/1.0)" -D /tmp/headers.txt \
-     "https://target.com/page" -o /tmp/page.html
-wc -c /tmp/page.html
-grep -ic "<term>" /tmp/page.html  # one grep per target field
+HASH=$(printf '%s' "$URL" | md5)            # stable per-URL key
+CACHE=/tmp/scrape-cache/$HASH
+mkdir -p "$CACHE"
+test -f "$CACHE/page.html" || curl -sL -A "Mozilla/5.0 (compatible; research-bot/1.0)" \
+  -D "$CACHE/headers.txt" "$URL" -o "$CACHE/page.html"
+wc -c "$CACHE/page.html"
+grep -ic "<term>" "$CACHE/page.html"          # one grep per target field
 ```
 
-**Quality gate:** if every target field is in `page.html` AND no protection signals (`grep -i "^server:\|cf-ray:" /tmp/headers.txt`), write a `selectolax` parser. **Do not launch a browser.**
+Every later step (selector probes, framework signature checks, blocking-signal grep) reads from `$CACHE/`. **Never refetch a URL within a session** — it wastes the server's bandwidth and your tokens, and gives different results if the page changed mid-task.
+
+**Quality gate:** if every target field is in `page.html` AND no protection signals (`grep -i "^server:\|cf-ray:" "$CACHE/headers.txt"`), write a `selectolax` parser. **Do not launch a browser.**
 
 ### Framework signatures — instant Tier-0 shortcuts
 
