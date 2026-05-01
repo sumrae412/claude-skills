@@ -45,6 +45,31 @@ Task → MoE Router → Constraint Compiler → RAG Context Injection
 5. **Causal** reads/writes: registry controlled_skip data. Feeds: dispatch decisions (skip/include)
 6. **Federation** reads/writes: Supabase. Feeds: registry initial priors, MoE expert configs
 
+### RAG CLI Entry Points
+
+RAG is always optional and non-blocking. If the local store, embeddings, or
+`OPENAI_API_KEY` are unavailable, the workflow continues without retrieved
+experience.
+
+```bash
+python3 <claude-flow-root>/scripts/rag.py extract \
+  --log .claude/exploration-log.json \
+  --out .claude/rag/chunks.jsonl
+
+python3 <claude-flow-root>/scripts/rag.py format \
+  --chunks .claude/rag/chunks.jsonl \
+  --limit 5
+
+python3 <claude-flow-root>/scripts/rag.py query \
+  --store .claude/rag \
+  --text "<task summary>" \
+  --phase phase-2 \
+  --fingerprint '<json fingerprint>'
+```
+
+Inject at most 5 formatted chunks under `PRIOR EXPERIENCE`, and only when the
+query command prints a non-empty block.
+
 ---
 
 ## Retry on Verification Failure

@@ -154,6 +154,29 @@ def test_lint_workflow_flags_stale_active_doc_patterns(tmp_path: Path):
     assert any("hardcoded HEAD~1 review base" in error for error in result["errors"])
 
 
+def test_lint_workflow_flags_phase6_raw_scrub_without_redactions(
+    tmp_path: Path,
+):
+    skill_root = _build_min_skill_root(tmp_path)
+    _write_text(
+        skill_root / "phases" / "phase-6-quality.md",
+        "python3 <claude-flow-root>/scripts/scrub_review_payload.py "
+        "> /tmp/claude-flow-review.diff\n",
+    )
+
+    result = lint_workflow(
+        skill_root=skill_root,
+        project_root=tmp_path,
+        include_review_base=False,
+    )
+
+    assert result["ok"] is False
+    assert any(
+        "phase 6 review scrub must preserve redaction summaries" in error
+        for error in result["errors"]
+    )
+
+
 def test_lint_workflow_flags_phase_drift_and_missing_reference_assets(
     tmp_path: Path,
 ):

@@ -28,6 +28,9 @@ LEGACY_PATTERNS = {
     "legacy skill script prefix": "skills/claude-flow/scripts",
     "hardcoded HEAD~1 review base": "HEAD~1",
 }
+RAW_REVIEW_SCRUB = (
+    "scrub_review_payload.py > /tmp/claude-flow-review.diff"
+)
 EXPECTED_MUTATING_PATHS = {
     "plan": ["phase-1", "phase-4c", "phase-5", "phase-5.5", "phase-6"],
     "clone": ["phase-1", "phase-4c", "phase-5", "phase-5.5", "phase-6"],
@@ -111,6 +114,17 @@ def lint_active_docs(skill_root: Path) -> list[str]:
             if label == "hardcoded HEAD~1 review base" and path.name != "phase-6-quality.md":
                 continue
             errors.append(f"{path.relative_to(skill_root)}: {label}")
+        if path.name == "phase-6-quality.md":
+            has_raw_pipe = RAW_REVIEW_SCRUB in text.replace("\\\n", "")
+            has_orchestrated_scrub = "orchestrate.py scrub-diff" in text
+            has_redactions_output = "--redactions-output" in text
+            if has_raw_pipe and not (
+                has_orchestrated_scrub and has_redactions_output
+            ):
+                errors.append(
+                    f"{path.relative_to(skill_root)}: phase 6 review scrub "
+                    "must preserve redaction summaries"
+                )
     return errors
 
 

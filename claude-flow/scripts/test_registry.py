@@ -440,6 +440,99 @@ class TestCompactEvents:
         result = json.loads(reg_path.read_text())
         assert result["agents"]["explorer:broad"]["prior"]["alpha"] == 5.0
 
+    def test_compact_events_increments_dispatch_count_and_timestamp(
+        self, tmp_path
+    ):
+        from registry import compact_events
+        reg_path = tmp_path / "registry.json"
+        ev_path = tmp_path / "events.jsonl"
+        self._write_registry(reg_path, {
+            "reviewer:slow": {
+                "prior": {"alpha": 1.0, "beta": 1.0},
+                "dispatches": 14,
+                "findings_produced": 0,
+                "findings_used": 0,
+                "findings_used_rate": 0.0,
+                "missed_context_count": 0,
+                "last_dispatched": None,
+                "last_updated": None,
+            }
+        })
+        self._write_events(ev_path, [{
+            "agent": "reviewer:slow",
+            "success": False,
+            "timestamp": "2026-05-01T12:00:00+00:00",
+        }])
+
+        compact_events(reg_path, ev_path)
+
+        data = json.loads(reg_path.read_text())
+        agent = data["agents"]["reviewer:slow"]
+        assert agent["prior"] == {"alpha": 1.0, "beta": 2.0}
+        assert agent["dispatches"] == 15
+        assert agent["last_updated"] == "2026-05-01T12:00:00+00:00"
+        assert ev_path.read_text() == ""
+
+    def test_compact_events_accumulates_optional_counters(self, tmp_path):
+        from registry import compact_events
+        reg_path = tmp_path / "registry.json"
+        ev_path = tmp_path / "events.jsonl"
+        self._write_registry(reg_path, {
+            "reviewer:quality": {
+                "prior": {"alpha": 2.0, "beta": 1.0},
+                "dispatches": 4,
+                "findings_produced": 3,
+                "findings_used": 1,
+                "findings_used_rate": 1 / 3,
+                "missed_context_count": 2,
+                "last_dispatched": None,
+                "last_updated": None,
+            }
+        })
+        self._write_events(ev_path, [{
+            "agent": "reviewer:quality",
+            "success": True,
+            "timestamp": "2026-05-01T12:30:00+00:00",
+            "findings_produced": 2,
+            "findings_used": 1,
+            "missed_context_count": 3,
+        }])
+
+        compact_events(reg_path, ev_path)
+
+        agent = json.loads(reg_path.read_text())["agents"]["reviewer:quality"]
+        assert agent["dispatches"] == 5
+        assert agent["findings_produced"] == 5
+        assert agent["findings_used"] == 2
+        assert agent["findings_used_rate"] == pytest.approx(2 / 5)
+        assert agent["missed_context_count"] == 5
+
+    def test_compact_events_creates_usable_unknown_agent_entry(
+        self, tmp_path
+    ):
+        from registry import compact_events
+        reg_path = tmp_path / "registry.json"
+        ev_path = tmp_path / "events.jsonl"
+        self._write_registry(reg_path, {})
+        self._write_events(ev_path, [{
+            "agent": "worker:new",
+            "success": True,
+            "timestamp": "2026-05-01T13:00:00+00:00",
+            "findings_produced": 1,
+            "findings_used": 1,
+        }])
+
+        compact_events(reg_path, ev_path)
+
+        agent = json.loads(reg_path.read_text())["agents"]["worker:new"]
+        assert agent["prior"] == {"alpha": 2.0, "beta": 1.0}
+        assert agent["dispatches"] == 1
+        assert agent["findings_produced"] == 1
+        assert agent["findings_used"] == 1
+        assert agent["findings_used_rate"] == 1.0
+        assert agent["last_dispatched"] == "2026-05-01T13:00:00+00:00"
+        assert agent["last_updated"] == "2026-05-01T13:00:00+00:00"
+
 
 # ---------------------------------------------------------------------------
 # Registry class

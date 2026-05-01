@@ -34,8 +34,13 @@ PY
    `git diff --name-only "$REVIEW_BASE_SHA"..HEAD`
 3. Scrub the diff payload before any reviewer sees it:
    ```bash
-   git diff "$REVIEW_BASE_SHA"..HEAD | \
-     python3 <claude-flow-root>/scripts/scrub_review_payload.py > /tmp/claude-flow-review.diff
+   git diff "$REVIEW_BASE_SHA"..HEAD > /tmp/claude-flow-review.raw.diff
+
+   python3 <claude-flow-root>/scripts/orchestrate.py scrub-diff \
+     /tmp/claude-flow-review.raw.diff \
+     --output /tmp/claude-flow-review.diff \
+     --redactions-output /tmp/review-redactions.json \
+     --json
    ```
 4. Run the selector script:
    ```bash
