@@ -134,6 +134,10 @@ Downgraded from Opus to Sonnet 2026-04-24 after a 15-trial dual-judge eval showe
 
 When a Phase 5 subagent dispatch could plausibly use ≥2 domain skills (UI / API / data / integrations / security), check `skill_selection_variant` in workflow-state. Default is `"b"` (shipped 2026-04-29 — see [decision record](../../docs/decisions/2026-04-29-ship-forced-selection-phase5.md)).
 
+For UI-affecting tasks, carry `$design_context` into implementation dispatches.
+Implementers must preserve centralized design-system patterns and satisfy the
+task design brief's required states before polishing visuals.
+
 - **Variant B (forced selection — DEFAULT):** Prepend the following block to the subagent prompt:
 
   ```
@@ -141,7 +145,7 @@ When a Phase 5 subagent dispatch could plausibly use ≥2 domain skills (UI / AP
   SELECTED_SKILL: <name|none>
 
   Available skills (pick one):
-  - courierflow-ui — Frontend code: Jinja templates, CSS, Vue workflow builder pages, dashboards, calendar/sidebar layouts
+  - courierflow-ui — Frontend code: Jinja templates, CSS, Vue workflow builder pages, dashboards, calendar/sidebar layouts; preserve design-system alignment, task-specific design brief, complete UI states, and centralized patterns over one-off styles
   - courierflow-api — Backend route and service code: FastAPI routes, service layer, business logic, request handlers
   - courierflow-data — Database layer: SQLAlchemy ORM models, Alembic migrations, schema design, eager-loading, Household/HouseholdMember domain
   - courierflow-integrations — External services: Google Calendar, Twilio SMS, OpenAI, DocuSeal, Gmail, onboarding wizard
