@@ -56,6 +56,17 @@ Assume they are a skilled developer, but know almost nothing about our toolset o
 **Ruled Out:** [Approaches considered and rejected during design — prevents re-exploration]
 - <approach> — <why rejected>
 
+## References
+
+[REQUIRED. List the exact file paths and external docs an implementer needs to consult. This section gates Phase 5 / `executing-plans` context loading — implementers and exploration subagents are instructed to read ONLY what's listed here, not adjacent docs they happen to find. Be deliberate: if a file is critical, list it; if it isn't, leaving it off keeps subagent context tight.]
+
+- `path/to/relevant/source.py` — <why it matters: existing pattern, contract to preserve, similar feature>
+- `path/to/test/file.py` — <why: test patterns to mirror, fixtures to reuse>
+- `docs/decisions/<decision>.md` — <why: prior decision this plan inherits>
+- <external URL> — <why: API contract, library reference>
+
+If a planned task touches a file or pattern not listed here, add it to References before handoff. Empty list is acceptable for greenfield tasks; explicitly write `- (none — greenfield)` rather than omitting the section.
+
 ---
 ```
 
