@@ -1,0 +1,4 @@
+interface:
+  display_name: "Synthesis Brief"
+  short_description: "Synthesize multiple sources into a conflict-resolved brief."
+  default_prompt: "Synthesize these sources into one conflict-resolved brief."

@@ -1,0 +1,4 @@
+interface:
+  display_name: "Writing Workshop"
+  short_description: "Edit, rewrite, and transform drafts."
+  default_prompt: "Help improve or transform this writing."

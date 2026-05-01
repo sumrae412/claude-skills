@@ -1,0 +1,4 @@
+interface:
+  display_name: "Career Practice"
+  short_description: "Practice career conversations."
+  default_prompt: "Help me prepare for this career conversation or profile update."
