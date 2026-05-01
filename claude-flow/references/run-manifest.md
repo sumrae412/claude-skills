@@ -137,6 +137,23 @@ their manifest order. This format is intentionally close to trajectory logs in
 recursive inference runtimes: a thin append-style stream that can feed a local
 viewer without teaching the viewer the full manifest schema.
 
+## Reliability Scan
+
+Use `scripts/analyze_run_reliability.py` to summarize tool and subagent errors
+across event logs:
+
+```bash
+python3 <claude-flow-root>/scripts/analyze_run_reliability.py \
+  --runs-dir .claude/runs \
+  --json
+```
+
+The scanner reports unknown error counts, totals by error class, phase, tool,
+and subagent role, repeated failures, and simple latest-run spikes. Treat any
+`unknown-tool-error` count above zero as investigation-worthy: either classify
+the failure into an expected error class or fix the workflow/tool surface that
+produced it.
+
 ## Rules
 
 - Append new approval records; do not overwrite earlier ones.
