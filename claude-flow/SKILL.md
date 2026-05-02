@@ -28,6 +28,8 @@ Phase 5 dispatches use **forced single-skill selection** (variant B) by default 
 
 When auto mode is active and the user has approved a plan, do not ask permission for each routine sub-step (commits between approval gates, picking which row to swap, choosing one of two equivalent paths). The user's "yes" is durable until the next gate. If the user says "you select one," make the call and ship — presenting options instead of acting wastes a turn.
 
+Auto mode executes bounded, approved substeps until the next explicit gate. It is not permission to run an unattended backlog loop, invent new scope, or work through an open-ended plan without returning to the user at the defined checkpoint.
+
 
 Agentic multi-phase workflow for building features. **Executor/Advisor strategy:** Sonnet executor runs the main loop (exploring, drafting, implementing). Opus advisor fires on-demand at 3-5 decision points. Project-agnostic — works for any codebase or greenfield project.
 
@@ -146,7 +148,7 @@ Examples: GitHub ops → `gh` CLI is fine locally; prefer GitHub MCP when dispat
 | `$plan` | `contracts/plan.schema.md` | Phase 4b | Phases 4c, 4d, 5, 6 |
 | `$diff` | `contracts/diff.schema.md` | Phase 5 | Phase 6 |
 
-Contracts are the interface between phases. When dispatching subagents, pass the named contract — not raw conversation. See each schema file for field definitions and notes.
+Contracts are the interface between phases. When dispatching subagents, pass the named contract — not raw conversation. See each schema file for field definitions and notes. If success depends on a specific skill, docs source, MCP server, CLI, or browser/testing tool, name it explicitly in the dispatch prompt instead of assuming the subagent will discover or choose it.
 
 For UI-affecting work, `$design_context` carries the project design system and
 the task-specific design brief; project-local UI instructions override generic
