@@ -42,6 +42,22 @@ For paragraphs 2 and 3:
 
 Do not use abstract filler such as "this is a particular shape of work" or bald "you need X, I did X" cadence.
 
+## 3a. JD Vocabulary Echo
+
+Do not echo the JD's distinctive vocabulary back at the reader verbatim. Lifting the JD's exact phrasing into the letter signals pattern-matching, not understanding — and reads as AI-generated even when the surrounding paragraph is solid.
+
+**Diagnostic:** if a noun phrase or verb construction in the letter is more than 3 consecutive words from the JD, rewrite it. Single shared keywords (e.g. "RAG", "agentic", "GxP") are fine and ATS-helpful; multi-word phrasings are not.
+
+**Replacement strategy — describe the work, don't quote the listing:**
+
+| JD says | Letter should NOT say | Letter SHOULD say |
+|---------|----------------------|-------------------|
+| "drive cross-functional alignment" | "I drive cross-functional alignment…" | "At Govini, getting eng, product, and policy on the same plan was the actual job." |
+| "own the agentic platform roadmap end-to-end" | "I would own the agentic platform roadmap end-to-end" | "I've been running an agentic platform from research through production for the last year." |
+| "translate ambiguous business needs into ML systems" | "I translate ambiguous business needs into ML systems" | "Most of what I've shipped started as a vague exec ask and ended as a system in prod." |
+
+The rule is *demonstrate you understand the work, not that you read the listing*. JD vocabulary echo is a special case of the §1 opening rule and the §5 "JD restatement" anti-pattern — it can pass both surface checks while still violating the spirit.
+
 ## 4. Company-Specific Claims
 
 Do not claim a specific company priority, product, customer segment, or operating model unless it is verified from the company's own site or another primary source the user provided.

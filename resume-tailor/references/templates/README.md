@@ -27,6 +27,8 @@ Short one-line headline — what the user does, best framed for the target role
 
 This is required for every resume, not optional.
 
+**Subtitle length:** target ~80 characters max, ideally 1 line and never more than 2. The Subtitle Word style sits tight to the Title; a 3-line subtitle wraps into the contact block and visually merges with body text. If the headline runs long, compress to a noun phrase rather than a full sentence.
+
 **Section order:**
 
 1. `::: {custom-style="Title"}` name div
@@ -48,6 +50,17 @@ This is required for every resume, not optional.
 **Bullets:** plain hyphen bullets. Each bullet is one sentence or one clause. Past tense for finished roles, present tense for the current role.
 
 **Contact block order:** street (optional — city + state is enough per `output-formats.md` "What to Omit"), city/state/zip, phone, email. One line per field.
+
+**Contact block formatting (bold, balanced 2-line).** Render the contact line as bold body text, split across two balanced lines using a pandoc-friendly soft break (`\` at end of line) when the full line would wrap awkwardly in DOCX. Example:
+
+```markdown
+**City, ST · email@example.com · (XXX) XXX-XXXX**\
+**linkedin.com/in/handle · portfolio.example.com**
+```
+
+Bold makes the contact line read as a deliberate header element rather than body prose. The 2-line split prevents a single contact line from wrapping to 3 lines in narrower DOCX renderings — which collapses the visual hierarchy under the Subtitle.
+
+**Optional intro paragraph per role.** For senior or executive resumes, each `## Company, Location - Title` may be followed by a 1-sentence prose intro before the bullet list — naming the scope, team size, or charter that frames the bullets. This is optional; use it when the role's context (org size, regulated domain, reporting line) materially changes how the bullets should be read. Skip it for early-career roles where the title carries the context. Limit to one sentence — anything longer competes with the bullets.
 
 ## Cover letter conventions (extracted)
 
