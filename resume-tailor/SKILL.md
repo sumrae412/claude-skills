@@ -146,6 +146,10 @@ Final deliverables. Format details, ATS tips, and optional DOCX export are in `r
 
 **Required step before any file write:** walk the user through the assembled resume **section by section** (header/summary, each role, tail sections) for approval. See `references/output-formats.md` §3.5. Cover letters get the same treatment paragraph-by-paragraph, and must also clear the anti-patterns checklist (positive framing, no JD restatement, P4 claim verified).
 
+**Voice corpus — when drafting a cover letter:** load `references/voice-corpus.md` before reading any prior letter as a voice template. Voice templates come ONLY from `~/Documents/resumes/_voice-corpus/{originals,successful}/` — never from per-company folders, even endorsed ones. If the corpus does not exist, offer to bootstrap it once and proceed (or skip without prior-letter input on user decline). This prevents AI-voice cadence from compounding across drafts.
+
+**Post-interview promotion:** when the user reports an interview/screen/offer signal for an application that has a letter on disk ("I got an interview at X", "X invited me to a phone screen", "X moved me forward", "X made me an offer"), offer to promote `~/Documents/resumes/<X>/cover-letter.md` to `~/Documents/resumes/_voice-corpus/successful/<YYYY-MM-DD>-<X>-cover-letter.md`. Promotion is a **copy** (not symlink), frozen at success-time. Do not promote on application-submitted, auto-acks, or in-session endorsement. See `references/voice-corpus.md` §"Promotion Trigger".
+
 Defaults:
 
 1. **Tailored resume** (markdown, ready to copy-paste or convert)
@@ -172,6 +176,7 @@ Offer: *"Want me to convert to DOCX or iterate on any section?"*
 7. **Communication principles apply.** Resumes are author-to-audience writing. Audience-centered focus, lead with the strongest evidence, simple plain-language bullets, no ego residue. Load `shared/communication-principles.md` before Phase 2 matching and Phase 4 positioning — the bullet-level and headline-level decisions are where these principles bite hardest.
 8. **Cover letters are opt-in only.** The default Phase 5 deliverable set is resume + keyword coverage + jd.md. Cover letters are produced only on explicit user request — never offered proactively, never pre-announced, never drafted as a "while I'm at it" addition. The closing prompt deliberately omits cover-letter language so the user has to raise it.
 9. **Final prose must not sound templated.** Lists and tables are for analysis checkpoints only. Headlines, summaries, and cover letters must read like authored prose with a governing idea, specific evidence, and no buzzword stacking. Load `references/writing-quality.md` before writing them.
+10. **Voice templates come from the corpus, not from per-company folders.** When drafting a cover letter, voice cues come ONLY from `~/Documents/resumes/_voice-corpus/{originals,successful}/`. Never read prior letters from `~/Documents/resumes/<other-companies>/cover-letter.md` as voice templates — those letters either failed, are in flight, or were endorsed in-session without an interview signal, and pulling voice from them compounds AI cadence. See `references/voice-corpus.md`.
 
 ## Professional Help Boundary
 

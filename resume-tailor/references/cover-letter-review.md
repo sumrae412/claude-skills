@@ -2,6 +2,12 @@
 
 Local review reference for Phase 5 cover-letter drafting. Load this file before drafting or revising a cover letter so the review rules live inside the `resume-tailor` skill instead of in host memory.
 
+## 0. Input Sources — where voice templates come from
+
+Before drafting, read voice templates **only** from `~/Documents/resumes/_voice-corpus/{originals,successful}/`. Do NOT read prior letters from `~/Documents/resumes/<other-companies>/cover-letter.md` — those letters either failed, are in flight, or were endorsed in-session without an interview signal, and pulling voice from them compounds AI cadence over time.
+
+If the corpus does not exist, see `references/voice-corpus.md` §Bootstrap. If the user declines to bootstrap, draft without prior-letter input and surface the AI-voice-compounding risk in §6.
+
 ## 1. Opening Rule
 
 Paragraphs 2-4 must open with the company's need, the role's actual work, or a concrete pain point. Do not open those paragraphs with the candidate's credential.
