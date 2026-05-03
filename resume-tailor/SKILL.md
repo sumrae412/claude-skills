@@ -85,6 +85,8 @@ Output to user (checkpoint) — **in this order**:
 
 **Rationale for JD-first ordering:** Users often can't evaluate whether a weight is right without re-anchoring in the JD content. Placing the JD recap immediately above the weights means the user sees the *evidence* and the *derived profile* together, without scrolling back to the JD file.
 
+**YOE cutoff check (honest-scoping):** if the JD specifies a years-of-experience requirement (e.g. "8+ years", "12+ years required"), compute the earliest plausible role start year for the resume: `current_year - (YOE + ~3 grace)`. Any role on the resume starting more than that window back becomes a *truncate-or-summarize* candidate in Phase 2. Hiring managers reading a 25-year tenure for an 8-YOE role read it as overqualified, not as bonus. See `references/jd-analysis.md` §"YOE Cutoff".
+
 Ask: *"Does this profile match how you read the role? Anything I over- or under-weighted?"* Wait for confirmation before Phase 2.
 
 ---
@@ -92,6 +94,8 @@ Ask: *"Does this profile match how you read the role? Anything I over- or under-
 ## Phase 2 — Matching Pass
 
 For each bullet and role in the resume, assign a confidence band vs. the JD profile and propose a reframe if appropriate. Rubric + four reframing strategies are in `references/matching-rubric.md` — load it. Also load `shared/communication-principles.md` — reframed bullets must lead with the conclusion, stay in plain language, and serve the reader (hiring manager / ATS), not the author. If the target role is Head/VP/executive level, also load `references/executive-bullets.md` so bullet rewrites surface decisions, tradeoffs, governance, and leverage rather than just implementation.
+
+**Anti-fabrication mechanic — copy master, then diff.** The Phase 2 working baseline is a *literal copy* of the canonical resume, not a draft regenerated from memory of the user's experience. Reframes are diffs against that copy: each change names the strategy used (Keyword Alignment / Emphasis Shift / Abstraction Level / Scale Emphasis) and traces back to a specific bullet in the copied source. If a proposed reframe has no antecedent in the copied master, it is fabrication, not reframing — route to Phase 3 discovery instead.
 
 Output to user (checkpoint):
 
@@ -156,10 +160,37 @@ Defaults:
 2. **Keyword coverage report** — must-haves + nice-to-haves hit/missed
 3. **`jd.md`** — source URL + captured date + full JD text. Required in every company folder so the tailored outputs remain legible months later. See `references/output-formats.md` §0.1.
 4. **Cover letter draft — opt-in only.** Do NOT offer, pre-announce, or auto-draft a cover letter at the end of Phase 5. Produce resume + keyword coverage + jd.md only. Draft a cover letter exclusively when the user explicitly requests one ("draft a cover letter", "write me a letter for this", etc.). The default closing prompt does NOT mention cover letters — its absence is what prevents an unwanted draft from being produced unprompted.
+5. **Connection message — opt-in only.** Same rules as cover letters. Produce a ~300-character LinkedIn DM aimed at a recruiter, hiring manager, or referrer ONLY when the user explicitly asks ("draft a connection message", "write me a LinkedIn DM for this", "outreach to the recruiter"). Spec lives in `references/connection-message.md`. Output path: `~/Documents/resumes/<Company>/connection-message.md`.
 
 No change log. What was reframed and why is a conversation artifact, not a deliverable — if the skill itself should behave differently next time, that's a session-learnings update to the skill, not a file for the user.
 
 Offer: *"Want me to convert to DOCX or iterate on any section?"*
+
+---
+
+## Phase 5R — Review Mode (Critique an Existing Letter)
+
+Use when the user has already drafted a cover letter (or resume bullet set) and wants targeted critique without redrafting. Triggers: *"review my cover letter"*, *"critique this draft"*, *"what would you change?"*, *"don't rewrite it, just tell me what's weak"*.
+
+**Mode contract — what Review Mode does NOT do:**
+
+- Does NOT redraft. The user owns the prose; Review Mode produces feedback.
+- Does NOT rewrite paragraphs into "improved" versions unless the user explicitly asks for a rewrite of a specific paragraph.
+- Does NOT silently apply voice from `_voice-corpus/` — Review Mode evaluates *against* the user's voice, not toward AI cadence.
+
+**Workflow:**
+
+1. **Inputs:** the draft (paste or path) + the JD (URL, file, or paste). If no JD, ask once; without it the review is blind.
+2. **Quick JD scan:** load `references/jd-analysis.md` and produce a compact JD profile (no full Phase 1 checkpoint — this is a critique pass, not a tailoring session).
+3. **Load review references:** `references/cover-letter-review.md` (anti-patterns + opener rules), `shared/communication-principles.md` (audience-centered, lead-with-conclusion). For resume-bullet review, also `references/matching-rubric.md` and `references/writing-quality.md`.
+4. **Output (single checkpoint, no phase chain):**
+   - **Strengths** (2-4 bullets) — what's working, with the specific phrase quoted and why it lands
+   - **Targeted issues** (per paragraph or per bullet) — quote the exact text, name the rule it violates, suggest a *direction* (not a rewrite). Example: *"P2 opens with `I led enterprise AI delivery at Govini...` — candidate-focused per cover-letter-review §1. Direction: lead with the company's pain, then your evidence."*
+   - **Anti-pattern hits** — explicit list of any §5 anti-patterns triggered
+   - **Final read pass** (per cover-letter-review §6): first sentence of each paragraph, all proper nouns, closing line — flag any that fail the test
+5. **Close:** *"Want me to rewrite any paragraph you flag, or leave the draft entirely yours?"* Wait for explicit per-paragraph rewrite request before producing replacement prose.
+
+**Why this mode exists:** the default Phase 1-5 chain assumes the user wants a tailored draft. When the user wants critique, the chain over-produces — it rewrites material that should stay theirs. Review Mode is the "I want a sharp editor, not a ghostwriter" path.
 
 **Post-write verification (when this skill's own files are edited):** after any Edit to `references/*.md` or `SKILL.md` in this skill, Read the written file and grep for the inserted anchor text. Do not trust the Edit tool's success signal alone — on hosts where `~/.claude/skills/resume-tailor/` is not a symlink to `claude_code/claude-skills/resume-tailor/`, edits can land in a stale copy while the canonical repo stays clean. Verify in the canonical path at `/Users/summerrae/claude_code/claude-skills/resume-tailor/` (or the host's equivalent).
 
