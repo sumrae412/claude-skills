@@ -296,6 +296,7 @@ Never offer HTML, LaTeX, or heavily-designed templates as default. They fail ATS
 
 - Keywords must appear **in the bullet prose**, not just in a skills list. ATS-modern scanners weight context, not keyword density.
 - **Avoid Unicode glyphs in the resume body.** Arrows (`→`, `⇒`), em-dashes in keyword positions, bullet-point characters, and fancy quotes can fail older ATS parsers and cause keyword mismatches. Write `0 to 1` instead of `0→1`, `A to B` instead of `A→B`, regular hyphens instead of en/em-dashes in keyword-adjacent positions. Reserve Unicode for the coverage report (internal, not parsed by ATS).
+- **Decode HTML entities when ingesting source resumes from `.txt` exports or pasted content.** Tools that export resumes via HTML-aware paths can leave entities like `R&amp;D`, `P&amp;L`, `&nbsp;`, `&#39;` in the text. These break ATS keyword matching (`R&amp;D` does not match `R&D`) and look broken to human reviewers. Run a decode pass on any pasted source before treating it as ground truth: `python3 -c "import html,sys; print(html.unescape(sys.stdin.read()))" < source.txt`. Common entities to scan for: `&amp;`, `&nbsp;`, `&#39;`, `&quot;`, `&lt;`, `&gt;`.
 - Do not use tables, text boxes, headers/footers, or multi-column layouts in DOCX. Single column, standard headings.
 - Standard section names (`Experience`, not "Where I've Been"). ATS looks for headers.
 - Dates in `MMM YYYY` or `YYYY`, consistently.
