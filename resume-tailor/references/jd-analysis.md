@@ -111,6 +111,25 @@ Each focus area gets exactly one action code. Phase 2 uses these to decide treat
 - **Scope signals:** team size, budget, geographic scope, P&L ownership, # of stakeholders. Quote the JD phrases that establish each.
 - **Culture signals:** read the "about us" and "how we work" sections. Tone matters — "we move fast" vs. "we believe in sustainable pace" calibrate differently.
 
+## YOE Cutoff (Honest-Scoping)
+
+When the JD specifies a years-of-experience requirement, compute the *earliest plausible role start year* the resume should show:
+
+```
+earliest_start = current_year - (YOE_required + ~3 grace)
+```
+
+Roles with start dates earlier than that window become **truncate-or-summarize** candidates in Phase 2:
+
+- Truncate: drop the role entirely if it's not load-bearing for the JD's focus areas.
+- Summarize: collapse multiple early-career roles into a single "Earlier roles: [titles], [years]" line at the bottom of EXPERIENCE.
+
+**Why this matters:** a hiring manager reading a 25-year tenure for an 8-YOE role reads it as overqualified or as a candidate who didn't tailor — not as bonus. The grace window (~3 years) avoids cutting roles that are 1-2 years past the literal threshold and still genuinely useful evidence.
+
+**Do not delete the source bullets** from the canonical resume — only from the tailored output. The canonical resume retains every role.
+
+**Example:** JD says "8+ years of experience required". Current year 2026. Earliest plausible start = `2026 - (8 + 3) = 2015`. Roles starting before 2015 are candidates for truncation or summarization in the tailored output.
+
 ## When to Surface Tension
 
 If the JD has internal contradictions (e.g., "senior" title at IC scope + "must manage a team"), name this to the user before Phase 2. It often becomes an interview question; the resume should be tailored to what the role *actually* is, not the title.
