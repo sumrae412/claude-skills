@@ -8,6 +8,10 @@ Before drafting, read voice templates **only** from `~/Documents/resumes/_voice-
 
 If the corpus does not exist, see `references/voice-corpus.md` §Bootstrap. If the user declines to bootstrap, draft without prior-letter input and surface the AI-voice-compounding risk in §6.
 
+## 0a. Director-Level Roles → Load `forward-looking-fit.md`
+
+For any Director, Sr. Director, VP, Head-of, or Chief title (and senior IC roles where the JD emphasizes ownership, cross-functional leadership, or roadmap influence), load `references/forward-looking-fit.md` *before* drafting. The default Phase 5 pattern produces a retrospective resume narrative; senior roles need a forward-looking, problem-solution argument that explicitly de-risks the hiring manager's roadmap. The reference codifies the 10 rules and a 5-point diagnostic.
+
 ## 1. Opening Rule
 
 Paragraphs 2-4 must open with the company's need, the role's actual work, or a concrete pain point. Do not open those paragraphs with the candidate's credential.
