@@ -150,7 +150,26 @@ Skip for FYI emails, automated messages, or anything needing research first.
 
 ---
 
-## Step 7 — Log a daily summary
+## Step 7 — Work pending Claude Tasks (Mem)
+
+After handling email, read the Personal / Claude Tasks note
+(`f9d6413e-4d58-4c2c-a446-514f5a7fa148`) and scan `## Pending` for unchecked items.
+
+For each `- [ ]` task:
+- **Claude can handle it** (research, lookups, phone numbers, scheduling, tool-based
+  actions): Complete it. Move the checkbox to `## Done`:
+  ```
+  - [x] **[Task]** — handled automatically on [date]
+  ```
+- **Cannot handle** (requires login, physical action, personal decision, payment):
+  Leave as-is.
+
+Call `update_note` once with the full updated note after working all actionable tasks.
+Count completed tasks toward "Auto-handled" in the log.
+
+---
+
+## Step 8 — Log a daily summary
 
 Append to the Personal note (`f9d6413e-4d58-4c2c-a446-514f5a7fa148`) under a
 `## Daily Triage Log` section (create if missing):
@@ -163,16 +182,16 @@ Append to the Personal note (`f9d6413e-4d58-4c2c-a446-514f5a7fa148`) under a
 - BetterBurgh: X items
 - Personal: X items
 - Drafts created: X
-- Auto-handled: X
+- Auto-handled: X (includes Mem tasks worked)
 - Notable: [anything worth flagging]
 ```
 
 ---
 
-## Step 8 — Report in chat
+## Step 9 — Report in chat
 
 Brief summary: emails processed/skipped, tasks added by project, drafts created,
-anything urgent.
+Mem tasks worked, anything urgent.
 
 ---
 
