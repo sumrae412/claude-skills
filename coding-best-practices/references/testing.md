@@ -324,3 +324,17 @@ class TestGoldenPaths:
         response = await client.get(f"/resources/{resource_id}", headers=auth_headers)
         assert response.status_code == 404
 ```
+
+## Vitest gotchas
+
+- **`vi.spyOn<T, M>` chokes on `Console` + method-name string.** `vi.spyOn<Console, "warn">` produces `Type '"warn"' does not satisfy the constraint '"Console"'` — vitest 1.x's `M extends Methods<Required<T>>` constraint resolves oddly when M is the method-name string against the global `Console` type. Escape hatch: keep a generic `ReturnType<typeof vi.spyOn>` annotation on the holding variable and cast the assignment through `unknown`:
+
+  ```ts
+  let warnSpy: ReturnType<typeof vi.spyOn>;
+  // ...
+  warnSpy = vi
+    .spyOn(console, "warn")
+    .mockImplementation(() => {}) as unknown as ReturnType<typeof vi.spyOn>;
+  ```
+
+- **Spike validation can be unfalsifiable.** When a plan says "trust spike X for claim Y", confirm the spike actually exercised Y. A spike that compiles clean but never destructures the disputed prop (e.g. `args` vs `parameters` in CopilotKit v2 render callbacks) cannot validate which prop name is right — treat the claim as untested and verify against the upstream `.d.ts` directly. Pattern: grep the spike for the disputed symbol; if absent, the spike's compile status is silent on it.

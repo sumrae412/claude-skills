@@ -58,6 +58,13 @@ Any UI that arms, pauses, deletes, archives, or overrides a workflow must show:
 - CopilotKit class-name contract (stable, safe to target/portal-into): `.copilotKitChat`, `.copilotKitChatBody`, `.copilotKitMessages` (scroll container), `.copilotKitInput`, `.copilotKitInputContainer`. `.copilotKitMessages` ships with `justify-content: space-between` — override to `flex-start !important` when portaling content into it.
 - Cache-bust `spa.css` (`?v=YYYYMMDD-N`) when the cascade ordering changes; CopilotKit-rendered chat history is also browser-cached, so verify CSS deploys via Playwright in a fresh session before assuming "still broken" reports are real.
 - Unit-prefix double-up: when backend serializers emit fields like `unit_label = "Unit B"`, components must strip a case-insensitive leading "Unit " before re-prefixing in JSX (see `TenantSearchCard.tsx`).
+- **CopilotKit v2 hook surface is NOT uniform across the three hooks.** A migration plan must enumerate each hook's contract separately:
+  - `useRenderTool` (backend-paired, render-only): render-prop is `({status, parameters, result})` — note `parameters`, NOT `args`. `status` is the string-literal union `'inProgress' | 'executing' | 'complete'`.
+  - `useFrontendTool` (LLM-exposed, frontend-handled): render-prop is `({status, args, result})`. `status` is the `ToolCallStatus` enum.
+  - `useHumanInTheLoop` (LLM-exposed, awaits user via `respond`): render-prop is `({status, args, respond})`. `status` is the `ToolCallStatus` enum.
+  `ToolCallStatus.Complete === "complete"` so `status !== ToolCallStatus.Complete` works against both the string-literal and enum shapes — preferred over bare string literals for grep-ability. Source of truth: `node_modules/@copilotkit/react-core/dist/copilotkit-DFaI4j2r.d.mts` (`RenderToolInProgressProps` / `ReactToolCallRenderer` / `ReactHumanInTheLoop`).
+- **`args` / `parameters` is `Partial<T>` during `InProgress` status, even with Zod schemas.** Required-string fields become `string | undefined` in the render union — keep defensive `?? "fallback"` coercion or early-return on non-Complete status. The "Zod schema fully types render args" claim is wrong for the streaming window.
+- **`CopilotChatLabels` v2 dropped `title` and `initial`.** Only `chatInputPlaceholder` (renamed from v1's `placeholder`) is a valid key for the placeholder slot. Importing `CopilotChat` from `@copilotkit/react-core/v2` (NOT `@copilotkit/react-ui`) and pairing with `'@copilotkit/react-core/v2/styles.css'` is the v2 swap pattern.
 
 ## Search Checks
 
