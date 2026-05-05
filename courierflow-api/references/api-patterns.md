@@ -66,3 +66,7 @@ Cover:
 - validation/business-rule failure
 - external-service failure when relevant
 - pending/confirmed workflow status transition when relevant
+
+## CopilotKit Action handler typing
+
+- **`useCopilotAction` handler stubs that just `JSON.stringify` args should drop the explicit `args: <Input>` annotation.** When the v1.54+ `parameters: [...]` array doesn't fully line up with the Python-side `<Input>` interface (e.g. backend Action declares richer enum types like `step_type: StepType` while the frontend `parameters` declares `type: 'string'`), TS rejects the handler with `Parameters<typeof X>[0] is not assignable to <Input>`. For stub handlers whose body is `return JSON.stringify(args)`, drop the annotation — `args` flows from the parameters declaration and the body never reads typed fields. Don't extend this pattern to handlers that destructure or branch on args; those need accurate types and the right place to fix is the `parameters` declaration.
