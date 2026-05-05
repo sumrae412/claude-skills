@@ -70,7 +70,15 @@ Brief description of the approach and what was built.
 
 ## Files modified
 - `path/to/file.py` — what was changed
+
+## Saved artifacts (if applicable)
+- **Patch:** `abandoned/YYYY-MM-DD-<topic>.patch`
+  - Base SHA: `<git rev-parse origin/main>` (run at save-time)
+  - Net: `+N / -M` lines (run `grep -c "^+" / "^-"` and record)
+- **Stash:** `<message from git stash list>` in canonical clone
 ```
+
+A future session reading this record needs the base SHA to compare against `origin/main` at resume-time — if they differ, the patch's deletion context is stale and applying it will silently revert intervening commits. Recording `+N / -M` at save-time gives the resumer a sanity check against the description. See per-project memory `feedback_verify_saved_patch_base_before_apply.md` and `pattern_parked_patch_double_anchor.md`.
 
 ### Step 3 — Clean up
 
