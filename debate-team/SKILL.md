@@ -85,6 +85,23 @@ This skill uses progressive disclosure. Load the phase file for the step you're 
 
 ---
 
+## Multi-round delta capture (mandatory)
+
+When this skill runs a **second or later round** of review against an artifact that was already reviewed in a prior round (e.g. round 1 = plan-detail, round 2 = strategic; or any re-review after material edits), the skill MUST produce a **modification delta artifact** alongside the synthesized review. The delta is a separate file, not a section folded into the plan body.
+
+Required contents of the delta artifact:
+
+1. **One row per ADOPTed mod**, labeled `R<round>-NN`, with: target section in the artifact under review, one-line summary of the mod, source critic, and status (ADOPTED / DEFERRED / REJECTED).
+2. **Round-N ↔ Round-(N-1) interaction map**: which current-round mods supersede, modify, or operationalize prior-round mods; which are net-new direction.
+3. **Load-bearing list**: the subset of mods that, if dropped, would silently regress the artifact. This is the "future sessions must preserve these" list.
+4. **Outstanding questions**: anything the round surfaced but didn't resolve, with a named owner or a fallback ("write this when work resumes").
+
+Why this is mandatory: when round-N mods are folded back into the artifact body without per-mod labels, the audit trail is destroyed and future sessions cannot tell which mods are load-bearing vs. obsolete. This skill has historically produced exactly that failure mode.
+
+**Output path:** `docs/plans/<date>-<artifact-slug>-modification-delta.md` (or repo's plan-doc convention). Link from the synthesized review's "next step" section.
+
+**Applies to:** any debate-team invocation where the artifact under review has a prior debate-team artifact in `docs/plans/`, in MEMORY, or referenced in the prompt. Single-round reviews are exempt.
+
 ## Debugging
 
 - If a critic run fails: re-run the same `plancraft_review.py` command with the same `--plan-file` and `--scope-file`, then inspect the JSON output. The `error` key (if present) explains the failure (e.g. missing API key, API timeout).

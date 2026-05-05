@@ -198,3 +198,4 @@ Contracts are the interface between phases. When dispatching subagents, pass the
 | Running 10-step plans without context breaks | Fresh context for subagents at 5+ steps |
 | Carrying stale session context across unrelated tasks | `/clear` at task boundaries — auto-compaction only fires at ~80%; a small new task on top of a large done one pays for irrelevant history on every turn |
 | Running silent-failure-hunter and security-reviewer separately | Use merged `safety-reviewer` (Tier 2) — they're consolidated |
+| Running Phase 4 debate-team round 2 without a modification delta artifact | When Phase 4 invokes `debate-team` for a 2nd+ review round on the same plan, require the delta artifact (see `debate-team` "Multi-round delta capture"). Folding round-N mods into the plan body without per-mod labels destroys the audit trail and forces future sessions to re-derive load-bearing items by guesswork. |
