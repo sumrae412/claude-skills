@@ -34,6 +34,7 @@ attempt to surface a connector fix from inside a triage run.
 | CourierFlow | `7e999d54-9690-4ad1-8494-c665242b4306` |
 | BetterBurgh | `c4937ace-82b4-400f-b31e-42bbffc5ed21` |
 | Personal (everything else) | `f9d6413e-4d58-4c2c-a446-514f5a7fa148` |
+| Claude Auto-Execution Log | `eac92dec-244d-4476-8743-8adaa44443ab` |
 
 **Always call `get_note` before `update_note`** to retrieve the current `version`.
 Send the full note content back in `update_note` — partial patches are not supported.
@@ -110,18 +111,19 @@ Check the note first — skip if a digest was already added this week.
 ### B. Action Required (Summer must handle personally)
 Bills, legal docs, appointments, logins required, physical tasks.
 **Action:** Get the current version of the correct Mem note, then add a checkbox
-under `## Pending`:
+under `## Pending`. **Tag Claude-routed tasks** with `(claude-routed YYYY-MM-DD)`
+so Step 7 can distinguish them from tasks Summer added directly:
 ```
-- [ ] **Task name** — brief description of what's needed and why.
+- [ ] (claude-routed 2026-05-06) **Task name** — brief description of what's needed and why.
 ```
 
 ### C. Needs a Reply
 Real people or businesses waiting on a response.
 **Action:** Create a Gmail draft reply (warm, professional, match formality of
 original). Do not send.
-Also add to the correct Mem note:
+Also add to the correct Mem note (with the same `(claude-routed)` tag):
 ```
-- [ ] **Reply to [sender]** — [one line on what it's about]
+- [ ] (claude-routed 2026-05-06) **Reply to [sender]** — [one line on what it's about]
 ```
 
 ### D. Claude Can Handle It
@@ -154,25 +156,101 @@ Skip for FYI emails, automated messages, or anything needing research first.
 
 ---
 
-## Step 7 — Work pending Claude Tasks (Mem)
+## Step 7 — Work pending Summer-added tasks (Mem)
 
 After handling email, read the Personal / Claude Tasks note
 (`f9d6413e-4d58-4c2c-a446-514f5a7fa148`) and scan `## Pending` for unchecked items.
 
-For each `- [ ]` task:
-- **Claude can handle it** (research, lookups, phone numbers, scheduling, tool-based
-  actions): Complete it. Move the checkbox to `## Done`:
-  ```
-  - [x] **[Task]** — handled automatically on [date]
-  ```
-- **Login-gated but credential is in macOS Keychain** (see Step 7.5): Retrieve
-  credential, complete the task, move to `## Done` with a credential-source
-  annotation.
-- **Cannot handle** (physical action, personal decision, payment, login with no
-  stored credential): Leave as-is.
+### 7.0 — Discriminator: who added each task?
 
-Call `update_note` once with the full updated note after working all actionable tasks.
-Count completed tasks toward "Auto-handled" in the log.
+For each `- [ ]` in `## Pending`:
+
+- **Tagged `(claude-routed YYYY-MM-DD)`** → Claude added this from email triage. It is a
+  PROPOSAL to Summer, NOT a directive. **Do not execute.** Apply the staleness
+  rule below; otherwise leave it alone.
+- **Untagged** → Summer added it directly. Execute per 7.1 below.
+
+This split is the safety boundary: Summer-added items are directives, Claude-routed
+items wait for Summer to read them in the morning brief and either tolerate them
+(implicit ack) or delete them. Phase 1 is intentionally cautious. Future phases
+may relax this once the Auto-Execution Log has enough data.
+
+#### 7.0a — Staleness check (Claude-routed items only)
+
+If a `(claude-routed YYYY-MM-DD)` task is **>14 days old** (date in the tag is more
+than 14 days before today), append `[STALE — never acknowledged]` to the task body
+and surface it in the Step 9 chat summary. Do NOT delete or auto-purge — Summer
+decides whether to act or remove.
+
+### 7.1 — Execute Summer-added tasks
+
+For each untagged `- [ ]`:
+
+1. **Apply safety boundaries first** (see 7.2). If any rule blocks execution, leave
+   the checkbox alone and surface the reason in the Step 9 summary.
+2. **Classify the task:**
+   - **Claude can handle directly** (Gmail filter creation, calendar event creation,
+     research/lookup, scheduling via tool, Drive file fetch): proceed.
+   - **Login-gated, credential in macOS Keychain** (Step 7.5): retrieve credential,
+     complete task, annotate.
+   - **Cannot handle** (physical action, personal decision, ambiguous, requires
+     judgment): leave as-is, surface in summary.
+3. **Execute** with the appropriate tool.
+4. **Move the checkbox to `## Done`** with a one-line completion annotation:
+   ```
+   - [x] **[Original task text]** — [what was done], [tool], [date]
+   ```
+5. **Append an entry to the Auto-Execution Log** Mem note
+   (`eac92dec-244d-4476-8743-8adaa44443ab`). See 7.3 for format.
+
+Call `update_note` once with the full updated Personal note after working all
+actionable tasks. Count completed tasks toward "Auto-handled" in Step 8's log.
+
+### 7.2 — Safety boundaries (apply before every execution)
+
+These are hard rules. If a task touches any of these, do NOT execute — leave
+unchecked, surface the reason in Step 9.
+
+- **No money / no purchases.** Never initiate transfers, payments, charges, or
+  buys, even if the credential is available. Includes "buy X on Amazon," "pay Y
+  invoice," "transfer $Z."
+- **No irrevocable sends to real humans.** For "send X to person Y" tasks, draft
+  only — never send. Drafts go in Gmail's Drafts folder for Summer to review.
+  Exception: Summer-authored Gmail filters that route to spam/label/archive, since
+  those don't reach a human.
+- **No external deletes without explicit "delete" verb.** "Filter to spam" and
+  "archive" and "label" are OK. "Delete" requires the word "delete" or
+  "permanently remove" in the task body.
+- **No PII outside Mem.** Don't paste account numbers, SSNs, or sensitive
+  personal data into chat output, drafts to third parties, or tool arguments
+  beyond what the task requires.
+- **No credential write-back.** Step 7.5's Keychain access is read-only.
+- **No work-account actions.** `summer@deeplearning.ai` is out of scope.
+
+If a task is ambiguous about which boundary applies, default to NOT executing
+and ask in the Step 9 summary.
+
+### 7.3 — Auto-Execution Log entry format
+
+After each successful execution, fetch the Auto-Execution Log note
+(`eac92dec-244d-4476-8743-8adaa44443ab`), prepend a new entry at the top (right
+after the `***` separator), and `update_note` with the new content + version.
+
+```
+## YYYY-MM-DD — [Short task name]
+
+- Source: Personal Mem note, Pending (Summer-added)
+- Tools used: [Gmail filter | Calendar event | Drive search | Keychain + Browser | ...]
+- Action: [one-sentence description of what Claude did]
+- Outcome: [filter ID / event ID / URL / "found X" / "drafted reply" / etc.]
+- Time: [seconds or "n/a"]
+
+***
+```
+
+The log is the corpus that future triage decisions will learn from. Be specific
+about the action and outcome — vague entries don't help calibration. Don't log
+PII, credentials, or full email bodies.
 
 ---
 
@@ -296,3 +374,7 @@ Mem tasks worked, anything urgent.
 - Always dedup — read before writing.
 - VIPs always get a task — even if the email looks routine.
 - Always `get_note` before `update_note` — the version number is required.
+- **Tag every Claude-routed task** with `(claude-routed YYYY-MM-DD)` so Step 7
+  doesn't execute it. Untagged = Summer-added = directive. Tagged = proposal.
+- **Conservative by default.** When a task is ambiguous, leave it for Summer
+  rather than guessing. The Auto-Execution Log only matters if entries are clean.
