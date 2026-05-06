@@ -25,3 +25,17 @@ A worktree is SAFE to remove if ANY of:
 
 See: `memory/gotcha_git_cherry_squash_merge_false_positive.md`, `memory/gotcha_gh_pr_merge_delete_branch_worktree.md`
 
+### Bulk-prune triple-check (validated 2026-05-06)
+
+When auditing N stale worktrees at once, capture three signals per worktree and decide from the joint result, not any single one:
+
+- `git -C <wt> status --porcelain | wc -l` — dirty file count (untracked `.claude/` session-state ≠ tracked changes; inspect before treating as dirty)
+- `git -C <wt> log --oneline origin/main..HEAD | wc -l` — commits unique to the worktree branch
+- `git ls-remote --heads origin <branch> | wc -l` — remote branch still exists
+
+Decision rule: `dirty=0 AND unique=0 AND remote=0` → safe to prune. If `dirty>0` but the dirty files are all untracked session-state under `.claude/`, also safe under `--force`.
+
+### PATH loss in bash for-loops with `$(...)` substitutions
+
+Iterating over worktrees in `bash` and calling `git`/`wc`/`tr`/`head` inside `$(...)` can return `command not found` even after explicit `export PATH=...` at the top — subshells in command substitutions don't inherit the export reliably in some sandboxed contexts. Workaround: run the audit as a single `/usr/bin/python3 <<'PY'` block using absolute `/usr/bin/git`. Same root cause as the `gh api` bash-loop gotcha in CLAUDE.md, but extends to plain coreutils.
+
