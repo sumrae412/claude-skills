@@ -140,6 +140,47 @@ Tasks completable with available tools (research, phone numbers, lookups, schedu
 ### E. FYI / Receipts / Confirmations
 **Action:** Skip entirely.
 
+### F. Confirmed meeting / appointment to add to calendar
+Emails where Summer has clearly **accepted** or **confirmed** attending a
+meeting, appointment, or event. Two cases:
+
+1. **Calendar invites she accepted via email reply** ("yes, see you Tuesday at
+   3pm" / "RSVP confirmed").
+2. **Plain-text confirmations** with no `.ics` attachment ("Your dentist
+   appointment is confirmed for May 10 at 2:00 PM at 123 Main St" / "Order
+   pickup ready Tuesday 5/13 between 4-6pm at the warehouse").
+
+**Action:**
+1. **Extract the event:** title (concise — "Dentist", "Townsgate closing",
+   "Coffee with Sam"), start time, end time (default 30 min if unclear),
+   location, and a short description that links back to the source email.
+2. **Check for duplicates** via Calendar MCP `list_events` for ±2h around the
+   proposed start. If an existing event has the same title or location, do NOT
+   create a duplicate — annotate that match in the chat summary instead.
+3. **Create the event** via Calendar MCP `create_event` on her primary calendar
+   (`primary`). Set `reminders.useDefault: true`.
+4. **Append a Mem-side note** to the project's Pending section if the email
+   isn't auto-handlable beyond the calendar add (e.g. "review prep before
+   meeting"). Otherwise just count it toward `Auto-handled` in Step 8.
+
+**Hard rules:**
+- **Past events** — never create. If the proposed time is before now, skip
+  and surface in the chat summary as "already past".
+- **Ambiguous time** — if the email has multiple candidate times or no clear
+  date, skip and add a `- [ ]` task to the Personal note asking Summer to
+  schedule it manually. Do not guess.
+- **Tentative / proposed** — if the email contains "tentative", "proposed",
+  "if you're free", "would you be able to", do NOT create. That's an offer,
+  not a confirmation.
+- **All-day events for things that aren't all-day** — never. A "ship by Tuesday"
+  email is not an all-day event for Tuesday; it's a deadline. Skip those.
+- **Recurring** — only set recurrence if the email explicitly states a pattern
+  ("every Tuesday at 3pm"). Single occurrence otherwise.
+
+**Idempotency** — running triage twice on the same inbox state must not
+double-add. The duplicate check (rule 2) is the safety net. If you're unsure
+whether a match constitutes a duplicate, default to NOT creating.
+
 ---
 
 ## Step 5 — Deduplication
@@ -345,8 +386,10 @@ Append to the Personal note (`f9d6413e-4d58-4c2c-a446-514f5a7fa148`) under a
 - BetterBurgh: X items
 - Personal: X items
 - Drafts created: X
+- Calendar events added: X (Step 4.F)
 - Auto-handled: X (includes Mem tasks worked)
-- Notable: [anything worth flagging]
+- Notable: [anything worth flagging — including Gmail filter tasks left for the
+  9:10am gmail-task-executor worker]
 ```
 
 ---
@@ -365,8 +408,17 @@ Mem tasks worked, anything urgent.
 - `search_threads` — find email (Gmail MCP)
 - `get_thread` — read full thread body (Gmail MCP)
 - `create_draft` — create reply draft (Gmail MCP)
+- `list_events` — check existing calendar events for duplicates (Calendar MCP, Step 4.F)
+- `create_event` — add a confirmed meeting/appointment to the primary calendar (Calendar MCP, Step 4.F)
 - `security find-generic-password` (Bash) — fetch credentials from macOS Keychain
   under the `claude-automation:*` namespace (Step 7.5)
+
+**Out of scope for this routine** — Gmail filter creation. The attached Gmail
+MCP doesn't expose `users.settings.filters.create`. Filter tasks are picked up
+by the separate `gmail-task-executor` GitHub Actions workflow at 9:10am ET,
+which runs against the same `Claude Tasks` Pending list and uses a dedicated
+Gmail OAuth token. Triage should leave filter tasks untouched and let that
+worker handle them.
 
 ---
 
