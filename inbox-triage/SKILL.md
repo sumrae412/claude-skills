@@ -28,13 +28,16 @@ attempt to surface a connector fix from inside a triage run.
 
 ## Mem Note IDs
 
-| Note | ID |
-|---|---|
-| DeepLearning.AI work | `479ee14b-baed-4e54-8c5d-c2edb8c2a5b1` |
-| CourierFlow | `7e999d54-9690-4ad1-8494-c665242b4306` |
-| BetterBurgh | `c4937ace-82b4-400f-b31e-42bbffc5ed21` |
-| Personal (everything else) | `f9d6413e-4d58-4c2c-a446-514f5a7fa148` |
-| Claude Auto-Execution Log | `eac92dec-244d-4476-8743-8adaa44443ab` |
+| Note | ID | Role |
+|---|---|---|
+| Claude Tasks (also called Personal) | `f9d6413e-4d58-4c2c-a446-514f5a7fa148` | **Summer-added directives.** Step 7 executes from `## Pending` here. |
+| Claude Inbox Proposals | `2623654a-822b-4f59-8a96-d08747730ddf` | **Triage outbox.** All routed tasks land here as proposals. Never executed. |
+| Claude Auto-Execution Log | `eac92dec-244d-4476-8743-8adaa44443ab` | **Audit trail.** Append-only log of successful executions. |
+| DeepLearning.AI work | `479ee14b-baed-4e54-8c5d-c2edb8c2a5b1` | Project note (Summer-managed). Triage no longer writes here. |
+| CourierFlow | `7e999d54-9690-4ad1-8494-c665242b4306` | Project note (Summer-managed). Triage no longer writes here. |
+| BetterBurgh | `c4937ace-82b4-400f-b31e-42bbffc5ed21` | Project note (Summer-managed). Triage no longer writes here. |
+
+**Discrimination is structural, not syntactic.** Where a task LIVES tells you who created it: items in `Claude Tasks` are Summer's directives; items in `Claude Inbox Proposals` are Claude's proposals. No inline markers, no parsing.
 
 **Always call `get_note` before `update_note`** to retrieve the current `version`.
 Send the full note content back in `update_note` — partial patches are not supported.
@@ -110,20 +113,21 @@ Check the note first — skip if a digest was already added this week.
 
 ### B. Action Required (Summer must handle personally)
 Bills, legal docs, appointments, logins required, physical tasks.
-**Action:** Get the current version of the correct Mem note, then add a checkbox
-under `## Pending`. **Tag Claude-routed tasks** with `(claude-routed YYYY-MM-DD)`
-so Step 7 can distinguish them from tasks Summer added directly:
+**Action:** Add a checkbox to the **Claude Inbox Proposals** note
+(`2623654a-822b-4f59-8a96-d08747730ddf`) under `## Pending`. Prefix the line
+with today's date and a `[Project]` tag so Summer can route it during review:
 ```
-- [ ] (claude-routed 2026-05-06) **Task name** — brief description of what's needed and why.
+- [ ] 2026-05-06 [Personal] **Task name** — brief description of what's needed and why.
 ```
+Project tag is one of: `[DeepLearning.AI]`, `[CourierFlow]`, `[BetterBurgh]`,
+`[Personal]`. Pick by the same project-classification rule you applied in Step 2.
 
 ### C. Needs a Reply
 Real people or businesses waiting on a response.
 **Action:** Create a Gmail draft reply (warm, professional, match formality of
-original). Do not send.
-Also add to the correct Mem note (with the same `(claude-routed)` tag):
+original). Do not send. Also add a proposal to **Claude Inbox Proposals**:
 ```
-- [ ] (claude-routed 2026-05-06) **Reply to [sender]** — [one line on what it's about]
+- [ ] 2026-05-06 [BetterBurgh] **Reply to [sender]** — [one line on what it's about] (draft created)
 ```
 
 ### D. Claude Can Handle It
@@ -156,45 +160,24 @@ Skip for FYI emails, automated messages, or anything needing research first.
 
 ---
 
-## Step 7 — Work pending Summer-added tasks (Mem)
+## Step 7 — Execute Summer-added tasks (Claude Tasks note)
 
-After handling email, read the Personal / Claude Tasks note
-(`f9d6413e-4d58-4c2c-a446-514f5a7fa148`) and scan `## Pending` for unchecked items.
-
-### 7.0 — Discriminator: who added each task?
+Read the Claude Tasks note (`f9d6413e-4d58-4c2c-a446-514f5a7fa148`) and scan
+`## Pending` for unchecked items. **Every item here is a directive** — Summer
+added it. There is no syntactic marker to check; the discrimination is
+structural (Claude-routed proposals live in a different note — see Step 7.4).
 
 For each `- [ ]` in `## Pending`:
-
-- **Tagged `(claude-routed YYYY-MM-DD)`** → Claude added this from email triage. It is a
-  PROPOSAL to Summer, NOT a directive. **Do not execute.** Apply the staleness
-  rule below; otherwise leave it alone.
-- **Untagged** → Summer added it directly. Execute per 7.1 below.
-
-This split is the safety boundary: Summer-added items are directives, Claude-routed
-items wait for Summer to read them in the morning brief and either tolerate them
-(implicit ack) or delete them. Phase 1 is intentionally cautious. Future phases
-may relax this once the Auto-Execution Log has enough data.
-
-#### 7.0a — Staleness check (Claude-routed items only)
-
-If a `(claude-routed YYYY-MM-DD)` task is **>14 days old** (date in the tag is more
-than 14 days before today), append `[STALE — never acknowledged]` to the task body
-and surface it in the Step 9 chat summary. Do NOT delete or auto-purge — Summer
-decides whether to act or remove.
-
-### 7.1 — Execute Summer-added tasks
-
-For each untagged `- [ ]`:
 
 1. **Apply safety boundaries first** (see 7.2). If any rule blocks execution, leave
    the checkbox alone and surface the reason in the Step 9 summary.
 2. **Classify the task:**
-   - **Claude can handle directly** (Gmail filter creation, calendar event creation,
+   - **Claude can handle directly** (Gmail filter creation, calendar event,
      research/lookup, scheduling via tool, Drive file fetch): proceed.
    - **Login-gated, credential in macOS Keychain** (Step 7.5): retrieve credential,
      complete task, annotate.
    - **Cannot handle** (physical action, personal decision, ambiguous, requires
-     judgment): leave as-is, surface in summary.
+     judgment, or required tool not available): leave as-is, surface in summary.
 3. **Execute** with the appropriate tool.
 4. **Move the checkbox to `## Done`** with a one-line completion annotation:
    ```
@@ -203,7 +186,7 @@ For each untagged `- [ ]`:
 5. **Append an entry to the Auto-Execution Log** Mem note
    (`eac92dec-244d-4476-8743-8adaa44443ab`). See 7.3 for format.
 
-Call `update_note` once with the full updated Personal note after working all
+Call `update_note` once with the full updated Claude Tasks note after working all
 actionable tasks. Count completed tasks toward "Auto-handled" in Step 8's log.
 
 ### 7.2 — Safety boundaries (apply before every execution)
@@ -251,6 +234,26 @@ after the `***` separator), and `update_note` with the new content + version.
 The log is the corpus that future triage decisions will learn from. Be specific
 about the action and outcome — vague entries don't help calibration. Don't log
 PII, credentials, or full email bodies.
+
+### 7.4 — Stale-proposal scan (Claude Inbox Proposals)
+
+After executing Summer-added tasks, read the **Claude Inbox Proposals** note
+(`2623654a-822b-4f59-8a96-d08747730ddf`). For each `- [ ]` line in `## Pending`:
+
+- Parse the leading date (`YYYY-MM-DD` immediately after `- [ ]`).
+- If the proposal is **>14 days old** (today − date > 14) AND does NOT already
+  end with `[STALE — never acknowledged]`, append that marker to the line.
+- Do NOT delete, auto-purge, or move stale items. Summer decides.
+
+Examples:
+```
+- [ ] 2026-04-20 [BetterBurgh] **Reply to Townsgate** — closing date question (draft created) [STALE — never acknowledged]
+```
+
+Surface in the Step 9 chat summary: total proposals, # added this run, # stale.
+
+Call `update_note` once on the Proposals note after the scan, even if no items
+changed (idempotent). Use the version from the get_note that started this step.
 
 ---
 
@@ -374,7 +377,12 @@ Mem tasks worked, anything urgent.
 - Always dedup — read before writing.
 - VIPs always get a task — even if the email looks routine.
 - Always `get_note` before `update_note` — the version number is required.
-- **Tag every Claude-routed task** with `(claude-routed YYYY-MM-DD)` so Step 7
-  doesn't execute it. Untagged = Summer-added = directive. Tagged = proposal.
+- **Discrimination is structural.** Where a task lives = who created it.
+  `Claude Tasks` note = Summer's directives (Step 7 executes). `Claude Inbox
+  Proposals` note = Claude's outbox (Step 7 never executes from here; only
+  flags stale items). No inline markers to parse, no syntactic drift.
 - **Conservative by default.** When a task is ambiguous, leave it for Summer
   rather than guessing. The Auto-Execution Log only matters if entries are clean.
+- **Promotion is Summer's gate.** A proposal becomes a directive when she
+  copies the line from Proposals into Claude Tasks (sans date prefix). That
+  copy is her explicit consent. Triage never auto-promotes.
