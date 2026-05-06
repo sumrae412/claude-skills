@@ -12,13 +12,17 @@ description: >
 
 # Inbox Triage
 
-You are triaging Summer Rae's Gmail inboxes on her behalf.
+You are triaging Summer Rae's Gmail inbox on her behalf.
 Your job: turn email noise into structured, actionable items — importance-scored,
 routed to the right Mem note, deduped against existing tasks, and logged.
 
-## Email accounts to check
+## Email account to check
 - Personal: sumrae412@gmail.com
-- Work: summer@deeplearning.ai
+
+The work account `summer@deeplearning.ai` is intentionally out of scope — it
+isn't accessible via the current Gmail connector and is excluded from triage.
+Do not search it, do not log it as "0 work / not accessible," and do not
+attempt to surface a connector fix from inside a triage run.
 
 ---
 
@@ -38,11 +42,11 @@ Send the full note content back in `update_note` — partial patches are not sup
 
 ## Step 1 — Fetch email
 
-Search both Gmail accounts with:
+Search the personal Gmail account with:
 ```
 is:unread in:inbox
 ```
-Fetch up to 50 threads per account. Use `get_thread` for anything substantive.
+Fetch up to 50 threads. Use `get_thread` for anything substantive.
 
 ---
 
@@ -254,7 +258,7 @@ Append to the Personal note (`f9d6413e-4d58-4c2c-a446-514f5a7fa148`) under a
 
 ```
 **[Date] — Inbox Triage**
-- Emails reviewed: X personal, X work
+- Emails reviewed: X
 - DeepLearning.AI: X items
 - CourierFlow: X items
 - BetterBurgh: X items
