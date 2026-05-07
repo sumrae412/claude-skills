@@ -7,7 +7,7 @@ description: >
   Use this skill whenever asked to "triage inbox", "check my email",
   "go through my email and add tasks", "run inbox triage", "process my inbox",
   or any request to sort, summarize, or act on email. Also runs automatically
-  at 9am EST daily.
+  at 10:00am EST daily.
 ---
 
 # Inbox Triage
