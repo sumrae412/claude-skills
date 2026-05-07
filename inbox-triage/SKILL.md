@@ -98,6 +98,10 @@ Score to action:
 - Marketing, newsletters, promotions
 - FYI / receipts / confirmations / automated notifications
 - GitHub individual commit/push/branch notifications
+- **Redfin** — any email from `@redfin.com` or `@e.redfin.com` (listing
+  alerts, saved-search updates, price drops, tour reminders, agent nudges,
+  market reports). Never add to Mem, never create a calendar event, never
+  draft a reply. Score 0 and move on. No weekly digest either.
 
 ### GitHub digest (once per week)
 Add one digest task to the CourierFlow note:
