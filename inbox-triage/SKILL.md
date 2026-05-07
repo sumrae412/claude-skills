@@ -477,6 +477,18 @@ Mem tasks worked, anything urgent.
 
 ---
 
+## Step 10 — Post summary to Slack
+
+After the chat report, send the same summary as a DM to Summer via Slack.
+
+- **Channel:** `D08AXFD2SDT` (Summer's DM — user ID `U08ATMPMUAJ`)
+- **Tool:** `slack_send_message`
+- **Format:** Mirror the Step 8 log structure with a brief header line, bullet
+  points for each project's item count, drafts, calendar events, and a
+  `> ⚠️ Action needed:` callout for anything urgent. Keep it under ~20 lines.
+
+---
+
 ## Tools
 
 - `mcp__a5ce767d-48cc-4ac0-b83a-4a0e2432ee4a__get_note` — read a Mem note (required before update)
