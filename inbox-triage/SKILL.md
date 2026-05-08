@@ -100,6 +100,24 @@ Score to action:
   appropriate property/tenant Mem note (Personal note if no project-
   specific note exists), and draft a reply for any tenant message that
   reads as a question, complaint, or maintenance request.
+- **Job offers / recruiter outreach** — any email that looks like a
+  recruiter, hiring manager, or platform-mediated job message. Detect via:
+  - Subject contains: `job offer`, `offer letter`, `interview`,
+    `opportunity at`, `role at`, `position at`, `we'd like to chat`,
+    `chat about a role`, `hiring`, `recruiting`
+  - Sender domain or display name includes: `recruiter`, `talent`,
+    `hiring`, `careers@`, `jobs@`, `@lever.co`, `@greenhouse.io`,
+    `@ashbyhq.com`, `@workable.com`, `@bamboohr.com`, LinkedIn InMail
+    (`@linkedin.com` with subject mentioning a role/conversation)
+  - Body patterns: "I came across your profile," "we have an opportunity,"
+    "would you be open to," "your background looks like a great fit,"
+    "[name] from [company] recruiting team"
+  Route to the Personal Mem note with a `🎯` emoji prefix on the task line
+  to make it visually distinct, draft a reply if the message clearly
+  expects a response (intro, scheduling ask, follow-up question), and
+  never zero-out under "marketing/automated" classification — recruiter
+  outreach can pattern-match marketing template language but is genuinely
+  worth Summer's attention.
 
 ### Floors and overrides (run BEFORE the "Always skip" list)
 
