@@ -9,9 +9,54 @@ All ambiguities must be resolved and requirements formalized before architecture
 
 ---
 
+## Step 0: Ingest PRD (if present)
+
+Before resolving ambiguities yourself, check whether a PRD already answers them.
+
+```bash
+ls docs/prds/prd-*.md 2>/dev/null
+```
+
+**Disambiguation chain** when multiple PRDs match:
+
+1. **Slug match** — if any `prd-<slug>.md` matches the current task slug, use it. Otherwise:
+2. **List + ask** — if multiple PRDs exist and none match the slug, present the list to the user and ask which one (if any) applies to the current task.
+3. **Skip** — if the user says "none" or there are no PRDs, skip this step and proceed to Step 1 normally.
+
+Never silently pick "most recent" — the wrong PRD ingested as `$requirements` is worse than no PRD.
+
+**Section → field mapping:**
+
+| PRD section | `$requirements` field |
+|-------------|------------------------|
+| `## User Stories` (US-N) | `stories[]` |
+| `## Acceptance Criteria` (AC-N, EARS) | `acceptance_criteria[]` |
+| `## Scope` → `### In` / `### Out` | `scope.in` / `scope.out` |
+| `## Edge Cases` | `edge_cases[]` |
+| `## Risk Class` | `risk_class` |
+| `## Non-Functional Requirements` | `nonfunctional[]` |
+| `## Problem Statement` | (read for context, not stored in `$requirements`) |
+| `## Goals & Success Metrics` | (read for context, not stored in `$requirements`) |
+| `## Definition of Done` | (read for context; consumed by Phase 5 implementation gates and Phase 6 verification reviewers, not by Phase 3) |
+| `## Open Questions` | (parked decisions; `[BLOCKING — ...]` items must resolve in Step 1) |
+
+Pre-populate `$requirements` from the PRD. Treat PRD-resolved ambiguities as already answered — do NOT re-ask the user about anything the PRD specifies.
+
+**EARS-shape check on ingested ACs:** as you ingest each `## Acceptance Criteria` item, sanity-check that it parses as `WHEN <event>, [IF <condition>,] THEN <outcome>`. Any AC that fails the shape check (bare assertion, paragraph form, no clear THEN clause) → mark the ingested AC as `quality_flag: malformed` in `$requirements`. The Step 2 SKIP-CONDITION won't trigger when a malformed flag is present, so the full Testability axis runs even if Phase 2 passed it. This closes the silent-degradation path where a PM's loose ACs would otherwise sail through Phase 2's skip.
+
+**Contradiction reconciliation with Phase 2 exploration:** Compare the ingested PRD against `$exploration` findings before proceeding to Step 1. If they disagree (e.g. PRD declares "no auth integration" but exploration found an existing auth dependency on the affected file), do not silently trust the PRD. Surface the contradiction to the user with both sources cited and ask which to trust. Common contradiction sites: scope.out items the codebase actually couples into, risk_class flags the PRD missed, edge_cases the codebase already handles differently.
+
+If `## Open Questions` lists items tagged `[BLOCKING — ...]`, those must be resolved in Step 1 before proceeding.
+
+If the PRD is missing or its scope doesn't match the current task, skip this step and proceed to Step 1 normally.
+
+The `prd` skill (`~/.claude/skills/prd/`) authors PRDs in this exact format. If the user mentions wanting one and Phase 3 is about to ask many questions, suggest pausing claude-flow and running `/prd` first — the resulting document survives across sessions and turns Phase 3 from interrogation into ingestion.
+
+---
+
 ## Step 1: Resolve Ambiguities
 
-Review exploration findings against the original request. Identify **every** underspecified aspect:
+Review exploration findings against the original request. Identify **every** underspecified aspect (skip anything already answered by Step 0's PRD ingestion):
 
 - **Edge cases** — What happens when input is empty, duplicated, or malformed?
 - **Error handling** — What should the user see when things fail?
@@ -64,17 +109,24 @@ they mention files or schemas.
 ## Step 2: Quality Gate
 
 <SKIP-CONDITION>
-If the Phase 2 advisor already scored all 4 quality axes as PASS (carried forward in $exploration.quality_gate), skip this step — proceed directly to Step 3.
+If the Phase 2 advisor already scored all 4 quality axes as PASS (carried forward in $exploration.quality_gate) AND Step 0 did not flag any ingested acceptance_criteria as malformed, skip this step — proceed directly to Step 3.
 </SKIP-CONDITION>
 
-**Only runs when Phase 2 advisor flagged failures or was skipped.** Re-score the 4 axes after ambiguity resolution:
+**Only runs when Phase 2 advisor flagged failures, was skipped, or Step 0 flagged a PRD-sourced AC.** Re-score the 4 axes after ambiguity resolution:
 
 1. **Objective Clarity** — Deliverable stateable as one-sentence outcome? FAIL: vague, unmeasurable, or activity-not-outcome.
 2. **Service Scope** — Affected files/modules identifiable from exploration? FAIL: no specific locations.
-3. **Testability** — All behaviors expressible as WHEN/THEN? FAIL: "should work well", "be fast", etc.
+3. **Testability** — every acceptance criterion is pass-fail observable from outside the system. Apply ALL of these checks:
+   - **EARS shape:** `WHEN <event>, [IF <condition>,] THEN <outcome>`. FAIL on bare assertions ("user can search") or paragraph-style criteria.
+   - **No vague predicates:** flag "fast", "easy", "intuitive", "user-friendly", "smooth", "robust", "scalable", "obvious", "good", "nice" without quantification. FAIL → require concrete observable.
+   - **Quantification on measurable predicates:** if the AC implies measurement ("many users", "small file", "soon", "quickly"), it must name a number and unit. FAIL → "many" → "10k concurrent"; "fast" → "p95 < 200ms".
+   - **Atomic observable:** one assertion per AC. `THEN A AND B AND C` → split into AC-N, AC-(N+1), AC-(N+2). FAIL on conjunctions in the THEN clause.
+   - **No implementation prescription:** the AC names *what is observable*, not *what the system uses*. "Stored in Redis" / "served via REST" / "JWT in cookie" → moves to `nonfunctional` or design notes, not `acceptance_criteria`. FAIL when an AC mentions a specific technology choice.
+   - **Story trace:** every AC-N must be linkable to at least one US-N from `$requirements.stories`. FAIL on orphan ACs (criterion with no parent story).
+   - **Stable subject:** the AC names what acts (system / user / external service / scheduled job), not "it" / "this" / "the thing". FAIL on pronoun-only subjects.
 4. **Completeness** — All edge cases have resolutions (including those self-answered by the Step 1.5 audit)? FAIL: unresolved edges, unspecified error handling.
 
-**Gate:** All pass → Step 3. Any fail → present failures with questions, loop until all pass.
+**Gate:** All pass → Step 3. Any fail → present failures with questions (or send back to PRD author with the specific failing ACs), loop until all pass.
 
 ---
 
