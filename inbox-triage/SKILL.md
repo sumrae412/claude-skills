@@ -93,6 +93,13 @@ Score to action:
 - @townsgateclosing.com or Townsgate-related
 - Any lawyer, notary, or title company
 - Any billing/payment failure alert
+- **TurboTenant** — any email from `@turbotenant.com` or any subject
+  containing `Message from tenant`. Tenant communication is always VIP
+  regardless of TurboTenant being a platform-generated sender. These do
+  NOT match the "automated notifications" skip rule. Route to the
+  appropriate property/tenant Mem note (Personal note if no project-
+  specific note exists), and draft a reply for any tenant message that
+  reads as a question, complaint, or maintenance request.
 
 ### Floors and overrides (run BEFORE the "Always skip" list)
 
