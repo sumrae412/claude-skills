@@ -109,7 +109,7 @@ they mention files or schemas.
 ## Step 2: Quality Gate
 
 <SKIP-CONDITION>
-If the Phase 2 advisor already scored all 4 quality axes as PASS (carried forward in $exploration.quality_gate) AND Step 0 did not flag any ingested acceptance_criteria as malformed, skip this step — proceed directly to Step 3.
+If `$exploration.quality_gate` exists AND its 4 axes all scored PASS AND Step 0 did not flag any ingested acceptance_criteria as malformed, skip this step — proceed directly to Step 3. If `$exploration.quality_gate` is missing or incomplete (Phase 2 was skipped on a fast / lite / clone path), do NOT skip — run the full Quality Gate.
 </SKIP-CONDITION>
 
 **Only runs when Phase 2 advisor flagged failures, was skipped, or Step 0 flagged a PRD-sourced AC.** Re-score the 4 axes after ambiguity resolution:
@@ -122,7 +122,7 @@ If the Phase 2 advisor already scored all 4 quality axes as PASS (carried forwar
    - **Quantification on measurable predicates:** if the AC implies measurement ("many users", "small file", "soon", "quickly"), it must name a number and unit. FAIL → "many" → "10k concurrent"; "fast" → "p95 < 200ms".
    - **Atomic observable:** one assertion per AC. `THEN A AND B AND C` → split into AC-N, AC-(N+1), AC-(N+2). FAIL on conjunctions in the THEN clause.
    - **No implementation prescription:** the AC names *what is observable*, not *what the system uses*. "Stored in Redis" / "served via REST" / "JWT in cookie" → moves to `nonfunctional` or design notes, not `acceptance_criteria`. FAIL when an AC mentions a specific technology choice.
-   - **Story trace:** every AC-N must be linkable to at least one US-N from `$requirements.stories`. FAIL on orphan ACs (criterion with no parent story).
+   - **Story trace:** every AC-N must be linkable to at least one US-N from `$requirements.stories`. FAIL on orphan ACs (criterion with no parent story). **Waiver:** `$requirements.stories` may be empty for pure-technical work (refactor / migration / infrastructure / tech debt) or when stories live in an external ticketing system; in that case the orphan-AC check is suppressed and the PRD's Problem Statement carries the rationale instead.
    - **Stable subject:** the AC names what acts (system / user / external service / scheduled job), not "it" / "this" / "the thing". FAIL on pronoun-only subjects.
 4. **Completeness** — All edge cases have resolutions (including those self-answered by the Step 1.5 audit)? FAIL: unresolved edges, unspecified error handling.
 

@@ -31,7 +31,7 @@ If the PRD is going to a separate AI coding agent (not claude-flow), use the **A
 
 Before asking anything, check the working directory:
 
-- **Greenfield** — no source files yet (no `package.json`, `pyproject.toml`, `src/`, `app/`). Stack decisions are open.
+- **Greenfield** — no source files or build manifests yet (no `package.json`, `pyproject.toml`, `pom.xml`, `build.gradle`, `Cargo.toml`, `go.mod`, `Gemfile`, `*.csproj`, `composer.json`, `src/`, `app/`, `lib/`, `cmd/`). Stack decisions are open.
 - **Feature mode** — existing codebase. The stack is already set; don't re-recommend it. PRD describes integration points, not a standalone shape.
 
 If you can't tell, ask: "Greenfield project, or adding to an existing codebase?"
