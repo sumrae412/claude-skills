@@ -94,7 +94,32 @@ Score to action:
 - Any lawyer, notary, or title company
 - Any billing/payment failure alert
 
+### Floors and overrides (run BEFORE the "Always skip" list)
+
+These rules apply *before* any classification or skip filtering. They exist
+because Summer's explicit signals (stars, subject-line prefixes) must not be
+silently overridden by the marketing/automated-notification classifier.
+
+- **Starred by Summer → score 65+ floor + bypass "Always skip".** If the
+  thread's first message has the Gmail label `STARRED` (or the search query
+  matched `is:starred`), treat the email as VIP-tier regardless of sender,
+  body content, or subject line. Add a task to the appropriate Mem note,
+  draft a reply if a response is expected, and never zero it out under the
+  "Always skip" list. The star is Summer's eyeball-passed-it consent — honor
+  it before any other rule.
+- **Subject-line prefix "Urgent:" / "URGENT" / "[URGENT]" / "Action Required:"
+  → score 50 floor.** When the subject *starts with* one of these markers
+  (case-insensitive, allow whitespace and brackets), apply a minimum score
+  of 50. Place in the 30-64 "Route to Mem, no draft" tier at minimum;
+  combine with other signals if they push higher. The word "urgent" buried
+  inside a subject or body stays at the normal urgency-keyword weight (25).
+  Subject-prefix is the stronger explicit-priority signal.
+
 ### Always skip (score 0)
+
+Apply only AFTER the Floors and overrides above. If a Floor rule fires, do
+not run this list.
+
 - Marketing, newsletters, promotions
 - FYI / receipts / confirmations / automated notifications
 - GitHub individual commit/push/branch notifications
@@ -102,6 +127,14 @@ Score to action:
   alerts, saved-search updates, price drops, tour reminders, agent nudges,
   market reports). Never add to Mem, never create a calendar event, never
   draft a reply. Score 0 and move on. No weekly digest either.
+
+**Tie-breaker on uncertain marketing classification.** If an email contains
+an explicit urgency keyword (`urgent`, `ASAP`, `deadline`, `action required`,
+`important`) AND the classifier is not confident it is marketing/automated,
+default to *Route to Mem at the 30-64 tier* rather than skip. False
+positives (a real email mis-classified as marketing) are more expensive than
+false negatives (one extra task to uncheck). When in doubt, route — Summer
+can dismiss with one click.
 
 ### GitHub digest (once per week)
 Add one digest task to the CourierFlow note:
