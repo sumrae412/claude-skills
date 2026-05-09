@@ -24,6 +24,7 @@ After regenerating, ask Claude to update that note via the Mem MCP
 itself does not push to Mem — MCP tools are only available inside a
 Claude Code session, not from a standalone CLI.
 """
+
 from __future__ import annotations
 
 import argparse
@@ -33,33 +34,46 @@ from collections import Counter, defaultdict
 from pathlib import Path
 
 # Skip these dirs entirely
-SKIP_DIRS = {".git", ".claude", "node_modules", "htmlcov", ".venv", "venv",
-             "__pycache__", ".pytest_cache", "dist", "build", ".knowledge",
-             "worktrees"}
+SKIP_DIRS = {
+    ".git",
+    ".claude",
+    "node_modules",
+    "htmlcov",
+    ".venv",
+    "venv",
+    "__pycache__",
+    ".pytest_cache",
+    "dist",
+    "build",
+    ".knowledge",
+    "worktrees",
+}
 
 # Stop words for keyword extraction (small, intentional — extend as needed)
-STOP = set("""a an and are as at be but by for from has have if in into is it its
+STOP = set(
+    """a an and are as at be but by for from has have if in into is it its
 of on or that the their then there these they this to was were what when where
 which who will with you your yours we our us not no can do does did had how use
 using used uses see also via not don's is's it's via per use cases case eg ie eg
-""".split())
+""".split()
+)
 
 # Template/scaffolding words common in phase/contract files. These are
 # structural (every phase doc has "before/load/phase/goal") not semantic — they
 # inflate keyword overlap between unrelated skills (soc2 ↔ fda ↔ iso27001).
-STRUCTURAL_STOP = set("""phase phases load loads loaded before after goal goals
+STRUCTURAL_STOP = set(
+    """phase phases load loads loaded before after goal goals
 running run runs running step steps before-running output outputs input inputs
 contract contracts schema schemas requirement requirements skill skill.md
-reference references docs section sections subsection chapter""".split())
+reference references docs section sections subsection chapter""".split()
+)
 STOP |= STRUCTURAL_STOP
 
 LINK_RE = re.compile(r"\[([^\]]+)\]\(([^)]+)\)")
 WORD_RE = re.compile(r"[a-zA-Z][a-zA-Z0-9_-]{2,}")
 # Inline references — "see `foo/bar.md`" or "`MEMORY.md`" or absolute paths
 BACKTICK_PATH_RE = re.compile(r"`([A-Za-z0-9_./~-]+\.md)`")
-ABS_PATH_RE = re.compile(
-    r"(?:~/claude_code/claude-skills/|~/\.claude/skills/)([A-Za-z0-9_./-]+\.md)"
-)
+ABS_PATH_RE = re.compile(r"(?:~/claude_code/claude-skills/|~/\.claude/skills/)([A-Za-z0-9_./-]+\.md)")
 # Skill-name mentions: `slug` or `plugin:slug` or `/slug` (slash-command form)
 SKILL_MENTION_RE = re.compile(r"`(?:/)?([a-z][a-z0-9-]+(?::[a-z][a-z0-9-]+)?)`")
 
@@ -76,8 +90,9 @@ def collect_md(root: Path) -> list[Path]:
     return out
 
 
-def _resolve(rel_or_abs: str, src: Path, root: Path,
-             all_paths: set[Path], basename_index: dict[str, list[Path]]) -> Path | None:
+def _resolve(
+    rel_or_abs: str, src: Path, root: Path, all_paths: set[Path], basename_index: dict[str, list[Path]]
+) -> Path | None:
     """Resolve a textual reference to an actual .md path in the corpus."""
     s = rel_or_abs.split("#", 1)[0].split("?", 1)[0].strip()
     if not s or not s.endswith(".md"):
@@ -85,8 +100,7 @@ def _resolve(rel_or_abs: str, src: Path, root: Path,
     # Absolute-ish (~/... or /...) → expand and resolve
     if s.startswith("~/"):
         # Strip either prefix; both resolve to the same repo (symlink)
-        cand = (s.replace("~/claude_code/claude-skills/", "")
-                 .replace("~/.claude/skills/", ""))
+        cand = s.replace("~/claude_code/claude-skills/", "").replace("~/.claude/skills/", "")
         cand_path = (root / cand).resolve()
         if cand_path in all_paths and cand_path != src:
             return cand_path
@@ -101,12 +115,21 @@ def _resolve(rel_or_abs: str, src: Path, root: Path,
         matches = basename_index.get(s, [])
         if len(matches) == 1 and matches[0] != src:
             return matches[0]
+    # Suffix-match fallback — catches prose like `docs/plans/foo.md` when the
+    # script is scoped under `--root docs/`. Without this, design/plan pairs
+    # that already cross-reference each other look like orphans because the
+    # textual prefix doesn't match the on-disk arrangement.
+    if "/" in s:
+        sfx = "/" + s
+        suffix_matches = [p for p in all_paths if str(p).endswith(sfx)]
+        if len(suffix_matches) == 1 and suffix_matches[0] != src:
+            return suffix_matches[0]
     return None
 
 
-def extract_links(md_path: Path, root: Path, all_paths: set[Path],
-                  basename_index: dict[str, list[Path]],
-                  skill_index: dict[str, Path]) -> set[Path]:
+def extract_links(
+    md_path: Path, root: Path, all_paths: set[Path], basename_index: dict[str, list[Path]], skill_index: dict[str, Path]
+) -> set[Path]:
     """Return set of resolved .md paths this file references.
 
     Catches:
@@ -131,8 +154,7 @@ def extract_links(md_path: Path, root: Path, all_paths: set[Path],
             targets.add(hit)
 
     for m in ABS_PATH_RE.findall(text):
-        hit = _resolve("~/claude_code/claude-skills/" + m, md_path, root,
-                       all_paths, basename_index)
+        hit = _resolve("~/claude_code/claude-skills/" + m, md_path, root, all_paths, basename_index)
         if hit:
             targets.add(hit)
 
@@ -171,9 +193,7 @@ def build_graph(root: Path):
             # Prefer top-level (skills/<slug>/SKILL.md) over nested
             if slug not in skill_index or len(p.parts) < len(skill_index[slug].parts):
                 skill_index[slug] = p
-    forward: dict[Path, set[Path]] = {
-        p: extract_links(p, root, path_set, basename_index, skill_index) for p in paths
-    }
+    forward: dict[Path, set[Path]] = {p: extract_links(p, root, path_set, basename_index, skill_index) for p in paths}
     reverse: dict[Path, set[Path]] = defaultdict(set)
     for src, targets in forward.items():
         for t in targets:
@@ -193,7 +213,7 @@ def find_missing_links(paths, forward, keywords, threshold: int = 6, max_pairs: 
     suggestions = []
     seen = set()
     for i, a in enumerate(candidates):
-        for b in candidates[i + 1:]:
+        for b in candidates[i + 1 :]:
             if b in forward[a] or a in forward[b]:
                 continue
             shared = keywords[a] & keywords[b]
@@ -238,37 +258,113 @@ def _is_command_file(p: Path, root: Path) -> bool:
     return len(parts) == 1 and parts[0].endswith(".md")
 
 
+# Top-level dirs whose contents are intentionally not part of the cross-linked
+# doc graph — standalone reference assets, history, or test artifacts. Files
+# inside these are NOT orphans even when uncited.
+_REFERENCE_DIRS = {
+    "audits",
+    "compliance",
+    "deployment",
+    "dev",
+    "evidence",
+    "implementation-notes",
+    "marketing",
+    "mockups",
+    "perf",
+    "prompts",
+    "routines",
+    "runbooks",
+    "setup",
+    "superpowers",
+    "templates",
+    "calendar-integration",
+}
+
+
+def _is_archive_file(p: Path, root: Path) -> bool:
+    """True if file lives under any `archive/` dir at any depth (top-level
+    `archive/` or nested like `plans/archive/`). Archive content is
+    intentional history — not part of the active doc graph and should not be
+    flagged as orphan.
+    """
+    parts = p.relative_to(root).parts if p.is_relative_to(root) else p.parts
+    return "archive" in parts
+
+
+def _is_handoff_file(p: Path, root: Path) -> bool:
+    """True if file is a session handoff doc in `plans/` — filename ends in
+    `-handoff.md` or `-session-handoff.md`. Handoffs are one-off transitional
+    docs; they're not expected to be cross-linked from the doc graph.
+    """
+    parts = p.relative_to(root).parts if p.is_relative_to(root) else p.parts
+    if len(parts) < 2 or parts[0] != "plans":
+        return False
+    name = p.name
+    return name.endswith("-handoff.md") or name.endswith("-session-handoff.md")
+
+
+def _is_reference_dir_file(p: Path, root: Path) -> bool:
+    """True if file's top-level dir is a known standalone-reference category.
+    Also matches dated test-artifact dirs like `copilot-canary-2026-04-27/`.
+    """
+    parts = p.relative_to(root).parts if p.is_relative_to(root) else p.parts
+    if len(parts) < 2:
+        return False
+    top = parts[0]
+    if top in _REFERENCE_DIRS:
+        return True
+    # Dated copilot test-artifact dirs (`copilot-canary-*`, `copilot-baseline-*`)
+    if top.startswith(("copilot-canary-", "copilot-baseline-")):
+        return True
+    return False
+
+
 def render_report(root: Path, paths, forward, reverse, missing) -> str:
     total_files = len(paths)
     total_edges = sum(len(v) for v in forward.values())
     hubs = sorted(paths, key=lambda p: len(reverse[p]), reverse=True)[:15]
     raw_orphans = [p for p in paths if not reverse[p] and not forward[p]]
-    true_orphans = sorted(p for p in raw_orphans
-                          if not _is_progressive_disclosure(p, root)
-                          and not _is_command_file(p, root))
-    pd_orphans = sorted(p for p in raw_orphans
-                        if _is_progressive_disclosure(p, root))
-    cmd_orphans = sorted(p for p in raw_orphans
-                         if _is_command_file(p, root))
-    sinks = sorted((p for p in paths if reverse[p] and not forward[p]),
-                   key=lambda p: len(reverse[p]), reverse=True)[:10]
+    true_orphans = sorted(
+        p
+        for p in raw_orphans
+        if not _is_progressive_disclosure(p, root)
+        and not _is_command_file(p, root)
+        and not _is_archive_file(p, root)
+        and not _is_reference_dir_file(p, root)
+        and not _is_handoff_file(p, root)
+    )
+    pd_orphans = sorted(p for p in raw_orphans if _is_progressive_disclosure(p, root))
+    cmd_orphans = sorted(p for p in raw_orphans if _is_command_file(p, root))
+    archive_orphans = sorted(p for p in raw_orphans if _is_archive_file(p, root))
+    ref_orphans = sorted(p for p in raw_orphans if _is_reference_dir_file(p, root) and not _is_archive_file(p, root))
+    handoff_orphans = sorted(p for p in raw_orphans if _is_handoff_file(p, root) and not _is_archive_file(p, root))
+    sinks = sorted((p for p in paths if reverse[p] and not forward[p]), key=lambda p: len(reverse[p]), reverse=True)[
+        :10
+    ]
 
     lines = [
         "# Doc Graph Report",
         "",
         f"- **Files scanned:** {total_files}",
         f"- **Cross-references found:** {total_edges}",
-        f"- **Hub nodes (top 15 by inbound refs):** see below",
-        f"- **True orphans (zero links + not progressive-disclosure + not command-file):** {len(true_orphans)}",
+        "- **Hub nodes (top 15 by inbound refs):** see below",
+        f"- **True orphans (zero links + not in any excluded asset class):** {len(true_orphans)}",
         f"- **Progressive-disclosure references (Read-loaded, not orphans):** {len(pd_orphans)}",
         f"- **Command files (repo-root .md, slash commands or workflow docs — not orphans):** {len(cmd_orphans)}",
-        f"- **Confidence:** EXTRACTED (explicit markdown links only) — "
+        f"- **Archive files (under `archive/`, intentional history — not orphans):** {len(archive_orphans)}",
+        f"- **Reference-dir files (audits/, perf/, runbooks/, etc. — standalone, not orphans):** {len(ref_orphans)}",
+        f"- **Handoff docs (`plans/*-handoff.md` — one-off transitional docs, not orphans):** {len(handoff_orphans)}",
+        "- **Confidence:** EXTRACTED (explicit markdown links only) — "
         "INFERRED keyword-cluster suggestions in the missing-links section. "
         "Files under `<skill>/references/`, `<skill>/phases/`, `<skill>/contracts/`, "
         "or `<skill>/diagrams/` are loaded by the Read tool from the router "
         "SKILL.md and are NOT counted as orphans even when no markdown link points to them. "
-        "Top-level repo-root `.md` files (slash commands, workflow docs, project registries) "
-        "are also excluded from true-orphans — they're a different asset class.",
+        "Top-level repo-root `.md` files (slash commands, workflow docs, project registries), "
+        "anything under `archive/`, and standalone-reference dirs (`audits/`, `perf/`, `runbooks/`, "
+        "`setup/`, `deployment/`, `templates/`, `prompts/`, `marketing/`, `mockups/`, `evidence/`, "
+        "`compliance/`, `routines/`, `dev/`, `implementation-notes/`, `superpowers/`, "
+        "`copilot-canary-*`, `copilot-baseline-*`) are also excluded from true-orphans — "
+        "different asset classes.",
         "",
         "## Hubs (most-referenced files)",
         "",
@@ -280,7 +376,7 @@ def render_report(root: Path, paths, forward, reverse, missing) -> str:
         lines.append(f"- **{rel(p, root)}** — {n} inbound")
     lines.append("")
 
-    lines.append("## True orphans (no links in or out, not progressive-disclosure, not command-file)")
+    lines.append("## True orphans (no links in or out, not in any excluded asset class)")
     lines.append("")
     if not true_orphans:
         lines.append("_None._")
@@ -305,22 +401,26 @@ def render_report(root: Path, paths, forward, reverse, missing) -> str:
     else:
         for shared_n, a, b, shared in missing:
             terms = ", ".join(shared[:6]) + ("…" if len(shared) > 6 else "")
-            lines.append(f"- **{rel(a, root)}** ↔ **{rel(b, root)}** "
-                         f"— {shared_n} shared terms ({terms})")
+            lines.append(f"- **{rel(a, root)}** ↔ **{rel(b, root)}** — {shared_n} shared terms ({terms})")
     lines.append("")
 
     lines.append("## Suggested questions for review")
     lines.append("")
     if hubs and len(reverse[hubs[0]]) > 10:
-        lines.append(f"- Is `{rel(hubs[0], root)}` a true hub or should it be split? "
-                     f"({len(reverse[hubs[0]])} inbound refs.)")
+        lines.append(
+            f"- Is `{rel(hubs[0], root)}` a true hub or should it be split? ({len(reverse[hubs[0]])} inbound refs.)"
+        )
     if true_orphans:
-        lines.append(f"- Should the {len(true_orphans)} true orphan file(s) be linked from "
-                     "an index, merged into a hub, or removed?")
+        lines.append(
+            f"- Should the {len(true_orphans)} true orphan file(s) be linked from "
+            "an index, merged into a hub, or removed?"
+        )
     if missing:
         a, b = missing[0][1], missing[0][2]
-        lines.append(f"- `{rel(a, root)}` and `{rel(b, root)}` share many terms but never "
-                     "cross-reference. Intentional separation or missing link?")
+        lines.append(
+            f"- `{rel(a, root)}` and `{rel(b, root)}` share many terms but never "
+            "cross-reference. Intentional separation or missing link?"
+        )
     lines.append("")
     return "\n".join(lines)
 
@@ -329,8 +429,7 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--root", type=Path, default=Path.cwd())
     ap.add_argument("--out", type=Path, default=None)
-    ap.add_argument("--json", type=Path, default=None,
-                    help="Optional: dump full graph as JSON for downstream tools")
+    ap.add_argument("--json", type=Path, default=None, help="Optional: dump full graph as JSON for downstream tools")
     ap.add_argument("--missing-threshold", type=int, default=6)
     args = ap.parse_args()
 
@@ -339,8 +438,7 @@ def main():
     out.parent.mkdir(parents=True, exist_ok=True)
 
     paths, forward, reverse, keywords = build_graph(root)
-    missing = find_missing_links(paths, forward, keywords,
-                                 threshold=args.missing_threshold)
+    missing = find_missing_links(paths, forward, keywords, threshold=args.missing_threshold)
     out.write_text(render_report(root, paths, forward, reverse, missing))
     print(f"wrote {out} — {len(paths)} files, {sum(len(v) for v in forward.values())} edges")
 
@@ -350,8 +448,7 @@ def main():
             "files": [rel(p, root) for p in paths],
             "edges": [[rel(s, root), rel(t, root)] for s, ts in forward.items() for t in ts],
             "missing_suggestions": [
-                {"a": rel(a, root), "b": rel(b, root), "shared": shared}
-                for _, a, b, shared in missing
+                {"a": rel(a, root), "b": rel(b, root), "shared": shared} for _, a, b, shared in missing
             ],
         }
         args.json.parent.mkdir(parents=True, exist_ok=True)
