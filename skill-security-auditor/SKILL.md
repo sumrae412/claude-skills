@@ -46,13 +46,16 @@ python3 scripts/skill_security_auditor.py /path/to/skill-name/ --json
 ## Use as a pre-install gate
 
 When importing skills from external repos into a canonical skills repo, run this
-auditor as a gate *before* the import PR opens, and record the result in a
-`SOURCE.md` file shipped alongside the imported skill:
+auditor as a gate *before* the import PR opens, and record the result as a new
+row in the repo-root `NOTICE.md` file (or under the existing upstream's section
+if one already exists):
 
 ```bash
 python3 scripts/skill_security_auditor.py /path/to/imported-skill/
-# Record result in <skill>/SOURCE.md under "## Vetting":
-#   - Passed skill-security-auditor scan (0 findings)
+# In NOTICE.md, add a row to the appropriate license section listing:
+#   local skill, upstream path, import date, and local modifications.
+# Vetting outcome (e.g. "Passed skill-security-auditor scan, 0 findings")
+# goes in the section's vetting summary paragraph.
 ```
 
 If this tool is itself being imported as a new skill, ship it in its own PR

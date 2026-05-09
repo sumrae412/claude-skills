@@ -1,6 +1,6 @@
 ---
 name: debate-team
-description: Unified review skill with auto-tiering — absorbs PlanCraft. Tier 1 (DeepSeek scope check), Tier 2 (DeepSeek + second critic), Tier 3 (full debate). In Codex, use Claude/Anthropic as the second external critic instead of GPT-4o unless the user explicitly requests GPT-4o. Conditional Haiku Style critic for frontend.
+description: Unified review skill with auto-tiering — absorbs PlanCraft and adversarial-thinking. Tier 0 (single-conversation devil's advocate or steelman, no API calls — for pressure-testing ideas, plans, decisions, beliefs, strategies, startup concepts, arguments, or assumptions before incurring multi-model cost). Tier 1 (DeepSeek scope check). Tier 2 (DeepSeek + second critic). Tier 3 (full debate). Trigger phrases for Tier 0: "attack this idea", "devil's advocate", "steelman", "find flaws", "argue against", "understand the other side". In Codex, use Claude/Anthropic as the second external critic instead of GPT-4o unless the user explicitly requests GPT-4o. Conditional Haiku Style critic for frontend.
 ---
 
 # Unified Review — Debate Team
@@ -26,6 +26,8 @@ Cross-model adversarial review for plans and code. Three tiers auto-selected by 
 
 ## When to Use
 
+- **Pressure-test an idea / plan / decision / belief / argument** (no code, no committed plan, no need for multi-model review) → Tier 0
+- **User says "attack this idea", "devil's advocate", "steelman", "find flaws", "argue against", "understand the other side"** → forces Tier 0
 - **All plan/architecture reviews** → Tier 3 (full debate, always)
 - **Bug fix plans** touching 3+ files or crossing service boundaries → Tier 3
 - **Code reviews** with 3+ files or cross-cutting concerns → Tier 2 (dual critic)
@@ -47,6 +49,59 @@ Cross-model adversarial review for plans and code. Three tiers auto-selected by 
 - User says "skip debate" — bypasses entirely
 - Brainstorming phase (stays interactive with user)
 - Implementation phase (TDD provides its own feedback loop)
+
+## Tier 0 — Standalone Modes (No API Calls)
+
+Pure-Sonnet single-conversation pressure testing. No DeepSeek, no GPT-4o, no Claude critic, no Haiku. Use when the user wants to stress-test an idea, plan, or argument before incurring the multi-model cost of Tier 1+.
+
+Two modes — infer from the request, ask only if unclear.
+
+### Mode A — Devil's Advocate
+
+Use for ideas, plans, strategies, product concepts, career moves, and decisions.
+
+Output:
+
+1. **Flawed Assumptions** — what the user is taking for granted that may be false.
+2. **Execution Risks** — where the plan is likely to break in practice.
+3. **Market / Human Reality** — behavior, incentives, institutions, or constraints the plan ignores.
+4. **Fatal Flaw** — the one risk that could kill the idea entirely.
+
+Rules:
+
+- Criticize the idea, not the person.
+- Be direct. Do not pad with encouragement.
+- Skip obvious objections unless they have non-obvious consequences.
+- Do not offer fixes unless the user asks for a second pass.
+- End with: `The strongest argument against this in one sentence: …`
+
+### Mode B — Steelman
+
+Use when the user disagrees with a position and wants to understand why intelligent people hold it.
+
+Output:
+
+1. **Core Insight** — the fundamental truth the position is built on.
+2. **Evidence** — data, history, mechanisms, or logic that support it.
+3. **Where The User's View Is Weakest** — blind spots exposed by the opposing view.
+4. **Strongest Single Argument** — one paragraph from a brilliant advocate.
+
+Rules:
+
+- Do not include counterarguments or caveats.
+- Do not announce personal agreement or disagreement.
+- Argue as if the view is genuinely persuasive.
+- Keep the goal understanding, not conversion.
+
+### Optional second pass — attack → repair
+
+If the user asks for improvements after a Devil's Advocate pass, switch from attack to repair:
+
+- Keep the original fatal risks visible.
+- Propose the smallest changes that address the highest-risk assumptions.
+- Identify which risks remain unresolved.
+
+When Tier 0 is not enough → escalate to Tier 1+ (the API-driven tiers below) for cross-model adversarial review.
 
 ## Team Composition
 
@@ -93,7 +148,7 @@ This skill uses progressive disclosure. Load the phase file for the step you're 
 
 ## Extending: Adding New Critics
 
-1. Create `debate-team/critics/<name>.md` following the frontmatter schema
+1. Create `debate-team/references/critics/<name>.md` following the frontmatter schema
 2. Set `activation: always` or `activation: conditional` with `triggers`
 3. The registry auto-discovers new files — no code changes needed
 
