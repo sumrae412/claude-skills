@@ -33,7 +33,7 @@ duplication, or extra structure is a finding only when it creates a concrete
 correctness, maintainability, delivery, user, or operations risk.
 
 OUTPUT FORMAT:
-Markdown table: | Design Issue | Impact (Critical/High/Medium) | Plan Step Affected | Alternative Approach |
+Markdown table: | Design Issue | Severity (Critical/High/Medium) | Plan Step Affected | Alternative Approach |
 Do NOT rewrite the plan. Provide intelligence for the Architect.
 
 ## Diff Mode Prompt

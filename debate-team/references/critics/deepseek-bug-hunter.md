@@ -33,7 +33,7 @@ canonical. Flag only runtime, security, performance, data, or operability risks
 with a concrete failure mode.
 
 OUTPUT FORMAT:
-Markdown table: | Vulnerability | Impact (Critical/High/Medium) | Plan Step Affected | Suggested Fix |
+Markdown table: | Vulnerability | Severity (Critical/High/Medium) | Plan Step Affected | Suggested Fix |
 Do NOT rewrite the plan. Provide intelligence for the Architect.
 
 ## Diff Mode Prompt
