@@ -226,15 +226,27 @@ def _is_progressive_disclosure(p: Path, root: Path) -> bool:
     return skill_router.exists()
 
 
+def _is_command_file(p: Path, root: Path) -> bool:
+    """True if file is a top-level repo-root .md (slash command, workflow doc,
+    or project-context registry). Different asset class than skills — should
+    not be flagged as orphan when uncited.
+    """
+    parts = p.relative_to(root).parts if p.is_relative_to(root) else p.parts
+    return len(parts) == 1 and parts[0].endswith(".md")
+
+
 def render_report(root: Path, paths, forward, reverse, missing) -> str:
     total_files = len(paths)
     total_edges = sum(len(v) for v in forward.values())
     hubs = sorted(paths, key=lambda p: len(reverse[p]), reverse=True)[:15]
     raw_orphans = [p for p in paths if not reverse[p] and not forward[p]]
     true_orphans = sorted(p for p in raw_orphans
-                          if not _is_progressive_disclosure(p, root))
+                          if not _is_progressive_disclosure(p, root)
+                          and not _is_command_file(p, root))
     pd_orphans = sorted(p for p in raw_orphans
                         if _is_progressive_disclosure(p, root))
+    cmd_orphans = sorted(p for p in raw_orphans
+                         if _is_command_file(p, root))
     sinks = sorted((p for p in paths if reverse[p] and not forward[p]),
                    key=lambda p: len(reverse[p]), reverse=True)[:10]
 
@@ -244,13 +256,16 @@ def render_report(root: Path, paths, forward, reverse, missing) -> str:
         f"- **Files scanned:** {total_files}",
         f"- **Cross-references found:** {total_edges}",
         f"- **Hub nodes (top 15 by inbound refs):** see below",
-        f"- **True orphans (zero links + not progressive-disclosure):** {len(true_orphans)}",
+        f"- **True orphans (zero links + not progressive-disclosure + not command-file):** {len(true_orphans)}",
         f"- **Progressive-disclosure references (Read-loaded, not orphans):** {len(pd_orphans)}",
+        f"- **Command files (repo-root .md, slash commands or workflow docs — not orphans):** {len(cmd_orphans)}",
         f"- **Confidence:** EXTRACTED (explicit markdown links only) — "
         "INFERRED keyword-cluster suggestions in the missing-links section. "
         "Files under `<skill>/references/`, `<skill>/phases/`, `<skill>/contracts/`, "
         "or `<skill>/diagrams/` are loaded by the Read tool from the router "
-        "SKILL.md and are NOT counted as orphans even when no markdown link points to them.",
+        "SKILL.md and are NOT counted as orphans even when no markdown link points to them. "
+        "Top-level repo-root `.md` files (slash commands, workflow docs, project registries) "
+        "are also excluded from true-orphans — they're a different asset class.",
         "",
         "## Hubs (most-referenced files)",
         "",
@@ -262,7 +277,7 @@ def render_report(root: Path, paths, forward, reverse, missing) -> str:
         lines.append(f"- **{rel(p, root)}** — {n} inbound")
     lines.append("")
 
-    lines.append("## True orphans (no links in or out, not progressive-disclosure)")
+    lines.append("## True orphans (no links in or out, not progressive-disclosure, not command-file)")
     lines.append("")
     if not true_orphans:
         lines.append("_None._")
