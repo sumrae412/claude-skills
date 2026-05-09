@@ -13,3 +13,7 @@ Net cost increase per round is modest; provides a third independent model perspe
 - Tier 1 drops GPT-4o entirely — acceptable for 1-2 file changes
 - GPT-4o cost is the same regardless of role (Architecture vs Completeness) — the routing only changes the prompt, not the model or token cap
 
+## Operational fallbacks
+
+**GPT-4o TPM rate-limit (HTTP 429) on large plan artifacts:** Plans/specs ≥1,000 lines submitted as `--plan-file` can exceed OpenAI's per-minute token quota even on paid org tiers, blowing both attempts of a Tier 3 dispatch. **Fallback:** drop to Tier 2 with DeepSeek + Sonnet-as-judge (the Sonnet teammate doing the synthesis fills the architecture-and-completeness role GPT-4o would have provided) instead of waiting out the rate-limit window. This is a clean substitute, not a degraded one — a single external critic + Sonnet judgment beats a stalled review. Hit 2026-05-08 reviewing a 1,373-line greenfield build doc; both GPT-4o attempts 429'd 60 seconds apart.
+
