@@ -5,7 +5,7 @@ description: "Tool-call-level discipline for minimizing session token burn witho
 
 # Token Economy
 
-Tactical, per-tool-call discipline for keeping a coding session's token burn low without sacrificing correctness. Patterns distilled from the WithWoz/wozcode-plugin agent-prompt conventions — specifically the half that transfers to orthodox Claude Code tools (Read, Grep, Glob, Edit, Bash, Agent) with no custom MCP required. See SOURCE.md for attribution.
+Tactical, per-tool-call discipline for keeping a coding session's token burn low without sacrificing correctness. Patterns distilled from the WithWoz/wozcode-plugin agent-prompt conventions — specifically the half that transfers to orthodox Claude Code tools (Read, Grep, Glob, Edit, Bash, Agent) with no custom MCP required. See the repo-root `NOTICE.md` for attribution.
 
 ## When to use
 
