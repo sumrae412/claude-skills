@@ -67,7 +67,10 @@ SKILL_MENTION_RE = re.compile(r"`(?:/)?([a-z][a-z0-9-]+(?::[a-z][a-z0-9-]+)?)`")
 def collect_md(root: Path) -> list[Path]:
     out = []
     for p in root.rglob("*.md"):
-        if any(part in SKIP_DIRS for part in p.parts):
+        # Check parts relative to root so a worktree path like
+        # `.claude/worktrees/...` doesn't make every file look skipped.
+        rel_parts = p.relative_to(root).parts if p.is_relative_to(root) else p.parts
+        if any(part in SKIP_DIRS for part in rel_parts):
             continue
         out.append(p)
     return out
