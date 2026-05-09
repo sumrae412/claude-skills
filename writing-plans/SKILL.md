@@ -70,6 +70,19 @@ If a planned task touches a file or pattern not listed here, add it to Reference
 ---
 ```
 
+## Greenfield / Long-Spec Framing (§0 pattern)
+
+When the plan is a **greenfield build doc or full-product spec** (not a feature increment) and exceeds ~500 lines, prepend a §0 framing section that distinguishes:
+
+- **PMF-ready spec** — the full doc, comprehensive, intended for post-validation execution
+- **Wedge-sprint plan** — a minimum-viable-subset path through the same doc, marked with explicit "follow only §X / §Y" or "defer to post-launch" tags
+
+Without §0, a thorough spec reads as premature optimization for pre-validation contexts and triggers "this doc is too thorough" pushback in review. §0 acknowledges the dual mode upfront: the spec is durable; the wedge path tells you what to actually build first.
+
+**Pair with a Post-Launch Deferral Tracker** (single consolidated section near the end with table format: `Item | Pre-launch shape | Post-launch shape | Trigger`) instead of scattering "TODO post-launch" comments through the doc. Reviewers can scan one table to verify deferrals are intentional.
+
+**Robustness-lens audit before handoff:** Sweep each section asking "is this the best for the goal, or am I anchoring on legacy/familiar choices?" Especially load-bearing for greenfield docs — without the explicit prompt, prior-stack assumptions silently carry forward and the "fresh build" framing becomes a lie.
+
 ## Task Structure
 
 ````markdown
@@ -114,6 +127,18 @@ git add tests/path/test.py src/path/file.py
 git commit -m "feat: add specific feature"
 ```
 ````
+
+## Phase Checklist Pattern (for multi-phase build sequences)
+
+When a plan covers a multi-week build sequence (vs. a single feature), each phase needs five elements to be actionable without freezing low-level decisions:
+
+1. **Goal** — one-line outcome statement
+2. **User stories shipped** — what a user can do at end of phase that they couldn't before
+3. **Checklist** — verifiable tasks (not internal steps), each one independently checkable
+4. **Definition of Done** — measurable bars (e.g. "p95 latency < 500ms on 100-event seed", "zero ERROR logs across smoke run", "≥85% accuracy on N-item eval set")
+5. **Trip-wire** — the signal that this phase needs to be revisited or rolled back
+
+This pattern is complete enough to dispatch to subagents but coarse enough that the implementer still owns file paths and line numbers. Use instead of bite-sized step-by-step tasks (the default Task Structure above) when phases span 1+ week of work.
 
 ## Task Types
 

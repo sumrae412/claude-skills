@@ -143,8 +143,9 @@ This skill uses progressive disclosure. Load the phase file for the step you're 
 
 ## Debugging
 
-- If a critic run fails: re-run the same `plancraft_review.py` command with the same `--plan-file` and `--scope-file`, then inspect the JSON output. The `error` key (if present) explains the failure (e.g. missing API key, API timeout).
-- If a batch review fails: re-run `batch_review.py` with the same `--artifact-file` and `--scope-file`. Check the JSON `error` key. Common causes: `anthropic` not installed, `ANTHROPIC_API_KEY` not set (check shell profile sourcing), batch timeout (increase `--timeout`).
+- The review scripts (`plancraft_review.py`, `batch_review.py`) live in the **CourierFlow repo** at `scripts/` (also mirrored to active worktrees). When invoking from a non-script context, find them with `find ~/claude_code/courierflow -name plancraft_review.py -not -path '*/node_modules/*' | head -1`. The scripts are not on PATH and not packaged as a CLI — invoke as `python3 <full-path>/plancraft_review.py ...`.
+- If a critic run fails: re-run the same `plancraft_review.py` command with the same `--plan-file` and `--scope-file`, then inspect the JSON output. The `error` key (if present) explains the failure (e.g. missing API key, API timeout, HTTP 429 rate limit).
+- If a batch review fails: re-run `batch_review.py` with the same `--artifact-file` and `--scope-file`. Check the JSON `error` key. Common causes: `anthropic` not installed, `ANTHROPIC_API_KEY` not set (verify via `zsh -ic 'echo $ANTHROPIC_API_KEY'` — bare Bash subshells don't inherit zshrc), batch timeout (increase `--timeout`), GPT-4o TPM rate limit on large artifacts (drop to Tier 2 — see `references/cost-budget.md` "Operational fallbacks").
 
 ## Extending: Adding New Critics
 
