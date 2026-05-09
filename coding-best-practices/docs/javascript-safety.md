@@ -189,3 +189,22 @@ Before committing JavaScript changes:
 - [ ] If WebSocket: verify message types match between server/client
 - [ ] Test in browser console for errors
 - [ ] Hard refresh (Cmd+Shift+R / Ctrl+Shift+R) to bypass cache
+
+## 7. tsc baseline discipline
+
+Before claiming "tsc clean" after edits, distinguish edit-introduced errors from pre-existing baseline errors. A claim that the current edit is type-safe needs to compare against the *unchanged* tree, not the absolute error count.
+
+```bash
+git stash push -- <touched-files>
+./node_modules/.bin/tsc --noEmit | tee /tmp/tsc-baseline.txt
+git stash pop
+./node_modules/.bin/tsc --noEmit | tee /tmp/tsc-after.txt
+diff /tmp/tsc-baseline.txt /tmp/tsc-after.txt
+```
+
+Only the diff is the current edit's responsibility. Without this:
+
+- An unrelated baseline error gets attributed to the current change → wasted fix attempts on unrelated code paths.
+- The current edit silently introduces an error that hides in the noise of pre-existing ones → silent breakage shipped.
+
+Pre-existing errors that block a gate (CI, hooks) are still real bugs to fix, but split them into a separate commit (`fix N pre-existing baseline tsc errors`) rather than absorbing them silently into the feature commit. Mixing the two erodes the audit trail.
