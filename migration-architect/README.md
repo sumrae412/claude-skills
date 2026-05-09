@@ -4,6 +4,8 @@
 **Category:** Engineering - Migration Strategy  
 **Purpose:** Zero-downtime migration planning, compatibility validation, and rollback strategy generation
 
+> See [`SKILL.md`](SKILL.md) for the agent-facing skill router and trigger conditions. This README is a human-oriented overview; `SKILL.md` is what Claude reads when the skill is invoked.
+
 ## Overview
 
 The Migration Architect skill provides comprehensive tools and methodologies for planning, executing, and validating complex system migrations with minimal business impact. This skill combines proven migration patterns with automated planning tools to ensure successful transitions between systems, databases, and infrastructure.

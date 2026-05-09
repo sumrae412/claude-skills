@@ -2,6 +2,8 @@
 
 Date: 2026-04-29
 
+**Status:** SHIPPED — see decision record [`docs/decisions/2026-04-29-ship-forced-selection-phase5.md`](../decisions/2026-04-29-ship-forced-selection-phase5.md) for the outcome and what landed.
+
 ## Hypothesis
 
 For Phase 5 implementation subagents, forcing one explicit skill-selection
