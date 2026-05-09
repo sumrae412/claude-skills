@@ -1,6 +1,6 @@
 ---
 name: synthesis-brief
-description: Synthesize multiple sources the user already has in hand into one conflict-resolved brief — extracts consensus, contradictions, gaps, and strongest evidence across N inputs. Use ONLY when the user has already gathered the source material (articles, papers, reports, URLs, transcripts, notes, excerpts) and wants it consolidated into a single brief. NOT for finding or searching for sources (use `research`). NOT for evaluating one external artifact against a known target (use `useful-for`). NOT for single-source summaries. Trigger phrases: "synthesize these", "what do these all say", "find the consensus across", "contradictions in these", "boil these down".
+description: Synthesize multiple sources the user has identified into one conflict-resolved brief — extracts consensus, contradictions, gaps, and strongest evidence across N inputs. Sources can be pasted (articles, transcripts, excerpts, notes) or named/linked for retrieval (URLs, papers, reports); the skill will fetch/verify links before synthesizing. NOT for finding or searching for sources (use `research`). NOT for evaluating one external artifact against a known target (use `useful-for`). NOT for single-source summaries. Trigger phrases: "synthesize these", "what do these all say", "find the consensus across", "contradictions in these", "boil these down".
 ---
 
 # Synthesis Brief

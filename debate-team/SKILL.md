@@ -27,7 +27,7 @@ Cross-model adversarial review for plans and code. Three tiers auto-selected by 
 ## When to Use
 
 - **Pressure-test an idea / plan / decision / belief / argument** (no code, no committed plan, no need for multi-model review) → Tier 0
-- **User says "attack this", "find flaws", "devil's advocate", "steelman X"** → forces Tier 0
+- **User says "attack this idea", "devil's advocate", "steelman", "find flaws", "argue against", "understand the other side"** → forces Tier 0
 - **All plan/architecture reviews** → Tier 3 (full debate, always)
 - **Bug fix plans** touching 3+ files or crossing service boundaries → Tier 3
 - **Code reviews** with 3+ files or cross-cutting concerns → Tier 2 (dual critic)
