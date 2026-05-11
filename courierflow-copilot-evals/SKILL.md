@@ -1,6 +1,6 @@
 ---
 name: courierflow-copilot-evals
-description: Use when building, maintaining, or running CourierFlow Copilot evaluation automation: capture new landlord chat prompts as eval candidates, dedupe by intent, promote reviewed candidates into stable eval cases, run scripted Copilot prompts against the local app, verify Phoenix traces, and score DB/tool/safety outcomes.
+description: "Use when building, maintaining, or running CourierFlow Copilot evaluation automation: capture new landlord chat prompts as eval candidates, dedupe by intent, promote reviewed candidates into stable eval cases, run scripted Copilot prompts against the local app, verify Phoenix traces, score DB/tool/safety outcomes, and iterate on Alyx-grouped failing traces with baseline-vs-change comparison."
 ---
 
 # CourierFlow Copilot Evals
@@ -15,6 +15,70 @@ Do not auto-promote raw prompts directly into committed evals.
 Raw Copilot questions become **eval candidates** first. A candidate becomes a
 real eval only after it has stable fixture data, clear assertions, and a
 repeatable expected outcome.
+
+For Arise/Phoenix failure work, do not change the trace set during an
+iteration. Use the exact failing traces Alyx grouped in Email #2 as the fixed
+eval set for that failure mode, then compare every candidate fix against the
+same set. Moving traces between baseline and rerun makes the score useless.
+
+## Self-Improving Loop
+
+Use this loop for each specific Copilot failure mode:
+
+1. **Pull failing traces**
+   - Start from Alyx's grouped failures in Email #2.
+   - Select one failure mode at a time.
+   - Preserve the trace IDs, prompts, expected behavior, actual behavior, and
+     Phoenix span links in the eval case or report.
+
+2. **Ask Alyx for the eval**
+   - Ask Alyx to write or review the eval for that exact failure mode.
+   - The eval must define pass/fail criteria before any implementation change.
+   - Prefer deterministic checks for tool calls, DB effects, Phoenix spans, and
+     safety claims. Use LLM judging only for subjective response quality.
+
+3. **Get the baseline score**
+   - Run the eval against the current implementation before making a fix.
+   - Record score, failing trace IDs, command, timestamp, and artifact path.
+   - Do not patch the app, prompt, fixtures, or eval expectations before this
+     baseline exists.
+
+4. **Make one change**
+   - Change the smallest plausible implementation, prompt, tool schema, or
+     guardrail that targets the diagnosed failure mode.
+   - Keep unrelated cleanup out of the iteration.
+
+5. **Rerun on the same traces**
+   - Run the same eval on the same trace set.
+   - Compare baseline vs candidate scores and list which trace IDs changed
+     status.
+
+6. **Ship or iterate**
+   - Keep the candidate only if it improves the target score without regressing
+     required safety/business-rule checks.
+   - If the score ties or worsens, revert or continue iterating with another
+     targeted change.
+   - Report the final baseline score, candidate score, delta, and remaining
+     failures.
+
+## Production Tracking
+
+Once a failure mode is fixed, keep tracking it in production:
+
+- Run evals on sampled real Copilot traffic, with sanitized prompts and trace
+  IDs.
+- Catch regressions by comparing current production scores against the shipped
+  fix baseline.
+- Debug new failures by grouping traces into a specific failure mode before
+  writing or changing evals.
+- Promote recurring production failures into stable eval cases after review.
+- Run the critical eval set in CI/CD before deploys.
+- Build dashboards for pass rate, regression count, safety failures, latency,
+  and new unclassified failure clusters.
+
+Production evals should monitor behavior; they should not silently rewrite the
+eval set or expected outcomes. Treat new failures as candidates for the next
+self-improvement loop.
 
 ## Workflow
 
