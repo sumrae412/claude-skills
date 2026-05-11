@@ -11,6 +11,40 @@ Prefer these paths unless the repo already has a better convention:
 - Runner: `scripts/eval_copilot.py`
 - Report output: `artifacts/copilot-evals/<timestamp>.json`
 
+## Self-Improvement Iteration Contract
+
+When the eval runner is used for Arise/Phoenix failure-mode work, it must make
+baseline-vs-change comparison easy:
+
+- Accept or record a fixed trace set ID from Alyx's Email #2 grouping.
+- Include trace IDs in every per-case result.
+- Write immutable baseline and candidate reports under separate artifact paths.
+- Compare reports from the same trace set only.
+- Print score delta, newly passing trace IDs, newly failing trace IDs, and
+  unchanged failures.
+- Exit nonzero if required safety or business-rule checks regress, even when the
+  aggregate score improves.
+
+Do not let the runner silently refresh, expand, dedupe, or replace the trace set
+between baseline and candidate runs. That turns iteration into scoreboard
+gardening, which is not engineering.
+
+## Production Eval Operations
+
+For production monitoring, the runner or scheduled job should:
+
+- Sample real Copilot traffic after sanitization.
+- Attach Phoenix trace IDs and deployment/version metadata to every scored run.
+- Compare production scores against the shipped baseline for each fixed failure
+  mode.
+- Emit regression events when a previously fixed case fails again.
+- Group unknown failures for later Alyx review instead of auto-promoting them.
+- Publish CI/CD and dashboard-friendly JSON fields: pass rate, regression count,
+  safety failures, latency, trace set ID, app version, and failure cluster.
+
+Use CI/CD for the critical fixed eval set. Use dashboards for production drift
+and new failure discovery.
+
 ## Runner Flow
 
 1. Load eval case YAML.
@@ -21,7 +55,9 @@ Prefer these paths unless the repo already has a better convention:
 6. Query DB for expected changes.
 7. Query Phoenix traces for spans newer than the run start timestamp.
 8. Score deterministic assertions.
-9. Write a JSON report and exit nonzero on failure.
+9. Write a JSON report with case IDs, trace IDs, score, and artifact metadata.
+10. If given a baseline report, compare against it and exit nonzero on
+    regression.
 
 ## Minimal Copilot Request Body
 
