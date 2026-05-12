@@ -33,6 +33,12 @@ and query performance.
 - New schema changes require Alembic migrations.
 - PostgreSQL is the queue/locking/cache coordination substrate; do not add
   Redis or a new queue.
+- During the SQLAlchemy → SQLModel migration (slices 1.3a–1.3d), import
+  `SQLModel` from `app.database`, NOT from `sqlmodel` directly. The
+  shared-registry wiring in `app/database/__init__.py` depends on import
+  order — a direct `from sqlmodel import SQLModel` before `app.database`
+  runs caches SQLModel's own metadata on the class before reassignment.
+  See `references/data-patterns.md` → SQLModel Coexistence + Gotchas.
 
 ## Verification
 
