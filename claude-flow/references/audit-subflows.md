@@ -155,6 +155,19 @@ Output the synthesis as a "## Coordination Notes" section above the per-dimensio
 
 Same as Subflow A: the audit deliverable is the prioritized list. Auto-implementation of "high-confidence, low-risk" items is a separate `/claude-flow` invocation where each checked box becomes a `$requirements` entry. Keeps the deletion path through Phase 4/5 verification gates instead of skipping straight to `git rm`.
 
+### Implementation: tiered PRs from one audit
+
+When the user approves a "full safe cleanup pass" on a Subflow C deliverable, split implementation into one PR per tier, each branched off `main`:
+
+- **Tier 1 — mechanical sweeps.** Repo-root cruft, AI-artifact comments (`# ARCHIVED:` tombstones, restating-what-the-code-does, Phase/PR-numbered narration), `.gitignore` typos / additions. High file count, near-zero behavioral risk. **Bundle env-hygiene fixes here** if pre-commit surfaces a pre-existing env failure during gating — the alternative is blocking the cleanup PR on a separate one-line env-fix PR.
+- **Tier 2 — whole-tree deletions.** Subpackages and orphan top-level dirs verified zero-importer via grep + dynamic-usage checklist. Medium volume, low risk after verification.
+- **Tier 3 — dependency hygiene.** Unused packages from `pyproject.toml` / `package.json` + matching config/validation entries (e.g., `pre_deployment_validation.py` allowlists, dangling Settings fields whose only reference is the deleted dep). Low volume, requires `uv lock` follow-up per CLAUDE.md.
+- **Tier 4 — orphan routes / files with subtle callers.** Single-file deletions where one service or webhook still references a sibling symbol. Manual verification per file: `git rm` only the route; keep the service if any live caller exists.
+
+Note dependency order in PR descriptions (e.g. "PR 1 carries the env fix PRs 2–4 implicitly depend on" — once merged, the others rebase clean). Validated PRs courierflow#662–#665 (2026-05-12/13).
+
+**Subagent fan-out for the audit pass:** 4 general-purpose subagents covering 8 dimensions (2 dims each — `dead+legacy`, `duplication+AI-artifacts`, `types+defensive`, `cycles+deps`) is the validated shape. Each subagent writes to `docs/audits/.work/0N-<topic>.md`; the dispatcher synthesizes. Emit explicit `## Coordination Notes` at synthesis time for cross-dimension overlaps (e.g., a dep coupled to a route, a config field coupled to an archived feature) BEFORE the auto-implementable list. See `batch_similar_agents.md` and `n_per_entity_fanout.md` in memory for fan-out sizing.
+
 ---
 
 ## Related
