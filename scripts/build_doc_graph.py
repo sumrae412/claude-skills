@@ -11,6 +11,19 @@ works on any markdown folder. Run from repo root:
 
 Defaults: root = cwd, out = .knowledge/GRAPH_REPORT.md
 
+## Reading the report
+
+Keyword-overlap pairs in "Suggested missing cross-links" are USUALLY
+missing links between complementary patterns, NOT duplicates to merge.
+Read both files before consolidating; the default action is to add a
+cross-reference, not retire one side. Validated 2026-05-12 on the
+courierflow project-memory corpus: 5/5 inferred pairs were complementary,
+0/5 were duplicates.
+
+Use this script as the pre-step before any "clean up memory" manual pass.
+Hubs (>10 inbound refs) are what NOT to retire — deletion dangles N
+references silently.
+
 ## Mem sync workflow
 
 The current report is mirrored as a Mem note for navigability:
