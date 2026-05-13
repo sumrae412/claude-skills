@@ -220,3 +220,9 @@ frontend-design guidance.
 | Running 10-step plans without context breaks | Fresh context for subagents at 5+ steps |
 | Carrying stale session context across unrelated tasks | `/clear` at task boundaries — auto-compaction only fires at ~80%; a small new task on top of a large done one pays for irrelevant history on every turn |
 | Running silent-failure-hunter and security-reviewer separately | Use merged `safety-reviewer` (Tier 2) — they're consolidated |
+
+---
+
+## Notes
+
+- **`--lite` for same-session-validated plans (single observation, 2026-05-13):** When the user invokes `--lite` on a task where the plan was validated in-session (tier-0 review done, drafts in the diff being shipped, edit anchors already verified), Phase 1–3 router content is largely unused. Validated once on PR #668 (~10 tool calls start-to-PR; router/path-decision content mostly bypassed in favor of direct apply). If this pattern recurs, consider an `--apply-only` flag that skips Phase 1–3 and goes straight to apply + ship. Single observation; not a confirmed pattern. TodoWrite firing 3 times in a 10-step linear task was also noisy at that scale.
