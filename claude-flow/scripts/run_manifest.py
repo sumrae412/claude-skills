@@ -44,6 +44,7 @@ def default_manifest() -> dict[str, Any]:
         "verification_runs": [],
         "review_runs": [],
         "commands_run": [],
+        "goal_runs": [],
     }
 
 
@@ -172,6 +173,22 @@ def sync_state_review_base(
     if state is None:
         return None
     state["review_base_sha"] = review_base_sha
+    return state
+
+
+def sync_state_goal_flag(
+    state: dict[str, Any] | None,
+    goal_flag: bool | None,
+) -> dict[str, Any] | None:
+    """Mirror the --goal flag into state.flags.goal when supplied.
+
+    When goal_flag is None the existing flag is left untouched so that a
+    resumed session keeps whatever was set on a prior turn.
+    """
+    if state is None or goal_flag is None:
+        return state
+    flags = state.setdefault("flags", {})
+    flags["goal"] = bool(goal_flag)
     return state
 
 
@@ -380,6 +397,67 @@ def record_command(
     return entry
 
 
+GOAL_ACTIONS = {"set", "clear", "achieved", "budget_exhausted", "replaced"}
+
+
+def record_goal(
+    manifest_path: Path,
+    phase: str,
+    action: str,
+    condition: str | None = None,
+    condition_file: Path | None = None,
+    turn_budget: int | None = None,
+    path_name: str | None = None,
+    note: str | None = None,
+    state_path: Path | None = None,
+    goal_flag: bool | None = None,
+) -> dict[str, Any]:
+    """Append a goal-mode lifecycle event and optionally mirror state.flags.goal."""
+    if action not in GOAL_ACTIONS:
+        raise ValueError(
+            f"action must be one of {sorted(GOAL_ACTIONS)}; got {action!r}"
+        )
+    manifest = load_manifest(manifest_path)
+    state = load_state_file(state_path)
+    entry: dict[str, Any] = {
+        "phase": phase,
+        "action": action,
+        "recorded_at": now_iso(),
+    }
+    if condition is not None or condition_file is not None:
+        text, source = read_text_source(
+            content=condition, content_file=condition_file
+        )
+        entry["condition_sha256"] = hash_text(text)
+        entry["condition_size_bytes"] = len(text.encode("utf-8"))
+        entry["condition_source"] = source
+    if turn_budget is not None:
+        entry["turn_budget"] = turn_budget
+    if path_name is not None:
+        entry["path"] = path_name
+    if note:
+        entry["note"] = note
+
+    manifest.setdefault("goal_runs", []).append(entry)
+    manifest["last_updated_at"] = now_iso()
+    event_log_path = resolve_event_log_path(manifest_path, manifest)
+    write_json_file(manifest_path, manifest)
+    append_jsonl(
+        event_log_path,
+        {
+            "recorded_at": entry["recorded_at"],
+            "type": "goal",
+            "category": action,
+            "source": "run_manifest",
+            "payload": dict(entry),
+        },
+    )
+
+    state = sync_state_goal_flag(state, goal_flag)
+    write_state_file(state_path, state)
+    return entry
+
+
 def record_event(
     manifest_path: Path,
     event_type: str,
@@ -489,6 +567,27 @@ def build_parser() -> argparse.ArgumentParser:
     event_parser.add_argument("--source")
     event_parser.add_argument("--payload", default="{}")
     event_parser.add_argument("--json", action="store_true")
+
+    goal_parser = subparsers.add_parser("record-goal")
+    goal_parser.add_argument("--manifest", type=Path, required=True)
+    goal_parser.add_argument("--phase", required=True)
+    goal_parser.add_argument(
+        "--action", choices=sorted(GOAL_ACTIONS), required=True
+    )
+    goal_parser.add_argument("--condition")
+    goal_parser.add_argument("--condition-file", type=Path)
+    goal_parser.add_argument("--turn-budget", type=int)
+    goal_parser.add_argument("--path-name")
+    goal_parser.add_argument("--note")
+    goal_parser.add_argument("--state-file", type=Path)
+    goal_flag_group = goal_parser.add_mutually_exclusive_group()
+    goal_flag_group.add_argument(
+        "--goal-flag", dest="goal_flag", action="store_true", default=None
+    )
+    goal_flag_group.add_argument(
+        "--no-goal-flag", dest="goal_flag", action="store_false", default=None
+    )
+    goal_parser.add_argument("--json", action="store_true")
     return parser
 
 
@@ -574,6 +673,22 @@ def main() -> int:
             category=args.category,
             source=args.source,
             payload=parse_json_object(args.payload),
+        )
+        print_result(payload, args.json)
+        return 0
+
+    if args.command == "record-goal":
+        payload = record_goal(
+            manifest_path=args.manifest,
+            phase=args.phase,
+            action=args.action,
+            condition=args.condition,
+            condition_file=args.condition_file,
+            turn_budget=args.turn_budget,
+            path_name=args.path_name,
+            note=args.note,
+            state_path=args.state_file,
+            goal_flag=args.goal_flag,
         )
         print_result(payload, args.json)
         return 0

@@ -184,5 +184,24 @@
     "phase-5": 3,
     "phase-6": 2,
     "default": 1
+  },
+  "goal_turn_budgets": {
+    "_doc": "Per-path turn budgets injected into the /goal condition when --goal flag is set. Budget bounds runaway evaluator loops; the goal-mode contract also requires anti-cheat clauses (see SKILL.md § Goal-mode auto-injection). Paths not listed (fast, explore, audit, bug) reject --goal.",
+    "full": {
+      "phase-5": 30,
+      "phase-6": 15
+    },
+    "lite": {
+      "phase-5": 15,
+      "phase-6": 10
+    },
+    "plan": {
+      "phase-5": 30,
+      "phase-6": 15
+    },
+    "clone": {
+      "phase-5": 10,
+      "phase-6": 10
+    }
   }
 }

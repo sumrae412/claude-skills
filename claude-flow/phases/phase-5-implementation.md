@@ -46,6 +46,45 @@ Never pass to subagents:
 User must approve the plan before any implementation begins.
 </HARD-GATE>
 
+### Goal-mode entry (when `--goal` is set)
+
+After the plan approval gate clears and BEFORE invoking the External API Contract gate, check `state.flags.goal === true` and inject the Phase 5 goal:
+
+```text
+/goal $plan.steps all have status=complete; uv run pytest <touched-dirs> exits 0;
+uv run ruff check <touched-dirs> exits 0; static analysis (semgrep --severity ERROR,
+ast-grep scan) reports 0 ERROR-level findings; phantom-completion audit (per
+executing-plans § "Step 4.5") shows 0 MUST-FIX; no new pytest.skip/xfail/skipif
+markers added in $diff; no test files deleted in $diff without replacement;
+$diff.context_facts captured for any task that surfaced new domain knowledge;
+or stop after <workflow-profiles.goal_turn_budgets[<path>][phase-5]> turns
+```
+
+Before injection: run `/goal` with no arg. If a user-set goal is active, surface its condition and ask whether to replace. If `--no-goal` is set or `state.flags.goal === false`, skip injection entirely.
+
+After injection, record the event:
+
+```bash
+python3 <claude-flow-root>/scripts/run_manifest.py record-goal \
+  --manifest .claude/runs/<session-id>.json \
+  --state-file .claude/workflow-state.json \
+  --phase phase-5 --action set --goal-flag \
+  --path-name "<workflow_path>" \
+  --turn-budget "<goal_turn_budgets[<path>][phase-5]>" \
+  --condition-file /tmp/goal-condition.txt
+```
+
+At Phase 5 exit (transition to Phase 5.5): run `/goal clear` so the reflection step runs without an active goal driving the loop, and record the clear:
+
+```bash
+python3 <claude-flow-root>/scripts/run_manifest.py record-goal \
+  --manifest .claude/runs/<session-id>.json \
+  --state-file .claude/workflow-state.json \
+  --phase phase-5 --action achieved --no-goal-flag
+```
+
+Use `--action budget_exhausted` instead when the turn budget tripped before the condition was met.
+
 ### Pre-Implementation: Verify External API Contract
 
 <HARD-GATE>

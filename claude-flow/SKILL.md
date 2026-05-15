@@ -73,6 +73,34 @@ Optional flags modify specific phases without changing the path decision.
 |------|-------|--------|
 | `--visual` | Phase 4 | Force the Visual Checkpoint step (Step 6): generate `.excalidraw` mockups under `docs/design/<feature>/mockups/`, pause for user edits, fold drift back into `$plan`. Auto-enabled when `$plan` touches frontend files or the task mentions "UI mockup" / "wireframe" / "visual review". |
 | `--no-visual` | Phase 4 | Skip the Visual Checkpoint step even when auto-enable signals fire. The always-emit `architecture.excalidraw` (one-way) still runs. |
+| `--goal` | Phases 5, 6 | Auto-set `/goal` at phase entry with a condition derived from `$plan.steps[].test_requirements` (Phase 5) or the Verification Ladder + Finish Branch (Phase 6). Auto-clear at phase exit, turn-budget exhaustion, or any subsequent user-approval gate. Off by default — `/goal` is a session-scoped slash command that keeps Claude working across turns until a small fast model confirms the condition; it is NOT permission to run an open-ended backlog. See "Goal-mode auto-injection" below. |
+| `--no-goal` | Phases 5, 6 | Disable goal-mode injection even when `--goal` was set on a prior turn. Honors a user's manual `/goal clear`. |
+
+---
+
+## Goal-mode auto-injection (`--goal`)
+
+When `--goal` is set, the executor invokes the `/goal` slash command at Phase 5 entry and Phase 6 entry — not before, not mid-phase. `/goal` "starts a turn immediately, with the condition itself as the directive" (see [Claude Code docs § /goal](https://code.claude.com/docs/en/goal)), so injecting mid-phase disrupts whatever the executor is doing.
+
+**Scope rules:**
+
+- **Only after user-approval gates.** Phase 5 goal injects AFTER the user approves `$plan` in Phase 4b. Phase 6 goal injects AFTER `$diff` is produced and the executor enters the review cascade. Never inject during Phase 2/3/4 — those phases have user-approval gates that a goal would attempt to autopilot through.
+- **One goal at a time.** `/goal` permits one active goal per session. Before injecting, check status via `/goal` (no arg). If a user-set goal is already active, surface it and ask before replacing — do not silently overwrite.
+- **Auto-clear at phase exit.** When Phase 5 transitions to Phase 5.5, OR Phase 6 transitions to `complete`, OR the iteration limit in `workflow-profiles.json` is hit, the executor runs `/goal clear` before the next phase begins. The Phase 5.5 reflection step must not run under an active Phase 5 goal.
+- **Resume hygiene.** A `/goal` carries over on `--resume`/`--continue`, but the workflow's phase context does not. On resume, check `state.phase` in the run manifest against the active goal's phase tag; if they disagree, `/goal clear` and let the user re-engage explicitly.
+- **Anti-cheat clauses are mandatory.** The evaluator (Haiku) can't run tools — it only judges what the executor has surfaced. A naive "tests pass" condition is gameable by `pytest.skip`, deleting tests, or mocking `db.execute` to mask WHERE-clause bugs. Every injected goal MUST include:
+  - "no new `pytest.skip` / `xfail` / `skipif` markers in `$diff`"
+  - "no test file deletions in `$diff` unless paired with replacements"
+  - "phantom-completion audit shows 0 MUST-FIX"
+  - turn budget from `workflow-profiles.json:goal_turn_budgets[<path>][<phase>]`
+
+**Off-limits paths:** `--goal` is rejected on FAST, EXPLORE, AUDIT, and BUG paths. FAST is single-turn; EXPLORE has no falsifiable end state; AUDIT produces a report (not a green-CI gate); BUG hands off to `/bug-fix` which owns its own loop. The flag is silently a no-op on CLONE PATH (Phase 5 only — Phase 6 still applies).
+
+**Composition:** `--goal` composes with `--lite` (smaller turn budget) and with auto mode (auto mode handles per-tool prompts; goal handles per-turn prompts). Per the docs, the combination is the canonical unattended-execution mode.
+
+**Risk surfacing:** Per the Path Decision risk screen below — if the task hits `auth`, `privacy`, `money`, `data_loss`, `external_side_effects`, or `public_api`, `--goal` is downgraded with a warning. The user can confirm to keep it; default is "skip goal-mode, keep gates manual" because evaluator misses on these classes are the most expensive.
+
+**Manifest persistence:** Every goal-mode lifecycle event (`set` / `clear` / `achieved` / `budget_exhausted` / `replaced`) is recorded via `scripts/run_manifest.py record-goal`, which appends an entry to `manifest.goal_runs[]` (hashed condition, turn budget, path, phase) and mirrors `state.flags.goal` so the flag round-trips across `--resume`. The condition text itself is NOT persisted — only its SHA256 — so post-hoc inspection compares hashes against the canonical condition templates in the phase files. See `record-goal` in the CLI help.
 
 ---
 

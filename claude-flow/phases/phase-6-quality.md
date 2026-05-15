@@ -4,6 +4,45 @@
 
 ---
 
+## Goal-mode entry (when `--goal` is set)
+
+If a Phase 5 goal is still active on entry, clear it first — Phase 5 and Phase 6 have different exit conditions, and the Phase 5 evaluator would judge Phase 6 work against the wrong criteria:
+
+```text
+/goal clear
+```
+
+Then inject the Phase 6 goal AFTER the review base SHA is resolved and reviewers have been selected (i.e. after the first ~2 steps of the Active Flow), so the evaluator can judge against a concrete review set:
+
+```text
+/goal selected reviewers (per /tmp/reviewer-selection.json) all dispatched and
+returned; every CRITICAL and HIGH finding either resolved in $diff or explicitly
+waived in transcript with rationale; verification-before-completion gate green
+(all 4 rungs of the Verification Ladder passed with commands quoted in
+transcript); run_manifest record-review and record-command persisted; /cleanup
+finish-branch step complete (commit, merge/PR option executed); no new
+pytest.skip/xfail markers added during fix iterations; or stop after
+<workflow-profiles.goal_turn_budgets[<path>][phase-6]> turns
+```
+
+Before injection: run `/goal` (no arg). If a user-set goal is active, surface it and ask before replacing. If `--no-goal` is set, skip.
+
+After injection, record the event:
+
+```bash
+python3 <claude-flow-root>/scripts/run_manifest.py record-goal \
+  --manifest .claude/runs/<session-id>.json \
+  --state-file .claude/workflow-state.json \
+  --phase phase-6 --action set --goal-flag \
+  --path-name "<workflow_path>" \
+  --turn-budget "<goal_turn_budgets[<path>][phase-6]>" \
+  --condition-file /tmp/goal-condition.txt
+```
+
+At Phase 6 exit (`complete` state): run `/goal clear` and record the terminal action (`achieved` on success, `budget_exhausted` on cap hit), passing `--no-goal-flag` so the flag clears for any subsequent session in the same window.
+
+---
+
 ## Risk-Budgeted Cascading Review
 
 Reviews are structured as a cascade: Tier 1 runs first, then specialized
