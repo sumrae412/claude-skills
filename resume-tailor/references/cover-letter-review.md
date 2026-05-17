@@ -7,7 +7,7 @@ Local review reference for Phase 5 cover-letter drafting. Load this file before 
 Before drafting, load these in order:
 
 1. **The candidate's canonical structural example** — `~/Documents/resumes/Summer_Rae_CoverLetter.md`. Always load. This is the endorsed paragraph shape, cadence, and voice baseline.
-2. **The annotated structural template** — `references/templates/cover-letter-structural-template.md`. Always load alongside the baseline. Captures the 4-paragraph hook → current-edge → prior-leadership-evidence → synthesis-close pattern as a skeleton with per-paragraph rules and named variants (biotech-anchor inversion, seniority alignment, agentic-AI lead).
+2. **The annotated structural template** — `references/templates/cover-letter-structural-template.md`. Always load alongside the baseline. Captures the 4-paragraph hook → bridge → operational-evidence → close pattern as a skeleton with per-paragraph rules and two paired shapes (Shape A — operational-fit / Shape B — career-arc). The shape pair is selected from the JD signal at draft-start and carried through P1 → P2 → P4.
 3. **Voice corpus** — `~/Documents/resumes/_voice-corpus/{originals,successful}/`. Proven-by-interview letters that supplement the baseline when available.
 
 Do NOT read prior letters from per-company folders (`~/Documents/resumes/<company>/cover-letter.md`) as voice templates. Those letters either failed, are in flight, or were endorsed in-session without an interview signal, and pulling voice from them compounds AI cadence over time.
@@ -174,15 +174,97 @@ Reject the draft if it contains any of these:
 - Passive closing lines: "I look forward to hearing from you", "Please feel free to contact me at your convenience", "Thank you for considering my application" as the standalone final sentence. The close must be active and specific — name what you'd talk about, not what you hope happens.
 - Em dashes or en dashes
 
+### 5a. LLM-era buzzwords and AI-influencer cadence
+
+Hiring managers in 2024-2026 are increasingly skeptical of bare AI-industry vocabulary used without operational substance. The following phrases read as AI-influencer cosplay even when the candidate's underlying experience is real. Reject if any appear without a concrete operational artifact attached in the same sentence:
+
+- **Bare "frontier AI" / "frontier LLM" / "frontier models"** — must be followed by a specific named system, evaluation framework, shipped artifact, or paper. *"working alongside X on frontier LLM research"* is bare; *"working alongside X on the LLM evaluation framework that gated [named system]'s release"* is anchored.
+- **Bare "agentic AI" / "agentic systems" / "agentic workflows"** — must be followed by a named project, governance mechanism, or production constraint. *"agentic-AI research"* is bare; *"agentic orchestration with contract-based handoffs and phase gates that keep multi-agent pipelines reproducible"* is anchored.
+- **"next-gen" / "cutting-edge" / "state-of-the-art"** without a named system or benchmark — always cut.
+- **"bets I want to be running" / "the bets that matter" / "the right bets"** — startup-founder cosplay. Closes that frame the role as a portfolio of bets read as performative rather than operational. Close on what would be discussed or built, not on betting language.
+- **Prestige stacking** — naming 3+ proper nouns (employers, publications, advisors, institutions) inside a single paragraph with no operational through-line. Prestige density asks the reader to *infer* importance; senior writing *demonstrates* it. If a paragraph has more than 2 proper-noun credentials, rewrite so each credential is doing one specific operational job.
+- **"the kind of work I have been doing"** / **"exactly the kind of"** / **"this is the work I want to be doing"** — vague affinity claims without naming the work. Replace with the specific operational dimension that maps to the JD.
+
+### 5b. Resume narration in P1
+
+P1 must not be a chronological employer montage. The *"At X, I did Y. Before that, at Z, I did W. Earlier, at V, I first..."* cadence is the strongest single signal that a letter is a resume-in-paragraphs rather than a positioning document. Specific bans for P1:
+
+- More than ONE prior employer named with active-verb evidence before P1 turns to the company's bet.
+- The connective tissue *"Before that…"* / *"Earlier…"* / *"Prior to that…"* used inside P1 to chain employers.
+- Three or more sentences in P1 whose primary subject is the candidate or a candidate-employer.
+
+P1 may name one employer with one evidence clause when that employer is the strongest single fit signal. Multi-employer evidence belongs in P3 (operational evidence), where it is relevance-ordered — not chronologically chained.
+
 ## 6. Final Review Pass
 
-Before sign-off, read:
+Before sign-off, run BOTH a set of mechanical pre-ship checks (§6.1) AND a hiring-manager perspective review (§6.2). The mechanical checks produce printed evidence — they are not optional vibe-checks. The perspective review runs in a fresh subagent context so it isn't biased by the drafter's own rationalization.
 
-1. The first sentence of each paragraph by itself.
-2. All proper nouns by themselves, cross-checked against the JD and the resume. Catches two failure modes: (a) stale company/role/person names accidentally carried over from another letter, and (b) fresh typos in this letter — recipient firm name, hiring manager's name, the candidate's current employer. Both are interview-killers and resume-screen rejections. (One published experiment had the author address "WXY Architects" when applying to XYZ Architects, and name XYZ as his current employer when it was the role he was applying for — caught only by outside reviewers.)
-3. The closing line by itself.
-4. The whole letter aloud, asking: *would I send this to a smart friend?* Press-release cadence ("As a passionate strategist with a proven track record of driving impact...") fails this test. Conversational-but-professional passes.
-5. Each body paragraph against the **"what can I do for you?" diagnostic.** Every body paragraph should answer that question implicitly. If a paragraph answers "what do I want from you?" instead, rewrite to lead with the company's need (per §1 opening rule).
-6. The whole letter from the **hiring manager's perspective.** Read as if you are the hiring manager for this exact role at this exact company. Ask: what raises a question? what makes me want to keep reading? what would make me skip to the next application? Skim-bait paragraphs (predictable openers, generic praise, resume restatement) fail this test even when the §6 step-4 smart-friend test passes — they sound human but waste the reader's time.
+### 6.1. Mechanical pre-ship checks (printed evidence required)
 
-The first-sentence pass catches candidate-focused openings. The proper-noun pass catches stale company- or role-specific evidence from another letter. The closing-line pass catches filler. The smart-friend pass catches press-release cadence. The "what can I do for you?" pass catches candidate-centric framing that escaped the §1 first-sentence check. The hiring-manager pass catches skim-bait that survives all of the above by being technically well-written but functionally forgettable.
+Each check below must produce a one-line printed output. If any check fails, fix the draft and re-run before continuing to §6.2.
+
+**Check 1 — Sentence-subject sequence per paragraph.** For each of P1-P4, print the sequence of sentence subjects as a single line, e.g. *"P1: [company-bet] → [I] → [I] → [I] → [company]"*. Fail conditions:
+
+- Any paragraph has 3+ consecutive sentences whose subject is "I" or "my [employer]" / "my [project]".
+- P1 ends on a candidate-subject sentence rather than a company-subject sentence.
+- P2-P4 open with "I" as the first-sentence subject.
+
+If any fail condition triggers, the diagnostic itself names the violating paragraph — rewrite that paragraph and re-run the sequence check.
+
+**Check 2 — Proper-noun cross-check.** List every proper noun in the letter and cross-check against the JD and the resume. Catches (a) stale company/role/person names accidentally carried over from another letter, and (b) fresh typos in this letter — recipient firm name, hiring manager's name, the candidate's current employer. Both are interview-killers and resume-screen rejections. (One published experiment had the author address "WXY Architects" when applying to XYZ Architects, and name XYZ as his current employer when it was the role he was applying for — caught only by outside reviewers.)
+
+**Check 3 — Prestige-density count per paragraph.** Count proper-noun credentials (employers, publications, advisors, institutions) in each paragraph. Fail condition: any paragraph has 3+. Per §5a, prestige stacking asks the reader to infer importance instead of demonstrating it. If a paragraph fails, redistribute credentials or cut.
+
+**Check 4 — Hiring-risk anchor presence in P1.** Locate the P1 clause that grounds in the Phase 1 hiring-risk sentence (per `references/templates/cover-letter-structural-template.md` §P1). Print: *"Hiring-risk anchor in P1: [QUOTE the clause]"*. Fail condition: no clause in P1 can be traced to the hiring-risk sentence — the letter is orbiting a generic "AI leadership" frame rather than this role's actual hardest problem.
+
+**Check 5 — Structural diff against canonical baseline.** For each paragraph P1-P4, list (a) which structural move from the canonical baseline at `~/Documents/resumes/Summer_Rae_CoverLetter.md` and (b) which Shape (A vs B from the structural template) was applied. Format:
+
+```
+P1: Shape A intersection-of-problems hook + company-bet bridge — matches baseline structural intent (hook → company-bet)
+P2: Shape A company-situation deep-dive — DEVIATES from baseline (baseline uses current-edge); reason: JD has 4 distinct operational dimensions worth naming
+P3: Shape A operational evidence with through-line — matches baseline
+P4: Shape A pivot-back close — matches baseline structural intent (close on company topic)
+```
+
+Every paragraph either matches baseline or has an explicit DEVIATES tag with a one-line reason naming the JD signal that justified the deviation. Vague reasons ("different shape needed", "this role is unique") fail the check — name the specific JD signal that triggered the variant. Surface the diff to the user before file-write so they can override.
+
+**Check 6 — Closing-line standalone read.** Read the final sentence alone. Fail conditions: passive closing (§5), founder-cosplay closing (§5a "bets I want to be running"), or generic "I'd welcome the chance to discuss" without naming a specific topic.
+
+**Check 7 — Anti-pattern §5 / §5a / §5b sweep.** Scan the full draft once against the §5 anti-pattern list, the §5a LLM-era buzzword list, and the §5b P1 resume-narration ban. Print: *"§5 hits: [n] — [list]"*. Fail condition: any single hit. (Anti-patterns are reject-on-presence, not score-and-weigh.)
+
+### 6.2. Hiring-manager perspective review (dispatched subagent)
+
+After §6.1 passes, dispatch a fresh subagent via the Agent tool with `model: "sonnet"` and pass ONLY:
+
+- The JD
+- The current draft
+- The Phase 1 hiring-risk sentence
+- The §6.2 prompt below
+
+Do not pass the resume, the canonical baseline, the structural template, or §A philosophy — the reviewer must evaluate the draft cold, as a hiring manager would. Same-context review by the drafting model systematically under-flags problems the drafter has already rationalized.
+
+**§6.2 reviewer prompt:**
+
+```
+You are the hiring manager for the role described in [JD]. The candidate sent the cover letter in [DRAFT]. Their Phase 1 hiring-risk sentence is: [HIRING-RISK].
+
+Read the letter the way a hiring manager reads 80+ letters in a screening session: skim P1 first, decide whether to keep reading, then evaluate.
+
+Answer in this order:
+
+1. **After reading P1 only:** would you keep reading? One sentence answer with reason.
+2. **What raises a question or makes you want to keep reading?** Quote the specific phrase. Up to 3.
+3. **What would make you skip to the next application?** Quote the specific phrase. Up to 3. Special attention to: skim-bait paragraphs, predictable openers, generic AI-leadership framing, prestige stacking without operational substance, founder-cosplay language, resume narration.
+4. **Does the letter orbit the hiring risk, or does it orbit "AI leadership in general"?** One sentence.
+5. **Verdict — would you grant a screen?** Yes / No / Borderline, with one reason.
+
+Be skim-honest, not generous. The drafter wants the harsh signal, not a confidence boost.
+```
+
+The subagent's response is surfaced to the user verbatim. If the verdict is No or Borderline, present the option to revise specific paragraphs before file-write.
+
+### 6.3. Why this two-tier review exists
+
+The first-sentence pass catches candidate-focused openings. The proper-noun pass catches stale company- or role-specific evidence from another letter. The sentence-subject sequence catches I-stacking that the prose-level reviewer would let slide. The structural-diff check catches variant drift (the failure mode where a permissive variant quietly disables the default's safeguards). The prestige-density count catches the LLM-era "infer-from-proper-nouns" failure. The hiring-risk anchor check catches generic-AI-leadership drift. The closing-line pass catches filler. The dispatched hiring-manager review catches skim-bait that survives all the mechanical checks by being technically well-written but functionally forgettable.
+
+Mechanical checks (§6.1) produce evidence. Perspective review (§6.2) produces signal. Both must pass before file-write.
