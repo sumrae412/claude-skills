@@ -29,7 +29,7 @@ loaded=$(grep -l "model-router/references/" \
   ~/.claude/projects/*/conversations/*.jsonl 2>/dev/null | wc -l)
 total=$(grep -l "model-router/SKILL.md" \
   ~/.claude/projects/*/conversations/*.jsonl 2>/dev/null | wc -l)
-echo "References loaded in $loaded of $total sessions ($(( loaded * 100 / total ))%)"
+echo "References loaded in $loaded of $total sessions ($(( total > 0 ? loaded * 100 / total : 0 ))%)"
 ```
 
 ### 2. `/stats` for model-mix calibration

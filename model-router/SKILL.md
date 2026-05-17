@@ -57,12 +57,12 @@ If current context exceeds the long-context threshold, jump straight to `longCon
 |---|---|---|---|
 | `longContext` | context > 60K tokens (check via `/context`) | Sonnet 4.6 (Opus if reasoning-heavy) | Haiku quality drops on long inputs |
 | `background` | non-interactive, batch, `--print` flag, scripted, CI | Haiku 4.5 | Speed and throughput matter more than depth |
-| `think` | Plan Mode active (via `/plan`, **Shift+Tab**, or Claude auto-detection), "think carefully", architecture work, debate-team Tier 1+ | Opus 4.7 + extended thinking — or `/model opusplan` for two-model workflow (see Plan-Mode Pattern below) | Reasoning depth justifies the cost |
-| `subagent-fleet` | dispatching 2+ parallel agents via Task / Agent tool | per-role (see Subagent Fleet Routing) | Highest-leverage decision — cost multiplies across the fleet |
+| `subagent-fleet` | dispatching 2+ parallel agents via Task / Agent tool | per-role (see Subagent Fleet Routing) | Highest-leverage decision — cost multiplies across the fleet; placed before `think` so fleet routing wins for parallel-agent dispatches that also look like thinking tasks |
+| `think` | Plan Mode active (via `/plan`, **Shift+Tab**, or Claude auto-detection), "think carefully", architecture work, multi-model debate | Opus 4.7 + extended thinking — or `/model opusplan` for two-model workflow (see Plan-Mode Pattern below) | Reasoning depth justifies the cost |
 | `webSearch` | research / web-fetch heavy, `useful-for` triage, `synthesis-brief`, link-chasing | Sonnet 4.6 | Opus wastes tokens on synthesis steps |
 | `default` | everything else | drop to Step 2 |
 
-**First-match precedence:** if a task matches multiple modes, use the first match in table order. `longContext` always wins, then `background`, then `think`, etc. This keeps the router deterministic when signals overlap (a parallel-subagent run that also happens to be a thinking task is still `subagent-fleet`, because fleet routing decides model per-agent rather than for the orchestrator).
+**First-match precedence:** if a task matches multiple modes, use the first match in table order. `longContext` always wins, then `background`, then `subagent-fleet`, then `think`, then `webSearch`, then `default`. This keeps the router deterministic when signals overlap — a parallel-subagent run that also looks like a thinking task is `subagent-fleet`, because fleet routing decides model per-agent rather than for the orchestrator.
 
 ### Step 2 — Complexity scoring (for `default` mode only)
 
@@ -157,7 +157,7 @@ Model choice is one knob — these are siblings worth pointing at when the model
 | `/model opusplan` | Two-model workflow: Opus plans, Sonnet executes within one session — picker label: "Use Opus in plan mode, Sonnet otherwise" | Mixed planning + execution work; see Plan-Mode Pattern below |
 | Skill `model:` frontmatter | Pin model per-skill (loads when skill activates; reverts on next prompt) | Skill is consistently better on one tier (e.g. `/debate-team` pins Opus) |
 | Skill `effort:` frontmatter (`low` / `medium` / `high` / `xhigh` / `max`) | Adjust extended-thinking budget per-skill | Mechanical skills can run `effort: low`; reasoning-heavy skills `effort: high` |
-| `/fast` toggle (**Opus 4.6 only**) | Same model, optimized for faster output — not available on Opus 4.7 or other models | Specifically running Opus 4.6 and want speed over depth |
+| `/fast` toggle (**Opus 4.6 only**) | Same model, optimized for faster output — not available on Opus 4.7 or other models | Only relevant if you've explicitly pinned Opus 4.6 via `/model claude-opus-4-6` or the `--model` flag; the skill's default architectural recommendation is Opus 4.7, which doesn't support `/fast` |
 | `/compact` vs `/clear` | Context hygiene (see `token-economy`) | Long sessions approaching limits |
 | CLAUDE.md under 500 tokens | Loads every turn regardless of model | Always — the cheapest optimization |
 | Prompt caching | 90% discount on cached prefix | Repeated CLAUDE.md or boilerplate |
@@ -268,7 +268,7 @@ Three core examples cover the decision space. For the full set (6 examples + 3 e
 
 ## Integration Notes
 
-- **claude-flow Executor/Advisor pattern.** Sonnet executes (default), Opus advises at Phase 4 design review and debate-team Tier 0. This skill formalizes that pattern as table rules — same logic, made explicit.
+- **Executor/Advisor pattern.** Sonnet executes (default), Opus advises (design review, adversarial critique, judgment calls). This skill formalizes that pattern as table rules — same logic, made explicit. Maps cleanly to two-model orchestration frameworks that distinguish "doer" agents from "reviewer" agents.
 - **token-economy pairing.** Model choice is upstream of tool-call discipline. After picking the model, apply `token-economy` patterns for the tool-call layer (batch independent calls, targeted line-range reads, cheap-subagent delegation).
 - **Boundary with llm-cost-optimizer.** `llm-cost-optimizer` is for production API spend — cost-observability systems, routing between providers, prompt caching at scale, reducing AI feature costs in shipped products. This skill is for in-session decisions on what model to run the current Claude Code turn under.
 

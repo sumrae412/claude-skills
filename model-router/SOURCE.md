@@ -32,7 +32,7 @@ URL: https://buildtolaunch.substack.com/p/claude-code-token-optimization
 
 **Principles lifted:**
 - Verbatim Haiku/Sonnet/Opus tier phrasings (mechanical / implementation + daily work / architecture + complex)
-- Cost ratio anchor: Haiku ~5× cheaper than Opus input
+- Cost ratio anchor: Haiku cheaper than Opus by a meaningful multiple (article quoted ~5× input, but actual ratio under current Anthropic pricing is closer to ~15× input — SKILL.md uses the current 15× figure; article anchored the *concept* of input-cost stratification, not the exact multiplier)
 - Adjacent levers: `/effort low`, `MAX_THINKING_TOKENS=8000`, `/compact` vs `/clear`, CLAUDE.md under 500 tokens
 
 **Deliberately left behind:** `.claudeignore` recipe (belongs in context-engineering), personal cost anecdote, `/compact` vs `/clear` deep dive (belongs in token-economy).

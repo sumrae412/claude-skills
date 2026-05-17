@@ -60,7 +60,7 @@ Sum hits within a tier; assign to the lowest tier whose threshold is met. Signal
 
 ## First-match precedence within tier
 
-Evaluate trivial → simple → complex → architectural. If a task scores into trivial AND complex (e.g., a single-file typo fix that also touches multiple files), the trivial threshold fires first and wins.
+Evaluate trivial → simple → complex → architectural. If a task scores into trivial AND complex (e.g., "fix typo in auth.py, part of a multi-file feature" — scores +3 trivial AND +2 complex), the trivial threshold fires first and wins.
 
 This biases toward cheaper models when signals are mixed — escalation after the fact is cheaper than over-spend. If the user pushes back ("actually this is more complex than that"), apply the manual override and re-route.
 
