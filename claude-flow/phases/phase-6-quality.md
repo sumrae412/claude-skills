@@ -195,6 +195,15 @@ Default reviewers:
 Agents that already ran as Phase 5 specialists are skipped here to avoid double
 review.
 
+**Opus reviewer for HIGH-budget runs:** When `review_budget == "high"` and the
+diff touches `auth`, `privacy`, `money`, `data_loss`, `external_side_effects`,
+or `public_api` paths, promote `adversarial-breaker` (or add a second
+`safety-reviewer` pass) to `model: "opus"` rather than Sonnet. Per the
+two-reviewer-stack pattern (PR #96: 8 findings, 0 overlap between CodeRabbit
+and an Opus skill-quality reviewer), single-cluster Sonnet stacks miss real
+bugs that Opus catches on the same diff. Sonnet remains the floor for all
+other reviewers and lower-budget runs.
+
 ## Findings Resolution
 
 If Tier 1 or later reviewers produce HIGH+ findings, load
@@ -270,14 +279,19 @@ For PR check progression, post-deploy soak, and CodeRabbit review polling, use `
 
 ## Finish Branch
 
-Invoke `/cleanup`:
+Invoke `/ship` (the canonical shipping pipeline):
 
 1. run the full test suite
 2. commit with a conventional message
-3. present merge / PR / keep / discard options
-4. execute the user’s choice
+3. push and open a PR
+4. background `review-pr` agent
+5. capture `session-learnings`
+6. merge to main
 
-`/cleanup` then handles `session-learnings` and repo sync.
+After `/ship` merges, invoke `/cleanup` for branch teardown, worktree removal,
+and post-merge housekeeping. Do not run `/cleanup` in place of `/ship` — those
+two skills cover different stages (commit-through-merge vs. post-merge
+teardown) and conflating them was the historical bug.
 
 ## Capture Learnings
 

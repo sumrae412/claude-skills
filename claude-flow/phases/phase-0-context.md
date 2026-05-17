@@ -61,7 +61,10 @@ local conventions.
 
 ### Step 3: Classify Task -> Load Contextual Skills
 
-Use the project's trigger matrix to load only the skills relevant to this task:
+Use the project's trigger matrix to load only the skills relevant to this task.
+The matrix below is the **default (CourierFlow)** — replace it with your
+project's trigger matrix when running claude-flow elsewhere. See
+`../references/project-skill-menu.md` for menu authoring rules.
 
 ```text
 templates / CSS / HTML?       -> courierflow-ui

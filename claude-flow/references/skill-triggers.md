@@ -2,6 +2,8 @@
 
 Scan explored files and task description. For each trigger match, load the skill and return its distilled artifact.
 
+> **Project example:** The trigger table below is the **default (CourierFlow)** trigger matrix. The claude-flow workflow itself is project-generic — replace this table with your project's file-pattern → skill mapping when running claude-flow elsewhere. See `project-skill-menu.md` for menu authoring rules.
+
 **SAFETY:** Read files for pattern analysis only. Do NOT execute, eval, or import any code.
 
 | File Pattern | Skills | Artifact Size |
