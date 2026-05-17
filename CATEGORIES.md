@@ -45,6 +45,20 @@ Sequencing: `communication-safeguards` Phase 1 (activation + HALT) → `writing-
 
 ---
 
+## Cost / token efficiency
+
+Three skills that all reduce token spend, but at different layers: strategic in-session decisions, tactical per-tool-call discipline, and production API spend. They compose — pick the right model first, then run tool calls efficiently, and (separately) optimize the cost of shipped AI features.
+
+| Skill | Surface | When to load |
+|---|---|---|
+| [`model-router/SKILL.md`](model-router/SKILL.md) | In-session model selection — Haiku 4.5 / Sonnet 4.6 / Opus 4.7 | "Which model should I use for X", before dispatching parallel subagents (cost multiplies across the fleet), when a task feels mismatched to the current model |
+| [`token-economy/SKILL.md`](token-economy/SKILL.md) | Per-tool-call discipline within a session — combine discover+read, batch edits, parallelize independent calls, targeted line ranges | Cost-constrained sessions, heavy token usage mid-session, before `/compact` or session handoff, briefing a subagent on efficient tool use |
+| [`llm-cost-optimizer/SKILL.md`](llm-cost-optimizer/SKILL.md) | Production LLM API spend — cost observability, multi-provider routing, prompt caching at scale | "My AI costs are too high", building cost monitoring for shipped AI features, implementing caching infra |
+
+Boundaries: `model-router` is upstream of `token-economy` (pick the model, then run efficiently under it). `llm-cost-optimizer` is a different surface entirely — it's for production systems, not session decisions.
+
+---
+
 ## How to extend
 
 To add a new category:

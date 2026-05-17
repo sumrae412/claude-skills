@@ -13,3 +13,18 @@ cd ~/claude_code/claude-skills && python3 claude-flow/scripts/analyze_skill_sele
 ```
 
 Then update the decision record's follow-ups section with the result.
+
+## model-router progressive-disclosure check — fire on or after 2026-06-17
+
+**Source:** [decision record](2026-05-17-model-router-progressive-disclosure.md)
+
+On or after the fire date, run:
+
+```bash
+cd ~/claude_code/claude-skills && \
+  loaded=$(grep -l "model-router/references/" ~/.claude/projects/*/conversations/*.jsonl 2>/dev/null | wc -l) && \
+  total=$(grep -l "model-router/SKILL.md" ~/.claude/projects/*/conversations/*.jsonl 2>/dev/null | wc -l) && \
+  echo "References loaded in $loaded of $total sessions ($(( total > 0 ? loaded * 100 / total : 0 ))%)"
+```
+
+If references loaded in >50% of sessions, reverse the progressive-disclosure split — move signal-scoring back inline in SKILL.md. Otherwise keep and re-schedule for 90 days out. Update the decision record's status section with the result.
