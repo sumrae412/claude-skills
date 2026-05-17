@@ -199,10 +199,11 @@ review.
 diff touches `auth`, `privacy`, `money`, `data_loss`, `external_side_effects`,
 or `public_api` paths, promote `adversarial-breaker` (or add a second
 `safety-reviewer` pass) to `model: "opus"` rather than Sonnet. Per the
-two-reviewer-stack pattern (PR #96: 8 findings, 0 overlap between CodeRabbit
-and an Opus skill-quality reviewer), single-cluster Sonnet stacks miss real
-bugs that Opus catches on the same diff. Sonnet remains the floor for all
-other reviewers and lower-budget runs.
+two-reviewer-stack pattern validated on [claude-skills#96](https://github.com/sumrae412/claude-skills/pull/96)
+(8 findings surfaced, 0 overlap between CodeRabbit and an Opus skill-quality
+reviewer on the same diff), single-cluster Sonnet stacks miss real bugs that
+Opus catches. Sonnet remains the floor for all other reviewers and
+lower-budget runs.
 
 ## Findings Resolution
 
