@@ -32,6 +32,19 @@ Both also reindexed in `~/.claude/CLAUDE.md` Domain Skills table for cross-proje
 
 ---
 
+## Communication
+
+Skills that shape how Summer writes and sends — voice on the way in, state and intent on the way out. They run in sequence, not as alternatives: `communication-safeguards` handles the upstream state/intent check before composition, `writing-voice` carries her voice through drafting, and the upstream `anthropic-skills:toneguard` plugin scans the final text for passive-aggressive / escalatory markers.
+
+| Skill | Surface | When to load |
+|---|---|---|
+| [`communication-safeguards/SKILL.md`](communication-safeguards/SKILL.md) | Pre-composition state/intent layer — activation 1–10, HALT, Two-Sentence Response, 2-Minute Reset, ToneGuard handoff | "Draft a Slack message", "how should I respond to", "I'm fuming about", "I can't stop replaying", "help me reply to" — any communication request that may be carrying conflict heat |
+| [`writing-voice/SKILL.md`](writing-voice/SKILL.md) | Summer's personal voice profile — sensory + deadpan dark humor for creative work, minimal + direct + lead-with-the-ask for business writing | "Write this for me", "draft an email", "help me write", "write as me", "in my voice" — any drafting task she'll put her name on |
+
+Sequencing: `communication-safeguards` Phase 1 (activation + HALT) → `writing-voice` for drafting → `communication-safeguards` Phase 4 (ToneGuard pre-send review). The shared communication principles at `shared/communication-principles.md` apply across both — see the "Writing skills load shared communication principles" section in `~/.claude/CLAUDE.md`.
+
+---
+
 ## How to extend
 
 To add a new category:
