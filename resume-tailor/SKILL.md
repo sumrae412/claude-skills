@@ -82,6 +82,7 @@ Output to user (checkpoint) — **in this order**:
 5. Cultural signals (what kind of operator do they want?)
 6. Archetype selected + resume story to foreground + what to downplay
 7. Action-code plan per focus area: `LEAD_WITH` / `EMPHASIZE` / `QUANTIFY` / `DOWNPLAY`
+8. **Hiring risk — single sentence.** *"What is the hardest thing this person has to do, that most candidates with the right keywords can't actually do?"* Format and examples in `references/jd-analysis.md` §"Hiring Risk". This artifact is required before any cover-letter drafting can begin in Phase 5 — it is the antecedent for the cover letter's P1 "specific bet" clause and prevents the draft from drifting into resume narration.
 
 **Rationale for JD-first ordering:** Users often can't evaluate whether a weight is right without re-anchoring in the JD content. Placing the JD recap immediately above the weights means the user sees the *evidence* and the *derived profile* together, without scrolling back to the JD file.
 
@@ -148,7 +149,14 @@ Final deliverables. Format details, ATS tips, and optional DOCX export are in `r
 
 **Output path:** all files go to `~/Documents/resumes/<Company>/` (one folder per target company). See `references/output-formats.md` §0.
 
-**Required step before any file write:** walk the user through the assembled resume **section by section** (header/summary, each role, tail sections) for approval. See `references/output-formats.md` §3.5. Cover letters get the same treatment paragraph-by-paragraph, and must also clear the anti-patterns checklist (positive framing, no JD restatement, P4 claim verified).
+**Required step before any file write:** walk the user through the assembled resume **section by section** (header/summary, each role, tail sections) for approval. See `references/output-formats.md` §3.5. Cover letters get the same treatment paragraph-by-paragraph, and must also clear both review tiers:
+
+- **§6.1 mechanical pre-ship checks** (sentence-subject sequence per paragraph, proper-noun cross-check, prestige-density count, hiring-risk anchor present in P1, structural diff against canonical baseline, closing-line standalone read, §5/§5a/§5b sweep). Each check produces a printed one-line output; fail conditions trigger a rewrite, not a "ship anyway".
+- **§6.2 hiring-manager perspective review** dispatched to a fresh Sonnet subagent with ONLY the JD, the draft, and the Phase 1 hiring-risk sentence — no resume, no baseline, no philosophy doc. Same-context review by the drafting model systematically under-flags problems the drafter has rationalized.
+
+Both tiers live in `references/cover-letter-review.md` §6. Surface the §6.1 evidence and the §6.2 verdict to the user before file-write so they can override or revise.
+
+**Required Phase 1 artifact for cover letters:** the Phase 1 hiring-risk sentence (Phase 1 output item #8) is the antecedent for P1's "specific bet" clause. Do not begin cover-letter drafting unless that sentence exists. If the user requests a cover letter and the hiring-risk sentence was not produced in Phase 1 (e.g. Phase 5R review-only path skipped Phase 1), produce it now from the JD before drafting.
 
 **Voice corpus + canonical baseline + structural template — when drafting a cover letter:** load `references/voice-corpus.md`, `references/cover-letter-review.md`, and `references/templates/cover-letter-structural-template.md` before drafting. The **canonical structural baseline** is `~/Documents/resumes/Summer_Rae_CoverLetter.md` — always load it as the voice example. The **annotated structural template** (`references/templates/cover-letter-structural-template.md`) captures the 4-paragraph shape with per-paragraph rules and variants — always load it as the skeleton. The voice corpus at `~/Documents/resumes/_voice-corpus/{originals,successful}/` supplements with proven-by-interview letters when available. NEVER pull voice from per-company folders even if endorsed in-session — that compounds AI cadence across drafts. If the corpus is empty, baseline + structural template alone are sufficient.
 
@@ -189,7 +197,8 @@ Use when the user has already drafted a cover letter (or resume bullet set) and 
    - **Strengths** (2-4 bullets) — what's working, with the specific phrase quoted and why it lands
    - **Targeted issues** (per paragraph or per bullet) — quote the exact text, name the rule it violates, suggest a *direction* (not a rewrite). Example: *"P2 opens with `I led enterprise AI delivery at Govini...` — candidate-focused per cover-letter-review §1. Direction: lead with the company's pain, then your evidence."*
    - **Anti-pattern hits** — explicit list of any §5 anti-patterns triggered
-   - **Final read pass** (per cover-letter-review §6): first sentence of each paragraph, all proper nouns, closing line — flag any that fail the test
+   - **Mechanical pre-ship checks** (per cover-letter-review §6.1): sentence-subject sequence per paragraph, proper-noun cross-check, prestige-density count, hiring-risk anchor in P1, structural diff against canonical baseline, closing-line standalone read, anti-pattern sweep. Print evidence for each — flag any that fail.
+   - **Hiring-manager perspective review** (per cover-letter-review §6.2): dispatch a fresh Sonnet subagent with ONLY the JD, the draft, and the Phase 1 hiring-risk sentence. Surface the subagent's verdict verbatim. If §6.1 caught structural failures the user agrees to revise, optionally defer §6.2 until after the revise.
 5. **Close:** *"Want me to rewrite any paragraph you flag, or leave the draft entirely yours?"* Wait for explicit per-paragraph rewrite request before producing replacement prose.
 
 **Narrow-scope-only refinement rule:** broad revision requests ("rewrite this to be better," "tighten the whole letter," "make it more compelling," "improve the flow") produce over-revisions that erase the candidate's voice. When the user asks for broad refinement, push back before drafting: *"Want me to (a) flag specific spots to revise, (b) rewrite one paragraph you name, or (c) do an errors-only pass that preserves all phrasing?"* Wait for the user to choose scope. Never silently broad-revise — that is the failure mode the named refinement patterns exist to prevent.
