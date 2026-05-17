@@ -151,6 +151,8 @@ Dispatch **Sonnet** (`model: "sonnet"`, `subagent_type: "general-purpose"`) with
 
 **Why Sonnet, not Opus:** Exploration review is gap-finding and checklist scoring — broad pattern matching, not deep trade-off analysis. Opus is reserved for Phase 4 architecture critique and plan stress-test where it earns its cost.
 
+**Haiku candidate (untested):** The same gap-finding + checklist-scoring shape is the canonical Haiku-role workload per the `model-router` skill's role rubric (Explorer → Haiku; see `../../model-router/SKILL.md`). Sonnet is the current shipping choice; consider A/B-ing Haiku for this dispatch — savings are roughly 3× input cost if quality holds. Track in `docs/decisions/` before flipping the default.
+
 ---
 
 ## Phase 2 Step Labels

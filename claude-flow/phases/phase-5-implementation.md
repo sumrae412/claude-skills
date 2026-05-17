@@ -171,13 +171,13 @@ Downgraded from Opus to Sonnet 2026-04-24 after a 15-trial dual-judge eval showe
 
 ### Subagent Skill Loading
 
-When a Phase 5 subagent dispatch could plausibly use ≥2 domain skills (UI / API / data / integrations / security), check `skill_selection_variant` in workflow-state. Default is `"b"` (shipped 2026-04-29 — see [decision record](../../docs/decisions/2026-04-29-ship-forced-selection-phase5.md)).
+When a Phase 5 subagent dispatch could plausibly use ≥2 domain skills (UI / API / data / integrations / security), check `skill_selection_variant` in workflow-state. Default is `"b"` (shipped 2026-04-29 — see [decision record](../docs/decisions/2026-04-29-ship-forced-selection-phase5.md)).
 
 For UI-affecting tasks, carry `$design_context` into implementation dispatches.
 Implementers must preserve centralized design-system patterns and satisfy the
 task design brief's required states before polishing visuals.
 
-- **Variant B (forced selection — DEFAULT):** Prepend the following block to the subagent prompt:
+- **Variant B (forced selection — DEFAULT):** Prepend the following block to the subagent prompt. The `Available skills` list below is the **default CourierFlow menu** — replace it with your project's menu (see `../references/project-skill-menu.md` for authoring rules).
 
   ```
   Before any tool calls, output exactly one line:
@@ -199,7 +199,7 @@ task design brief's required states before polishing visuals.
 
 - **Variant A (opt-out / progressive disclosure):** Pre-2026-04-29 behavior — list available skills as "you may invoke if useful." Use only for re-running the A/B experiment (set `skill_selection_variant: "a"` in workflow-state). Do not use for production work.
 
-Variant B's curated 5-skill menu is hand-selected to be domain-coherent. Per the [scale experiment](../../docs/plans/2026-04-29-skill-selection-at-scale.md), retrieving from a broader corpus (BM25 / rerank) under-performed this curated menu. Do not replace the menu with retrieval without re-running the experiment.
+Variant B's curated 5-skill menu is hand-selected to be domain-coherent. Per the [scale experiment](../docs/plans/2026-04-29-skill-selection-at-scale.md), retrieving from a broader corpus (BM25 / rerank) under-performed this curated menu. Do not replace the menu with retrieval without re-running the experiment.
 
 Keep `courierflow-troubleshooter`, `courierflow-skill-sync`, and
 `courierflow-skill-reviewer` out of the implementation forced-selection menu.

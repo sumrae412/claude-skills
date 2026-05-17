@@ -1,6 +1,6 @@
 ---
 name: claude-flow
-description: Use when creating new features, implementing complex changes, or executing implementation plans. Agentic workflow with fast, clone, lite, explore, and full paths. Executor/Advisor strategy — Sonnet executes, Opus advises at key decision points.
+description: Use when creating new features, implementing complex changes, building features, adding features, executing implementation plans, or running TDD workflows. Multi-phase agentic build pipeline (Phase 0 context → 1 discovery → 2 exploration → 3 requirements → 4 architecture/plan → 4c verification → 5 TDD implementation → 5.5 reflection → 6 review+ship). Workflow paths: fast, clone, lite, plan, explore, audit, full. Executor/Advisor strategy — Sonnet executes, Opus advises at key decision points. Project-generic router; project-specific skill menu is injected via Phase 0/5 (see references/project-skill-menu.md).
 version: 4.1.0
 user-invocable: true
 metadata:
@@ -31,7 +31,7 @@ When auto mode is active and the user has approved a plan, do not ask permission
 Auto mode executes bounded, approved substeps until the next explicit gate. It is not permission to run an unattended backlog loop, invent new scope, or work through an open-ended plan without returning to the user at the defined checkpoint.
 
 
-Agentic multi-phase workflow for building features. **Executor/Advisor strategy:** Sonnet executor runs the main loop (exploring, drafting, implementing). Opus advisor fires on-demand at 3-5 decision points. Project-agnostic — works for any codebase or greenfield project.
+Agentic multi-phase workflow for building features. **Executor/Advisor strategy:** Sonnet executor runs the main loop (exploring, drafting, implementing). Opus advisor fires on-demand at 3-5 decision points. **Workflow is project-generic; the Phase 0 trigger matrix and Phase 5 forced-selection menu are project-specific** — see `references/project-skill-menu.md` for the default (CourierFlow) menu and replacement guidance.
 
 **Announce:** "Running claude-flow — loading context, exploring codebase, then building with you."
 
@@ -46,9 +46,13 @@ Agentic multi-phase workflow for building features. **Executor/Advisor strategy:
 | **Lightweight reviewer** | **haiku** | Phase 6 — single batched dispatch (types, API docs, invariants, defensive) |
 | **Specialist reviewers** | **sonnet** | Phase 6 — safety (combined), test coverage |
 
+**First-party adjacent levers:** `/model opusplan` mirrors this Executor/Advisor split at the main-loop level — use it for interactive plan-then-execute runs (Opus drafts the plan, Sonnet executes). Per-dispatch `model:` parameters still apply for subagent fan-out. Skill `model:`/`effort:` frontmatter, `/context` for size pre-checks, and `/plan` (Shift+Tab) for Plan Mode are all complementary to claude-flow's phase routing.
+
 ---
 
 ## How to Use This Workflow
+
+> **Maintainer note on the split:** Router + phase + reference layout is intentional — 8 paths × several sub-flows would burn ~30K tokens inline. Decision rationale in `docs/plans/2026-04-29-skill-selection-vs-progressive-disclosure.md`; quarterly health checks (load-frequency, menu drift, stale cross-refs) in `REMINDERS.md`. Reversal threshold: any phase file loading <2× per quarter for two quarters → inline or delete.
 
 1. **This file** (router) is always resident.
 2. **Load `phases/phase-N-*.md`** only when entering that phase.
@@ -107,6 +111,10 @@ When `--goal` is set, the executor invokes the `/goal` slash command at Phase 5 
 ## Path Decision (Phase 1 Core Logic)
 
 ```
+DIRECT-ROUTE? ("synthetic beta test", "alpha test with personas",
+                "assess usability with simulated users", "run persona-based eval")
+  → Invoke /personas skill — EXIT workflow
+
 BUG? (error report, regression, stack trace, "fix this bug")
   → Invoke /bug-fix skill — EXIT workflow
 
