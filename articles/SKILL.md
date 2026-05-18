@@ -29,7 +29,7 @@ Pull from these collections. Each has a stable ID — don't search by title, the
 
 Default target set, in priority order:
 
-1. **claude-skills repo** (`/Users/summerrae/repos/claude-skills`) — every skill directory, plus `CLAUDE.md`, `COMMANDS.md`, `CATEGORIES.md`. New patterns may become a new skill, refine an existing one, or update memory.
+1. **claude-skills repo** — every skill directory at the repo root, plus `CLAUDE.md`, `COMMANDS.md`, `CATEGORIES.md`. New patterns may become a new skill, refine an existing one, or update memory.
 2. **CourierFlow** — the `courierflow-*` skills in claude-skills repo, plus the actual CourierFlow repo if relevant.
 3. **BetterBurgh** — personal advocacy project.
 4. **DeepLearning.ai work** — course scripts, evals (see `sc-marketing-scripts`, `Evals` collection).
