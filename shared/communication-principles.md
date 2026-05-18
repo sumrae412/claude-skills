@@ -21,6 +21,7 @@ Use the simplest word that carries the meaning. Short sentences. If a word can b
 - Plain verbs over Latinate nouns ("use" not "utilization," "help" not "facilitation").
 - One idea per sentence. Break compound sentences that force re-reading.
 - Remove hedges and intensifiers that add no information ("really," "very," "actually," "just," "basically").
+- **And-test:** when a sentence pairs ideas with "and" or commas ("elevate and enhance," "clear, concise, and compelling"), ask "do I need all of these, or is one strongest?" Pick one. Coordinated qualifiers usually subtract power, not add it.
 
 ## 3. Lead with the conclusion
 
@@ -61,6 +62,13 @@ Effective communication is a skill that requires **deliberate preparation** — 
 - Know the audience, the ask, and the one thing you want them to remember before writing the first sentence.
 - If preparation reveals you don't have a clear point, stop. No amount of polish rescues an unclear message.
 
+**Real-point test.** Before drafting, write the one sentence that completes "I believe that ___" with the draft's core claim. Then run two checks on it:
+
+- **So-what test:** is there a reasonable counterpoint someone could hold? If no one could disagree, it's a topic or a truism, not a point. Sharpen it.
+- **Why test:** strip every adjective ("important," "great," "exciting," "powerful"). Does the sentence still carry weight? If the adjectives were doing the work, the point is hollow — replace them with the specific reasoning or outcome that justified them.
+
+If the sentence won't survive both tests, the draft doesn't have a point yet. Stop and find one.
+
 ## 8. Control your message
 
 You control three things: **yourself, your message, and your interaction with the audience.** You do not control how the audience feels, what they do with the message, or what they already believe when they encounter it.
@@ -75,8 +83,9 @@ You control three things: **yourself, your message, and your interaction with th
 
 Before shipping any piece of writing produced under a skill that loads this reference:
 
+- [ ] Can complete the sentence "I believe that ___" with the draft's core claim, and the claim survives the so-what + why tests (§7).
 - [ ] Starts with the conclusion / recommendation / hook — not setup.
-- [ ] Every sentence earns its place. Cut words until cuts hurt the meaning.
+- [ ] Every sentence earns its place. Cut words until cuts hurt the meaning. Ran the and-test on coordinated qualifiers (§2).
 - [ ] Written in plain language — no jargon the audience hasn't earned.
 - [ ] Tuned to the medium (email vs. script vs. doc vs. resume bullet).
 - [ ] Audience could state the one key takeaway in their own words after reading.
