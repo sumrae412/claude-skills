@@ -168,6 +168,8 @@ If no: proceed directly to Step 3.
 
 **Why this matters:** Validating visual design before writing code prevents wasted effort when the UX direction is wrong. A 10-minute mockup can save hours of rework.
 
+**Mockup vs full HTML design doc:** This step produces an exploratory mockup only. If the feature is large enough that the whole architecture doc would benefit from HTML treatment (multi-screen, multi-component, non-engineer reviewer in the loop), invoke [`html-spec`](../../html-spec/SKILL.md) in addition — author `docs/specs/<slug>.html` as the durable visual design doc, and keep this `/tmp/` mockup as the throwaway exploration artifact. Most features don't need both; default to mockup-only unless the user asks for a longer-lived visual artifact.
+
 If both Step 2.5 and Step 6 run, the Step 2.5 HTML mockup is exploratory only;
 the Step 6 manifest/mockups are the verification source.
 

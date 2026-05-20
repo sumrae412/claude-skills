@@ -16,6 +16,8 @@ A markdown PRD at `docs/prds/prd-<slug>.md`. The structure maps onto claude-flow
 
 If the PRD is going to a separate AI coding agent (not claude-flow), use the **AI-agent variant** in `references/ai-agent-variant.md` — adds file paths, API contracts as code blocks, and a build sequence.
 
+If the PRD is UI-heavy (multiple landlord/user-facing screens, novel flows, or a non-engineer reviewer in the loop), pair this skill with [`html-spec`](../html-spec/SKILL.md): keep the `$requirements` contract (stories, AC-N EARS clauses, scope.in/out) in Markdown at `docs/prds/prd-<slug>.md`, and author an accompanying `docs/prds/prd-<slug>.html` with mockups + visual layouts. Cross-link bidirectionally so claude-flow Phase 3 still ingests the Markdown contract while reviewers can click through the HTML.
+
 ## When to use
 
 - A PM / founder / requester wants a sharable spec before the build starts

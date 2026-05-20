@@ -29,6 +29,8 @@ Assume they are a skilled developer, but know almost nothing about our toolset o
 
 **Plan location priority:** Check `docs/plans/` in the project first, then `~/.claude/plans/` as fallback. To enable project-local plan storage for Claude Code's built-in plan mode, add `"plansDirectory": "docs/plans"` to your project's `.claude/settings.json`.
 
+**Markdown vs HTML output:** Default to Markdown. Switch to [`html-spec`](../html-spec/SKILL.md) when the plan exceeds ~1000 lines, has 5+ distinct UI screens to visualize, or has a non-engineer reviewer in the loop who benefits from inline mockups. Markdown is cheaper to author and edit — the format-switch needs to earn its keep.
+
 ## Bite-Sized Task Granularity
 
 **Each step is one action (2-5 minutes):**
