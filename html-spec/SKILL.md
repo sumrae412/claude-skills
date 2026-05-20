@@ -5,7 +5,7 @@ user-invocable: true
 metadata:
   hermes:
     tags: [planning, specs, prd, html, visual, design-system, brainstorming]
-    related_skills: [writing-plans, prd, claude-flow, excalidraw-canvas, brainstorming]
+    related_skills: [writing-plans, prd, claude-flow, excalidraw-canvas]
 ---
 
 # HTML Spec
@@ -124,7 +124,7 @@ For CourierFlow specifically: `docs/plans/` and `docs/prds/` already exist; add 
 - **[`prd`](../prd/SKILL.md):** PRDs default to Markdown for the `$requirements` contract mapping. Use html-spec for PRDs heavy in user-facing UI — write the contract in Markdown at the top of the file, embed mockups via `<iframe>` or inline below.
 - **[`claude-flow`](../claude-flow/SKILL.md) Phase 4 (Architecture):** The Step 2.5 "Offer Visual Mockup" gate is where html-spec triggers. If the executor would otherwise emit ASCII diagrams + bullets, offer to switch the design doc to HTML.
 - **[`excalidraw-canvas`](../excalidraw-canvas/SKILL.md):** Excalidraw for whiteboard-style architecture diagrams + free-form sketches. html-spec for full single-page specs (mockups + copy + risk + code in one artifact). They compose — embed Excalidraw exports as SVG inside an html-spec.
-- **[`brainstorming`](../brainstorming/SKILL.md):** First brainstorm pass can be HTML if "show me eight different shapes of this feature with mockups" beats "list eight ideas as bullets."
+- **`superpowers:brainstorming`** (plugin skill — no local path): First brainstorm pass can be HTML if "show me eight different shapes of this feature with mockups" beats "list eight ideas as bullets."
 
 ## Anti-patterns
 
