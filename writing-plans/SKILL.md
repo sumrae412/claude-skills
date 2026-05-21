@@ -142,6 +142,7 @@ Right-size each task using these indicators:
 - Reference relevant skills with @ syntax
 - DRY, YAGNI, TDD, frequent commits
 - Verify artifact persistence before planning calibration/backfill — if the plan assumes "N past runs/events/samples exist," run one targeted check (`ls`, `git log -S`) to confirm they were actually persisted. CLIs that print to stdout leave no trace; pivot to instrument-first if the answer is "none persisted"
+- Verify centralization claims before scoping a single-file fix — if the plan's premise is "edit `foo.py` because it routes all X," grep import sites first (`rg -l "from .*foo import"`) and search for direct SDK instantiations of the underlying primitive (`rg "AsyncAnthropic\(|AsyncOpenAI\("`). A file named like a router may only be wired into 1 of N call sites. Hit on courierflow 2026-05-20: `llm_fallback.py` looked central, was imported by 1 service while 8+ instantiated SDKs directly — forced full plan redesign mid-session.
 
 ## Gate Validation: Verify Every Script/Command Path Against the Target Repo
 
