@@ -592,3 +592,9 @@ worker handle them.
 - **Promotion is Summer's gate.** A proposal becomes a directive when she
   copies the line from Proposals into Claude Tasks (sans date prefix). That
   copy is her explicit consent. Triage never auto-promotes.
+
+---
+
+## References
+
+- [`articles/references/maturity-progression.md`](../articles/references/maturity-progression.md) — Jason Liu's Six Levels framework. `inbox-triage` currently sits around Level 3–4; the doc names what L5 (auto-draft replies on every urgent message) and L6 (per-sender memory) would look like.

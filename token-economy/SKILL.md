@@ -153,3 +153,7 @@ When context shrinks — `/compact`, session handoff, summarizing for a fresh se
 Don't apply this skill at the expense of correctness. Saving 500 tokens by reading lines 100–140 when the bug is on line 95 is a false economy that costs you a second round-trip AND a wrong fix.
 
 If a pattern above would make you miss the actual answer, widen the search. The goal is not fewer tokens — the goal is fewer **wasted** tokens.
+
+## External tools
+
+See [`references/external-tools.md`](references/external-tools.md) for external infrastructure that automates patterns from this skill (e.g., `rtk-ai/rtk` operationalizes Pattern 9 for CLI output).

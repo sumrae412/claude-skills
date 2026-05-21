@@ -284,3 +284,9 @@ Three core examples cover the decision space. For the full set (6 examples + 3 e
 ---
 
 *Maintainer note: if you find yourself loading `references/signal-scoring.md` more than once per session or in most sessions, the progressive-disclosure split is wrong — the scoring detail is load-bearing, not reference. See [`docs/decisions/2026-05-17-model-router-progressive-disclosure.md`](../docs/decisions/2026-05-17-model-router-progressive-disclosure.md) for the reversal thresholds and tracking commands.*
+
+---
+
+## Pricing reference data
+
+For absolute prices, cross-vendor comparisons, and notable non-Claude data points (e.g., Cursor Composer 2.5 at ~10% of GPT-5.5 cost), see [`references/live-pricing-sources.md`](references/live-pricing-sources.md). Load only when picking between Claude-family and non-Claude routing, or when re-verifying the Claude cost ratios after a model ships.

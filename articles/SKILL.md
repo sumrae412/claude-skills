@@ -110,3 +110,9 @@ Every triaged note ends in the reviewed archive — including "skip" verdicts. T
 - User pastes a single article inline → use `useful-for` directly, no need to touch Mem.
 - User wants to *add* something to Mem → that's `inbox-triage` or direct Mem tools.
 - User wants a deep research dive on one article → use `synthesis-brief` or `research`.
+
+---
+
+## References
+
+- [`references/maturity-progression.md`](references/maturity-progression.md) — where `/articles` sits on Jason Liu's Six Levels framework and what Level 5 (drafts actions) / Level 6 (memory-vault feedback) would look like here.
