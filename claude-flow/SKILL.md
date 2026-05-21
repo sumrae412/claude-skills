@@ -262,3 +262,5 @@ frontend-design guidance.
 ## Notes
 
 - **`--lite` for same-session-validated plans (single observation, 2026-05-13):** When the user invokes `--lite` on a task where the plan was validated in-session (tier-0 review done, drafts in the diff being shipped, edit anchors already verified), Phase 1–3 router content is largely unused. Validated once on PR #668 (~10 tool calls start-to-PR; router/path-decision content mostly bypassed in favor of direct apply). If this pattern recurs, consider an `--apply-only` flag that skips Phase 1–3 and goes straight to apply + ship. Single observation; not a confirmed pattern. TodoWrite firing 3 times in a 10-step linear task was also noisy at that scale.
+
+- **Research inputs for future doc refactors:** [`references/research-inputs.md`](references/research-inputs.md) cites "Code as Agent Harness" (arXiv survey with three-layer framing candidate), `re_gent` (production-grade agent-action provenance), and Warp Oz multi-harness orchestration (cross-model design vocabulary). Not load-bearing for any current phase; review when redesigning architecture vocabulary or considering cross-model dispatch.

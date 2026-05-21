@@ -92,6 +92,10 @@ Produce only what the current phase needs:
   `product-management:product-brainstorming` instead — this skill is for
   pressure-testing, not generation.
 
+## References
+
+- [`references/distribution-first-counterexamples.md`](references/distribution-first-counterexamples.md) — when to invert the default problem-first / wedge-first framing. Load during Phase 4–5 if the idea is consumer-facing B2C.
+
 ## Guardrails
 
 - no hedging without logical need
