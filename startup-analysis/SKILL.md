@@ -94,7 +94,10 @@ Produce only what the current phase needs:
 
 ## References
 
-- [`references/distribution-first-counterexamples.md`](references/distribution-first-counterexamples.md) — when to invert the default problem-first / wedge-first framing. Load during Phase 4–5 if the idea is consumer-facing B2C.
+Two non-CLEARFRAME paths to surface during Phase 4–5 when the founder (not the product) is the intended moat. Load only the one that matches the idea's shape; both files describe when to fall back to CLEARFRAME.
+
+- [`references/distribution-first-counterexamples.md`](references/distribution-first-counterexamples.md) — viral format as the moat (consumer B2C, short-form social distribution, quick-exit profile).
+- [`references/brand-first-counterexamples.md`](references/brand-first-counterexamples.md) — founder expertise + audience as the moat (creator-economy solopreneurship, owned-media distribution, sustained solo revenue).
 
 ## Guardrails
 
