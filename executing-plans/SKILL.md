@@ -27,6 +27,7 @@ Load plan, review critically, execute tasks in batches, report for review betwee
 
 ### Step 1: Load and Review Plan
 1. Read plan file
+1a. **Honor the `## References` section as your read-allow-list.** If the plan has one, treat its bulleted file paths as the only prior-art / context files you load before writing code. Do NOT chase adjacent files you "happened to find" — if you need one not listed, surface `REFERENCES_GAP: <path> — <reason>` to the user and let them amend the plan before proceeding. If the section is missing entirely, surface `REFERENCES_MISSING` and ask the plan author to add it (legacy plans without the section fall back to discretion, but flag the gap). If the section says `- (none — greenfield)`, the prior-art context budget is intentionally empty.
 2. Review critically - identify any questions or concerns about the plan
 3. If concerns: Raise them with your human partner before starting
 4. **Premise ambiguity in auto mode: pragmatic-interpret, surface in PR body.** When the plan cites symbols/fields that only partially exist in the target code (e.g. "validate `foo` on classes X and Y" when only Y has `foo`), pragmatic interpretation — validate what's present, apply a sensible defensive check on the other, flag the gap — beats blocking on clarification. Explicitly surface the interpretation in the PR description so reviewers can correct. Do NOT silently drop plan items or fabricate fields that don't exist. Applies only in auto mode; interactive mode should ask.
@@ -76,9 +77,41 @@ Based on feedback:
 - Execute next batch
 - Repeat until complete
 
+### Step 4.5: Phantom-Completion Audit (HARD GATE before Step 5)
+
+Before announcing completion or invoking cleanup, audit the plan's task checklist for **phantom completions** — checkboxes marked `[X]` (or TodoWrite items marked `completed`) that lack corresponding code artifacts.
+
+**Why:** Generic verification (`verification-before-completion`) checks individual claims at fix-time. This step is the orthogonal post-batch check: every task the plan said it would produce must actually exist on disk.
+
+**Procedure:**
+
+1. Re-read the plan's task list. For each `[X]` task, extract the artifacts the task promised:
+   - Files listed under `**Files:**` → Create / Modify / Test paths
+   - Functions, classes, endpoints, or migration revisions named in step bodies
+2. Verify each artifact:
+   ```bash
+   # Files promised by the plan
+   git ls-files <path>            # exists on disk and is tracked
+   git diff origin/main -- <path> # actually contains changes
+   # Symbols promised by the plan
+   rg -n "def <function_name>|class <ClassName>" <path>
+   # Migration revisions
+   alembic heads                  # new revision present
+   ```
+3. For each task, classify:
+   - **Real:** all promised artifacts present + non-empty diff → leave `[X]`.
+   - **Phantom:** task marked `[X]` but artifact missing, file unchanged vs `origin/main`, or symbol absent → downgrade to `[~]` and surface in the report.
+   - **Partial:** some artifacts present, some missing → downgrade to `[~]`, list the missing ones.
+
+4. **If any phantom or partial items found:** STOP. Do not proceed to Step 5. Either complete the missing work or amend the plan to remove the unkept promise (with explicit justification). Never silently drop a task.
+
+5. **If all `[X]` tasks verified real:** include the audit summary in the Step 5 hand-off ("Phantom-completion audit: N tasks, all verified — no missing artifacts").
+
+**Skip criteria:** Plans with <3 tasks where every task already had its diff inspected during Step 2's inter-task verification gate.
+
 ### Step 5: Complete Development
 
-After all tasks complete and verified:
+After all tasks complete and verified (including Step 4.5):
 - Announce: "I'm using the cleanup skill to complete this work."
 - **REQUIRED SUB-SKILL:** Use `/cleanup`
 - Follow that skill to verify tests, present options, execute choice

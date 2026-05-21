@@ -17,6 +17,8 @@ import subprocess
 import sys
 from pathlib import Path
 
+from lint_skill_metadata import lint_skill_metadata
+from lint_skill_security import lint_skill_security
 from resolve_review_base import resolve_review_base
 
 
@@ -26,6 +28,9 @@ LEGACY_PATTERNS = {
     "legacy skill script prefix": "skills/claude-flow/scripts",
     "hardcoded HEAD~1 review base": "HEAD~1",
 }
+RAW_REVIEW_SCRUB = (
+    "scrub_review_payload.py > /tmp/claude-flow-review.diff"
+)
 EXPECTED_MUTATING_PATHS = {
     "plan": ["phase-1", "phase-4c", "phase-5", "phase-5.5", "phase-6"],
     "clone": ["phase-1", "phase-4c", "phase-5", "phase-5.5", "phase-6"],
@@ -109,6 +114,17 @@ def lint_active_docs(skill_root: Path) -> list[str]:
             if label == "hardcoded HEAD~1 review base" and path.name != "phase-6-quality.md":
                 continue
             errors.append(f"{path.relative_to(skill_root)}: {label}")
+        if path.name == "phase-6-quality.md":
+            has_raw_pipe = RAW_REVIEW_SCRUB in text.replace("\\\n", "")
+            has_orchestrated_scrub = "orchestrate.py scrub-diff" in text
+            has_redactions_output = "--redactions-output" in text
+            if has_raw_pipe and not (
+                has_orchestrated_scrub and has_redactions_output
+            ):
+                errors.append(
+                    f"{path.relative_to(skill_root)}: phase 6 review scrub "
+                    "must preserve redaction summaries"
+                )
     return errors
 
 
@@ -198,6 +214,25 @@ def lint_workflow(
     errors.extend(lint_active_docs(skill_root))
     errors.extend(lint_mutating_paths(skill_root))
     errors.extend(lint_reference_assets(skill_root))
+
+    metadata_result = lint_skill_metadata(
+        skill_root=skill_root,
+        workspace_root=skill_root.parent,
+    )
+    errors.extend(
+        f"skill metadata: {error}" for error in metadata_result["errors"]
+    )
+    warnings.extend(
+        f"skill metadata: {warning}" for warning in metadata_result["warnings"]
+    )
+
+    security_result = lint_skill_security(skill_root=skill_root)
+    errors.extend(
+        f"skill security: {error}" for error in security_result["errors"]
+    )
+    warnings.extend(
+        f"skill security: {warning}" for warning in security_result["warnings"]
+    )
 
     review_base_result = None
     if include_review_base:

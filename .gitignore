@@ -15,3 +15,6 @@ __pycache__/
 # Claude Code harness state — embedded agent worktrees, not skill content.
 # `git add -A` would otherwise pick these up as submodule gitlinks (mode 160000).
 .claude/
+
+# Doc-graph artifacts (computed locally per scripts/build_doc_graph.py)
+.knowledge/

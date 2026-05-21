@@ -49,6 +49,7 @@ current user request.
     "requirements_sha256": null,
     "plan_sha256": null
   },
+  "skill_selection_variant": "b",
   "current_phase": {
     "id": "phase-1",
     "name": "Discovery",
@@ -78,6 +79,18 @@ current user request.
 ```
 
 Initialize only after Phase 1 has picked a path that needs the state machine.
+
+### `skill_selection_variant` field
+
+Controls how Phase 5 subagent dispatches present available courierflow-* skills to the model:
+
+| value | behavior |
+|---|---|
+| `"b"` (default) | Forced selection — subagent emits `SELECTED_SKILL: <name\|none>` line before any tool calls. Curated 5-skill menu (courierflow-{ui,api,data,integrations,security}). |
+| `"a"` | Progressive disclosure — subagent sees "you may load X if useful" with no commit step. Reproduces the pre-2026-04-29 behavior; useful only for re-running the A/B experiment. |
+| `"b150"`, `"c1"`, `"c3"` | Experimental scale variants. Do not use for production runs. See `docs/plans/2026-04-29-skill-selection-at-scale.md`. |
+
+Default `"b"` shipped 2026-04-29 after a 60-trial A/B experiment. See [decisions/2026-04-29-ship-forced-selection-phase5.md](../../docs/decisions/2026-04-29-ship-forced-selection-phase5.md).
 
 ## Resume Rules
 
@@ -144,6 +157,16 @@ Step updates:
 - review base:
   - `jq '.review_base_sha = "SHA"'`
 - workflow complete: `jq '.status = "completed"'`
+
+## Experiment authoring
+
+### End-task-pass rubric for retrieval/selection experiments
+
+When the model never writes code (e.g., replays whose prompts say "do not write code"), `quick_ci.sh` cannot grade outcomes. Use the rubric: **pass = (loaded == gold) OR (baseline_skill_free_pass)**. The OR-clause prevents penalizing trials where the base model would have solved the task without any skill. Implementation: `claude-flow/scripts/grade_end_task_pass.py`. Decision-tree: ship if Δcorrect ≥ 15pp AND Δpass ≥ 5pp.
+
+### A/B replay prompt isolation
+
+When generating prompts for variant-A and variant-B replays, never describe both variants inside one prompt's task block — variant-A subjects will self-label as "Variant B" and emit the variant-B output token (e.g., `SELECTED_SKILL:`). Split into `VARIANT_A_TAIL` / `VARIANT_B_TAIL` constants with no cross-mention. Hit on `replay_skill_selection.py` first run; contaminated all 12 variant-A trials before the split.
 
 ## Iteration Limits
 

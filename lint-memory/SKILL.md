@@ -47,6 +47,23 @@ This file is a router. Do not keep all six check definitions resident.
 3. `phases/phase-3-semantic-checks.md`
 4. `phases/phase-4-reporting-and-fixes.md`
 
+## Companion tooling — `build_doc_graph.py`
+
+For dense corpora (>100 source files), pair this skill with periodic runs
+of `scripts/build_doc_graph.py` (available in `claude-skills/scripts/` and
+`courierflow/scripts/`). The graph is the durable maintenance lever:
+
+- **Hubs (>10 inbound refs):** flag what NOT to retire — deleting a hub
+  dangles N references silently.
+- **True orphans:** real deletion candidates.
+- **Keyword-overlap "missing-link" suggestions:** treat as missing links
+  between complementary patterns BY DEFAULT, NOT as duplicates to merge.
+  Validated 2026-05-12 on a 254-file corpus: 5/5 inferred pairs were
+  complementary, 0/5 were duplicates. Read both files before consolidating;
+  default action is to add a cross-reference, not retire one side.
+
+Run it before manual consolidation and after every batch of memory adds.
+
 ## Check Map
 
 - Mechanical, auto-fixable:

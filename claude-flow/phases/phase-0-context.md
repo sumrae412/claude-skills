@@ -61,15 +61,20 @@ local conventions.
 
 ### Step 3: Classify Task -> Load Contextual Skills
 
-Use the project's trigger matrix to load only the skills relevant to this task:
+Use the project's trigger matrix to load only the skills relevant to this task.
+The matrix below is the **default (CourierFlow)** — replace it with your
+project's trigger matrix when running claude-flow elsewhere. See
+`../references/project-skill-menu.md` for menu authoring rules.
 
 ```text
-templates / CSS / HTML?     -> UI skill
-routes / services?          -> API skill
-models / migrations?        -> data skill
-external APIs?              -> integrations skill
-git / deploy / PR?          -> git skill
-auth / security?            -> security skill
+templates / CSS / HTML?       -> courierflow-ui
+routes / services?            -> courierflow-api
+models / migrations?          -> courierflow-data
+external APIs / providers?    -> courierflow-integrations
+auth / security / webhooks?   -> courierflow-security
+prod incident / missed job?   -> courierflow-troubleshooter
+skill drift / routing edits?  -> courierflow-skill-sync or reviewer
+git / deploy / PR?            -> git skill
 ```
 
 Do not bulk-load unrelated skills.
@@ -134,6 +139,26 @@ python3 <claude-flow-root>/scripts/run_manifest.py init \
   --capability-matrix-file /tmp/capability-matrix.json \
   --state-file .claude/workflow-state.json
 ```
+
+### Step 6.6: Environment Doctor Probe (runtime truth, not memory)
+
+The capability snapshot in 6.5 reads project-owned declarations. This step probes **what is actually available right now** — credentials, MCP tools, CLI versions, model access — so later phases don't infer from stale MEMORY.md entries.
+
+Run a single JSON dump:
+
+- which MCP servers loaded this session (deferred-tool list + connected-tool list)
+- whether provider API keys are set in env — **presence only, never values** (`ANTHROPIC_API_KEY`, `OPENAI_API_KEY`, `GOOGLE_*`, project-specific). Record booleans only; never log, persist, or export the secret values.
+- which CLIs are on `$PATH` and their versions (`gh --version`, `node -v`, `python3 --version`, project-specific tools)
+- which models the current session can reach (declared in environment block)
+- recommended defaults for this session (e.g. "use `coderabbit` CLI not subagent — CLI is faster and on $PATH")
+
+Persist alongside the capability snapshot. Phases 2/4/5/6 read this when deciding whether to dispatch a subagent vs use a CLI, whether a doc-fetch is feasible, whether a reviewer is reachable.
+
+The probe runner is intentionally not specified — projects vary in what they need to introspect. Until a shared `run_session_probe.py` exists, perform the probe inline (env reads, `command -v`, MCP tool list from the session reminder) and dump to `/tmp/session-probe.json`. Add a concrete script here once the shape stabilizes across projects.
+
+**Do not infer from MEMORY.** Memory may say "use `mcp__scheduled-tasks__create_scheduled_task`" but the tool may not be loaded this session — the probe returns runtime truth, MEMORY does not.
+
+This is a probe, not a gate. If a tool is missing the workflow continues with a degraded path; the probe just makes that path deliberate instead of accidental.
 
 ### Step 7: Optional Bootstrap
 

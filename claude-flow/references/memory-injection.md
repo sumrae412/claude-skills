@@ -49,6 +49,15 @@ Output (JSON) gives you everything you need:
   "matched_entries": [
     {"key": "is-primary-contact", "line": "- [...](...) — ...", "topic_file": "is_primary_contact.md"}
   ],
+  "related_entries": [
+    {"key": "counts-endpoint", "line": "- [...](...) — ...", "topic_file": "counts_endpoint.md", "source": "related", "citation_count": 2}
+  ],
+  "compiled_articles": [
+    {"key": "workflow-patterns", "topic_file": "knowledge/concepts/workflow_patterns.md", "title": "Workflow patterns", "updated": "2026-04-20", "matching_source_count": 2}
+  ],
+  "abandoned_entries": [
+    {"key": "2026-04-20-old-approach", "topic_file": ".claude/abandoned/2026-04-20-old-approach.md", "date": "2026-04-20", "why_abandoned": "..."}
+  ],
   "skipped": ["alembic-cli-only"]
 }
 ```
@@ -57,6 +66,8 @@ Notes on the script's behavior:
 - A file can match multiple domains; all matched gotcha keys are returned (deduplicated)
 - Keys present in the domain table but missing from MEMORY.md show up in `skipped` — surface them or ignore depending on caller intent
 - The script handles glob portability (`models/*` matches both `app/models/foo.py` and `models/foo.py`)
+- `related_entries`, `compiled_articles`, and `abandoned_entries` are already selected and capped by the script; callers should not walk those files manually
+- Pass `--project-root <project>` when `$PROJECT/.claude/abandoned/` is not inferable from the memory directory; pass `--now <iso timestamp>` only for deterministic tests
 - Stdlib only — no install needed
 
 Examples (reference; the script enforces them):
@@ -68,7 +79,7 @@ When NOT to use the script: if this file doesn't exist (e.g., a project hasn't i
 
 ### Step 4a: 1-Hop Expansion via `## Related`
 
-After Step 4 produces its initial matches, walk the matched memory files for a `## Related` section and pull in neighbor entries. This surfaces connective tissue that file-pattern matching alone misses — e.g., a gotcha about Phase 3 quality gate is more useful if the design decision that introduced it also comes along.
+The script returns `related_entries` by reading `## Related` sections from direct-match memory files. This surfaces connective tissue that file-pattern matching alone misses — e.g., a gotcha about Phase 3 quality gate is more useful if the design decision that introduced it also comes along.
 
 **Convention:** Memory files may declare relationships with a plain-markdown footer (no frontmatter migration required):
 
@@ -80,16 +91,16 @@ After Step 4 produces its initial matches, walk the matched memory files for a `
 
 Where `slug` matches a filename in the memory directory without the `.md` extension (e.g. `fold_check_upstream` → `fold_check_upstream.md`).
 
-**Expansion rules:**
-1. For each file matched in Step 4, open it and grep for `## Related`. If absent, move on.
-2. Parse `- [slug] — ...` bullets. Resolve each slug to a file path; skip if the file doesn't exist.
-3. Collect expanded entries. Deduplicate against Step 4 matches (by filename).
+**Expansion rules implemented by the script:**
+1. Parse `- [slug] — ...` bullets under `## Related`.
+2. Resolve each slug through `MEMORY.md`; skip missing files.
+3. Deduplicate against Step 4 direct matches.
 4. Cap total expansion at **3 additional entries** across all matched files combined. These 3 entries are **additive** — they do NOT count toward Section 1's 10-entry cap (see Step 5). When more than 3 candidates exist, select deterministically:
    - **Score:** co-citation count = number of matched files whose `## Related` list names this slug.
    - **Rank:** descending by co-citation count.
    - **Tiebreak:** ascending alphabetical slug order (stable across runs).
    - **Fallback:** if fewer than 3 slugs are co-cited (score ≥ 2), fill remaining slots with singly-cited candidates using the same alphabetical tiebreak. If fewer than 3 candidates exist total, include all of them (the cap is a ceiling, not a target).
-5. Emit expanded entries into Section 1 of the injection block, tagged as `[related]` so the subagent sees they were pulled via 1-hop:
+5. Return expanded entries in `related_entries`; callers render them into Section 1 tagged as `[related]` so the subagent sees they were pulled via 1-hop:
 
 ```
 PROJECT GOTCHAS (verified for this codebase — do not ignore):
@@ -102,7 +113,7 @@ PROJECT GOTCHAS (verified for this codebase — do not ignore):
 
 ### Step 4b: Select Matching Compiled Articles
 
-Check if `knowledge/concepts/` exists in the memory directory. If so:
+The script checks if `knowledge/concepts/` exists in the memory directory. If so:
 
 1. Read all `knowledge/concepts/*.md` files
 2. For each article, parse the `sources:` frontmatter list
@@ -145,7 +156,7 @@ If truncated, append: `[N more gotchas omitted — see MEMORY.md]`. The Section 
 
 ### Step 5b: Check Abandoned Approaches
 
-Check if `$PROJECT/.claude/abandoned/` exists. If so:
+The script checks if `$PROJECT/.claude/abandoned/` exists. If the memory directory is `$PROJECT/.claude/memory`, the project root is inferred; otherwise pass `--project-root <project>`.
 
 1. Read all `.md` files in the directory
 2. For each file, extract the "What was attempted" and "Why abandoned" sections
@@ -166,7 +177,7 @@ PREVIOUSLY RULED OUT (from .claude/abandoned/):
 
 ### Step 6: Return or Omit
 
-If matches were found in Step 4, Step 4b, or Step 5b, return the formatted injection block (all applicable sections: `PROJECT GOTCHAS`, `COMPILED KNOWLEDGE`, and `PREVIOUSLY RULED OUT`, omitting any section with no matches). If no section has matches, omit the entire block — do not return an empty section.
+If matches were found in `matched_entries`, `related_entries`, `compiled_articles`, or `abandoned_entries`, return the formatted injection block (all applicable sections: `PROJECT GOTCHAS`, `COMPILED KNOWLEDGE`, and `PREVIOUSLY RULED OUT`, omitting any section with no matches). If no section has matches, omit the entire block — do not return an empty section.
 
 ## Used By
 

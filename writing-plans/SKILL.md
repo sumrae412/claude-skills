@@ -29,6 +29,8 @@ Assume they are a skilled developer, but know almost nothing about our toolset o
 
 **Plan location priority:** Check `docs/plans/` in the project first, then `~/.claude/plans/` as fallback. To enable project-local plan storage for Claude Code's built-in plan mode, add `"plansDirectory": "docs/plans"` to your project's `.claude/settings.json`.
 
+**Markdown vs HTML output:** Default to Markdown. Switch to [`html-spec`](../html-spec/SKILL.md) when the plan exceeds ~1000 lines, has 5+ distinct UI screens to visualize, or has a non-engineer reviewer in the loop who benefits from inline mockups. Markdown is cheaper to author and edit — the format-switch needs to earn its keep.
+
 ## Bite-Sized Task Granularity
 
 **Each step is one action (2-5 minutes):**
@@ -56,8 +58,32 @@ Assume they are a skilled developer, but know almost nothing about our toolset o
 **Ruled Out:** [Approaches considered and rejected during design — prevents re-exploration]
 - <approach> — <why rejected>
 
+## References
+
+[REQUIRED. List the exact file paths and external docs an implementer needs to consult. This section gates Phase 5 / `executing-plans` context loading — implementers and exploration subagents are instructed to read ONLY what's listed here, not adjacent docs they happen to find. Be deliberate: if a file is critical, list it; if it isn't, leaving it off keeps subagent context tight.]
+
+- `path/to/relevant/source.py` — <why it matters: existing pattern, contract to preserve, similar feature>
+- `path/to/test/file.py` — <why: test patterns to mirror, fixtures to reuse>
+- `docs/decisions/<decision>.md` — <why: prior decision this plan inherits>
+- <external URL> — <why: API contract, library reference>
+
+If a planned task touches a file or pattern not listed here, add it to References before handoff. Empty list is acceptable for greenfield tasks; explicitly write `- (none — greenfield)` rather than omitting the section.
+
 ---
 ```
+
+## Greenfield / Long-Spec Framing (§0 pattern)
+
+When the plan is a **greenfield build doc or full-product spec** (not a feature increment) and exceeds ~500 lines, prepend a §0 framing section that distinguishes:
+
+- **PMF-ready spec** — the full doc, comprehensive, intended for post-validation execution
+- **Wedge-sprint plan** — a minimum-viable-subset path through the same doc, marked with explicit "follow only §X / §Y" or "defer to post-launch" tags
+
+Without §0, a thorough spec reads as premature optimization for pre-validation contexts and triggers "this doc is too thorough" pushback in review. §0 acknowledges the dual mode upfront: the spec is durable; the wedge path tells you what to actually build first.
+
+**Pair with a Post-Launch Deferral Tracker** (single consolidated section near the end with table format: `Item | Pre-launch shape | Post-launch shape | Trigger`) instead of scattering "TODO post-launch" comments through the doc. Reviewers can scan one table to verify deferrals are intentional.
+
+**Robustness-lens audit before handoff:** Sweep each section asking "is this the best for the goal, or am I anchoring on legacy/familiar choices?" Especially load-bearing for greenfield docs — without the explicit prompt, prior-stack assumptions silently carry forward and the "fresh build" framing becomes a lie.
 
 ## Task Structure
 
@@ -103,6 +129,18 @@ git add tests/path/test.py src/path/file.py
 git commit -m "feat: add specific feature"
 ```
 ````
+
+## Phase Checklist Pattern (for multi-phase build sequences)
+
+When a plan covers a multi-week build sequence (vs. a single feature), each phase needs five elements to be actionable without freezing low-level decisions:
+
+1. **Goal** — one-line outcome statement
+2. **User stories shipped** — what a user can do at end of phase that they couldn't before
+3. **Checklist** — verifiable tasks (not internal steps), each one independently checkable
+4. **Definition of Done** — measurable bars (e.g. "p95 latency < 500ms on 100-event seed", "zero ERROR logs across smoke run", "≥85% accuracy on N-item eval set")
+5. **Trip-wire** — the signal that this phase needs to be revisited or rolled back
+
+This pattern is complete enough to dispatch to subagents but coarse enough that the implementer still owns file paths and line numbers. Use instead of bite-sized step-by-step tasks (the default Task Structure above) when phases span 1+ week of work.
 
 ## Task Types
 

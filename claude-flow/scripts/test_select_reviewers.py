@@ -85,6 +85,41 @@ def test_select_marks_conditional_matches():
     assert result["by_tier"]["3"] == ["py-only"]
 
 
+def test_select_matches_impeccable_detector_for_ui_files():
+    registry = load_registry(bundled_registry_path())
+
+    result = select(
+        registry,
+        ["app/templates/dashboard.html"],
+        Path.cwd(),
+        "medium",
+    )
+
+    matched = [
+        reviewer["id"]
+        for reviewer in result["conditional_matched"]
+    ]
+    assert "impeccable-detector" in matched
+    assert "impeccable-detector" in result["by_tier"]["3"]
+
+
+def test_select_skips_impeccable_detector_for_backend_only_files():
+    registry = load_registry(bundled_registry_path())
+
+    result = select(
+        registry,
+        ["app/services/calendar.py"],
+        Path.cwd(),
+        "medium",
+    )
+
+    matched = [
+        reviewer["id"]
+        for reviewer in result["conditional_matched"]
+    ]
+    assert "impeccable-detector" not in matched
+
+
 def test_select_respects_review_budget():
     registry = {
         "reviewers": [

@@ -1,4 +1,6 @@
 import json
+import subprocess
+import sys
 from pathlib import Path
 
 from run_manifest import (
@@ -6,10 +8,15 @@ from run_manifest import (
     load_manifest,
     record_approval,
     record_command,
+    record_event,
+    record_goal,
     record_review,
     record_verification,
     set_review_base,
 )
+
+
+SCRIPT = Path(__file__).with_name("run_manifest.py")
 
 
 def _write_state(path: Path) -> None:
@@ -47,6 +54,46 @@ def test_init_manifest_creates_file_and_syncs_state(tmp_path: Path):
     assert state["run_manifest_path"] == str(manifest_path)
     assert state["current_phase"]["path"] == "full"
     assert state["capability_matrix"]["test_command"] == "pytest -q"
+
+
+def test_init_manifest_sets_skill_selection_variant_default_to_b(tmp_path: Path):
+    """Fresh state files default skill_selection_variant to 'b' (shipped 2026-04-29)."""
+    manifest_path = tmp_path / ".claude" / "runs" / "session.json"
+    state_path = tmp_path / ".claude" / "workflow-state.json"
+    _write_state(state_path)
+
+    init_manifest(
+        manifest_path=manifest_path,
+        workflow_path="full",
+        state_path=state_path,
+    )
+    state = json.loads(state_path.read_text())
+    assert state["skill_selection_variant"] == "b"
+
+
+def test_init_manifest_preserves_explicit_variant_a(tmp_path: Path):
+    """Explicit skill_selection_variant='a' is preserved across init (experiment reproducibility)."""
+    manifest_path = tmp_path / ".claude" / "runs" / "session.json"
+    state_path = tmp_path / ".claude" / "workflow-state.json"
+    state_path.parent.mkdir(parents=True, exist_ok=True)
+    state_path.write_text(
+        json.dumps(
+            {
+                "approvals": {},
+                "current_phase": {"path": None},
+                "capability_matrix": {},
+                "skill_selection_variant": "a",
+            }
+        )
+    )
+
+    init_manifest(
+        manifest_path=manifest_path,
+        workflow_path="full",
+        state_path=state_path,
+    )
+    state = json.loads(state_path.read_text())
+    assert state["skill_selection_variant"] == "a"
 
 
 def test_record_approval_appends_hash_and_syncs_state(tmp_path: Path):
@@ -135,3 +182,181 @@ def test_record_verification_review_and_command_append(tmp_path: Path):
     assert manifest["review_runs"][0]["reviewers_run"] == ["coderabbit"]
     assert manifest["commands_run"][0]["command"] == "python3 -m pytest -q"
     assert manifest["commands_run"][0]["exit_code"] == 0
+
+
+def test_record_event_appends_jsonl_and_stores_event_log_path(tmp_path: Path):
+    manifest_path = tmp_path / ".claude" / "runs" / "session.json"
+    init_manifest(manifest_path=manifest_path)
+
+    event = record_event(
+        manifest_path=manifest_path,
+        event_type="decision",
+        category="decision",
+        source="user",
+        payload={"summary": "Use append-only continuity events"},
+    )
+    manifest = load_manifest(manifest_path)
+    event_log_path = Path(manifest["event_log_path"])
+    if not event_log_path.is_absolute():
+        event_log_path = manifest_path.parent / event_log_path
+    events = [
+        json.loads(line) for line in event_log_path.read_text().splitlines()
+    ]
+
+    assert event["type"] == "decision"
+    assert events == [event]
+
+
+def test_record_command_mirrors_to_event_log(tmp_path: Path):
+    manifest_path = tmp_path / "run.json"
+    init_manifest(manifest_path=manifest_path)
+
+    command = record_command(
+        manifest_path=manifest_path,
+        command="python3 -m pytest -q",
+        exit_code=0,
+        category="tests",
+        cwd="/repo",
+    )
+    manifest = load_manifest(manifest_path)
+    event_log_path = Path(manifest["event_log_path"])
+    if not event_log_path.is_absolute():
+        event_log_path = manifest_path.parent / event_log_path
+    events = [
+        json.loads(line) for line in event_log_path.read_text().splitlines()
+    ]
+
+    assert command["command"] == "python3 -m pytest -q"
+    assert events[0]["type"] == "command"
+    assert events[0]["category"] == "tests"
+    assert events[0]["payload"]["exit_code"] == 0
+
+
+def test_record_goal_set_appends_entry_with_hashed_condition(tmp_path: Path):
+    manifest_path = tmp_path / "run.json"
+    init_manifest(manifest_path=manifest_path)
+    condition = "all tests pass; no new pytest.skip; or stop after 20 turns"
+
+    entry = record_goal(
+        manifest_path=manifest_path,
+        phase="phase-5",
+        action="set",
+        condition=condition,
+        turn_budget=20,
+        path_name="full",
+    )
+
+    assert entry["action"] == "set"
+    assert entry["phase"] == "phase-5"
+    assert entry["condition_sha256"]
+    assert entry["condition_size_bytes"] == len(condition.encode("utf-8"))
+    assert entry["turn_budget"] == 20
+    assert entry["path"] == "full"
+
+    manifest = load_manifest(manifest_path)
+    assert len(manifest["goal_runs"]) == 1
+    assert manifest["goal_runs"][0]["condition_sha256"] == entry["condition_sha256"]
+
+    event_log_path = manifest_path.with_name(f"{manifest_path.stem}.events.jsonl")
+    events = [json.loads(line) for line in event_log_path.read_text().splitlines()]
+    assert events[0]["type"] == "goal"
+    assert events[0]["category"] == "set"
+
+
+def test_record_goal_mirrors_goal_flag_to_state(tmp_path: Path):
+    manifest_path = tmp_path / "run.json"
+    state_path = tmp_path / "workflow-state.json"
+    _write_state(state_path)
+    init_manifest(manifest_path=manifest_path, state_path=state_path)
+
+    record_goal(
+        manifest_path=manifest_path,
+        phase="phase-5",
+        action="set",
+        condition="x",
+        state_path=state_path,
+        goal_flag=True,
+    )
+
+    state = json.loads(state_path.read_text())
+    assert state["flags"]["goal"] is True
+
+
+def test_record_goal_preserves_existing_state_flag_when_unset(tmp_path: Path):
+    """A resumed turn that records a goal event without re-asserting the flag
+    must NOT clobber state.flags.goal — the prior session's flag survives."""
+    manifest_path = tmp_path / "run.json"
+    state_path = tmp_path / "workflow-state.json"
+    state_path.parent.mkdir(parents=True, exist_ok=True)
+    state_path.write_text(
+        json.dumps(
+            {
+                "approvals": {},
+                "current_phase": {"path": None},
+                "capability_matrix": {},
+                "flags": {"goal": True},
+            }
+        )
+    )
+    init_manifest(manifest_path=manifest_path, state_path=state_path)
+
+    record_goal(
+        manifest_path=manifest_path,
+        phase="phase-6",
+        action="clear",
+        state_path=state_path,
+        goal_flag=None,
+    )
+
+    state = json.loads(state_path.read_text())
+    assert state["flags"]["goal"] is True
+
+
+def test_record_goal_rejects_unknown_action(tmp_path: Path):
+    manifest_path = tmp_path / "run.json"
+    init_manifest(manifest_path=manifest_path)
+
+    try:
+        record_goal(
+            manifest_path=manifest_path,
+            phase="phase-5",
+            action="bogus",
+        )
+    except ValueError as exc:
+        assert "action must be one of" in str(exc)
+    else:
+        raise AssertionError("expected ValueError for unknown action")
+
+
+def test_cli_record_event_appends_jsonl(tmp_path: Path):
+    manifest_path = tmp_path / "run.json"
+    init_manifest(manifest_path=manifest_path)
+
+    completed = subprocess.run(
+        [
+            sys.executable,
+            str(SCRIPT),
+            "record-event",
+            "--manifest",
+            str(manifest_path),
+            "--event-type",
+            "decision",
+            "--category",
+            "decision",
+            "--source",
+            "user",
+            "--payload",
+            '{"summary":"Use append-only continuity events"}',
+            "--json",
+        ],
+        capture_output=True,
+        text=True,
+    )
+    manifest = load_manifest(manifest_path)
+    event_log_path = Path(manifest["event_log_path"])
+    if not event_log_path.is_absolute():
+        event_log_path = manifest_path.parent / event_log_path
+
+    assert completed.returncode == 0
+    assert json.loads(completed.stdout)["source"] == "user"
+    assert event_log_path.exists()

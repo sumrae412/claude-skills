@@ -1,197 +1,317 @@
 ---
 name: structured-prompt-builder
-description: "Create, rewrite, or critique prompts for LLMs, agents, system instructions, developer instructions, user prompts, tool-use workflows, evaluation prompts, or reusable prompt templates. Auto-trigger when the user asks for a prompt, prompt creator, prompt rewrite, meta-prompt, agent prompt, system prompt, instruction hierarchy, output format, few-shot examples, JSON/schema prompt, tool-use prompt, or to make an AI assistant behave more reliably. NOT for image-generation prompts (use image-generation), production prompt registries/A-B tests/eval pipelines (use prompt-governance), empirical prompt variant promotion (use prompt-optimization), or broad context-loading strategy (use context-engineering)."
+description: Build a production-ready XML-structured prompt through an interactive critique loop. The skill drafts a prompt using Anthropic's 10-component framework from Prompting 101, then audits it against an 11-rule checklist and iterates with the user until the prompt is clean and efficient. Use this skill whenever the user asks to draft, design, or improve a prompt, system prompt, or LLM instruction set — especially for classification, extraction, document analysis, multi-step reasoning, or any task where output format matters. Trigger on phrases like "write a prompt for", "design a system prompt", "prompt template", "prompt structure", or "how should I prompt Claude to do X". Also trigger when the user describes a production LLM workflow without explicitly asking for a prompt — they probably need one. NOT for managing prompts in production at scale (use prompt-governance). NOT for analyzing performance across prompt versions (use prompt-optimization). NOT for optimizing session context for an active agent (use context-engineering).
 ---
 
 # Structured Prompt Builder
 
-## Purpose
+## Token Economy
 
-Build prompts that are explicit, testable, and hard to misread. Use this
-skill to turn vague intent into a production-quality prompt or to repair a
-prompt that is too broad, brittle, chatty, underspecified, or hard to
-evaluate.
+Apply `token-economy` whenever this skill would otherwise trigger broad exploration, repeated file reads, multi-file scans, or heavy reference loading.
 
-This skill combines:
+- Skip the audit checklist re-read on iterations 2+ — apply it from working memory.
+- Don't re-render unchanged sections of the prompt during iteration; show only the diff.
+- For simple prompts that pass the audit on v1, ship without belaboring the loop.
 
-- OpenAI prompt guidance for GPT-5.5 / GPT-5.x style models.
-- `context-engineering` context-packing rules.
-- `prompt-governance` eval and rollback discipline.
-- `prompt-optimization` failure-bucket and challenger drafting discipline.
-- `token-economy` compactness and subagent prompt hygiene.
-- `brevity` response-shape control.
+Drafts a prompt, audits it against 11 rules, iterates with the user until clean.
 
-## When to Use
+## When to use
 
-Use when the user asks to:
+Use for prompts that:
+- Drive a production workflow (API calls, automation, agents)
+- Need parseable / structured output
+- Involve multi-step reasoning over inputs
+- Must handle ambiguous data reliably
 
-- write, improve, or debug an LLM prompt
-- create a prompt template, system prompt, agent prompt, or meta-prompt
-- define assistant behavior, tool-use rules, output structure, or examples
-- make a prompt more reliable, concise, robust, autonomous, or eval-ready
-- convert messy instructions into a reusable prompt artifact
+**Skip this skill** for casual chat, single-turn Q&A, or one-off creative tasks. The framework + audit overhead is wasted there.
 
-Route elsewhere when the task is really:
+## Workflow
 
-- image prompt writing -> `image-generation`
-- prompt versioning, rollout, A/B tests, CI evals -> `prompt-governance`
-- selecting/promoting prompt variants from trace data -> `prompt-optimization`
-- deciding what project context to load -> `context-engineering`
-- reducing production LLM spend -> `llm-cost-optimizer`
+### Phase 1 — Initial draft
 
-## Core Workflow
+1. If the task is clear from the conversation, go to step 2. If a single piece of information would change the structure (e.g., "is this for an API call or a chat interface?"), ask ONE question. Otherwise, draft.
+2. Render v1 using the template below. Include only the components that fit the task. **Skip components rather than pad them.**
 
-1. Identify the prompt job.
-   - `new`: create from user intent.
-   - `rewrite`: improve an existing prompt.
-   - `diagnose`: explain failure modes before rewriting.
-   - `template`: create a reusable prompt with placeholders.
-   - `eval`: create scoring criteria or test cases.
-2. Extract the prompt contract.
-   - Goal: what success looks like.
-   - Audience/model: who or what will run it.
-   - Inputs: required variables, optional context, tools, files, constraints.
-   - Actions: exact steps the model should take.
-   - Ambiguity behavior: ask, assume, abstain, or proceed with stated assumptions.
-   - Output: format, length, sections, schema, examples, and forbidden extras.
-   - Verification: checks before final answer.
-3. Ask only if a missing detail would change the prompt materially. Otherwise,
-   make conservative assumptions and label them.
-4. Draft the prompt in the smallest structure that controls the behavior.
-5. Add an evaluation block when quality matters.
-6. Deliver the prompt first, then brief notes on assumptions or usage.
+### Phase 2 — Self-audit
 
-## Prompt Architecture
+3. Apply the 11-rule checklist (next section) to v1. For each rule, decide pass (✅) or flag (⚠️). Each flag must point to a specific span or omission, not a vibe.
 
-Prefer this order unless the user's target platform requires another format:
+### Phase 3 — Present + iterate
 
-1. Role and goal
-2. Critical rules
-3. Inputs and available context
-4. Step-by-step workflow
-5. Tool-use rules, if any
-6. Ambiguity and refusal behavior
-7. Verification loop
-8. Output format
-9. Examples, only when they reduce ambiguity
+4. Output to the user, in this order:
+   - The prompt draft (in a code block)
+   - Audit results (compact list format below)
+   - One question: fix all / fix specific / ship as-is
 
-Use XML-style blocks for long or fragile sections because they create clear
-boundaries:
+   Audit format:
+   ```
+   ✅ R1, R2, R5, R10, R11
+   ⚠️ R3 — "key points" is undefined
+   ⚠️ R6 — role missing domain and audience
+   ⚠️ R9 — no escape hatch for empty/garbled input
+   ```
 
-```text
-<role_and_goal>
-...
-</role_and_goal>
+5. If user picks fixes, produce v2 addressing those flags, re-audit, loop.
+6. When the user says "ship" / "looks good" / equivalent, output the final prompt as a clean code block with no audit annotations.
 
-<critical_rules>
-- ...
-</critical_rules>
+### Stopping criteria
 
-<workflow>
-1. ...
-</workflow>
+Stop iterating when ANY of these is true:
+- User explicitly ships
+- All 11 rules pass AND user confirms they're satisfied
+- User waives remaining flags ("ignore R8, this is too simple")
+
+## The 11-rule audit checklist
+
+### Structural rules
+
+**R1. Components in correct position.** Check: system content in system, user content in user, prefill in assistant. Common fix: static reference info that drifted into the user message belongs in system.
+
+**R2. Background = reference data only.** Check: no "if/then" logic in `<background>`. Common fix: move decision rules from background to instructions.
+
+**R3. Instructions = procedure + decision rules.** Check: numbered steps, specific about ordering, includes if/then logic. Common fix: replace vague verbs ("extract key points") with specific operations ("for each section in <background>, scan for matching content").
+
+**R4. Guardrails = escape hatches + hard stops.** Check: no overlap with `<instructions>`. Guardrails are the rules that apply *regardless of which step Claude is on* (don't invent data, return X when uncertain). Common fix: pull "do not" statements out of instructions into guardrails.
+
+**R5. No empty or placeholder sections.** Check: every XML tag has substantive content. Common fix: delete the tag rather than leave `[TODO]` or empty.
+
+### Content rules
+
+**R6. Role is specific.** Check: includes domain + task + register/audience. "You summarize text" fails. "You summarize engineering standup transcripts for someone who missed the meeting" passes.
+
+**R7. Output format uses enums where applicable.** Check: categorical fields list allowed values explicitly. Common fix: replace `"category": str` with `"category": "urgent" | "normal" | "spam"`.
+
+**R8. At least one negative or edge-case example.** Check: examples cover what should NOT trigger the main behavior, or what to do when input is malformed. Common fix: add an example showing the escape hatch firing.
+
+**R9. Escape hatch defined for uncertain inputs.** Check: `<guardrails>` or `<output_format>` specifies what to return when the model can't determine the answer confidently. Common fix: add `"needs_review"` / `null` / `"insufficient_input"` as a valid output value, with a guardrail telling the model when to use it.
+
+**R10. No aggregation rules in `<instructions>`.** Check: rules like "drop low-severity flags if there are 3+ medium ones" or "deduplicate before output" — these are post-processing operations, not per-item reasoning. Common fix: move them to a code-side post-processor, or split into a second prompt.
+
+### Efficiency rules
+
+**R11. No redundancy.** Check: each constraint appears in exactly one place. Common fix: if a rule is restated across `<tone>`, `<instructions>`, and `<task>`, pick the most appropriate location and delete the others.
+
+## The 10-component framework
+
+| # | Component                    | Required?       | Location           |
+|---|------------------------------|-----------------|--------------------|
+| 1 | Task context / role          | ✅              | system             |
+| 2 | Tone context                 | recommended     | system             |
+| 3 | Background data / schema     | when applicable | system (cacheable) |
+| 4 | Detailed instructions        | ✅ for complex  | system             |
+| 4b| Guardrails / escape hatches  | when applicable | system             |
+| 5 | Examples (few-shot)          | for tricky cases| system             |
+| 6 | Conversation history         | when applicable | messages           |
+| 7 | Immediate task + reminders   | ✅              | user               |
+| 8 | Think step-by-step guidance  | recommended     | user               |
+| 9 | Output formatting            | for parsed output| user              |
+| 10| Prefilled response           | optional        | assistant          |
+
+Stable/cacheable context goes first so it primes the model. Dynamic content and the immediate ask go last so they're the most recent thing in context when Claude generates.
+
+## Template
+
+```xml
+<!-- ============ SYSTEM PROMPT ============ -->
+
+<role>
+[1. Task context: who Claude is, what it's doing, what domain]
+</role>
+
+<tone>
+[2. Tone context: factual, confident, formal, etc.]
+</tone>
+
+<background>
+[3. Static REFERENCE DATA only: schemas, rubrics, taxonomies.
+No if/then logic. Cacheable.]
+</background>
+
+<instructions>
+[4. Procedure + decision rules. Numbered, ordered.]
+</instructions>
+
+<guardrails>
+[4b. Escape hatches, confidence thresholds, hard stops.]
+</guardrails>
+
+<examples>
+  <example>
+    <input>[realistic input]</input>
+    <reasoning>[how to think about it]</reasoning>
+    <o>[expected output in target format]</o>
+  </example>
+  <!-- Include at least one negative/edge-case example -->
+</examples>
+
+<!-- ============ USER MESSAGE ============ -->
+
+<input_data>
+[6. Conversation history if applicable, OR 7. the actual input for this call]
+</input_data>
+
+<task>
+[7. Immediate task — restate what you want NOW.]
+</task>
+
+<thinking_guidance>
+[8. Optional: how to reason. Skip if using extended thinking.]
+</thinking_guidance>
 
 <output_format>
-...
+[9. Exact format. Use enums for categorical fields.]
+</output_format>
+
+<!-- ============ ASSISTANT PREFILL (optional) ============ -->
+
+[10. Prefill to force format. Skip if you want reasoning preamble.]
+```
+
+## Worked example: one full iteration
+
+**User asks:** "Help me write a prompt to summarize Zoom transcripts for my team."
+
+### v1 (initial draft)
+
+```xml
+<role>You summarize meeting transcripts.</role>
+
+<instructions>
+1. Read the transcript.
+2. Extract key points.
+3. Write a summary.
+</instructions>
+
+<input_data>{{transcript}}</input_data>
+
+<task>Summarize this meeting.</task>
+```
+
+### Audit results
+
+```
+✅ R1, R2, R5, R10, R11
+⚠️ R3 — "extract key points" is undefined; no procedure for what counts
+⚠️ R4 — no guardrails for empty/garbled transcripts
+⚠️ R6 — role missing domain and audience
+⚠️ R7 — no output format; will return free prose
+⚠️ R8 — no examples
+⚠️ R9 — no escape hatch
+```
+
+**6 flags.** Fix all, fix specific, or ship as-is?
+
+### v2 (after "fix all")
+
+```xml
+<role>
+You summarize Zoom transcripts of engineering team standups and design
+reviews. Your audience is a teammate who missed the meeting and wants
+to catch up in under two minutes.
+</role>
+
+<tone>
+Concise and factual. Do not infer intent or sentiment the speaker
+did not state.
+</tone>
+
+<background>
+<summary_sections>
+  <decisions>Things explicitly agreed to, with the decider named</decisions>
+  <action_items>Tasks assigned, with owner and (if stated) deadline</action_items>
+  <open_questions>Questions raised but not resolved during the meeting</open_questions>
+  <context>Key info shared: links, numbers, status updates</context>
+</summary_sections>
+</background>
+
+<instructions>
+1. Read the full transcript end-to-end.
+2. For each section in <summary_sections>, scan the transcript for matching content.
+3. For each item, attribute it to the speaker who stated it.
+4. Skip greetings, off-topic chat, and repeated points.
+</instructions>
+
+<guardrails>
+- Do not invent decisions or action items that were not explicitly stated.
+- If the transcript is under 200 words or appears garbled (high noise,
+  unintelligible spans), return summary_status "insufficient_input"
+  with all section arrays empty.
+- If speaker attribution is unclear for an item, set its speaker
+  field to "unknown" rather than guessing.
+</guardrails>
+
+<examples>
+  <example>
+    <input>
+      [Alice, 0:30] OK so we agreed Bob will own the migration script,
+      target end of next week.
+      [Bob, 0:45] Yep, I'll have a draft by Wednesday.
+      [Alice, 1:02] One open question — do we backfill or start fresh?
+      Let's table that for next standup.
+    </input>
+    <reasoning>One decision (Bob owns migration), one action item with
+      owner and deadline, one open question. No filler.</reasoning>
+    <o>
+{
+  "summary_status": "complete",
+  "decisions": [{"text": "Bob will own the migration script", "decider": "Alice"}],
+  "action_items": [{"task": "Draft migration script", "owner": "Bob", "deadline": "Wednesday"}],
+  "open_questions": ["Backfill existing data or start fresh?"],
+  "context": []
+}
+    </o>
+  </example>
+  <example>
+    <input>
+      [unknown, 0:02] *static* ...think we should... *cuts out*
+      [unknown, 0:08] yeah... *static*
+    </input>
+    <reasoning>Garbled, no intelligible content. Escape hatch fires.</reasoning>
+    <o>
+{
+  "summary_status": "insufficient_input",
+  "decisions": [],
+  "action_items": [],
+  "open_questions": [],
+  "context": []
+}
+    </o>
+  </example>
+</examples>
+
+<input_data>
+{{transcript}}
+</input_data>
+
+<task>
+Summarize per <instructions> and <guardrails>.
+</task>
+
+<output_format>
+Return JSON only:
+{
+  "summary_status": "complete" | "insufficient_input",
+  "decisions": [{"text": str, "decider": str}],
+  "action_items": [{"task": str, "owner": str, "deadline": str | null}],
+  "open_questions": [str],
+  "context": [str]
+}
 </output_format>
 ```
 
-## Reliability Rules
+### Audit (v2)
 
-- Put critical rules first. Do not bury constraints after examples.
-- Be specific about what counts as done.
-- Separate "do the work" from "report the work."
-- Define when to ask a clarifying question. Do not let the model ask by reflex.
-- Prefer positive instructions over only prohibitions.
-- For smaller or cheaper models, use more structure: numbered steps, closed
-  outputs, explicit edge cases, and one correct example.
-- For agentic/tool workflows, include persistence, tool discipline, and
-  dependency ordering.
-- For research tasks, include source quality, citation format, empty-result
-  recovery, and verification rules.
-- For structured outputs, include a schema plus semantic rules for each field.
-- Avoid "output nothing else" unless scoped to a final artifact; it can suppress
-  useful recovery behavior.
-
-## Agentic Prompt Blocks
-
-Use these blocks when the prompt controls an agent that can use tools.
-
-```text
-<autonomy_and_persistence>
-Persist until the task is fully handled end-to-end within the current turn
-whenever feasible. Do not stop at analysis or partial work. Carry the work
-through execution, verification, and a concise outcome report unless the user
-explicitly pauses or redirects you.
-</autonomy_and_persistence>
+```
+✅ R1–R11 all pass
 ```
 
-```text
-<tool_persistence_rules>
-- Use tools when the answer depends on files, current data, external state, or
-  verification.
-- Batch independent reads/searches when possible.
-- Do not re-read unchanged files.
-- After tool use, continue from the evidence instead of restarting analysis.
-- If a tool fails, recover once with a narrower query or alternate source before
-  asking the user.
-</tool_persistence_rules>
-```
+Ready to ship, or want to refine any section?
 
-```text
-<verification_loop>
-Before finalizing, check the output against the goal, constraints, edge cases,
-and requested format. If a requirement is unmet, fix it before answering.
-</verification_loop>
-```
+## Edge cases & gotchas
 
-```text
-<completion_contract>
-The task is complete only when:
-- the requested artifact is produced or updated,
-- assumptions are labeled,
-- verification has been performed or the gap is disclosed,
-- the final answer states what changed and any remaining risk.
-</completion_contract>
-```
-
-## Output Contracts
-
-Choose one:
-
-- `artifact_only`: final prompt or template only.
-- `prompt_plus_notes`: prompt first, then assumptions and usage notes.
-- `diagnosis_then_rewrite`: failure modes, rewrite, eval checks.
-- `template_with_variables`: reusable prompt plus variable definitions.
-- `eval_pack`: prompt, golden cases, scoring rubric, pass threshold.
-
-When the user did not specify, default to `prompt_plus_notes`.
-
-## Eval Add-On
-
-For important prompts, include:
-
-- 3-5 golden test inputs, including at least one edge case.
-- Expected behavior, not just expected wording.
-- Failure modes the prompt is designed to prevent.
-- A simple pass/fail or 1-5 rubric.
-- One-change-at-a-time iteration advice if the prompt is still failing.
-
-## Review Checklist
-
-Before delivering, verify:
-
-- The goal is concrete.
-- Required inputs are named.
-- Steps are ordered.
-- Ambiguity behavior is explicit.
-- Output format is enforceable.
-- Tool rules exist when tools matter.
-- Verification criteria exist when accuracy matters.
-- The prompt does not ask for hidden reasoning or chain-of-thought disclosure.
-- The prompt is no longer than needed.
-
-## Reference
-
-Read `references/prompt-builder-principles.md` only when you need the reviewed
-source synthesis, trigger boundaries, or a deeper checklist.
+- **Data vs. rules:** `<background>` holds reference data only. Decision logic goes in `<instructions>`. Mixing them breaks caching when rules change.
+- **Always specify an escape hatch in `<guardrails>`.** Without one, Claude falls back to "best guess" on uncertain inputs — usually the worst possible behavior in production.
+- **Cacheability:** Anything in `<background>` should be stable across calls. If it changes per call, it's input data, not background.
+- **Aggregation belongs in code.** Rules like "drop low flags if 3+ mediums exist" or "deduplicate" are post-processing. The model can sort of do them, but unreliably. Move to a Python post-processor.
+- **Extended thinking is a crutch for prompt engineering.** With thinking enabled, you can skip `<thinking_guidance>` — but inspect the thinking traces to find prompt weaknesses.
+- **The audit is not a quality guarantee.** Passing 11 rules means the prompt is *structurally clean*, not that it produces good outputs. Test with real inputs.

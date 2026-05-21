@@ -121,5 +121,7 @@ If a design improvement requires a functional change, flag it:
 ## Next Steps
 
 - Use `/typography` for HTML entity and text correctness enforcement
-- Use `/design:accessibility-review` for deep WCAG 2.1 AA audit
+- Use `/design:accessibility-review` for deep WCAG 2.1 AA audit at design/mockup stage
+- Use `/fixing-accessibility` for HTML implementation a11y fixes (ARIA, keyboard, focus, semantics, form errors)
 - Use `/design:design-system` for token and component documentation
+- Use `/defensive-ui-flows` for state/feedback/failure-mode patterns on interactive surfaces

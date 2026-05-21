@@ -1,0 +1,30 @@
+# Decision-record reminders
+
+Scheduled-task fallback reminders. Any session that loads this file should check whether listed dates are due and run the listed command if so.
+
+## Variant B soak check — fire at 2026-05-06T15:00:00+00:00
+
+**Source:** [decision record](2026-04-29-ship-forced-selection-phase5.md)
+
+On or after the fire date, run:
+
+```bash
+cd ~/claude_code/claude-skills && python3 claude-flow/scripts/analyze_skill_selection.py --log .claude/experiments/skill_selection_ab.jsonl --by-row > docs/decisions/2026-05-06-variant-b-soak-results.md 2>&1 && printf '\n\n--- Soak check complete: %s ---\n' "$(date -u +%Y-%m-%dT%H:%M:%SZ)" >> docs/decisions/2026-05-06-variant-b-soak-results.md
+```
+
+Then update the decision record's follow-ups section with the result.
+
+## model-router progressive-disclosure check — fire on or after 2026-06-17
+
+**Source:** [decision record](2026-05-17-model-router-progressive-disclosure.md)
+
+On or after the fire date, run:
+
+```bash
+cd ~/claude_code/claude-skills && \
+  loaded=$(grep -l "model-router/references/" ~/.claude/projects/*/conversations/*.jsonl 2>/dev/null | wc -l) && \
+  total=$(grep -l "model-router/SKILL.md" ~/.claude/projects/*/conversations/*.jsonl 2>/dev/null | wc -l) && \
+  echo "References loaded in $loaded of $total sessions ($(( total > 0 ? loaded * 100 / total : 0 ))%)"
+```
+
+If references loaded in >50% of sessions, reverse the progressive-disclosure split — move signal-scoring back inline in SKILL.md. Otherwise keep and re-schedule for 90 days out. Update the decision record's status section with the result.

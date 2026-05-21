@@ -30,6 +30,25 @@ For each criterion below, produce:
   - break_case (string, max 200 chars): the EXACT concrete scenario that would trigger the failure,
                                         with the specific input/sequence/condition. No generic advice.
 
+Evaluation priorities:
+  1. Functional correctness and production breakability come first. Mentally
+     trace whether the changed code works under the stated input, timing, and
+     environment.
+  2. Regression risk comes second. A larger diff that preserves behavior and
+     handles the break case is better than a small diff that misses a path.
+  3. Minimality, cleanliness, style, naming, formatting, and "gold-like" shape
+     are tiebreakers only after correctness and breakability are established.
+
+Bias guardrails:
+  - Do not reward a patch because it is concise, elegant, familiar, or similar
+    to a canonical solution.
+  - Do not penalize a patch merely for redundant changes, helper code, tests,
+    docs, comments, or a messier shape if the production behavior is sound.
+  - A clean-looking incomplete fix should score worse than a messy-looking
+    complete fix.
+  - Findings must cite a concrete executable failure mode, not aesthetic
+    concerns or "unnecessary" code by itself.
+
 Criteria (score all six; use these exact strings as the `criterion` value):
   1. input_validation       — malformed/hostile/edge-case inputs
   2. error_handling         — exceptions, network failures, partial writes

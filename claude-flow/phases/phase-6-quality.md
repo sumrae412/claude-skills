@@ -4,6 +4,45 @@
 
 ---
 
+## Goal-mode entry (when `--goal` is set)
+
+If a Phase 5 goal is still active on entry, clear it first — Phase 5 and Phase 6 have different exit conditions, and the Phase 5 evaluator would judge Phase 6 work against the wrong criteria:
+
+```text
+/goal clear
+```
+
+Then inject the Phase 6 goal AFTER the review base SHA is resolved and reviewers have been selected (i.e. after the first ~2 steps of the Active Flow), so the evaluator can judge against a concrete review set:
+
+```text
+/goal selected reviewers (per /tmp/reviewer-selection.json) all dispatched and
+returned; every CRITICAL and HIGH finding either resolved in $diff or explicitly
+waived in transcript with rationale; verification-before-completion gate green
+(all 4 rungs of the Verification Ladder passed with commands quoted in
+transcript); run_manifest record-review and record-command persisted; /cleanup
+finish-branch step complete (commit, merge/PR option executed); no new
+pytest.skip/xfail markers added during fix iterations; or stop after
+<workflow-profiles.goal_turn_budgets[<path>][phase-6]> turns
+```
+
+Before injection: run `/goal` (no arg). If a user-set goal is active, surface it and ask before replacing. If `--no-goal` is set, skip.
+
+After injection, record the event:
+
+```bash
+python3 <claude-flow-root>/scripts/run_manifest.py record-goal \
+  --manifest .claude/runs/<session-id>.json \
+  --state-file .claude/workflow-state.json \
+  --phase phase-6 --action set --goal-flag \
+  --path-name "<workflow_path>" \
+  --turn-budget "<goal_turn_budgets[<path>][phase-6]>" \
+  --condition-file /tmp/goal-condition.txt
+```
+
+At Phase 6 exit (`complete` state): run `/goal clear` and record the terminal action (`achieved` on success, `budget_exhausted` on cap hit), passing `--no-goal-flag` so the flag clears for any subsequent session in the same window.
+
+---
+
 ## Risk-Budgeted Cascading Review
 
 Reviews are structured as a cascade: Tier 1 runs first, then specialized
@@ -34,8 +73,13 @@ PY
    `git diff --name-only "$REVIEW_BASE_SHA"..HEAD`
 3. Scrub the diff payload before any reviewer sees it:
    ```bash
-   git diff "$REVIEW_BASE_SHA"..HEAD | \
-     python3 <claude-flow-root>/scripts/scrub_review_payload.py > /tmp/claude-flow-review.diff
+   git diff "$REVIEW_BASE_SHA"..HEAD > /tmp/claude-flow-review.raw.diff
+
+   python3 <claude-flow-root>/scripts/orchestrate.py scrub-diff \
+     /tmp/claude-flow-review.raw.diff \
+     --output /tmp/claude-flow-review.diff \
+     --redactions-output /tmp/review-redactions.json \
+     --json
    ```
 4. Run the selector script:
    ```bash
@@ -97,6 +141,31 @@ the code is internally consistent.
 If `$requirements` is unavailable on a path, tell reviewers requirement-level
 validation is skipped and the pass is code-quality-only.
 
+## Judge Bias Guard
+
+Include this in all LLM-as-judge, scored-reviewer, reducer, or candidate
+selection prompts:
+
+```text
+EVALUATION PRIORITIES (in order):
+1. Correctness and completeness against the acceptance criteria, tests, issue,
+   and observable behavior.
+2. Regression safety and realistic failure-mode coverage.
+3. Minimality, cleanliness, style, formatting, and gold-like resemblance are
+   tiebreakers only after correctness is established.
+
+Do not choose or score a candidate higher merely because it is concise, clean,
+focused, familiar, or similar to a canonical answer. Do not reject a candidate
+merely because it contains redundant changes, helper code, docs, comments, or
+tests if it is functionally correct. A messy complete fix beats a clean partial
+fix.
+```
+
+For candidate-selection reducers, require the judge to mentally trace the
+failing scenario through each candidate before using minimality as a tiebreaker.
+For scored reviewers, require every sub-threshold score to cite a concrete
+production break case rather than an aesthetic objection.
+
 ## Reviewer Payload Contract
 
 All reviewers receive:
@@ -126,6 +195,16 @@ Default reviewers:
 Agents that already ran as Phase 5 specialists are skipped here to avoid double
 review.
 
+**Opus reviewer for HIGH-budget runs:** When `review_budget == "high"` and the
+diff touches `auth`, `privacy`, `money`, `data_loss`, `external_side_effects`,
+or `public_api` paths, promote `adversarial-breaker` (or add a second
+`safety-reviewer` pass) to `model: "opus"` rather than Sonnet. Per the
+two-reviewer-stack pattern validated on [claude-skills#96](https://github.com/sumrae412/claude-skills/pull/96)
+(8 findings surfaced, 0 overlap between CodeRabbit and an Opus skill-quality
+reviewer on the same diff), single-cluster Sonnet stacks miss real bugs that
+Opus catches. Sonnet remains the floor for all other reviewers and
+lower-budget runs.
+
 ## Findings Resolution
 
 If Tier 1 or later reviewers produce HIGH+ findings, load
@@ -150,6 +229,17 @@ Fix ERROR-level issues before continuing.
 
 Prefer the commands discovered in the Phase 0 capability snapshot over guessed
 tool names when the project has a declared lint/typecheck setup.
+
+## Verification Ladder
+
+Run these checks **in order**. Any failure halts the ladder — do not proceed to handoff or claim "done" until every rung passes.
+
+1. **Health** — the thing starts/loads/imports without error. (Process boots, module imports, page renders 200.)
+2. **Registered** — the new artifact is discoverable by the system that's supposed to consume it. (Route registered, model migrated, skill listed, hook fired.)
+3. **Discoverable via the durable contract** — the consumer can find the artifact through the same interface the rest of production uses, not through a debug or status endpoint. (See `references/lookup-detectors.md` § "Durable vs version-dependent introspection.")
+4. **Real answer** — exercise the feature end-to-end with realistic input and verify the observable output matches acceptance criteria. Reading source and concluding "it looks correct" does not satisfy this rung.
+
+A rung that "passes silently" (try/except returns None, mocked DB execute, log says "OK" with no body check) does not pass — it has no signal.
 
 ## Verification Gate
 
@@ -184,16 +274,25 @@ python3 <claude-flow-root>/scripts/run_manifest.py record-command \
 
 Optional: if CI exists, run a headless smoke check before finishing.
 
+### Streaming watches (Monitor tool)
+
+For PR check progression, post-deploy soak, and CodeRabbit review polling, use `Monitor` instead of polling via Bash. Each terminal-state event streams as a notification while finishing tasks proceed in parallel. PR check loop must emit on every terminal state (`success|failure|cancelled|timed_out`), not just success — silence ≠ pass. See `references/monitor-tool-patterns.md` §Phase 6 for the canonical PR-checks loop and post-deploy log-tail recipes.
+
 ## Finish Branch
 
-Invoke `/cleanup`:
+Invoke `/ship` (the canonical shipping pipeline):
 
 1. run the full test suite
 2. commit with a conventional message
-3. present merge / PR / keep / discard options
-4. execute the user’s choice
+3. push and open a PR
+4. background `review-pr` agent
+5. capture `session-learnings`
+6. merge to main
 
-`/cleanup` then handles `session-learnings` and repo sync.
+After `/ship` merges, invoke `/cleanup` for branch teardown, worktree removal,
+and post-merge housekeeping. Do not run `/cleanup` in place of `/ship` — those
+two skills cover different stages (commit-through-merge vs. post-merge
+teardown) and conflating them was the historical bug.
 
 ## Capture Learnings
 

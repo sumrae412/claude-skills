@@ -75,6 +75,6 @@ Do not assert an external skill exists without either (a) fetching its SKILL.md 
 
 ## After install: document provenance
 
-For every skill imported from an external registry, ship `<skill>/SOURCE.md` with four sections: attribution (upstream URL + commit SHA + license + ISO import date), vetting checklist (`skill-security-auditor` scan, cross-ref scrub, script review), and local modifications. The target dir name must match the skill's frontmatter `name:` field. Cross-refs to peer skills that don't exist locally must be substituted with local equivalents or dropped — not left dangling.
+For every skill imported from an external registry, add a row to the repo-root `NOTICE.md` under the appropriate license section (or create a new section for a new upstream). Each row records: local skill path, upstream path, ISO import date, and a one-line summary of local modifications. The vetting checklist (`skill-security-auditor` scan, cross-ref scrub, script review) goes in the section's vetting summary paragraph, not per-skill. The target dir name must match the skill's frontmatter `name:` field. Cross-refs to peer skills that don't exist locally must be substituted with local equivalents or dropped — not left dangling.
 
-Canonical examples: the seven skills imported from `alirezarezvani/claude-skills` across PRs #23–#25 (2026-04-17) all use the same `SOURCE.md` shape. See `skill-security-auditor/SOURCE.md` for the template.
+The previous per-skill `SOURCE.md` pattern (used in PRs #23–#25, 2026-04-17) was consolidated into `NOTICE.md` to satisfy MIT-style attribution requirements in one place rather than across 12 fragmented files. See `NOTICE.md` for the current shape.

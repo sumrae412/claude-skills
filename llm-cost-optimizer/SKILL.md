@@ -202,6 +202,10 @@ All output follows the structured standard:
 | Synthetic-only A/B before committing to a routing change | Synthetic prompts miss the real call-site framing, prompt-cache shape, and downstream parsing — the actual savings/regression delta only appears on real traffic | If a pr-reviewer-style tool already runs the surface, do a 1-PR A/B in existing infra (~$0.10, <1min wall) as the first eval. Use it to size the calibration gap before designing the gold set |
 | Treating peer coding agents (OpenCode, Aider, Cline, Claude Code) as model providers | Coding agents *consume* model APIs — they don't expose one. They have no `complete(messages)` endpoint a router can call. Wrapping a peer agent inside another agent adds latency and constraints without adding capability | If the goal is free-tier model routing, add another model provider (Groq, Together, Cerebras, OpenRouter free models) next to NVIDIA in the router. If the goal is to offload human work, use the peer agent separately — workflow change, not code change |
 
+## Reranker caveats
+
+- **Haiku-as-reranker on small candidate sets can degrade ranking.** Validated 2026-04-29 (claude-flow scale experiment): Haiku reranking BM25 top-3 produced more reordering noise than signal vs. raw BM25 ordering. Threshold for rerank to help: candidate set should be large enough that BM25 top-K loses real signal at K (typically K≥10 over a corpus of hundreds).
+
 ## Related Skills
 
 - **rag-architect**: Use when designing retrieval pipelines. NOT for cost optimization of the LLM calls within RAG (that is this skill).

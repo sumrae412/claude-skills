@@ -1,5 +1,21 @@
 # Matching Rubric + Reframing Strategies
 
+## Mandatory Rules — what reframing MUST / CAN / MUST NOT do
+
+Read this trichotomy before assigning any band. Every reframe in Phase 2 must pass all three columns or it goes to Phase 3 discovery instead.
+
+| MUST keep | CAN adjust | MUST NOT do |
+|-----------|------------|-------------|
+| Every claim traceable to a bullet in the canonical resume | Vocabulary (swap user term for JD term when they refer to the same thing) | Add numbers the user has not substantiated |
+| Original seniority register (Lead/Direct/Manage vs. Contribute/Support) | Bullet ordering within a role (lead with strongest match) | Inflate scope (team size, budget, user count) beyond what the source bullet establishes |
+| Truthful tense (past for past roles, present for current) | Abstraction level (zoom in to specific tool or zoom out to capability) | Imply ownership the user did not have ("led" when source says "supported") |
+| Material experience visible somewhere on the resume | Combine adjacent bullets that name one effort | Invent a stack, certification, or domain not present in source |
+| The user's authentic voice in headline + summary | De-emphasize or cut bullets that don't support the JD profile | Add achievements or outcomes that aren't in the source resume |
+
+If a proposed reframe violates any MUST NOT cell, it's fabrication, not reframing — surface as a Phase 3 discovery question instead.
+
+---
+
 For every resume bullet (and every role headline/summary line), assign a confidence band vs. the JD profile from Phase 1, then apply a reframing strategy if helpful. The rubric also surfaces missing JD requirements (`GAP`) that no existing bullet covers — see below.
 
 ## Confidence Bands

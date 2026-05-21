@@ -66,13 +66,25 @@ Before exploring from scratch, check what's already known about this feature are
 
 5. WORKFLOW TRACE CHECK
    → Grep MEMORY.md for workflow failure tags from prior runs
-     on similar feature types
+   on similar feature types
    → If prior runs flagged `exploration-gap` for this area,
      allocate extra exploration passes
    → If prior runs flagged `review-escape`, add the escaped
      pattern to the Phase 6 review prompt
    → Prior workflow failures are the eval signal — use them
      to calibrate this run's effort allocation
+
+6. RAG EXPERIENCE CHECK (optional, non-blocking)
+   → Query the local experience store for prior exploration chunks
+   → Inject at most 5 chunks, only when output is non-empty
+   → If the store, embeddings, or API key are unavailable, skip silently
+     or surface the script's concise skip message without blocking
+
+   python3 <claude-flow-root>/scripts/rag.py query \
+     --store .claude/rag \
+     --text "<task summary>" \
+     --phase phase-2 \
+     --fingerprint '<json fingerprint>'
 ```
 
 **Outcome:**
@@ -90,13 +102,13 @@ Generate token-efficient codebase maps before deep exploration:
 
 ```bash
 # Signatures only — function/class headers without bodies
-python scripts/generate_repo_outline.py app/services/ --max-depth 2
+python3 <claude-flow-root>/scripts/generate_repo_outline.py app/services/ --max-depth 2
 
 # Full compressed context — entire codebase packed into minimal tokens
 repomix --compress --output .repomix-output.txt
 ```
 
-For small/familiar codebases, `generate_repo_outline.py` alone is sufficient. For large or unfamiliar codebases, always run both.
+For small/familiar codebases, `generate_repo_outline.py` alone is sufficient. Run `repomix --compress` only when the outline leaves material architecture gaps.
 
 ---
 
@@ -138,6 +150,8 @@ Dispatch **Sonnet** (`model: "sonnet"`, `subagent_type: "general-purpose"`) with
 - Act on response: explore identified gaps. If all 4 quality axes pass, carry scores forward to Phase 3 (skip quality gate re-check). If any fail, Phase 3 will re-score after ambiguity resolution.
 
 **Why Sonnet, not Opus:** Exploration review is gap-finding and checklist scoring — broad pattern matching, not deep trade-off analysis. Opus is reserved for Phase 4 architecture critique and plan stress-test where it earns its cost.
+
+**Haiku candidate (untested):** The same gap-finding + checklist-scoring shape is the canonical Haiku-role workload per the `model-router` skill's role rubric (Explorer → Haiku; see `../../model-router/SKILL.md`). Sonnet is the current shipping choice; consider A/B-ing Haiku for this dispatch — savings are roughly 3× input cost if quality holds. Track in `docs/decisions/` before flipping the default.
 
 ---
 

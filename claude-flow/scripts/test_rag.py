@@ -21,6 +21,7 @@ from rag import (
     VectorStore,
     rerank,
     format_for_injection,
+    main as rag_main,
 )
 
 
@@ -444,3 +445,70 @@ class TestFormatForInjection:
     def test_returns_string(self):
         chunks = [make_chunk()]
         assert isinstance(format_for_injection(chunks), str)
+
+
+# ── CLI ────────────────────────────────────────────────────────────────────────
+
+class TestRagCli:
+    def test_extract_cli_writes_chunks_jsonl(self, tmp_path):
+        log = tmp_path / "log.json"
+        out = tmp_path / "chunks.jsonl"
+        log.write_text(json.dumps(SAMPLE_EXPLORATION_LOG))
+
+        assert rag_main(["extract", "--log", str(log), "--out", str(out)]) == 0
+
+        lines = out.read_text().splitlines()
+        assert lines
+        first = json.loads(lines[0])
+        assert first["source_type"] == "patterns_found"
+
+    def test_format_cli_prints_prior_experience_block(self, tmp_path, capsys):
+        chunks = tmp_path / "chunks.jsonl"
+        chunks.write_text(json.dumps(make_chunk(text="reuse service pattern").__dict__))
+
+        assert rag_main(["format", "--chunks", str(chunks), "--limit", "5"]) == 0
+
+        captured = capsys.readouterr()
+        assert "PRIOR EXPERIENCE" in captured.out
+        assert "reuse service pattern" in captured.out
+
+    def test_query_cli_returns_empty_when_store_missing(self, tmp_path, capsys):
+        missing = tmp_path / "missing-rag"
+
+        assert rag_main([
+            "query",
+            "--store",
+            str(missing),
+            "--text",
+            "service task",
+            "--phase",
+            "phase-2",
+            "--fingerprint",
+            '{"languages":["python"]}',
+        ]) == 0
+
+        captured = capsys.readouterr()
+        assert captured.out == ""
+
+    def test_query_cli_skips_when_api_key_missing(
+        self, tmp_path, monkeypatch, capsys
+    ):
+        store = VectorStore(tmp_path / "rag")
+        store.add([make_chunk(text="prior service discovery")], [[0.1] * 1536])
+        monkeypatch.delenv("OPENAI_API_KEY", raising=False)
+
+        assert rag_main([
+            "query",
+            "--store",
+            str(tmp_path / "rag"),
+            "--text",
+            "service task",
+            "--phase",
+            "phase-2",
+            "--fingerprint",
+            '{"languages":["python"]}',
+        ]) == 0
+
+        captured = capsys.readouterr()
+        assert captured.out == ""
+        assert "OPENAI_API_KEY" in captured.err

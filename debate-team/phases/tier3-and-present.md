@@ -4,7 +4,7 @@
 Skip for Tier 1 and Tier 2 reviews — the cost of an extra agent pass isn't justified for simple reviews.
 </SKIP-CONDITION>
 
-For Tier 3 (full debate), challenge the synthesis before presenting to the user. This catches false positives that survived synthesis — style preferences masquerading as bugs, fixes that introduce worse problems, or groupthink where multiple critics echo the same flawed reasoning.
+For Tier 3 (full debate), challenge the synthesis before presenting to the user. This catches false positives that survived synthesis — style preferences masquerading as bugs, gold-like preferences masquerading as correctness, fixes that introduce worse problems, or groupthink where multiple critics echo the same flawed reasoning.
 
 Dispatch a **haiku** agent:
 
@@ -21,6 +21,10 @@ Use Task tool:
     - Is this a false positive disguised as a real issue?
     - Does the "fix" introduce worse problems than the original?
     - Is this a style preference masquerading as a bug?
+    - Is this a gold-like preference masquerading as correctness (cleaner,
+      smaller, more canonical, or more elegant, but not actually more correct)?
+    - Would a messier or more redundant implementation be acceptable if it
+      satisfies the behavior, tests, and scope better?
     - Did multiple critics flag this for the same flawed reason (echo, not independent signal)?
 
     Be adversarial. Only flag findings where you have >70% confidence the ADOPT is wrong.
@@ -51,4 +55,3 @@ If reviewing a PR and CRITICAL findings were adopted:
 2. Generator commits fixes
 3. Re-run critics on updated diff
 4. **Max 2 cycles** — if unresolved after 2, escalate to user
-

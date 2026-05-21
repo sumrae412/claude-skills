@@ -130,6 +130,23 @@ The labeled corpus is the source of truth for "human agreement" — each case ha
 
 Drift detection (running the live reviewer against a single planted-bug fixture on a cron) is a separate concern from calibration (running against a 20+ case corpus to compute agreement). Both can coexist at different cadences — drift weekly, calibration monthly or on-demand.
 
+### LLM Judge Bias Guardrails
+
+Any reviewer, reducer, or eval harness that asks an LLM to score or select
+between candidate outputs must explicitly prioritize correctness over
+gold-like surface traits. The required ordering is:
+
+1. Correctness and completeness against the acceptance criteria, issue, tests,
+   and observable behavior.
+2. Regression safety and realistic failure-mode coverage.
+3. Minimality, cleanliness, style, formatting, and resemblance to canonical or
+   gold answers as tiebreakers only.
+
+Calibration corpora for scored reviewers should include at least one
+adversarial pair where a concise, clean, plausible candidate is incomplete and
+a more verbose or redundant candidate is correct. Agreement on that case is a
+drift signal for "gold-like" preference.
+
 ### Cross-repo persona resolution
 
 When a reviewer's persona/system-prompt file lives in a different repo than the registry (typical for `general-purpose` agent-backed reviewers under the post-2026-04-16 single-source-of-truth layout), declare BOTH:

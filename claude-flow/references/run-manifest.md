@@ -20,6 +20,7 @@ Store the path in workflow state as `run_manifest_path`.
   "workflow_path": null,
   "task_summary": null,
   "review_base_sha": null,
+  "event_log_path": null,
   "capability_matrix": {},
   "requirements_approvals": [],
   "plan_approvals": [],
@@ -39,6 +40,65 @@ Store the path in workflow state as `run_manifest_path`.
 - tests, lint, typecheck, and static-analysis commands with exit codes
 - reviewer selection, budget, skipped reviewers, and redaction count
 - any empirical tool-behavior checks that overruled reviewer claims
+
+## Append-Only Event Log
+
+Each run may have a sibling JSONL event log:
+
+`.claude/runs/<session-id>.events.jsonl`
+
+Use it for session-continuity facts that are too granular for the manifest but
+important after compaction or resume:
+
+- files read, created, edited, or intentionally left untouched
+- user decisions and rejected alternatives
+- blockers and unblockers
+- subagent launch/completion summaries
+- failing assertions and later resolutions
+- command outcomes that should be searchable as exact facts
+
+Preferred writer:
+
+```bash
+python3 <claude-flow-root>/scripts/run_manifest.py record-event \
+  --manifest .claude/runs/<session-id>.json \
+  --event-type decision \
+  --category decision \
+  --source user \
+  --payload '{"summary":"Use append-only continuity events"}'
+```
+
+`record-command` automatically mirrors command outcomes into the event log. The
+manifest stores `event_log_path` so later tools can discover the event stream.
+
+## Optional Trajectory Export
+
+Use `scripts/export_run_timeline.py` when you need to inspect or visualize a
+run as an ordered event stream instead of a nested manifest. If the event log
+exists, the exporter includes those JSONL records as `session_event` entries.
+
+```bash
+python3 <claude-flow-root>/scripts/export_run_timeline.py \
+  --manifest .claude/runs/<session-id>.json \
+  --output .claude/runs/<session-id>.timeline.jsonl
+```
+
+If `--output` is omitted, the script writes JSONL to stdout. The export is
+read-only and must not mutate the manifest or workflow state.
+
+Each line is a JSON object with:
+
+- `sequence`: monotonic event number in export order
+- `type`: `metadata`, `approval`, `verification_run`, `review_run`, or
+  `command`
+- `timestamp`: best available event timestamp, or `null`
+- `payload`: the original manifest fields relevant to that event
+
+Export order is deterministic: metadata first, then timestamped events in
+chronological order, with untimestamped events kept after timestamped events in
+their manifest order. This format is intentionally close to trajectory logs in
+recursive inference runtimes: a thin append-style stream that can feed a local
+viewer without teaching the viewer the full manifest schema.
 
 ## Rules
 

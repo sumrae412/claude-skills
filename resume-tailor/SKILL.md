@@ -82,8 +82,11 @@ Output to user (checkpoint) — **in this order**:
 5. Cultural signals (what kind of operator do they want?)
 6. Archetype selected + resume story to foreground + what to downplay
 7. Action-code plan per focus area: `LEAD_WITH` / `EMPHASIZE` / `QUANTIFY` / `DOWNPLAY`
+8. **Hiring risk — single sentence.** *"What is the hardest thing this person has to do, that most candidates with the right keywords can't actually do?"* Format and examples in `references/jd-analysis.md` §"Hiring Risk". This artifact is required before any cover-letter drafting can begin in Phase 5 — it is the antecedent for the cover letter's P1 "specific bet" clause and prevents the draft from drifting into resume narration.
 
 **Rationale for JD-first ordering:** Users often can't evaluate whether a weight is right without re-anchoring in the JD content. Placing the JD recap immediately above the weights means the user sees the *evidence* and the *derived profile* together, without scrolling back to the JD file.
+
+**YOE cutoff check (honest-scoping):** if the JD specifies a years-of-experience requirement (e.g. "8+ years", "12+ years required"), compute the earliest plausible role start year for the resume: `current_year - (YOE + ~3 grace)`. Any role on the resume starting more than that window back becomes a *truncate-or-summarize* candidate in Phase 2. Hiring managers reading a 25-year tenure for an 8-YOE role read it as overqualified, not as bonus. See `references/jd-analysis.md` §"YOE Cutoff".
 
 Ask: *"Does this profile match how you read the role? Anything I over- or under-weighted?"* Wait for confirmation before Phase 2.
 
@@ -92,6 +95,8 @@ Ask: *"Does this profile match how you read the role? Anything I over- or under-
 ## Phase 2 — Matching Pass
 
 For each bullet and role in the resume, assign a confidence band vs. the JD profile and propose a reframe if appropriate. Rubric + four reframing strategies are in `references/matching-rubric.md` — load it. Also load `shared/communication-principles.md` — reframed bullets must lead with the conclusion, stay in plain language, and serve the reader (hiring manager / ATS), not the author. If the target role is Head/VP/executive level, also load `references/executive-bullets.md` so bullet rewrites surface decisions, tradeoffs, governance, and leverage rather than just implementation.
+
+**Anti-fabrication mechanic — copy master, then diff.** The Phase 2 working baseline is a *literal copy* of the canonical resume, not a draft regenerated from memory of the user's experience. Reframes are diffs against that copy: each change names the strategy used (Keyword Alignment / Emphasis Shift / Abstraction Level / Scale Emphasis) and traces back to a specific bullet in the copied source. If a proposed reframe has no antecedent in the copied master, it is fabrication, not reframing — route to Phase 3 discovery instead.
 
 Output to user (checkpoint):
 
@@ -144,7 +149,20 @@ Final deliverables. Format details, ATS tips, and optional DOCX export are in `r
 
 **Output path:** all files go to `~/Documents/resumes/<Company>/` (one folder per target company). See `references/output-formats.md` §0.
 
-**Required step before any file write:** walk the user through the assembled resume **section by section** (header/summary, each role, tail sections) for approval. See `references/output-formats.md` §3.5. Cover letters get the same treatment paragraph-by-paragraph, and must also clear the anti-patterns checklist (positive framing, no JD restatement, P4 claim verified).
+**Required step before any file write:** walk the user through the assembled resume **section by section** (header/summary, each role, tail sections) for approval. See `references/output-formats.md` §3.5. Cover letters get the same treatment paragraph-by-paragraph, and must also clear both review tiers:
+
+- **§6.1 mechanical pre-ship checks** (sentence-subject sequence per paragraph, proper-noun cross-check, prestige-density count, hiring-risk anchor present in P1, structural diff against canonical baseline, closing-line standalone read, §5/§5a/§5b sweep). Each check produces a printed one-line output; fail conditions trigger a rewrite, not a "ship anyway".
+- **§6.2 hiring-manager perspective review** dispatched to a fresh Sonnet subagent with ONLY the JD, the draft, and the Phase 1 hiring-risk sentence — no resume, no baseline, no philosophy doc. Same-context review by the drafting model systematically under-flags problems the drafter has rationalized.
+
+Both tiers live in `references/cover-letter-review.md` §6. Surface the §6.1 evidence and the §6.2 verdict to the user before file-write so they can override or revise.
+
+**Required Phase 1 artifact for cover letters:** the Phase 1 hiring-risk sentence (Phase 1 output item #8) is the antecedent for P1's "specific bet" clause. Do not begin cover-letter drafting unless that sentence exists. If the user requests a cover letter and the hiring-risk sentence was not produced in Phase 1 (e.g. Phase 5R review-only path skipped Phase 1), produce it now from the JD before drafting.
+
+**Voice corpus + canonical baseline + structural template — when drafting a cover letter:** load `references/voice-corpus.md`, `references/cover-letter-review.md`, and `references/templates/cover-letter-structural-template.md` before drafting. The **canonical structural baseline** is `~/Documents/resumes/Summer_Rae_CoverLetter.md` — always load it as the voice example. The **annotated structural template** (`references/templates/cover-letter-structural-template.md`) captures the 4-paragraph shape with per-paragraph rules and variants — always load it as the skeleton. The voice corpus at `~/Documents/resumes/_voice-corpus/{originals,successful}/` supplements with proven-by-interview letters when available. NEVER pull voice from per-company folders even if endorsed in-session — that compounds AI cadence across drafts. If the corpus is empty, baseline + structural template alone are sufficient.
+
+**Drafting model — Sonnet (latest):** cover letters must be drafted with the latest Claude Sonnet. If the orchestrator is Opus or another model, dispatch the draft to a subagent via the Agent tool with `model: "sonnet"` and pass: (a) the JD, (b) `~/Documents/resumes/Summer_Rae_Resume.md` as the resume, (c) `~/Documents/resumes/Summer_Rae_CoverLetter.md` as the voice example, (d) `references/templates/cover-letter-structural-template.md` as the paragraph-shape skeleton, and (e) the philosophy + tone + hard rules from `references/cover-letter-review.md` §A. The cover-letter-review contract applies regardless of which model drafts.
+
+**Post-interview promotion:** when the user reports an interview/screen/offer signal for an application that has a letter on disk ("I got an interview at X", "X invited me to a phone screen", "X moved me forward", "X made me an offer"), offer to promote `~/Documents/resumes/<X>/cover-letter.md` to `~/Documents/resumes/_voice-corpus/successful/<YYYY-MM-DD>-<X>-cover-letter.md`. Promotion is a **copy** (not symlink), frozen at success-time. Do not promote on application-submitted, auto-acks, or in-session endorsement. See `references/voice-corpus.md` §"Promotion Trigger".
 
 Defaults:
 
@@ -152,10 +170,48 @@ Defaults:
 2. **Keyword coverage report** — must-haves + nice-to-haves hit/missed
 3. **`jd.md`** — source URL + captured date + full JD text. Required in every company folder so the tailored outputs remain legible months later. See `references/output-formats.md` §0.1.
 4. **Cover letter draft — opt-in only.** Do NOT offer, pre-announce, or auto-draft a cover letter at the end of Phase 5. Produce resume + keyword coverage + jd.md only. Draft a cover letter exclusively when the user explicitly requests one ("draft a cover letter", "write me a letter for this", etc.). The default closing prompt does NOT mention cover letters — its absence is what prevents an unwanted draft from being produced unprompted.
+5. **Connection message — opt-in only.** Same rules as cover letters. Produce a ~300-character LinkedIn DM aimed at a recruiter, hiring manager, or referrer ONLY when the user explicitly asks ("draft a connection message", "write me a LinkedIn DM for this", "outreach to the recruiter"). Spec lives in `references/connection-message.md`. Output path: `~/Documents/resumes/<Company>/connection-message.md`.
 
 No change log. What was reframed and why is a conversation artifact, not a deliverable — if the skill itself should behave differently next time, that's a session-learnings update to the skill, not a file for the user.
 
 Offer: *"Want me to convert to DOCX or iterate on any section?"*
+
+---
+
+## Phase 5R — Review Mode (Critique an Existing Letter)
+
+Use when the user has already drafted a cover letter (or resume bullet set) and wants targeted critique without redrafting. Triggers: *"review my cover letter"*, *"critique this draft"*, *"what would you change?"*, *"don't rewrite it, just tell me what's weak"*.
+
+**Mode contract — what Review Mode does NOT do:**
+
+- Does NOT redraft. The user owns the prose; Review Mode produces feedback.
+- Does NOT rewrite paragraphs into "improved" versions unless the user explicitly asks for a rewrite of a specific paragraph.
+- Does NOT silently apply voice from `_voice-corpus/` — Review Mode evaluates *against* the user's voice, not toward AI cadence.
+
+**Workflow:**
+
+1. **Inputs:** the draft (paste or path) + the JD (URL, file, or paste). If no JD, ask once; without it the review is blind.
+2. **Quick JD scan:** load `references/jd-analysis.md` and produce a compact JD profile (no full Phase 1 checkpoint — this is a critique pass, not a tailoring session).
+3. **Load review references:** `references/cover-letter-review.md` (anti-patterns + opener rules), `shared/communication-principles.md` (audience-centered, lead-with-conclusion). For resume-bullet review, also `references/matching-rubric.md` and `references/writing-quality.md`.
+4. **Output (single checkpoint, no phase chain):**
+   - **Strengths** (2-4 bullets) — what's working, with the specific phrase quoted and why it lands
+   - **Targeted issues** (per paragraph or per bullet) — quote the exact text, name the rule it violates, suggest a *direction* (not a rewrite). Example: *"P2 opens with `I led enterprise AI delivery at Govini...` — candidate-focused per cover-letter-review §1. Direction: lead with the company's pain, then your evidence."*
+   - **Anti-pattern hits** — explicit list of any §5 anti-patterns triggered
+   - **Mechanical pre-ship checks** (per cover-letter-review §6.1): sentence-subject sequence per paragraph, proper-noun cross-check, prestige-density count, hiring-risk anchor in P1, structural diff against canonical baseline, closing-line standalone read, anti-pattern sweep. Print evidence for each — flag any that fail.
+   - **Hiring-manager perspective review** (per cover-letter-review §6.2): dispatch a fresh Sonnet subagent with ONLY the JD, the draft, and the Phase 1 hiring-risk sentence. Surface the subagent's verdict verbatim. If §6.1 caught structural failures the user agrees to revise, optionally defer §6.2 until after the revise.
+5. **Close:** *"Want me to rewrite any paragraph you flag, or leave the draft entirely yours?"* Wait for explicit per-paragraph rewrite request before producing replacement prose.
+
+**Narrow-scope-only refinement rule:** broad revision requests ("rewrite this to be better," "tighten the whole letter," "make it more compelling," "improve the flow") produce over-revisions that erase the candidate's voice. When the user asks for broad refinement, push back before drafting: *"Want me to (a) flag specific spots to revise, (b) rewrite one paragraph you name, or (c) do an errors-only pass that preserves all phrasing?"* Wait for the user to choose scope. Never silently broad-revise — that is the failure mode the named refinement patterns exist to prevent.
+
+**Named refinement patterns (user-triggered, per-paragraph):**
+
+When the user asks for targeted refinement after the initial review, use these named patterns. Each operates on one paragraph at a time, preserves the rest of the draft, and respects §A philosophy + §5 anti-patterns.
+
+- **Personalization pass.** Trigger: *"add the company project"*, *"tie this to their X"*, *"make this specific to them"*. Rewrite the named paragraph to reference one verified company project, product, or moment (§4 verification required — never invent) and connect it directly to one concrete element of the candidate's experience. One reference, one connection — don't stack.
+- **Critique pass.** Trigger: *"what sounds generic"*, *"what reads like a press release"*, *"what would a hiring manager skip"*. Critique-only mode: name 2-4 spots that read as filler, press-release cadence, or hiring-manager skim-bait. Quote the exact phrase, name the failure mode, suggest a direction — do NOT rewrite unless the user then asks for a rewrite of a specific flagged spot.
+- **Tone calibration pass.** Trigger: *"what's the tone"*, *"does this sound desperate / formal / confident / arrogant"*, *"calibrate the tone"*. Label the current tone in one word first (e.g. *desperate*, *deferential*, *boastful*, *confident*, *flat*, *warm*) — show the user what you heard before suggesting a shift. Then propose a one-paragraph rewrite toward the target tone if the user names one, or recommend a target if they didn't. Do not rewrite the whole letter — single-paragraph shift only.
+
+**Why this mode exists:** the default Phase 1-5 chain assumes the user wants a tailored draft. When the user wants critique, the chain over-produces — it rewrites material that should stay theirs. Review Mode is the "I want a sharp editor, not a ghostwriter" path.
 
 **Post-write verification (when this skill's own files are edited):** after any Edit to `references/*.md` or `SKILL.md` in this skill, Read the written file and grep for the inserted anchor text. Do not trust the Edit tool's success signal alone — on hosts where `~/.claude/skills/resume-tailor/` is not a symlink to `claude_code/claude-skills/resume-tailor/`, edits can land in a stale copy while the canonical repo stays clean. Verify in the canonical path at `/Users/summerrae/claude_code/claude-skills/resume-tailor/` (or the host's equivalent).
 
@@ -172,6 +228,7 @@ Offer: *"Want me to convert to DOCX or iterate on any section?"*
 7. **Communication principles apply.** Resumes are author-to-audience writing. Audience-centered focus, lead with the strongest evidence, simple plain-language bullets, no ego residue. Load `shared/communication-principles.md` before Phase 2 matching and Phase 4 positioning — the bullet-level and headline-level decisions are where these principles bite hardest.
 8. **Cover letters are opt-in only.** The default Phase 5 deliverable set is resume + keyword coverage + jd.md. Cover letters are produced only on explicit user request — never offered proactively, never pre-announced, never drafted as a "while I'm at it" addition. The closing prompt deliberately omits cover-letter language so the user has to raise it.
 9. **Final prose must not sound templated.** Lists and tables are for analysis checkpoints only. Headlines, summaries, and cover letters must read like authored prose with a governing idea, specific evidence, and no buzzword stacking. Load `references/writing-quality.md` before writing them.
+10. **Voice templates come from the corpus, not from per-company folders.** When drafting a cover letter, voice cues come ONLY from `~/Documents/resumes/_voice-corpus/{originals,successful}/`. Never read prior letters from `~/Documents/resumes/<other-companies>/cover-letter.md` as voice templates — those letters either failed, are in flight, or were endorsed in-session without an interview signal, and pulling voice from them compounds AI cadence. See `references/voice-corpus.md`.
 
 ## Professional Help Boundary
 

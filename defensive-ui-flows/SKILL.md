@@ -90,3 +90,8 @@ This skill is a living document. Each bug fixed should make the next similar bug
 - These patterns apply to any JavaScript UI with async operations, modals, or multi-step flows
 - When reviewing, flag violations but preserve existing functionality
 - Guard clauses and state flags are defensive — do not remove them to "simplify" code
+
+## Related skills
+
+- `fixing-accessibility` — ARIA, keyboard, focus, semantics, form-error patterns. Pair: this skill covers state/feedback/failure-mode defensiveness; `fixing-accessibility` covers a11y compliance. Forms, dialogs, and async controls usually need both passes.
+- `design-audit` — visual-only audit (spacing, hierarchy, polish). Surfaces issues that `fixing-accessibility` resolves correctly (focus outlines, contrast, disabled states).

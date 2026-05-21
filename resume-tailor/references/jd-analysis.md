@@ -88,6 +88,31 @@ Load `references/role-archetypes.md` and classify the JD into one primary archet
 
 This forces the tailoring pass to pick a dominant story before it starts rewriting bullets.
 
+### 4. Hiring Risk (single sentence — required for cover letter drafting)
+
+Produce one sentence answering: *"What is the hardest thing this person has to do, that most candidates with the right keywords can't actually do?"*
+
+Format:
+
+```
+Can this person [operationalize / scale / land / govern / unify] [SPECIFIC CAPABILITY] under [SPECIFIC CONSTRAINT — regulatory, technical, organizational, or trust-related] while [SPECIFIC CROSS-FUNCTIONAL PRESSURE — aligning eng/clinicians/exec, integrating into existing workflow, holding the line on quality gates, etc.]?
+```
+
+**Examples:**
+
+- *Healthcare AI platform role:* "Can this person operationalize trustworthy healthcare AI systems from messy longitudinal patient data while aligning engineering, clinicians, executives, and compliance on the same release plan?"
+- *AI infra role at a frontier lab:* "Can this person ship safety-critical agentic systems at frontier-lab scale while running an evaluation discipline rigorous enough that the org actually trusts the gates?"
+- *Director of AI at a defense-tech company:* "Can this person stand up an ML organization that ships into classified production environments without losing the explainability + governance posture the customer demands?"
+
+**Rules:**
+
+- One sentence. If it takes two, the hiring risk isn't sharp enough — tighten.
+- Must name a *capability* + a *constraint* + a *cross-functional pressure*. A sentence with only "build X" is too generic to be useful.
+- Must be derivable from the JD, not invented. Cite the JD line that motivated each clause if asked.
+- This sentence is the antecedent for the cover letter's P1 "specific bet" clause (see `references/templates/cover-letter-structural-template.md` §P1). Without it, cover-letter drafting drifts into resume narration.
+
+**Why this is required for cover letters:** the cover-letter draft orbits the hiring risk. Producing it as a Phase 1 artifact (instead of leaving it implicit in the orchestrator's head) means the cover letter has a fixed reference point, the user sees the framing before drafting starts, and "P1 leads with the company's bet" becomes mechanically checkable instead of stylistic.
+
 ## Action Codes
 
 Each focus area gets exactly one action code. Phase 2 uses these to decide treatment:
@@ -110,6 +135,25 @@ Each focus area gets exactly one action code. Phase 2 uses these to decide treat
 - **Seniority:** combine the title word + years-of-experience range + scope language. When title and scope conflict ("Senior PM" but description sounds junior), surface the tension to the user.
 - **Scope signals:** team size, budget, geographic scope, P&L ownership, # of stakeholders. Quote the JD phrases that establish each.
 - **Culture signals:** read the "about us" and "how we work" sections. Tone matters — "we move fast" vs. "we believe in sustainable pace" calibrate differently.
+
+## YOE Cutoff (Honest-Scoping)
+
+When the JD specifies a years-of-experience requirement, compute the *earliest plausible role start year* the resume should show:
+
+```
+earliest_start = current_year - (YOE_required + ~3 grace)
+```
+
+Roles with start dates earlier than that window become **truncate-or-summarize** candidates in Phase 2:
+
+- Truncate: drop the role entirely if it's not load-bearing for the JD's focus areas.
+- Summarize: collapse multiple early-career roles into a single "Earlier roles: [titles], [years]" line at the bottom of EXPERIENCE.
+
+**Why this matters:** a hiring manager reading a 25-year tenure for an 8-YOE role reads it as overqualified or as a candidate who didn't tailor — not as bonus. The grace window (~3 years) avoids cutting roles that are 1-2 years past the literal threshold and still genuinely useful evidence.
+
+**Do not delete the source bullets** from the canonical resume — only from the tailored output. The canonical resume retains every role.
+
+**Example:** JD says "8+ years of experience required". Current year 2026. Earliest plausible start = `2026 - (8 + 3) = 2015`. Roles starting before 2015 are candidates for truncation or summarization in the tailored output.
 
 ## When to Surface Tension
 

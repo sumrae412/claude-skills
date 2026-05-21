@@ -100,7 +100,59 @@ def test_phase_6_reference_docs_exist():
     assert (SKILL_ROOT / "references" / "phase-6-design-review.md").exists()
 
 
+def test_frontend_design_context_assets_exist():
+    assert (SKILL_ROOT / "contracts" / "design-context.schema.md").exists()
+    assert (SKILL_ROOT / "references" / "frontend-design-context.md").exists()
+
+
 def test_run_manifest_and_capability_refs_exist():
     assert (SKILL_ROOT / "references" / "run-manifest.md").exists()
     assert (SKILL_ROOT / "references" / "project-capability-matrix.md").exists()
     assert (SKILL_ROOT / "scripts" / "run_manifest.py").exists()
+
+
+def test_courierflow_skill_menu_has_backing_skill_folders():
+    workspace_root = SKILL_ROOT.parent
+    phase_5 = (SKILL_ROOT / "phases" / "phase-5-implementation.md").read_text()
+
+    implementation_skills = {
+        "courierflow-ui",
+        "courierflow-api",
+        "courierflow-data",
+        "courierflow-integrations",
+        "courierflow-security",
+    }
+    support_skills = {
+        "courierflow-troubleshooter",
+        "courierflow-skill-reviewer",
+        "courierflow-skill-sync",
+    }
+
+    for skill in implementation_skills | support_skills:
+        skill_dir = workspace_root / skill
+        assert (skill_dir / "SKILL.md").exists(), skill
+        assert (skill_dir / "references").is_dir(), skill
+
+    for skill in implementation_skills:
+        assert f"- {skill} " in phase_5
+
+    menu_start = phase_5.index("Available skills (pick one):")
+    menu_end = phase_5.index('Pick "none" only', menu_start)
+    menu = phase_5[menu_start:menu_end]
+    for skill in support_skills:
+        assert skill not in menu
+
+
+def test_llm_judge_prompts_guard_against_gold_like_bias():
+    persona = (SKILL_ROOT / "scripts" / "adversarial_breaker_persona.txt").read_text()
+    phase_6 = (SKILL_ROOT / "phases" / "phase-6-quality.md").read_text()
+    schema = (
+        SKILL_ROOT / "references" / "reviewer-registry-schema.md"
+    ).read_text()
+
+    for text in (persona, phase_6, schema):
+        lowered = text.lower()
+        assert "correctness" in lowered
+        assert "minimality" in lowered
+        assert "gold" in lowered
+        assert "tiebreaker" in lowered

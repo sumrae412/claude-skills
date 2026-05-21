@@ -4,12 +4,15 @@ Dependencies: openai (embedding API), numpy (vector math).
 VectorStore: index.json (chunk metadata) + embeddings.npy (float32 array).
 """
 
+import argparse
 import json
 import math
+import os
+import sys
 from dataclasses import dataclass, asdict
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any
+from typing import Any, Sequence
 
 import numpy as np
 import openai
@@ -255,3 +258,127 @@ def format_for_injection(chunks: list[Chunk]) -> str:
             f"{i}. [{c.source_phase} / {c.source_type}] {c.text}"
         )
     return "\n".join(lines)
+
+
+# ---------------------------------------------------------------------------
+# CLI
+# ---------------------------------------------------------------------------
+
+def _chunk_from_dict(data: dict[str, Any]) -> Chunk:
+    """Build a Chunk from JSON-decoded metadata."""
+    return Chunk(
+        text=data["text"],
+        source_phase=data["source_phase"],
+        source_type=data["source_type"],
+        timestamp=data["timestamp"],
+        project_fingerprint=data["project_fingerprint"],
+        outcome_quality=data["outcome_quality"],
+    )
+
+
+def _read_chunks_jsonl(path: Path) -> list[Chunk]:
+    """Read Chunk records from a JSONL file."""
+    if not path.exists():
+        return []
+    chunks = []
+    for line in path.read_text().splitlines():
+        if line.strip():
+            chunks.append(_chunk_from_dict(json.loads(line)))
+    return chunks
+
+
+def _write_chunks_jsonl(path: Path, chunks: list[Chunk]) -> None:
+    """Write Chunk records to a JSONL file."""
+    path.parent.mkdir(parents=True, exist_ok=True)
+    lines = [json.dumps(asdict(chunk), sort_keys=True) for chunk in chunks]
+    path.write_text("\n".join(lines) + ("\n" if lines else ""))
+
+
+def _store_available(path: Path) -> bool:
+    """Return true when a vector store has both metadata and embeddings."""
+    return (
+        path.exists()
+        and (path / "index.json").exists()
+        and (path / "embeddings.npy").exists()
+    )
+
+
+def _cmd_extract(args: argparse.Namespace) -> int:
+    log = json.loads(args.log.read_text())
+    _write_chunks_jsonl(args.out, extract_chunks(log))
+    return 0
+
+
+def _cmd_format(args: argparse.Namespace) -> int:
+    chunks = _read_chunks_jsonl(args.chunks)[:args.limit]
+    block = format_for_injection(chunks)
+    if block:
+        print(block)
+    return 0
+
+
+def _cmd_query(args: argparse.Namespace) -> int:
+    store_path = args.store
+    if not _store_available(store_path):
+        return 0
+
+    api_key = os.environ.get("OPENAI_API_KEY")
+    if not api_key:
+        print(
+            "RAG query skipped: OPENAI_API_KEY is not set",
+            file=sys.stderr,
+        )
+        return 0
+
+    fingerprint = json.loads(args.fingerprint)
+    query_chunk = Chunk(
+        text=args.text,
+        source_phase=args.phase,
+        source_type="query",
+        timestamp=datetime.now(timezone.utc).isoformat(),
+        project_fingerprint=fingerprint,
+        outcome_quality=0.0,
+    )
+    query_vector = embed_chunks([query_chunk], api_key=api_key)[0]
+    store = VectorStore(store_path)
+    candidates = store.query(query_vector, top_k=max(args.limit, 20))
+    chunks = rerank(candidates, fingerprint, args.phase, datetime.now(timezone.utc))
+    block = format_for_injection(chunks[:args.limit])
+    if block:
+        print(block)
+    return 0
+
+
+def build_parser() -> argparse.ArgumentParser:
+    """Build the RAG CLI parser."""
+    parser = argparse.ArgumentParser(description=__doc__)
+    subparsers = parser.add_subparsers(dest="command", required=True)
+
+    extract = subparsers.add_parser("extract")
+    extract.add_argument("--log", required=True, type=Path)
+    extract.add_argument("--out", required=True, type=Path)
+    extract.set_defaults(func=_cmd_extract)
+
+    format_cmd = subparsers.add_parser("format")
+    format_cmd.add_argument("--chunks", required=True, type=Path)
+    format_cmd.add_argument("--limit", default=5, type=int)
+    format_cmd.set_defaults(func=_cmd_format)
+
+    query = subparsers.add_parser("query")
+    query.add_argument("--store", required=True, type=Path)
+    query.add_argument("--text", required=True)
+    query.add_argument("--phase", required=True)
+    query.add_argument("--fingerprint", required=True)
+    query.add_argument("--limit", default=5, type=int)
+    query.set_defaults(func=_cmd_query)
+    return parser
+
+
+def main(argv: Sequence[str] | None = None) -> int:
+    """Run the RAG CLI."""
+    args = build_parser().parse_args(argv)
+    return args.func(args)
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

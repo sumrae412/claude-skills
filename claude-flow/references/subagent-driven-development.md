@@ -142,6 +142,31 @@ If `lookups` is empty (all step-scope detectors skipped), omit the section.
 
 **Skip-envelope contract:** `inject_lookups.py` uses a graceful-skip design (see memory: `optional_dep_gate_policy`) — missing tools, inapplicable detectors, or absent project structure all produce a skip entry, never a non-zero exit. Only a non-zero exit code or malformed JSON is a real failure that should block dispatch.
 
+## Recursive Dispatch Guardrails
+
+When decomposing work into subagents, set explicit recursion and fan-out bounds
+before dispatch. Treat these as workflow limits, not suggestions:
+
+- `max_depth`: how many levels of subagent delegation are allowed. Default to
+  one child level; allow deeper recursion only when the plan explicitly calls
+  for nested research or review.
+- `max_concurrent_subcalls`: how many independent subagents may run at once.
+  Keep this low enough that the controller can review and integrate results
+  without losing state.
+- `max_timeout`: wall-clock cap for a dispatched batch. Preserve enough time
+  for integration and verification instead of spending the whole budget on
+  exploration.
+- `max_errors`: consecutive failed dispatches or malformed returns before
+  stopping the fan-out and returning to direct controller execution.
+- `remaining_budget`: pass the remaining review or implementation budget into
+  child prompts when a child can spawn more work.
+
+Use batched subagents only when prompts are independent and their outputs can
+be merged deterministically. Do not fan out tasks that share a write set, depend
+on live user clarification, or require a single evolving mental model. If a
+child subagent needs to delegate again, it must state the remaining depth,
+budget, and reason in its final report so the controller can audit the cascade.
+
 ## Direct Execution — When to Skip the Subagent Cycle
 
 For very small, architecturally-unambiguous tasks, the controller executes directly instead of dispatching an implementer + two reviewers. Direct execution is an intentional efficiency move, not a shortcut around review — the controller self-verifies by reading the diff, running the test, and checking scope.

@@ -39,6 +39,19 @@ returns `(None, "reason")` and the script lists it under `skipped_detectors`.
 No detector should ever raise — unhandled exceptions are caught at the top
 level and surfaced as skip entries.
 
+## Durable vs version-dependent introspection
+
+When a detector (or a Phase 6 verification rung) has a choice between two endpoints/CLIs/queries that both *can* answer the question, prefer the one whose semantics are **stable across versions** of the upstream system over one whose shape can drift.
+
+Heuristics:
+
+- Prefer the **contract** endpoint over the **status** endpoint. (`/discovery/capabilities` over `/nodes`, `alembic heads` over parsing migration files, `pyproject.toml [tool.X]` over `--help` output.)
+- Prefer endpoints other production consumers depend on — those have backward-compat pressure on their maintainers.
+- Avoid endpoints whose response includes "this may change" / "for debugging" / "experimental" in the docs.
+- If a detector must use a drift-prone source (e.g. a `--help` parse), pin the upstream version in the detector's skip-reason path so a version change reads as a skip rather than wrong data.
+
+This applies symmetrically to Phase 6's verification ladder rung 3 (discoverable via the durable contract): exercise the feature through the same interface real consumers use, not via a status/debug surface.
+
 ## Adding a detector
 
 1. Write a function `detect_<name>(files, project) -> tuple[str|None, str|None]`

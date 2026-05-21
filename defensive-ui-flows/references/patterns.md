@@ -1209,3 +1209,50 @@ watch: {
 **Learned from:** CourierFlow `WorkflowBuilder.js` `selectedStep.id` watcher (PR #351). Rapid step clicks caused duplicate `input`/`keydown`/`blur` listeners on token autocomplete inputs; `handleInput` fired twice per keystroke.
 
 ---
+
+## 39. Portal Into a Third-Party DOM Contract
+
+When you need to inject content into a third-party component's scroll container (e.g. CopilotKit's `.copilotKitMessages`), the target may not exist on first render — and the third-party library may re-mount it as state changes.
+
+```tsx
+useEffect(() => {
+  const root = bodyRef.current;
+  if (!root) return;
+  const attach = () => {
+    const messages = root.querySelector('.copilotKitMessages');
+    if (!messages) return false;
+    const host = document.createElement('div');
+    host.className = 'spa-chat-welcome-host';
+    host.style.order = '-1';  // flex-column: place at top
+    messages.prepend(host);
+    setHost(host);
+    return true;
+  };
+  if (attach()) return;
+  const obs = new MutationObserver(() => { if (attach()) obs.disconnect(); });
+  obs.observe(root, { childList: true, subtree: true });
+  return () => obs.disconnect();
+}, []);
+```
+
+Then `createPortal(<Welcome />, host)`. The MutationObserver fallback handles late mounts; `style.order: '-1'` puts the host above siblings without re-rendering them. Beware host-container CSS that pins flex children — e.g. CopilotKit's `.copilotKitMessages { justify-content: space-between }` will visually anchor an `order: -1` host to the top regardless of scroll. Override with `justify-content: flex-start !important` scoped under your shell.
+
+**Learned from:** CourierFlow PRs #577/#578 (welcome chips inside CopilotKit chat scroll).
+
+---
+
+## 40. Scroll Containment Requires Bounded Parents, Not Just `overflow`
+
+A child with `overflow-y: scroll` won't actually scroll unless every ancestor up to the viewport has a bounded height. Common silent failure: `display: grid; height: 100vh` with no `grid-template-rows` lets implicit `auto` rows expand to content. Three-layer rule:
+
+1. **Outermost:** `grid-template-rows: 100vh` (or explicit `fr` units summing to viewport).
+2. **Grid item:** `min-height: 0; height: 100%` — overrides the default `min-height: auto` that lets grid items grow to their content's intrinsic size.
+3. **Flex children:** `min-height: 0` everywhere down the chain.
+
+`overflow: clip` (not `hidden`) on the grid item preserves border-radius without forming a scroll-blocking BFC. `overflow: clip` alone won't enable scrolling — it just stops clipping from blocking inner scroll containers; the height bound still has to come from somewhere up the chain.
+
+**Don't:** assume `overflow-y: scroll` "just works" inside a grid item. Check every ancestor's height resolution in DevTools.
+
+**Learned from:** CourierFlow PRs #575/#576 (chat pane wouldn't scroll long markdown responses despite CopilotKit's internal `overflow-y: scroll` — `.spa-shell` had no `grid-template-rows`).
+
+---

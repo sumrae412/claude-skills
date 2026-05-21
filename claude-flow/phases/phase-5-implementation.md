@@ -6,6 +6,12 @@
 
 ---
 
+## Streaming watches (Monitor tool)
+
+For long-running tests, dev-server tails, or worker logs during implementation, use `Monitor` instead of polling via Bash. Each stdout line streams as a notification while the executor keeps drafting. Filter must include failure signatures (`ERROR|Traceback|FAILED|Killed|OOM`), not just success markers — silence is not success. See `references/monitor-tool-patterns.md` §Phase 5 for recipes (test loops, dev-server tails, worker watches) and decision rules vs. `Bash run_in_background`.
+
+---
+
 ## Context Management
 
 Load `references/phase-5-context-management.md` only when:
@@ -39,6 +45,45 @@ Never pass to subagents:
 <HARD-GATE>
 User must approve the plan before any implementation begins.
 </HARD-GATE>
+
+### Goal-mode entry (when `--goal` is set)
+
+After the plan approval gate clears and BEFORE invoking the External API Contract gate, check `state.flags.goal === true` and inject the Phase 5 goal:
+
+```text
+/goal $plan.steps all have status=complete; uv run pytest <touched-dirs> exits 0;
+uv run ruff check <touched-dirs> exits 0; static analysis (semgrep --severity ERROR,
+ast-grep scan) reports 0 ERROR-level findings; phantom-completion audit (per
+executing-plans § "Step 4.5") shows 0 MUST-FIX; no new pytest.skip/xfail/skipif
+markers added in $diff; no test files deleted in $diff without replacement;
+$diff.context_facts captured for any task that surfaced new domain knowledge;
+or stop after <workflow-profiles.goal_turn_budgets[<path>][phase-5]> turns
+```
+
+Before injection: run `/goal` with no arg. If a user-set goal is active, surface its condition and ask whether to replace. If `--no-goal` is set or `state.flags.goal === false`, skip injection entirely.
+
+After injection, record the event:
+
+```bash
+python3 <claude-flow-root>/scripts/run_manifest.py record-goal \
+  --manifest .claude/runs/<session-id>.json \
+  --state-file .claude/workflow-state.json \
+  --phase phase-5 --action set --goal-flag \
+  --path-name "<workflow_path>" \
+  --turn-budget "<goal_turn_budgets[<path>][phase-5]>" \
+  --condition-file /tmp/goal-condition.txt
+```
+
+At Phase 5 exit (transition to Phase 5.5): run `/goal clear` so the reflection step runs without an active goal driving the loop, and record the clear:
+
+```bash
+python3 <claude-flow-root>/scripts/run_manifest.py record-goal \
+  --manifest .claude/runs/<session-id>.json \
+  --state-file .claude/workflow-state.json \
+  --phase phase-5 --action achieved --no-goal-flag
+```
+
+Use `--action budget_exhausted` instead when the turn budget tripped before the condition was met.
 
 ### Pre-Implementation: Verify External API Contract
 
@@ -124,6 +169,43 @@ Downgraded from Opus to Sonnet 2026-04-24 after a 15-trial dual-judge eval showe
 **When to call:** non-obvious integration patterns, conflicting precedents, step diverging from plan in ways affecting later steps.
 **When NOT to call:** routine implementation, standard TDD cycles with clear requirements, unambiguous plan steps.
 
+### Subagent Skill Loading
+
+When a Phase 5 subagent dispatch could plausibly use ≥2 domain skills (UI / API / data / integrations / security), check `skill_selection_variant` in workflow-state. Default is `"b"` (shipped 2026-04-29 — see [decision record](../docs/decisions/2026-04-29-ship-forced-selection-phase5.md)).
+
+For UI-affecting tasks, carry `$design_context` into implementation dispatches.
+Implementers must preserve centralized design-system patterns and satisfy the
+task design brief's required states before polishing visuals.
+
+- **Variant B (forced selection — DEFAULT):** Prepend the following block to the subagent prompt. The `Available skills` list below is the **default CourierFlow menu** — replace it with your project's menu (see `../references/project-skill-menu.md` for authoring rules).
+
+  ```
+  Before any tool calls, output exactly one line:
+  SELECTED_SKILL: <name|none>
+
+  Available skills (pick one):
+  - courierflow-ui — Frontend code: Jinja templates, CSS, Vue workflow builder pages, dashboards, calendar/sidebar layouts; preserve design-system alignment, task-specific design brief, complete UI states, and centralized patterns over one-off styles
+  - courierflow-api — Backend route and service code: FastAPI routes, service layer, business logic, request handlers
+  - courierflow-data — Database layer: SQLAlchemy ORM models, Alembic migrations, schema design, eager-loading, Household/HouseholdMember domain
+  - courierflow-integrations — External services: Google Calendar, Twilio SMS, OpenAI, DocuSeal, Gmail, onboarding wizard
+  - courierflow-security — Auth, registration, login, secrets, permissions, session handling, landlord/tenant access
+
+  Pick "none" only if the task is fully solvable with built-in tools.
+  After your SELECTED_SKILL line, the orchestrator will inject that skill's
+  full content (or none). One commit per dispatch — no mid-task switching.
+  ```
+
+  After the subagent emits `SELECTED_SKILL:`, the orchestrator parses the line, injects the chosen SKILL.md, and the subagent resumes. Log the selection + ground-truth gold via `scripts/log_skill_selection.py`.
+
+- **Variant A (opt-out / progressive disclosure):** Pre-2026-04-29 behavior — list available skills as "you may invoke if useful." Use only for re-running the A/B experiment (set `skill_selection_variant: "a"` in workflow-state). Do not use for production work.
+
+Variant B's curated 5-skill menu is hand-selected to be domain-coherent. Per the [scale experiment](../docs/plans/2026-04-29-skill-selection-at-scale.md), retrieving from a broader corpus (BM25 / rerank) under-performed this curated menu. Do not replace the menu with retrieval without re-running the experiment.
+
+Keep `courierflow-troubleshooter`, `courierflow-skill-sync`, and
+`courierflow-skill-reviewer` out of the implementation forced-selection menu.
+Use them in Phase 0 or maintenance/diagnosis tasks; Phase 5 implementers should
+select one code-surface skill above.
+
 ### Parallel Subagent Dispatch (For Independent Steps)
 
 When the plan has 3+ steps with no dependencies between them:
@@ -169,7 +251,15 @@ MEDIUM/LOW findings defer to Phase 6 review. Agents that ran in Phase 5 are **sk
 | Data migrations | defensive-backend-flows: copy before delete, reversible ops |
 | Cross-module calls | defensive-backend-flows: respect encapsulation, public wrappers |
 
-**State transition:** If tests+lint pass, transition to phase-5.5. If failed
+### Phantom-Completion Audit (HARD GATE before Phase 5.5)
+
+After the final task in the plan is marked complete and tests+lint pass, run the phantom-completion audit from `executing-plans/SKILL.md` § "Step 4.5: Phantom-Completion Audit" before transitioning to Phase 5.5.
+
+For each `[X]` task in the plan, verify the promised artifacts (files, symbols, migration revisions) actually exist on disk and the diff against `origin/main` is non-empty. Downgrade unverified `[X]` to `[~]` and either complete the work or amend the plan with justification — never silently ship a hollow checkmark.
+
+**Skip:** Lite-mode plans with <3 tasks where the per-task inter-task verification gate already inspected each diff.
+
+**State transition:** If tests+lint pass AND phantom-completion audit is clean, transition to phase-5.5. If failed
 and iteration < 3, load `references/phase-5-retry-and-facts.md` and follow the
 retry ladder. If iteration limit is reached, set status to "failed" and surface
 it to the user.

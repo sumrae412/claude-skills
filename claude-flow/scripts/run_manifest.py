@@ -37,12 +37,14 @@ def default_manifest() -> dict[str, Any]:
         "task_summary": None,
         "review_base_sha": None,
         "review_base": None,
+        "event_log_path": None,
         "capability_matrix": dict(DEFAULT_CAPABILITY_MATRIX),
         "requirements_approvals": [],
         "plan_approvals": [],
         "verification_runs": [],
         "review_runs": [],
         "commands_run": [],
+        "goal_runs": [],
     }
 
 
@@ -55,13 +57,45 @@ def read_json_file(path: Path, fallback: Any) -> Any:
     """Read JSON from path, returning fallback when the file is absent."""
     if not path.exists():
         return fallback
-    return json.loads(path.read_text())
+    try:
+        return json.loads(path.read_text())
+    except json.JSONDecodeError as exc:
+        raise ValueError(f"Invalid JSON in {path}: {exc}") from exc
 
 
 def write_json_file(path: Path, payload: Any) -> None:
     """Write pretty JSON to path."""
     ensure_parent(path)
     path.write_text(json.dumps(payload, indent=2) + "\n")
+
+
+def default_event_log_path(manifest_path: Path) -> Path:
+    """Return the sibling append-only event log path for a manifest."""
+    return manifest_path.with_name(f"{manifest_path.stem}.events.jsonl")
+
+
+def resolve_event_log_path(
+    manifest_path: Path,
+    manifest: dict[str, Any],
+) -> Path:
+    """Resolve and initialize the manifest event log path."""
+    configured = manifest.get("event_log_path")
+    if configured:
+        event_log_path = Path(str(configured))
+        if event_log_path.is_absolute():
+            return event_log_path
+        return manifest_path.parent / event_log_path
+
+    event_log_path = default_event_log_path(manifest_path)
+    manifest["event_log_path"] = event_log_path.name
+    return event_log_path
+
+
+def append_jsonl(path: Path, payload: dict[str, Any]) -> None:
+    """Append one JSON object to a JSONL file."""
+    ensure_parent(path)
+    with path.open("a") as handle:
+        handle.write(json.dumps(payload, sort_keys=True) + "\n")
 
 
 def load_manifest(path: Path) -> dict[str, Any]:
@@ -107,6 +141,7 @@ def sync_state_manifest_path(
     if state is None:
         return None
     state["run_manifest_path"] = str(manifest_path)
+    state.setdefault("skill_selection_variant", "b")
     if task_summary is not None:
         state["task_summary"] = task_summary
     if workflow_path is not None:
@@ -138,6 +173,22 @@ def sync_state_review_base(
     if state is None:
         return None
     state["review_base_sha"] = review_base_sha
+    return state
+
+
+def sync_state_goal_flag(
+    state: dict[str, Any] | None,
+    goal_flag: bool | None,
+) -> dict[str, Any] | None:
+    """Mirror the --goal flag into state.flags.goal when supplied.
+
+    When goal_flag is None the existing flag is left untouched so that a
+    resumed session keeps whatever was set on a prior turn.
+    """
+    if state is None or goal_flag is None:
+        return state
+    flags = state.setdefault("flags", {})
+    flags["goal"] = bool(goal_flag)
     return state
 
 
@@ -331,8 +382,115 @@ def record_command(
         entry["cwd"] = cwd
     manifest.setdefault("commands_run", []).append(entry)
     manifest["last_updated_at"] = now_iso()
+    event_log_path = resolve_event_log_path(manifest_path, manifest)
     write_json_file(manifest_path, manifest)
+    append_jsonl(
+        event_log_path,
+        {
+            "recorded_at": entry["recorded_at"],
+            "type": "command",
+            "category": category or "command",
+            "source": "run_manifest",
+            "payload": dict(entry),
+        },
+    )
     return entry
+
+
+GOAL_ACTIONS = {"set", "clear", "achieved", "budget_exhausted", "replaced"}
+
+
+def record_goal(
+    manifest_path: Path,
+    phase: str,
+    action: str,
+    condition: str | None = None,
+    condition_file: Path | None = None,
+    turn_budget: int | None = None,
+    path_name: str | None = None,
+    note: str | None = None,
+    state_path: Path | None = None,
+    goal_flag: bool | None = None,
+) -> dict[str, Any]:
+    """Append a goal-mode lifecycle event and optionally mirror state.flags.goal."""
+    if action not in GOAL_ACTIONS:
+        raise ValueError(
+            f"action must be one of {sorted(GOAL_ACTIONS)}; got {action!r}"
+        )
+    manifest = load_manifest(manifest_path)
+    state = load_state_file(state_path)
+    entry: dict[str, Any] = {
+        "phase": phase,
+        "action": action,
+        "recorded_at": now_iso(),
+    }
+    if condition is not None or condition_file is not None:
+        text, source = read_text_source(
+            content=condition, content_file=condition_file
+        )
+        entry["condition_sha256"] = hash_text(text)
+        entry["condition_size_bytes"] = len(text.encode("utf-8"))
+        entry["condition_source"] = source
+    if turn_budget is not None:
+        entry["turn_budget"] = turn_budget
+    if path_name is not None:
+        entry["path"] = path_name
+    if note:
+        entry["note"] = note
+
+    manifest.setdefault("goal_runs", []).append(entry)
+    manifest["last_updated_at"] = now_iso()
+    event_log_path = resolve_event_log_path(manifest_path, manifest)
+    write_json_file(manifest_path, manifest)
+    append_jsonl(
+        event_log_path,
+        {
+            "recorded_at": entry["recorded_at"],
+            "type": "goal",
+            "category": action,
+            "source": "run_manifest",
+            "payload": dict(entry),
+        },
+    )
+
+    state = sync_state_goal_flag(state, goal_flag)
+    write_state_file(state_path, state)
+    return entry
+
+
+def record_event(
+    manifest_path: Path,
+    event_type: str,
+    category: str | None = None,
+    source: str | None = None,
+    payload: dict[str, Any] | None = None,
+) -> dict[str, Any]:
+    """Append a generic continuity event to the run event log."""
+    manifest = load_manifest(manifest_path)
+    recorded_at = now_iso()
+    event = {
+        "recorded_at": recorded_at,
+        "type": event_type,
+        "payload": payload or {},
+    }
+    if category is not None:
+        event["category"] = category
+    if source is not None:
+        event["source"] = source
+
+    event_log_path = resolve_event_log_path(manifest_path, manifest)
+    manifest["last_updated_at"] = recorded_at
+    write_json_file(manifest_path, manifest)
+    append_jsonl(event_log_path, event)
+    return event
+
+
+def parse_json_object(value: str) -> dict[str, Any]:
+    """Parse a CLI JSON object argument."""
+    payload = json.loads(value)
+    if not isinstance(payload, dict):
+        raise ValueError("payload must be a JSON object")
+    return payload
 
 
 def print_result(payload: dict[str, Any], as_json: bool) -> None:
@@ -401,6 +559,35 @@ def build_parser() -> argparse.ArgumentParser:
     command_parser.add_argument("--category")
     command_parser.add_argument("--cwd")
     command_parser.add_argument("--json", action="store_true")
+
+    event_parser = subparsers.add_parser("record-event")
+    event_parser.add_argument("--manifest", type=Path, required=True)
+    event_parser.add_argument("--event-type", required=True)
+    event_parser.add_argument("--category")
+    event_parser.add_argument("--source")
+    event_parser.add_argument("--payload", default="{}")
+    event_parser.add_argument("--json", action="store_true")
+
+    goal_parser = subparsers.add_parser("record-goal")
+    goal_parser.add_argument("--manifest", type=Path, required=True)
+    goal_parser.add_argument("--phase", required=True)
+    goal_parser.add_argument(
+        "--action", choices=sorted(GOAL_ACTIONS), required=True
+    )
+    goal_parser.add_argument("--condition")
+    goal_parser.add_argument("--condition-file", type=Path)
+    goal_parser.add_argument("--turn-budget", type=int)
+    goal_parser.add_argument("--path-name")
+    goal_parser.add_argument("--note")
+    goal_parser.add_argument("--state-file", type=Path)
+    goal_flag_group = goal_parser.add_mutually_exclusive_group()
+    goal_flag_group.add_argument(
+        "--goal-flag", dest="goal_flag", action="store_true", default=None
+    )
+    goal_flag_group.add_argument(
+        "--no-goal-flag", dest="goal_flag", action="store_false", default=None
+    )
+    goal_parser.add_argument("--json", action="store_true")
     return parser
 
 
@@ -475,6 +662,33 @@ def main() -> int:
             exit_code=args.exit_code,
             category=args.category,
             cwd=args.cwd,
+        )
+        print_result(payload, args.json)
+        return 0
+
+    if args.command == "record-event":
+        payload = record_event(
+            manifest_path=args.manifest,
+            event_type=args.event_type,
+            category=args.category,
+            source=args.source,
+            payload=parse_json_object(args.payload),
+        )
+        print_result(payload, args.json)
+        return 0
+
+    if args.command == "record-goal":
+        payload = record_goal(
+            manifest_path=args.manifest,
+            phase=args.phase,
+            action=args.action,
+            condition=args.condition,
+            condition_file=args.condition_file,
+            turn_budget=args.turn_budget,
+            path_name=args.path_name,
+            note=args.note,
+            state_path=args.state_file,
+            goal_flag=args.goal_flag,
         )
         print_result(payload, args.json)
         return 0

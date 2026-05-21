@@ -1,6 +1,6 @@
 ---
 name: startup-analysis
-description: Brutally honest startup idea validation — 6-step CLEARFRAME stack (TAM, ICP, wedge, GTM, Go/NoGo). Use for "validate this idea", "is this worth building", competitive analysis, or cold strategic feedback on a business concept.
+description: Brutally honest startup idea validation — 8-step CLEARFRAME stack (TAM, ICP, wedge, GTM, five-role debate team, Go/NoGo). Use for "validate this idea", "is this worth building", competitive analysis, or cold strategic feedback on a business concept.
 ---
 
 # Startup Analysis
@@ -19,8 +19,12 @@ loading.
 
 ## Overview
 
-Six-step startup pressure test using CLEARFRAME mode for direct,
-anti-sycophancy analysis.
+Eight-step startup pressure test using CLEARFRAME mode for direct,
+anti-sycophancy analysis. The five-role debate team (Researcher →
+Strategist → Copywriter → Builder → Marketer) runs as Phase 6 and feeds
+the Go/No-Go decision in Phase 7. The verdict cannot be issued without
+debate-team output — a chain Hold from any role is a structural No-Go
+signal.
 
 This file is a router. Keep the step details in phases.
 
@@ -54,7 +58,8 @@ Skip for free-form brainstorming or lightweight gut checks.
 3. `phases/phase-3-value-props.md`
 4. `phases/phase-4-competitive-wedge.md`
 5. `phases/phase-5-gtm-mode.md`
-6. `phases/phase-6-verdict.md`
+6. `phases/phase-6-debate-team.md` — invokes the five-role chain in `startup-debate-team/`
+7. `phases/phase-7-verdict.md` — consumes Phase 6 output as required evidence
 
 ## Session Rules
 
@@ -72,7 +77,27 @@ Produce only what the current phase needs:
 - value propositions
 - wedge analysis
 - GTM mode selection
+- debate-team validation packet (5 Pass/Hold calls + offer + copy + site spec + funnel math)
 - overall verdict
+
+## Companion Skills
+
+- `startup-debate-team` is invoked from Phase 6 — do not run it standalone
+  for validation; run it through this skill so its output feeds the
+  scorecard.
+- After a Go verdict, the natural follow-on is `pitch-deck` to turn the
+  validation into investor / sales / launch slides. The `pitch-deck`
+  skill reuses ICP, wedge, GTM, and Builder/Marketer outputs directly.
+- For pre-validation brainstorming, use `superpowers:brainstorming` or
+  `product-management:product-brainstorming` instead — this skill is for
+  pressure-testing, not generation.
+
+## References
+
+Two non-CLEARFRAME paths to surface during Phase 4–5 when the founder (not the product) is the intended moat. Load only the one that matches the idea's shape; both files describe when to fall back to CLEARFRAME.
+
+- [`references/distribution-first-counterexamples.md`](references/distribution-first-counterexamples.md) — viral format as the moat (consumer B2C, short-form social distribution, quick-exit profile).
+- [`references/brand-first-counterexamples.md`](references/brand-first-counterexamples.md) — founder expertise + audience as the moat (creator-economy solopreneurship, owned-media distribution, sustained solo revenue).
 
 ## Guardrails
 

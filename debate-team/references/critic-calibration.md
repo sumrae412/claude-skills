@@ -23,6 +23,7 @@ Silent critic:  Rarely produces findings → may not be adding value
 |--------|--------|
 | REJECT rate >40% over 5+ rounds | Critic is generating noise. Review its prompt for over-broad patterns. Add "Only flag if you are >80% confident this is a real issue" constraint. |
 | Same false positive type recurring | Add an explicit exclusion to the critic prompt: "Do NOT flag [pattern] — this is an accepted convention in this codebase." |
+| REJECTed findings cluster around "too complex", "not minimal", "over-engineered", "unclean", or similar | Check for gold-like bias. Tune the prompt so complexity/minimality findings must cite concrete correctness, maintainability, delivery, user, or operations risk. |
 | Missing real issues (caught later) | Critic is under-sensitive. Add the missed pattern to the critic's checklist with an example. |
 | ADOPT rate <30% | Consider demoting critic to conditional-only (skip for simple reviews) or replacing with a more targeted prompt. |
 
@@ -39,8 +40,10 @@ Don't tune after every round. Aggregate over 5+ debate rounds, then:
 1. Compute ADOPT/REJECT rates per critic
 2. Identify the noisiest critic (highest REJECT rate)
 3. Review its last 5 REJECTed findings — what pattern do they share?
-4. Make ONE prompt change (following claude-flow's one-change principle)
-5. Run 3+ rounds with the new prompt to verify improvement
+4. Check whether any REJECT cluster reflects gold-like preference for concise,
+   clean, canonical-looking answers over correct or complete answers
+5. Make ONE prompt change (following claude-flow's one-change principle)
+6. Run 3+ rounds with the new prompt to verify improvement
 
 This is the evaluator-optimizer loop applied to the debate team's own critics.
 
@@ -57,4 +60,3 @@ Tier 3 invocation surfaced two operational gotchas:
 **Speculative-finding rule held a SECOND iteration:** PR #533's DeepSeek-flagged "third blocker may exist" materialized in PR #534 with a different shape (empty-messages on `/connect` rather than duplicate non-consecutive system messages). Had the Tier 1 DEFER speculation been ADOPTed as a preemptive defense, it would have masked the real failure shape. **Empirical:** DEFER speculative findings; the next smoke names the real shape in minutes.
 
 **PR #534 review split:** 8 ADOPT / 5 REJECT / 0 DEFER (Tier 3 critics had concrete artifacts to cite because the smoke run was bundled in the same PR). Compare PR #533: 2/2/6. The bundling-with-smoke pattern produces a healthier review distribution.
-

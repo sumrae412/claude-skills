@@ -156,7 +156,28 @@ def compact_events(registry_path: Path, events_path: Path) -> None:
         key = ev["agent"]
         if key not in agents:
             agents[key] = _blank_agent()
-        agents[key]["prior"] = bayesian_update(agents[key]["prior"], ev["success"])
+        agent = agents[key]
+        agent["prior"] = bayesian_update(agent["prior"], ev["success"])
+        agent["dispatches"] = int(agent.get("dispatches", 0)) + 1
+
+        timestamp = ev.get("timestamp")
+        if timestamp:
+            agent["last_updated"] = timestamp
+            agent.setdefault("last_dispatched", timestamp)
+            if agent.get("last_dispatched") is None:
+                agent["last_dispatched"] = timestamp
+
+        for field in (
+            "findings_produced",
+            "findings_used",
+            "missed_context_count",
+        ):
+            if field in ev:
+                agent[field] = int(agent.get(field, 0)) + int(ev[field])
+
+        produced = int(agent.get("findings_produced", 0))
+        used = int(agent.get("findings_used", 0))
+        agent["findings_used_rate"] = (used / produced) if produced else 0.0
 
     registry_path.write_text(json.dumps(data, indent=2))
     events_path.write_text("")
