@@ -71,6 +71,7 @@ Before finishing backend code, verify your code against the catalog. The Quick R
 | Context-Aware Sanitizers | "JSON.parse fails at position 1 after sanitize" | Sanitizer is a state-machine walk (tracks in-string vs structural), not a global regex? Fallback path doesn't silently release destructive action on parse failure? |
 | Stateful Callback Cleanup | "Feature works once, then wedges until restart" | Every return/raise/early-exit in a function that mutates module-level state clears that state? Prefer `try/finally`. |
 | Telemetry Fail-Open | Noisy telemetry bug breaks the critical path it measures | Emit guarded with try/except + env-var opt-out (`REVIEW_LEDGER=0`) + import availability check? Reference: `scripts/plancraft_review.py` `_emit_invocation_record()`. |
+| API Key Shape Diagnosis | "Invalid key" without telling user which kind of invalid | Before asserting an API key is invalid, run `echo "${KEY:0:8}… len=${#KEY}"` + one targeted curl against the provider's cheapest endpoint (e.g. `/v1/models`). Shapes: Anthropic user `sk-ant-…` ~108c, Anthropic admin `sk-ant-admin01-…`, OpenAI project `sk-proj-…` ~164c, OpenAI user `sk-…` ~51c, NVIDIA `nvapi-…`. Catches wrong-provider-key-in-wrong-slot vs revoked vs typo. Hit 2026-05-20: `sk-proj-` (OpenAI) pasted into `ANTHROPIC_API_KEY` returned 401 — shape check made the diagnosis 30 seconds instead of debugging round-trip. |
 
 ## Red Flags — STOP and Fix
 
