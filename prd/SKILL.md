@@ -68,6 +68,7 @@ Walk the PRD against this list before declaring done:
 - [ ] **Definition of Done > Per-Story Verification** has at least 2 concrete checks per US-N (happy path + at least one error/edge)
 - [ ] **Open Questions** lists anything you couldn't resolve, tagged with who should answer (eng / design / legal / data / stakeholder)
 - [ ] Could a separate coder, with no access to this conversation, build this from the doc alone? If no, fix the gap.
+- [ ] **Categorical dimension + defer enumeration.** Any spec dimension that requires codebase audit to fully enumerate (e.g., "every chat-invocable action," "every API endpoint touched," "every form rendered") is locked at *category* level only, with 2–3 illustrative examples per category prefixed *"non-exhaustive — do not treat as the canonical list."* Full enumeration is deferred to the execution plan's inventory task. Honest > misleading: a guessed list will be treated as canonical and drift; a category structure + audit task produces accurate output later. Validated on courierflow_beta PR #7 design doc.
 
 ### 6. Hand off
 
