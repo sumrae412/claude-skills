@@ -116,6 +116,14 @@ Skip any step = lying, not verifying
 ❌ Trust agent report
 ```
 
+**Browser/UI state ("looking at the screen now"):**
+```
+✅ browser_snapshot → Check URL bar matches expected route → Read the snapshot tree → Then answer
+❌ "I can see the form" / "you're set up looking at the screen" (without snapshot — tab may be about:blank, a stale route, or wrong port)
+```
+
+Playwright (or any browser-control) tab content is unverified until you snapshot. Lesson from 2026-05-22 onboarding debug: assistant answered as if it saw the form, but the active tab was actually `about:blank`. Cross-check the URL bar against the route you think you're on; if the route uses a non-standard port (e.g. `localhost:22333`), discover the actual port via `lsof` or the dev-server banner rather than assuming a default.
+
 ## Regression tests for silent service-signature changes (red-green-revert)
 
 When hot-fixing a regression caused by a service returning a new shape (e.g. `T` → `Optional[T]`), write the test and verify it with full red-green-revert:
