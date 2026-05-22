@@ -1,13 +1,15 @@
 ---
 name: courierflow-ui
-description: CourierFlow frontend guidance for Jinja templates, Bootstrap 5, Vue workflow builder pages, dashboards, calendar/sidebar screens, static CSS/JS, and design-system changes. Use when editing app/templates, app/static, page headers, workflow UI, tenant/property forms, or any user-facing landlord confirmation flow.
+description: "LEGACY (Python repo only) — CourierFlow frontend guidance for Jinja templates, Bootstrap 5, Vue workflow builder pages, dashboards, calendar/sidebar screens, static CSS/JS, and design-system changes. Use ONLY when editing the frozen Python repo at ~/claude_code/courierflow/ (app/templates, app/static). Do NOT use for the active TypeScript beta at ~/claude_code/courierflow_beta/, which uses React 19 + Vite + wouter + TanStack Query + shadcn/ui + CopilotKit — none of the Jinja/Bootstrap/Vue patterns apply."
 license: MIT
 metadata:
   author: summerela
-  version: "1.0.0"
+  version: "1.1.0"
 ---
 
 # CourierFlow UI
+
+> **Legacy scope (2026-05-21):** This skill applies to the **legacy Python repo** at `~/claude_code/courierflow/` only. Active development has moved to **`courierflow_beta`** — React 19 + Vite + wouter + TanStack Query + shadcn/ui + CopilotKit. Jinja templates / Bootstrap 5 / Alpine.js / Vue workflow builder patterns from this skill do NOT apply to beta. The old repo is in **frozen reference** mode: readable for historical context, no new work. Do not auto-trigger this skill when cwd is inside `courierflow_beta`.
 
 ## Purpose
 

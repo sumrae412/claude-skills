@@ -1,13 +1,15 @@
 ---
 name: courierflow-data
-description: CourierFlow data-layer guidance for SQLAlchemy 2.0 async models, Alembic migrations, PostgreSQL queries, Household/Property/tenant/event/workflow relationships, eager loading, scheduler indexes, and user-scoped persistence. Use when editing app/models, alembic, query helpers, migrations, or schema-driven tests.
+description: "LEGACY (Python repo only) — CourierFlow data-layer guidance for SQLAlchemy 2.0 async models, Alembic migrations, PostgreSQL queries, Household/Property/tenant/event/workflow relationships, eager loading, scheduler indexes, and user-scoped persistence. Use ONLY when editing the frozen Python repo at ~/claude_code/courierflow/ (app/models, alembic, query helpers). Do NOT use for the active TypeScript beta at ~/claude_code/courierflow_beta/, which uses Drizzle ORM + PostgreSQL with a different schema layout."
 license: MIT
 metadata:
   author: summerela
-  version: "1.0.0"
+  version: "1.1.0"
 ---
 
 # CourierFlow Data
+
+> **Legacy scope (2026-05-21):** This skill applies to the **legacy Python repo** at `~/claude_code/courierflow/` only. Active development has moved to **`courierflow_beta`** — TypeScript with **Drizzle ORM** schemas in `lib/db/src/schema/` and `pnpm --filter @workspace/db run push` for dev migrations. SQLAlchemy / Alembic / Household-vs-Property terminology does NOT apply to beta. The old repo is in **frozen reference** mode: readable for historical context, no new work. Do not auto-trigger this skill when cwd is inside `courierflow_beta`.
 
 ## Purpose
 

@@ -1,13 +1,15 @@
 ---
 name: courierflow-api
-description: CourierFlow backend API guidance for FastAPI routes, async services, request handlers, domain exceptions, dashboard workflows, scheduler-adjacent service logic, and thin-route/thick-service boundaries. Use when editing app/routes, app/services, schemas, request validation, or landlord-facing API behavior.
+description: "LEGACY (Python repo only) — CourierFlow backend API guidance for FastAPI routes, async services, request handlers, domain exceptions, dashboard workflows, scheduler-adjacent service logic, and thin-route/thick-service boundaries. Use ONLY when editing the frozen Python repo at ~/claude_code/courierflow/ (app/routes, app/services, schemas). Do NOT use for the active TypeScript beta at ~/claude_code/courierflow_beta/."
 license: MIT
 metadata:
   author: summerela
-  version: "1.0.0"
+  version: "1.1.0"
 ---
 
 # CourierFlow API
+
+> **Legacy scope (2026-05-21):** This skill applies to the **legacy Python repo** at `~/claude_code/courierflow/` only. Active development has moved to **`courierflow_beta`** (TypeScript/pnpm/Drizzle/Express/React stack) — that repo's `CLAUDE.md` + `replit.md` are the current source of truth. The old repo is in **frozen reference** mode: readable for historical context, no new work. Do not auto-trigger this skill when cwd is inside `courierflow_beta`.
 
 ## Purpose
 
