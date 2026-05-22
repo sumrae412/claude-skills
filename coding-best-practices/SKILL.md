@@ -82,6 +82,8 @@ For high-risk work, load the relevant phase file before making changes.
 - Shared-library schemas: keep them workflow-agnostic.
 - Any retry-prone aggregator: make it idempotent.
 - Any path from untrusted input: resolve and verify containment.
+- **Dev server proxy must cover the API namespace.** Any Vite/CRA/Next dev config that hosts an SPA with history-fallback must `proxy` or `rewrite` `/api/*` (or whatever namespace the typed client uses) so unmatched routes return 502, not `index.html`. Without this, generated API clients accept HTML as a valid response body. See `defensive-ui-flows` pattern #41 (SPA-fallback fooling typed clients).
+- **Workspace platform overrides are a host-platform footgun.** When `pnpm-workspace.yaml` (or equivalent) uses `overrides` to set non-target-platform native binaries to `"-"` (typical for Linux-only deploy environments like Replit/Vercel), developers on other architectures cannot `pnpm install`. Prefer `supportedArchitectures` (pnpm ≥8) or constrain overrides to deploy CI only. Validated on [courierflow_beta PR #5](https://github.com/sumrae412/courierflow_beta/pull/5).
 
 ## Cold-boot circular-import test pattern
 

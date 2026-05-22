@@ -88,4 +88,5 @@ This skill works for regular branches too — it just skips Step 7. The git clea
 - **No confirmation for discard** — always require typed "discard"
 - **Merging from worktree when main is checked out elsewhere** — use `gh pr merge` or `/ship` instead
 - **Removing worktree before session-learnings resolves** — causes "folder no longer exists" error, kills ability to apply proposals
+- **`git reset --hard` ignores `git status` and blows away modified-but-uncommitted tracked files.** Before hard-resetting to discard local commits, either (a) `git stash -u` first and `git stash pop` after, or (b) run `git status --short` and confirm no modified files should survive. If you discover the loss after the fact: dropped stashes are recoverable for as long as the orphan commit isn't gc'd — capture the SHA from `git stash drop`'s output (it prints `Dropped refs/stash@{N} (<sha>)`) and recover via `git checkout <sha> -- <path>` or `git stash apply <sha>`. Validated 2026-05-22 during cleanup after [courierflow_beta PR #5](https://github.com/sumrae412/courierflow_beta/pull/5).
 - **Forgetting to sync config/skills repos** — session-learnings updates evaporate on machine switch

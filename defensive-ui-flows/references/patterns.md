@@ -1287,3 +1287,19 @@ console.warn("ToneGuard:", formatErrorForLog(result.error));
 **Learned from:** ToneGuard PR #32. A prior refactor (PR #30) changed `result.error` from string to structured object but didn't update the three `console.warn` call sites in `content.js`, so `chrome://extensions` filled with `[object Object]` entries that hid the actual error type.
 
 ---
+
+## 41. Guard Typed API Clients Against SPA-Fallback HTML Responses
+
+**Trigger:** Vite / CRA / Next dev server with SPA history fallback + an Orval / openapi-typescript-generated client.
+
+**Failure mode:** When the backend isn't running, the dev server serves `index.html` (HTTP 200, `text/html`) for `/api/*`. Generated hooks parse the body without a content-type or schema check, return an object with all fields `undefined`, and downstream guards (`if (user.onboardingCompleted)`) take the wrong branch — often an infinite redirect.
+
+**Defenses (any one):**
+
+1. Add `server.proxy: { '/api': 'http://localhost:<api-port>' }` to the dev config so unmatched API calls 502 instead of returning HTML.
+2. Add a content-type assertion in the generated-client wrapper: reject responses whose `Content-Type` isn't JSON.
+3. Add a runtime schema validator (zod) on the boundary so undefined required fields throw, not silently propagate.
+
+**Learned from:** [courierflow_beta PR #5](https://github.com/sumrae412/courierflow_beta/pull/5). Authenticated routes ping-ponged to `/onboarding` because `useGetMe` returned HTML as a "user" object with `onboardingCompleted: undefined`.
+
+---
