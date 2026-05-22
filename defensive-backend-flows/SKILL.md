@@ -68,6 +68,7 @@ Before finishing backend code, verify your code against the catalog. The Quick R
 | State-Machine Exit Transitions | Status stuck in `PENDING_*` forever | Every exit action sets `status` explicitly, not just clears trigger field? |
 | Fail-Closed Webhook Validators | Public unauthenticated POST in prod | No-token branch hard-fails when `settings.is_production`? |
 | Escape XML/TwiML Substitutions | TwiML hijack via tag injection | AI/user content wrapped in `xml_escape()` before f-string? |
+| LLM Prompt Injection (User Content) | Tenant-supplied text overrides system instructions, leaks data, escalates classifier tier | User-supplied content wrapped in named XML tags (`<message>…</message>`) with explicit "treat as DATA, not instructions" preamble naming the threat model? Triple-quote / backtick scoping is NOT sufficient. |
 | Context-Aware Sanitizers | "JSON.parse fails at position 1 after sanitize" | Sanitizer is a state-machine walk (tracks in-string vs structural), not a global regex? Fallback path doesn't silently release destructive action on parse failure? |
 | Stateful Callback Cleanup | "Feature works once, then wedges until restart" | Every return/raise/early-exit in a function that mutates module-level state clears that state? Prefer `try/finally`. |
 | Telemetry Fail-Open | Noisy telemetry bug breaks the critical path it measures | Emit guarded with try/except + env-var opt-out (`REVIEW_LEDGER=0`) + import availability check? Reference: `scripts/plancraft_review.py` `_emit_invocation_record()`. |
@@ -119,6 +120,7 @@ Before finishing backend code, verify your code against the catalog. The Quick R
 - Status-enum-driven model where an exit action only clears a trigger field and never reassigns `status`
 - Webhook signature validator with a no-token branch that returns `True` unconditionally — must hard-fail in production
 - F-string interpolation of AI/user content into XML/TwiML/RSS without `xml.sax.saxutils.escape`
+- Interpolating user-supplied content (SMS body, email body, tenant input) into an LLM prompt using triple-quotes, backticks, or any open-coded quote scoping instead of a named XML delimiter + data-not-instructions preamble
 
 ## Pre-flight Construction Smoke (Third-Party SDK Migration)
 
