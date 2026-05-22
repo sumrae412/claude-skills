@@ -30,6 +30,17 @@ When auto mode is active and the user has approved a plan, do not ask permission
 
 Auto mode executes bounded, approved substeps until the next explicit gate. It is not permission to run an unattended backlog loop, invent new scope, or work through an open-ended plan without returning to the user at the defined checkpoint.
 
+## Cross-context execution: handoff prompts
+
+When Phase 4 produces a plan whose execution can't share context with the originating brainstorm session — different repo, parallel workstreams, or one design that spawns multiple independent execution streams — the right Phase 4 output is **multiple self-contained handoff prompts**, one per downstream session, not a single plan or one shared session. Each prompt fully briefs a fresh session (repo path, design doc path, scope, out-of-scope, acceptance criteria, dependencies on the originating decision, links to upstream PRs) so the downstream session starts cold without losing context.
+
+Triggers:
+- Brainstorm runs in skills / docs repo; execution must happen in the product repo (no shared cwd).
+- One design doc spawns 2+ workstreams (e.g. Layer 1 positioning + Layer 2 tests + Layer 3 product reframe) that each need their own session.
+- Ship needs a "review-in-PR-author session" + "execute-in-tester session" split.
+
+Pattern: produce handoff prompts as fenced markdown blocks in the originating session's final turn, ready to copy-paste into fresh sessions. Each prompt is self-contained — the receiving session has no memory of the originating one. Validated on courierflow_beta PR #7 (2026-05-22) which spawned three handoff prompts (`/writing-plans` execution, Layer 1 positioning, Layer 3 product vision) from one brainstorm.
+
 
 Agentic multi-phase workflow for building features. **Executor/Advisor strategy:** Sonnet executor runs the main loop (exploring, drafting, implementing). Opus advisor fires on-demand at 3-5 decision points. **Workflow is project-generic; the Phase 0 trigger matrix and Phase 5 forced-selection menu are project-specific** — see `references/project-skill-menu.md` for the default (CourierFlow) menu and replacement guidance.
 
