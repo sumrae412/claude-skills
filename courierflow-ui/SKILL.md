@@ -36,6 +36,8 @@ static JavaScript, Vue workflow-builder behavior, and visual verification.
 - Do not hardcode colors.
 - Make confirmation, dry-run, conflict warning, and destructive-preview states
   visible in the same dashboard/sidebar visit.
+- Onboarding flows are chat-driven (CopilotKit `renderAndWaitForResponse`), not
+  side-by-side form columns. See `references/ui-patterns.md` § Chat-driven onboarding.
 
 ## Verification
 

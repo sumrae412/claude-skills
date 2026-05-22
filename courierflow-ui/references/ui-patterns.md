@@ -75,3 +75,23 @@ grep -r "wf-page-header\\|wf-page-title" app/templates/
 grep -r "block title\\|block extra_js\\|block scripts" app/templates/
 grep -r "var(--ds-[^)]*," app/templates app/static/css
 ```
+
+## Chat-driven onboarding (CopilotKit `renderAndWaitForResponse`)
+
+Per PRD §5/§6/§6.5, onboarding renders every step inside the chat — NOT as a side-by-side form column. Pattern:
+
+- Each step is a `useCopilotAction` with `renderAndWaitForResponse`; the render returns a form card (e.g. `PropertyFormCard`, `GoogleConnectCard`, `OnboardingDoneCard`).
+- The card's `onConfirm` runs the mutation, then calls `respond?.(<text describing result + next action to call>)`.
+- System prompt sequences actions directively ("call `connectGoogle` immediately if `setupProgress.calendarConnected` is false"), not narratively.
+- State sync: `useCopilotReadable({ value: { setupProgress: {...} } })` after each mutation so the assistant picks the next action.
+- Layout: checklist (left) + `CopilotChat` (right, `flex-1`). Done state swaps chat for `OnboardingDoneCard`.
+- Reference impl: `artifacts/web/src/pages/onboarding.tsx` ([courierflow_beta#2](https://github.com/sumrae412/courierflow_beta/pull/2), commit `f2d450d`).
+
+## CopilotKit 1.57 auto-kickoff
+
+To make the assistant proactively start a flow on mount (no "type 'go' to begin" friction):
+
+- Use `useCopilotChatInternal()` for `{ sendMessage, messages }`. `messages` is preferred over deprecated `visibleMessages`. Prefer `sendMessage` over deprecated `appendMessage`.
+- In a `useEffect`, if `messages.length === 0` and the flow isn't complete, call `sendMessage({ id: 'kickoff-<ts>', role: 'user', content: '<kickoff line>' })` after `setTimeout(..., 400)` so the initial greeting renders first.
+- Guard with `useRef(false)` so it fires once per mount.
+- Message shape: `{ id: string, role: 'user'|'assistant'|..., content: string }`.
