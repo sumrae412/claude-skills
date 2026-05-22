@@ -1,6 +1,6 @@
 ---
 name: articles
-description: Use when the user says "/articles", "check my articles", "process Claude articles", "triage my reading queue", or asks whether anything in their Mem reading queue is worth pulling into their projects or skills. Pulls unread notes from Mem's "Claude articles", "Claude Tasks", "Coding", and "Article Collection" collections, runs each through `useful-for` against the user's claude-skills repo and active projects (CourierFlow, BetterBurgh, DeepLearning.ai work), and moves processed notes to "Claude articles — reviewed". Triggers on any phrasing about checking, processing, triaging, or reviewing the reading inbox in Mem.
+description: Use when the user says "/articles", "check my articles", "process Claude articles", "triage my reading queue", or asks whether anything in their Mem reading queue is worth pulling into their projects or skills. Pulls unread notes from Mem's "Claude articles" collection ONLY, runs each through `useful-for` against the user's claude-skills repo and active projects (CourierFlow, BetterBurgh, DeepLearning.ai work), and moves processed notes to "Claude articles — reviewed". Triggers on any phrasing about checking, processing, triaging, or reviewing the reading inbox in Mem.
 user-invocable: true
 ---
 
@@ -12,16 +12,15 @@ Triages the user's Mem reading queue against their projects, repos, and skills. 
 
 ---
 
-## Sources (Mem collections)
+## Source (Mem collection)
 
-Pull from these collections. Each has a stable ID — don't search by title, the IDs are authoritative.
+Pull from this collection ONLY. The ID is authoritative — don't search by title.
 
 | Collection | ID | Notes |
 |---|---|---|
-| Claude articles | `421a7805-5221-4117-8425-da2dc72a2aa1` | Primary inbox — Claude/Anthropic articles |
-| Claude Tasks | `bb346d7f-4630-4fda-8f7a-e7a432f4cd68` | Tasks routed for Claude to handle |
-| Coding | `a5477b3e-cebc-4ae5-960e-2e0157d17a67` | Programming articles |
-| Article Collection | `ef920cfc-1abe-4edc-a6eb-2a24ec2af449` | General reading — filter to programming/AI only |
+| Claude articles | `421a7805-5221-4117-8425-da2dc72a2aa1` | The only inbox this skill triages |
+
+**Do NOT pull from** "Claude Tasks", "Coding", or "Article Collection" — those are separate workflows. If the user wants to triage something in another collection, they will name it explicitly and you should still verify before pulling.
 
 **Reviewed archive:** `bf963978-f4fd-41a5-86b6-989418e3e194` ("Claude articles — reviewed"). Anything already in this collection is done — skip it.
 
@@ -42,7 +41,9 @@ If the user names a narrower target ("just for claude-skills", "only CourierFlow
 
 ### 1. Pull the inbox
 
-For each source collection, call `mcp__a5ce767d-48cc-4ac0-b83a-4a0e2432ee4a__get_collection` with the ID to list its notes. Then subtract anything that is also in the reviewed collection — those are done.
+Call `mcp__a5ce767d-48cc-4ac0-b83a-4a0e2432ee4a__list_notes` with `collection_id = 421a7805-5221-4117-8425-da2dc72a2aa1` (Claude articles). Subtract anything also in the reviewed collection — those are done.
+
+Do NOT pull from any other collection. If a note appears in both Claude articles and another collection (e.g. Article Collection), it is still in scope, but only because of its Claude-articles membership.
 
 Default cap: 10 notes per run. If the queue is larger, ask the user "20 unread items — process all, or first 10?" before continuing.
 
@@ -89,7 +90,7 @@ At the very end, move every note from step 3's running list into the reviewed ar
 
 **Batch A** — for every `note_id`, call `add_note_to_collection` → `collection_id = bf963978-f4fd-41a5-86b6-989418e3e194` ("Claude articles — reviewed"). All in one parallel block.
 
-**Batch B** — after Batch A returns successfully, for every `(note_id, source_collection_id)`, call `remove_note_from_collection`. All in one parallel block.
+**Batch B** — after Batch A returns successfully, for every `note_id`, call `remove_note_from_collection` with `collection_id = 421a7805-5221-4117-8425-da2dc72a2aa1` (Claude articles) ONLY. Do not remove from any other collection the note happens to be in. All in one parallel block.
 
 Every triaged note ends in the reviewed archive — including "skip" verdicts. The point of archiving is to keep the inbox small, not to reward high-value pulls. Confirm in the closing line: "Archived N notes to Claude articles — reviewed."
 

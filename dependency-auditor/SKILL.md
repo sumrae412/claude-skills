@@ -57,6 +57,8 @@ material.
   `references/license_compatibility_matrix.md`
 - Dependency hygiene:
   `references/dependency_management_best_practices.md`
+- Supply-chain incident runbooks (kill-daemon-before-rotate, slopsquatting tools):
+  `references/supply-chain-incidents.md`
 
 ## Script Map
 
