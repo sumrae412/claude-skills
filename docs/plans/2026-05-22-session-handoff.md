@@ -4,7 +4,7 @@
 
 ## Goal
 
-Take [courierflow_beta PR #8](https://github.com/sumrae412/courierflow_beta/pull/8) (RAMPART classifier follow-ons) the rest of the way to merge — that's the only piece of in-flight work from this session. After merge, no carryover. If the user wants new work, route it through `/claude-flow`.
+No active carryover. [courierflow_beta PR #8](https://github.com/sumrae412/courierflow_beta/pull/8) (RAMPART classifier follow-ons) **merged before this handoff finished writing** — verified at 2026-05-22 13:0X via `gh pr view 8 --json state` → `MERGED`. If the user wants new work, route it through `/claude-flow`. If anything below contradicts "PR #8 is merged," trust the live `gh pr view` output.
 
 ## Current state
 
@@ -14,7 +14,7 @@ Take [courierflow_beta PR #8](https://github.com/sumrae412/courierflow_beta/pull
 |---|---|---|---|
 | `~/claude_code/claude-skills/` | `main` | clean / in sync at `ae505dc` | session-learnings commit pushed. Pre-existing untracked drift in `claude-flow/`, `prd/`, `startup-analysis/` unrelated to this session — leave alone unless investigating |
 | `~/.claude/` | `master` | clean / in sync at `a628d65` | 3 Git/Shell/CI checklist items pushed. Other tracked files modified locally (memory dirs, deleted session JSONs, ~17 untracked files) are pre-existing local state — DO NOT sweep into commits |
-| `~/claude_code/courierflow_beta/` | currently on `docs/chat-backbone-hardening-design` (parallel session's branch) | feature branch `feat/rampart-classifier-followons` has 1 commit at `fcfc47c` and is pushed to origin | **PR #8 open** — this is the actionable item |
+| `~/claude_code/courierflow_beta/` | `main` fast-forwarded to `38c1783` post-PR-#8-merge | clean | [PR #8](https://github.com/sumrae412/courierflow_beta/pull/8) merged as `dfdb5cc`; parallel session followed with PR #9 (`ca3a2d4` haiku model alias fix on my classifier.ts) and PR #10 (`38c1783` chat-backbone plan) |
 | `~/claude_code/courierflow/` (legacy) | n/a | frozen-reference mode | DO NOT COMMIT |
 
 **What shipped this session (commits in order):**
@@ -33,7 +33,7 @@ Take [courierflow_beta PR #8](https://github.com/sumrae412/courierflow_beta/pull
 
 **What's still in-flight:**
 
-- **[PR #8](https://github.com/sumrae412/courierflow_beta/pull/8)** — open, awaiting review/merge. Head: `feat/rampart-classifier-followons` (1 commit, `fcfc47c`). Base: `main`. CodeRabbit and the repo's automated reviewers should run on it shortly after push.
+- Nothing. [PR #8](https://github.com/sumrae412/courierflow_beta/pull/8) merged 2026-05-22 before this handoff finished writing.
 
 **What I deliberately did NOT do:**
 
@@ -42,20 +42,13 @@ Take [courierflow_beta PR #8](https://github.com/sumrae412/courierflow_beta/pull
 
 ## Exact next task
 
-**Default path: babysit PR #8 to merge.**
+**No default task — PR #8 merged before this doc finished writing.** Pull local main in courierflow_beta to fast-forward to the squash commit, then await user direction:
 
-1. `cd ~/claude_code/courierflow_beta && git fetch origin --prune`
-2. Check PR state: `env -u GH_TOKEN gh pr view 8 --repo sumrae412/courierflow_beta --json state,mergeable,reviewDecision,statusCheckRollup`
-3. Interpret:
-   - `state=OPEN, mergeable=MERGEABLE, reviewDecision=APPROVED` → squash-merge: `env -u GH_TOKEN gh pr merge 8 --repo sumrae412/courierflow_beta --squash --delete-branch`. The `gh pr merge` may print a fast-forward warning about local `main` — that's a false positive when local main has unpushed commits or worktree drift. Verify with `gh pr view 8 --json state` returning `MERGED`. See [[gh_pr_merge_fast_forward_warning_false_positive]].
-   - `mergeable=CONFLICTING` → the parallel session's branch landed something that touches `classifier.ts`, `classifier.injection.test.ts`, or `api-server/package.json`. Inspect with `git diff origin/main -- artifacts/api-server/src/lib/classifier.ts`, rebase the feature branch on origin/main, resolve, force-push.
-   - `mergeable=UNKNOWN` → wait 5 seconds and re-run (GitHub takes a moment after push).
-   - `reviewDecision=REVIEW_REQUIRED` → leave for human review; close the loop with the user.
-4. After merge: `git pull origin main` from local main (clean fast-forward since `git branch -f main origin/main` was applied this session).
+```bash
+cd ~/claude_code/courierflow_beta && git checkout main && git pull origin main --ff-only
+```
 
-**Acceptance criteria:** PR #8 merged, `feat/rampart-classifier-followons` branch deleted on origin, local main fast-forwarded to the squash commit.
-
-**Alternate path: new feature work.** If the user pivots to something new, route to `/claude-flow`. RAMPART Surfaces 2/3/4 (calendar, lease, chat) are NOT recommended follow-ons per the original assessment — Surfaces 2/3 have structural mitigations (enum gate, JSON schema) that already reduce risk, Surface 4 has the explicit "DATA not instructions" rule in the system prompt already. Only revisit if a real incident surfaces.
+**If the user pivots to new work**, route to `/claude-flow`. RAMPART Surfaces 2/3/4 (calendar, lease, chat) are NOT recommended follow-ons per the original [2026-05-22-rampart-fit-assessment.md](https://github.com/sumrae412/courierflow_beta/blob/main/docs/decisions/2026-05-22-rampart-fit-assessment.md) — Surfaces 2/3 have structural mitigations (enum gate, JSON schema) that already reduce risk, Surface 4 has the explicit "DATA not instructions" rule in the system prompt already. Only revisit if a real incident surfaces.
 
 ## Template / reference PRs
 
@@ -104,7 +97,7 @@ None this session. Nothing in `/tmp`, no stashes, no uncommitted patches the nex
 
 ## Ship instructions
 
-- **For PR #8:** already open, no new ship action — use `gh pr merge 8 --squash --delete-branch` after review. Do NOT use `/ship` (it's for new work, not merging existing PRs).
+- **PR #8 already merged.** Nothing to ship from this session.
 - **For new feature work:** route to `/claude-flow`.
 
 ## Mode directive
