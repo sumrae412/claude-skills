@@ -1210,49 +1210,80 @@ watch: {
 
 ---
 
-## 39. Portal Into a Third-Party DOM Contract
+## 39. Chrome MV3 Lifecycle Handlers Can Race — Idempotence Is Not Enough
 
-When you need to inject content into a third-party component's scroll container (e.g. CopilotKit's `.copilotKitMessages`), the target may not exist on first render — and the third-party library may re-mount it as state changes.
+`chrome.runtime.onInstalled` and `chrome.runtime.onStartup` can fire close enough together that any setup function invoked from both will execute concurrently. `removeAll()`-then-`create()` style idempotence is not sufficient — the two passes interleave, and the second `create()` hits a duplicate-id error.
 
-```tsx
-useEffect(() => {
-  const root = bodyRef.current;
-  if (!root) return;
-  const attach = () => {
-    const messages = root.querySelector('.copilotKitMessages');
-    if (!messages) return false;
-    const host = document.createElement('div');
-    host.className = 'spa-chat-welcome-host';
-    host.style.order = '-1';  // flex-column: place at top
-    messages.prepend(host);
-    setHost(host);
-    return true;
-  };
-  if (attach()) return;
-  const obs = new MutationObserver(() => { if (attach()) obs.disconnect(); });
-  obs.observe(root, { childList: true, subtree: true });
-  return () => obs.disconnect();
-}, []);
+```javascript
+// BAD — both lifecycle events call this; removeAll/create interleave
+function createContextMenu() {
+  chrome.contextMenus.removeAll(() => {
+    chrome.contextMenus.create({ id: "my-item", title: "..." });
+    // No callback → duplicate-id surfaces as unchecked runtime.lastError
+  });
+}
+
+// GOOD — in-flight guard + explicit lastError handling
+let setupInFlight = false;
+function createContextMenu() {
+  if (setupInFlight) return;
+  setupInFlight = true;
+  chrome.contextMenus.removeAll(() => {
+    chrome.contextMenus.create({ id: "my-item", title: "..." }, () => {
+      setupInFlight = false;
+      const err = chrome.runtime.lastError;
+      if (err && !/duplicate id/i.test(err.message || "")) {
+        console.warn("contextMenus.create failed:", err.message);
+      }
+    });
+  });
+}
 ```
 
-Then `createPortal(<Welcome />, host)`. The MutationObserver fallback handles late mounts; `style.order: '-1'` puts the host above siblings without re-rendering them. Beware host-container CSS that pins flex children — e.g. CopilotKit's `.copilotKitMessages { justify-content: space-between }` will visually anchor an `order: -1` host to the top regardless of scroll. Override with `justify-content: flex-start !important` scoped under your shell.
+**Applies to:** any Chrome MV3 service-worker setup invoked from multiple lifecycle handlers (`onInstalled`, `onStartup`, `onConnect`, etc.) — context menus, alarms, declarativeNetRequest rules, anything keyed by id.
 
-**Learned from:** CourierFlow PRs #577/#578 (welcome chips inside CopilotKit chat scroll).
+**Three required pieces together:**
+1. `removeAll()` / equivalent reset for idempotence.
+2. Module-level in-flight boolean so concurrent handlers can't both enter.
+3. Callback on the create-style API that reads `chrome.runtime.lastError` — otherwise even benign errors surface in `chrome://extensions` as "unchecked" runtime errors.
+
+**Learned from:** ToneGuard PR #32. `removeAll()` wrapper was already in place but the duplicate-id error still appeared in `chrome://extensions` because `onInstalled` + `onStartup` interleaved on extension update.
 
 ---
 
-## 40. Scroll Containment Requires Bounded Parents, Not Just `overflow`
+## 40. Format Structured Error Objects Before Logging in Chrome Extensions
 
-A child with `overflow-y: scroll` won't actually scroll unless every ancestor up to the viewport has a bounded height. Common silent failure: `display: grid; height: 100vh` with no `grid-template-rows` lets implicit `auto` rows expand to content. Three-layer rule:
+`console.warn("Label:", errObj)` renders the object fine in DevTools but stringifies to `[object Object]` in the `chrome://extensions` error pane — two surfaces, two behaviors. If your code returns structured errors (`{type, message, diagnostic_code, retryable}`) and you log them naively, the extensions pane shows nothing useful.
 
-1. **Outermost:** `grid-template-rows: 100vh` (or explicit `fr` units summing to viewport).
-2. **Grid item:** `min-height: 0; height: 100%` — overrides the default `min-height: auto` that lets grid items grow to their content's intrinsic size.
-3. **Flex children:** `min-height: 0` everywhere down the chain.
+```javascript
+// BAD — chrome://extensions shows: "ToneGuard: [object Object]"
+console.warn("ToneGuard:", result.error);
 
-`overflow: clip` (not `hidden`) on the grid item preserves border-radius without forming a scroll-blocking BFC. `overflow: clip` alone won't enable scrolling — it just stops clipping from blocking inner scroll containers; the height bound still has to come from somewhere up the chain.
+// GOOD — helper formats consistently across surfaces
+function formatErrorForLog(err) {
+  if (err == null) return "(null error)";
+  if (typeof err === "string") return err;
+  if (typeof err === "object") {
+    const type = err.type || err.name || "error";
+    const msg = err.message || err.error || "";
+    const code = err.diagnostic_code ? ` [${err.diagnostic_code}]` : "";
+    try {
+      return `${type}${code}: ${msg || JSON.stringify(err)}`;
+    } catch (_) {
+      return `${type}${code}: <unserializable>`;
+    }
+  }
+  return String(err);
+}
 
-**Don't:** assume `overflow-y: scroll` "just works" inside a grid item. Check every ancestor's height resolution in DevTools.
+console.warn("ToneGuard:", formatErrorForLog(result.error));
+// chrome://extensions now shows: "ToneGuard: timeout [TG_TIMEOUT_001]: Analysis took longer than 30 seconds"
+```
 
-**Learned from:** CourierFlow PRs #575/#576 (chat pane wouldn't scroll long markdown responses despite CopilotKit's internal `overflow-y: scroll` — `.spa-shell` had no `grid-template-rows`).
+**Helper must handle:** null/undefined, strings, objects with `{type, message, diagnostic_code}`, objects with circular refs (try/catch around `JSON.stringify`), and primitives.
+
+**Don't:** pass the raw object to `console.warn` even though DevTools handles it — the extensions error pane is a different surface and reviewers / users only see that one.
+
+**Learned from:** ToneGuard PR #32. A prior refactor (PR #30) changed `result.error` from string to structured object but didn't update the three `console.warn` call sites in `content.js`, so `chrome://extensions` filled with `[object Object]` entries that hid the actual error type.
 
 ---

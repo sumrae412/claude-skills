@@ -82,6 +82,8 @@ This skill is a living document. Each bug fixed should make the next similar bug
 - [ ] Animations are functional (150-300ms, transforms/opacity only), not decorative; wrapped in `prefers-reduced-motion` media query; no `animation: infinite` on non-loading elements
 - [ ] Cross-frame / cross-process actions use id-tagged request → `:ack` response with `{ok, error?}` — never paint success after a fire-and-forget `postMessage` or `chrome.runtime.sendMessage`
 - [ ] Every failure return from a stateful callback clears the same module-level state the success return clears (grep `return { ok: false` or equivalent, audit each)
+- [ ] Chrome MV3 setup invoked from multiple lifecycle handlers (`onInstalled`/`onStartup`) uses a module-level in-flight guard AND passes a callback to id-keyed create APIs that reads `chrome.runtime.lastError` (removeAll-then-create idempotence alone is insufficient)
+- [ ] Structured error objects are formatted to a readable string (e.g. `"type [code]: message"`) before `console.warn`/`console.error` in extension code — `chrome://extensions` stringifies the 2nd arg as `[object Object]` even though DevTools renders it fine
 
 ---
 
@@ -90,8 +92,3 @@ This skill is a living document. Each bug fixed should make the next similar bug
 - These patterns apply to any JavaScript UI with async operations, modals, or multi-step flows
 - When reviewing, flag violations but preserve existing functionality
 - Guard clauses and state flags are defensive — do not remove them to "simplify" code
-
-## Related skills
-
-- `fixing-accessibility` — ARIA, keyboard, focus, semantics, form-error patterns. Pair: this skill covers state/feedback/failure-mode defensiveness; `fixing-accessibility` covers a11y compliance. Forms, dialogs, and async controls usually need both passes.
-- `design-audit` — visual-only audit (spacing, hierarchy, polish). Surfaces issues that `fixing-accessibility` resolves correctly (focus outlines, contrast, disabled states).
