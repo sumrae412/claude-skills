@@ -33,27 +33,31 @@ Rust binary that intercepts and pre-filters CLI output (git, ls, grep, test runn
 ## colbymchenry/codegraph — pre-indexed code knowledge graph
 
 **Repo:** https://github.com/colbymchenry/codegraph
-**Saved from Mem reading queue 2026-05-21.**
+**Saved from Mem reading queue 2026-05-21. Measured trial on `courierflow_beta` (TS/pnpm, 210 files) on the same date — see `~/claude_code/courierflow_beta/docs/decisions/2026-05-21-codegraph-trial.md`.**
 
-Local SQLite-backed code knowledge graph that agents query instead of scanning files. Author-reported medians on the published benchmarks: ~35% cheaper, ~59% fewer tokens, ~49% faster, ~70% fewer tool calls. 100% local, no network egress. Supports 19+ languages and recognizes routing patterns for 13 web frameworks (Django, FastAPI, Express, NestJS, Laravel, Rails, Spring, etc.).
+Local SQLite-backed code knowledge graph that agents query instead of scanning files. Author-reported benchmarks: ~35% cheaper, ~59% fewer tokens, ~70% fewer tool calls. **Those claims did not replicate in the trial** — grep baseline was 16× faster and captured more of the relevant code paths for the test question. Calibrated guidance below.
+
+**Install:** `npx @colbymchenry/codegraph init` then `npx @colbymchenry/codegraph index` in the project root. Indexed 210 files in 4 seconds (3,537 nodes, 3,187 edges); on-disk footprint 7.1 MB SQLite DB. Tool itself is `npx`-only — no persistent global install.
+
+**Use codegraph for** (good-fit cases — confirmed in trial):
+- Symbol lookups: `codegraph query <name>` returns a ranked list with file:line precision. Cleaner than `grep <name> -rn .` when the same name appears in many files.
+- "Where is X defined" / "what types are named X" questions, especially across a TS workspace with many packages.
+- The `affected` command for test-file impact analysis after edits (not measured in trial — advertised feature, worth its own trial when tests stabilize).
+- MCP server mode (`codegraph serve`) for Claude Code — also not measured, may change behavior on long sessions.
+
+**Do NOT use codegraph for** (bad-fit cases — confirmed in trial):
+- **Cross-framework data-flow questions** (frontend hook → HTTP → backend route → DB write). The connection between layers is by URL string, not function call, so the symbol graph can't traverse it. Both `context` and `query` returned the Orval-generated client wrappers instead of the actual Express route handlers for a "where does Tenant get created" question — actively misleading.
+- **Repos under ~500 files** where grep is already fast enough. The 1.3-second-per-query overhead doesn't pay off when `grep -rn` returns in milliseconds.
+- **Questions where the agent already has the entry point** (named in CLAUDE.md, `active-files` registry, or PRD docs).
+
+**Why `context` was misleading in trial:** the command ranks symbols by graph-centrality and returns their source. Orval-generated client functions have many inbound edges (every React page imports them), so they rank highest. The actual route handlers have fewer inbound edges, so they get filtered out. For an agent asked "where does X happen?", reading the generated client looks like an answer but points away from the real implementation. Treat `context` output as "candidate symbols" not "the answer."
 
 **Maps to skill patterns:**
-- Pattern 1 (combine discover + read) — single graph query replaces glob → read → grep chains
-- Pattern 4 (entry-point-first exploration) — framework-aware route detection finds the right file without prose-search
-- Pattern 7 (delegate to cheap subagents) — graph queries can be smaller subagent prompts ("which files define `handlePayment`") and return structured answers instead of file dumps
+- Pattern 1 (combine discover + read) — only when the question is symbol-shaped
+- Pattern 4 (entry-point-first exploration) — only when the entry point is a symbol, not a route or a generated wrapper
+- Pattern 7 (delegate to cheap subagents) — subagent prompts that wrap `codegraph query` are a tighter contract than "grep for X"
 
-**Install:** `npx @colbymchenry/codegraph`, then `codegraph init -i` in the project root. Native OS file-watching keeps the index in sync.
-
-**When to install:**
-- Repos > 50 source files where Phase 2 / Phase 4 exploration burns tokens on grep + read fan-out
-- Multi-language repos — single index across TS/Python/Go/Rust avoids switching grep strategies
-
-**When to skip:**
-- One-shot tasks where the index-build cost outweighs query savings
-- Repos where the entry points are already memorized (CLAUDE.md or `active-files` registry covers it)
-- Network-restricted environments that can't run `npx` — though once installed it's offline-only
-
-**Pairs with `smart-exploration` and `claude-flow` Phase 2:** if `codegraph` is initialized for a project, the exploration phase should prefer graph queries over generic grep fan-outs. Worth a measured trial on a real repo before promoting to default.
+**Pairs with `smart-exploration` and `claude-flow` Phase 2:** do NOT promote to default exploration tool based on the article's claims. Use deliberately for symbol-lookup substeps; keep grep as the default entry point in this kind of repo.
 
 ---
 
