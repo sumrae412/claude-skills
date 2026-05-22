@@ -73,6 +73,13 @@ coderabbit review --plain -t all
 # add --base <branch> when reviewing a feature branch against a non-main base
 ```
 
+**Filter findings to the actual PR diff.** `coderabbit review --base <branch>` scans working-tree contents, not just committed changes — untracked or uncommitted files in your worktree will appear in findings even though they're not in the PR. Before treating a finding as PR-relevant, intersect against the PR diff:
+```bash
+git diff --name-only origin/main...HEAD > /tmp/pr-files.txt
+# then drop any finding whose path isn't in /tmp/pr-files.txt
+```
+Hit on courierflow_beta [PR #17](https://github.com/sumrae412/courierflow_beta/pull/17): 3 of CR's findings were on `.playwright-mcp/*.yml` and `scripts/launchd-*.sh` — untracked files not part of the PR.
+
 **If output is truncated or rate-limited**, parse the JSON cache directly instead of re-running:
 ```bash
 python3 -c "import json,glob; [print(json.load(open(f))) for f in glob.glob('$HOME/.coderabbit/reviews/*/*/reviews/*/*.json')]"
