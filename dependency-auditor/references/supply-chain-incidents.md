@@ -4,6 +4,18 @@ Concrete incident patterns and the safe cleanup orders that prevent self-inflict
 
 ---
 
+## Runbook authoring conventions
+
+When writing a new runbook for active malware (file-watching daemons, postinstall scripts, persistent agents, scheduled tasks, kernel/launchd entries), order the steps to **kill the persistence mechanism BEFORE the cleanup action it would re-corrupt.**
+
+Concrete example: the NPM Mini Shai-Hulud runbook orders `pkill -f <daemon>` + LaunchAgent removal **before** credential rotation. Rotating credentials first while the watcher is live re-exfiltrates the new secret to the attacker — the rotation creates a fresh observable event the daemon is specifically watching for.
+
+**Authoring check:** for each step in a draft runbook, answer "what does the attacker do if I run this step out of order, or skip it?" If the answer is "re-exploit using the artifact this step would have neutralized," the step is in the wrong place. Move it up until the answer becomes "nothing — the persistence mechanism is already dead."
+
+This rule also surfaces missing steps: if every step's failure mode is "nothing," but the original incident's blast radius was larger than the runbook's, you're missing a persistence layer (a forgotten daemon, a second LaunchAgent, a registered scheduled task). Audit until you can account for every observed exfiltration path.
+
+---
+
 ## Case 1 — npm "Mini Shai-Hulud" (2026-05-11, `@tanstack/*`)
 
 **Source:** Prosper, "npm Supply Chain Attack: The Only Safe Cleanup Order" (Substack, 2026-05).

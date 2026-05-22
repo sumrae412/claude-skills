@@ -157,3 +157,11 @@ If a pattern above would make you miss the actual answer, widen the search. The 
 ## External tools
 
 See [`references/external-tools.md`](references/external-tools.md) for external infrastructure that automates patterns from this skill (e.g., `rtk-ai/rtk` operationalizes Pattern 9 for CLI output).
+
+## Built-in tool cost notes
+
+A few harness tools have invocation costs worth knowing about, since they don't show in the patterns list but compound across a session:
+
+- **`Skill` tool re-emits the full skills list** as a system reminder on each invocation. The reminder block can be 5–10K tokens depending on the installed plugin set. Invoke `Skill` deliberately for a known target — don't probe-fire it to see what's available. When you're unsure which skill fits, invoke `skill-discovery` once and act on its output rather than calling `Skill` multiple times with guesses.
+- **Background `Agent` dispatches with `run_in_background: true`** keep the subagent's full JSONL transcript in a temp file the harness warns you not to `cat`. The completion notification carries the agent's final summary — that's the canonical record; don't try to re-read the transcript for "more detail."
+- **`AskUserQuestion`** is cheap on the user's end but each call breaks model flow. Batch related questions into one call (up to 4 questions) rather than firing sequentially.

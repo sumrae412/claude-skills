@@ -4,6 +4,23 @@ Resources that operationalize the skill's principles as infrastructure rather th
 
 ---
 
+## Trial protocol for new external tools
+
+Before promoting any tool here from "mentioned in a Mem article" to "default for task class X," run a measured trial against the current default in a representative repo. Record:
+
+1. **Wall time** (`time <cmd>` for each path)
+2. **Output size** (lines, bytes) — proxy for token cost
+3. **Result quality** (recall + precision against a known answer — pick a question where you can verify the right answer independently)
+4. **Tool-call count** (how many separate invocations to assemble an equivalent answer)
+
+Update each tool's entry in this file with the **measured numbers**, not the article's marketing claims. If the trial inverts the headline claim, say so explicitly and scope where the tool *does* fit (good-fit cases) vs *doesn't* (bad-fit cases). Don't paper over the result with hedged language.
+
+**Validated 2026-05-21 on codegraph:** Mem article claimed "35% cheaper, 70% fewer tool calls"; courierflow_beta trial showed grep was 16× faster and captured more relevant code paths because codegraph's `context` ranks by graph-centrality (Orval-generated client wrappers outrank actual Express route handlers). The codegraph entry below was rewritten post-trial to "good fit: pure-symbol queries / bad fit: cross-framework data-flow questions." Full trial writeup: `~/claude_code/courierflow_beta/docs/decisions/2026-05-21-codegraph-trial.md`.
+
+**Why this matters:** an "external tools" reference is a recommendation surface — every entry shapes what tools agents reach for next session. Article claims are marketing; what reaches this file should be evidence. The trial cost is bounded (one representative question, one repo); the cost of recommending the wrong tool is amplified across every future session.
+
+---
+
 ## rtk-ai/rtk — CLI proxy for LLM token optimization
 
 **Repo:** https://github.com/rtk-ai/rtk
