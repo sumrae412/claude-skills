@@ -152,6 +152,18 @@ Shape-only test passes ("no schema error") are necessary but not sufficient for 
 
 Concrete example: 2026-04-24 advisor-tool eval wired Anthropic `cache_control` breakpoints. Unit tests confirmed request shape; pilot showed `cache_read_input_tokens=0` on every live call because prompts sat below Anthropic's 1024-token minimum. The feature shipped green on unit tests but did nothing in production.
 
+## Parallel-bundle delta probe (pre-fix vs post-fix isolation)
+
+When a fix landed on `main` but a feature branch was forked BEFORE the fix, you can verify the fix's runtime effect by running two dev servers from two checkouts against a single shared backend. They differ only in the client bundle — same DB, same api-server, same session cookie.
+
+1. Start the api-server once. Open two checkouts (main + feature branch) and run two web dev servers on different ports (e.g. Vite: `PORT=22333 BASE_PATH=/ ./node_modules/.bin/vite ...` and `PORT=22433 BASE_PATH=/ ./node_modules/.bin/vite ...`).
+2. Seed test state once via a non-prod auth route (e.g. `POST /api/auth/test-login`) plus direct DB-shape curls — skip the LLM-driven UI path to cut 5–15 min per run.
+3. Drive each port via Playwright; compare URL stability / viewport screenshots side-by-side.
+
+Validated 2026-05-22 on courierflow_beta PR #17 (cache-sync hook): post-fix bundle stayed on `/dashboard`; pre-fix bundle bounced back to `/onboarding` because `AppShell` guard re-read stale TanStack cache. Same DB row, different React behavior = clean isolation of the React-layer fix.
+
+**Pre-flight check before any runtime verification on a feature branch:** run `git log --oneline origin/main..HEAD` and `git merge-base HEAD origin/main` to know which fixes the bundle DOES NOT include. A branch forked before a fix lands ships the buggy bundle even when `main` is green.
+
 ## Why This Matters
 
 From 24 failure memories:

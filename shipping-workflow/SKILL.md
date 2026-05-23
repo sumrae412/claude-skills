@@ -66,6 +66,8 @@ Skip Phase 3 (review + CI) entirely. Phase 4 verifies the merge state and hands 
 
 **Why auto-merge is safe for this case:** handoff docs are write-once continuation prompts. No executable code, no schema, no security surface. The review gate exists to catch issues in code/config changes — for doc-only continuation prompts it just delays the next session from finding the doc. Validated 2026-05-22 on [courierflow_beta PR #18](https://github.com/sumrae412/courierflow_beta/pull/18) (Task 4 handoff doc) which sat open until manually merged into commit `598fd11` — exactly the failure mode this fast path prevents.
 
+**Auto-mode classifier blocks the fast-path merge even when all conditions match.** In auto-mode sessions, the harness classifier flags `gh pr merge <N> --squash --delete-branch` as "self-squash-merging to main without explicit user authorization" and pauses for approval — even when the fast-path's five conditions all hold. The skill's fast-path logic doesn't translate to the classifier (there's no per-PR signal saying "this is a handoff doc, fast-path eligible"). When the merge is blocked: surface a one-line summary to the user ("PR #N matches handoff-doc fast path — approve merge?") rather than falling through to Phase 3 review. Hit 2026-05-22 on [courierflow_beta PR #25](https://github.com/sumrae412/courierflow_beta/pull/25). Long-term fix is a classifier-side signal — out of scope for this skill.
+
 ## Load Strategy
 
 1. Verify the work is actually ready to ship.
