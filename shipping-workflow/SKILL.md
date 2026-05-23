@@ -4,7 +4,7 @@ description: End-to-end ship pipeline — commit, push, PR, 10-step review, fix,
 license: MIT
 metadata:
   author: summerela
-  version: "1.1.0"
+  version: "1.2.0"
 ---
 
 # Shipping Workflow
@@ -38,6 +38,33 @@ in phases and `reference.md`.
 - tiny mechanical follow-up: inline ship may be enough
 - normal pattern-replication or backend follow-up: use this workflow
 - novel design work: finish through `claude-flow` before shipping
+- **session-handoff doc: use the Handoff-doc fast path below — auto-merge, no review**
+
+## Handoff-doc fast path
+
+When `/next` (or any caller) ships a session-handoff doc, **skip review/CI and auto-merge to main**. Future sessions need handoff docs discoverable on main, not stranded in open PRs.
+
+**Conditions for auto-merge (ALL must hold):**
+
+- PR diff is exactly one file (verify with `gh pr view <N> --json files --jq '.files | length'` returns `1`)
+- File path matches `docs/plans/*handoff*.md` (case-insensitive `handoff` substring in the basename)
+- File is purely additive (`changeType: "ADDED"`, or `deletions: 0`)
+- Branch name is doc-prefixed (e.g. `docs/...`)
+- PR base branch is `main`
+
+**When all hold:** after Phase 2 opens the PR, **immediately** run:
+
+```bash
+env -u GH_TOKEN gh pr merge <N> --squash --delete-branch
+```
+
+Skip Phase 3 (review + CI) entirely. Phase 4 verifies the merge state and hands off to `/cleanup` as usual.
+
+**When any condition fails:** fall through to the normal Phase 3 review flow — the PR is treated as ordinary doc work, not a handoff.
+
+**Why narrow:** the conditions exist to catch the exact handoff-doc shape (`/next` writes single-file additive docs under `docs/plans/*handoff*.md`). A multi-file PR, a doc that also touches code, a non-`docs/` branch, or a deletion-bearing diff all fall back to the normal review path. The fast path never auto-merges substantive changes.
+
+**Why auto-merge is safe for this case:** handoff docs are write-once continuation prompts. No executable code, no schema, no security surface. The review gate exists to catch issues in code/config changes — for doc-only continuation prompts it just delays the next session from finding the doc. Validated 2026-05-22 on [courierflow_beta PR #18](https://github.com/sumrae412/courierflow_beta/pull/18) (Task 4 handoff doc) which sat open until manually merged into commit `598fd11` — exactly the failure mode this fast path prevents.
 
 ## Load Strategy
 
