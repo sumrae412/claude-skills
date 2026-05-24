@@ -48,7 +48,7 @@ When `/next` (or any caller) ships a session-handoff doc, **skip review/CI and a
 
 - PR diff is exactly one file (verify with `gh pr view <N> --json files --jq '.files | length'` returns `1`)
 - File path matches `docs/plans/*handoff*.md` (case-insensitive `handoff` substring in the basename)
-- File is purely additive (`changeType: "ADDED"`, or `deletions: 0`)
+- File is functionally additive: `changeType: "ADDED"` OR (`changeType: "MODIFIED"` AND the file path matches `docs/plans/*handoff*.md` AND `deletions <= 5`). Rationale: refreshing the bottom continuation prompt of an existing handoff doc to reflect current shipped/in-flight state commonly produces small deletions (the prior prompt is rewritten in place). [courierflow_beta PR #40](https://github.com/sumrae412/courierflow_beta/pull/40) shipped at `+91 / -3` (the 3 deletions were the stale bottom prompt) — well within spirit. The `<=5` cap keeps substantive rewrites on the normal review path.
 - Branch name is doc-prefixed (e.g. `docs/...`)
 - PR base branch is `main`
 
