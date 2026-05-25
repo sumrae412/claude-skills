@@ -9,6 +9,10 @@ description: Synthesize multiple sources the user has identified into one confli
 
 Turn multiple sources into one useful judgment. Do not summarize source-by-source unless the user explicitly asks; compare claims across sources, resolve conflicts, and separate verified consensus from single-source assertions.
 
+## Communication Principles
+
+Before drafting the brief, load [`../shared/communication-principles.md`](../shared/communication-principles.md). Synthesis briefs default to flat, encyclopedic prose ("Source A says X. Source B says Y. There is some disagreement.") — exactly the failure mode the **§9 sameness-detector** is designed to catch. Before shipping, audit the eight axes on the brief itself: are the bullets suspiciously equal in length (rhythm)? Are evidence snippets interchangeable (evidence)? Does the verdict surprise (usefulness)? Apply the cut/combine/sharpen/surprise/specify/restructure moves so the brief reads like *judgment*, not coverage.
+
 ## Inputs
 
 Require:

@@ -77,6 +77,34 @@ You control three things: **yourself, your message, and your interaction with th
 - Hold the line on clarity, honesty, and calibrated confidence. Do not soften into vagueness to avoid imagined objections.
 - If the audience pushes back, listen (principle 5). Do not apologize for the message itself unless it was actually wrong.
 
+## 9. Sameness detector
+
+Before shipping, run a pass that hunts for **predictability** — places the draft sounds like every other AI-assisted piece of writing or every other draft on the same topic. The risk is not bad writing; it is *interchangeable* writing.
+
+**Audit across eight axes.** For each, name a concrete instance from the draft — not a generic "looks fine."
+
+1. **Ideas** — repeated points, obvious claims, concepts doing the same job twice.
+2. **Structure** — sections that follow the same setup → support → summary shape; predictable argument order.
+3. **Phrasing** — recurring words, sentence patterns, transitions, summary lines ("In conclusion," "It's worth noting," "At its core").
+4. **Examples** — generic examples that could apply to anyone (swap the company name and the sentence still works → too generic).
+5. **Evidence** — unsupported claims; proof points that feel interchangeable with any competing draft.
+6. **Rhythm** — paragraphs or bullets of suspiciously equal length; cadence that doesn't vary with stakes.
+7. **Emotional beats** — tone that stays flat or over-polished; no place where the writer's actual stance breaks through.
+8. **Usefulness** — sentences that sound smart but don't help the reader decide, act, or understand. If a line could be cut and the reader loses nothing, it's filler.
+
+**Diversification plan.** Don't just flag — decide:
+
+- **Cut.** What goes entirely?
+- **Combine.** Which two redundant moves merge into one?
+- **Sharpen.** Where does a generic example get replaced with a specific one (named audience, named company, named moment, named situation)?
+- **Surprise.** Where does the angle need to shift so the reader doesn't predict the next sentence?
+- **Specify.** Where do we add concrete detail from the audience, the company, the moment, the stakes?
+- **Restructure.** Where does the shape of the draft need to break its own pattern so the reader keeps reading?
+
+**Rewrite for perplexity, not length.** The goal is *useful surprise and variation* — not a longer draft. Default outcome: rewrite is the same length or shorter, with more specific nouns, fewer interchangeable verbs, and at least one structural break from the predictable shape.
+
+**Generic-swap test.** Pick any paragraph. Swap the audience name, company name, or topic for a competitor's. Does the paragraph still work unchanged? If yes, it is too generic — add specifics or cut it.
+
 ---
 
 ## Quick checklist
@@ -90,6 +118,7 @@ Before shipping any piece of writing produced under a skill that loads this refe
 - [ ] Tuned to the medium (email vs. script vs. doc vs. resume bullet).
 - [ ] Audience could state the one key takeaway in their own words after reading.
 - [ ] No ego residue, no completeness-anxiety filler, no hedges that blur the claim.
+- [ ] Ran the sameness-detector pass (§9): named concrete instances on the eight axes, made the cut/combine/sharpen/surprise/specify/restructure calls, passed the generic-swap test.
 
 ---
 
@@ -97,6 +126,7 @@ Before shipping any piece of writing produced under a skill that loads this refe
 
 - `resume-tailor` — Phase 2 matching, Phase 4 positioning, Principle 7.
 - `sc-marketing-scripts` — Core Principles and Review Checklist.
+- `writing-voice`, `writing-workshop`, `prd`, `pitch-deck`, `synthesis-brief` — load before drafting; run §9 sameness-detector pass before shipping.
 - Upstream via CLAUDE.md rule: `design:ux-copy`, `product-management:stakeholder-update`, `operations:status-report`, `anthropic-skills:toneguard`.
 
 Before ripping this reference out or renaming it, update the hosts above.

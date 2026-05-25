@@ -3,6 +3,7 @@
 Before finalizing any script:
 
 - [ ] Run through the checklist at the end of `shared/communication-principles.md` first — audience-centered, leads with the conclusion, plain language, tuned to the medium
+- [ ] Ran the §9 sameness-detector pass from `shared/communication-principles.md` — course scripts are template-shaped by default ("In this course, you'll learn…", "By the end of this lesson…"); name concrete instances across the eight axes, apply cut/combine/sharpen/surprise/specify/restructure, and verify the generic-swap test (swap the course name — does the script still work? then it's too generic)
 - [ ] All sentences pass a read-aloud test — no pronoun ambiguity, no compound run-ons
 - [ ] Lesson 1 preview is specific and teases what Lesson 2 unlocks (not generic)
 - [ ] No condescending framing ("this will make more sense once you...")

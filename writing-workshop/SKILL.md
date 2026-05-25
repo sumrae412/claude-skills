@@ -9,6 +9,10 @@ description: Edit, rewrite, ghostwrite, transform, or critique writing. Use for 
 
 Help writing survive contact with readers. Choose the mode that matches the user's request and produce the artifact, not a lecture about writing.
 
+## Communication Principles
+
+Before editing or rewriting, load [`../shared/communication-principles.md`](../shared/communication-principles.md). Critique and rewrite modes both run the **§9 sameness-detector** pass on the draft *and* on your own rewrite: name concrete instances across the eight axes (ideas, structure, phrasing, examples, evidence, rhythm, emotional beats, usefulness), produce the diversification plan (cut / combine / sharpen / surprise / specify / restructure), and verify the rewrite passes the generic-swap test. A "tightened" draft that still sounds interchangeable is not done.
+
 ## Shared Rules
 
 - Preserve the user's ideas unless they explicitly ask for new ones.
