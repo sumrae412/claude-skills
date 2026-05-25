@@ -46,6 +46,8 @@ If there are no uncommitted changes AND no unpushed commits, skip this step and 
 
 The handoff doc from Step 1 is committed as part of the shipping PR, NOT as a separate commit. This ensures it ships atomically with the state it describes.
 
+**Doc-only exception.** If the uncommitted diff is documentation-only (no code, no tests, no schemas) AND the repo's `CLAUDE.md` establishes a doc-only-direct-to-main convention — OR recent `git log` shows handoff / archive / plan / README commits landing on `main` without PRs — skip `/ship` and commit directly to main. Confirm with the user before pushing. Validated on toneguard repo (commits `ffe3bfd`, `475514e`, `18407f8`, `76abf6c`); see toneguard `CLAUDE.md` → "Repo Conventions". This is the exception, not the default — repos without an established convention still ship via `/ship`.
+
 ## Step 3 — Cleanup
 
 `/ship` delegates its final stage to `/cleanup`, which runs:
