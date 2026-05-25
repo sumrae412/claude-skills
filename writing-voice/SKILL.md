@@ -21,6 +21,10 @@ description: >
 
 # Writing Voice: Summer Rae
 
+## Communication Principles
+
+Before drafting, load [`../shared/communication-principles.md`](../shared/communication-principles.md). Voice profile sits *on top of* the shared principles — it does not replace them. Before shipping any draft, run the **§9 sameness-detector** pass: audit the eight axes (ideas, structure, phrasing, examples, evidence, rhythm, emotional beats, usefulness), make the cut/combine/sharpen/surprise/specify/restructure calls, and pass the generic-swap test. AI drafts default to interchangeable; this pass is what makes the voice actually *hers*.
+
 ## What This Skill Does
 
 This skill loads Summer's complete voice profile and applies it whenever she

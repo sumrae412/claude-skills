@@ -5,6 +5,10 @@ description: Use when the user wants to create a pitch deck — investor, sales,
 
 # Pitch Deck
 
+## Communication Principles
+
+Before drafting any slide prose (headlines, body, speaker notes), load [`../shared/communication-principles.md`](../shared/communication-principles.md). Decks are the highest-risk surface for sameness — investors and sales audiences see hundreds, and generic ("We're the X for Y," "leveraging AI to disrupt Z") gets pattern-matched and dismissed. Before shipping, run the **§9 sameness-detector** pass on every slide: name concrete instances across the eight axes, apply the cut/combine/sharpen/surprise/specify/restructure moves, and verify the generic-swap test (swap the company name for a competitor — if the slide still works, it's too generic). Headlines especially must survive the swap test.
+
 ## Token Economy
 
 Apply `token-economy` whenever this skill would otherwise trigger broad

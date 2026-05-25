@@ -10,6 +10,10 @@ metadata:
 
 # PRD — Product Requirements Document
 
+## Communication Principles
+
+Before drafting the PRD prose (problem statement, user stories, rationale, edge-case narratives), load [`../shared/communication-principles.md`](../shared/communication-principles.md). Before shipping the PRD, run the **§9 sameness-detector** pass on every prose section — PRDs default to template-shaped, interchangeable language ("As a user, I want…" boilerplate, generic edge cases, hand-wavy non-functional requirements). Name concrete instances across the eight axes and apply the cut/combine/sharpen/surprise/specify/restructure moves so the spec reads like *this* product, not any product. EARS clauses themselves stay templated — diversification applies to the surrounding narrative.
+
 ## What this produces
 
 A markdown PRD at `docs/prds/prd-<slug>.md`. The structure maps onto claude-flow's `$requirements` contract (stories, AC-N EARS clauses, scope.in/out, edge_cases, risk_class) so when you run `/claude-flow` next, Phase 3 reads the PRD and skips the questions you've already answered.
