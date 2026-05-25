@@ -59,6 +59,7 @@ Skip any step = lying, not verifying
 | Agent completed | VCS diff shows changes | Agent reports "success" |
 | Requirements met | Line-by-line checklist | Tests passing |
 | Count / quantity claim | Enumerate full result set | API `resultSizeEstimate` / `total` / `count` heuristic field |
+| LLM-judge grader "works" | Hand-labeled calibration set (≥6 neg + ≥4 amb) passes the gate THIS run | Spot-check of 3 positives, eyeballed evidence strings, "looks reasonable" |
 
 ## Red Flags - STOP
 
@@ -114,6 +115,12 @@ Skip any step = lying, not verifying
 ```
 ✅ Agent reports success → Check VCS diff → Verify changes → Report actual state
 ❌ Trust agent report
+```
+
+**LLM-judge grader (calibration gate):**
+```
+✅ Run calibration set (negatives + ambiguous) → ≥5/6 neg + ≥3/4 amb + ≥8/10 total → cite cost + agreement → "judge calibrated"
+❌ "10 positive examples all passed" (proves the judge approves; proves nothing about what it rejects)
 ```
 
 **Browser/UI state ("looking at the screen now"):**

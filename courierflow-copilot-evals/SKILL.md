@@ -21,6 +21,22 @@ iteration. Use the exact failing traces Alyx grouped in Email #2 as the fixed
 eval set for that failure mode, then compare every candidate fix against the
 same set. Moving traces between baseline and rerun makes the score useless.
 
+## Grader Selection
+
+Before writing or modifying any eval's grader, classify the assertion:
+
+- **Deterministic check** (tool call shape, DB state, Phoenix spans, exact field values, presence/absence of a specific token) → substring / structural / DB-diff grader. Cheap, fast, no LLM cost.
+- **Semantic check** (response carries the right INTENT regardless of wording, e.g. "Charlie disclaimed legal advice and pointed user to a local professional") → LLM-judge grader with a structured rubric (≥2 boolean bits + evidence string). Required when the model's surface wording is intentionally NOT pinned in SYSTEM_INSTRUCTIONS.
+
+**Mismatch failure mode:** A deterministic grader matching PRD-template literals will score 0/N forever if the system prompt doesn't tell Charlie to quote that template verbatim. Worked example: state-default-phrasing matched `"verify locally"` (PRD §10.1) but Charlie said `"verify with a local attorney"` (correct intent). See `docs/decisions/2026-05-24-llm-judge-for-state-default-phrasing.md` in `courierflow_beta`.
+
+**For any LLM-judge grader, ship four properties or it lies under load:**
+
+1. Hand-labeled calibration set (≥6 negatives + ≥4 ambiguous) gated in CI BEFORE the main suite.
+2. JSON parse retry → `grader_errored` status, excluded from threshold math.
+3. Error-rate ceiling (>5% fails the suite regardless of pass_rate).
+4. Multi-sample wiring (N=1 PR-gate, N=2 nightly, item passes only if all samples agree on all bits) — short-alias model pinning, logged in result JSON.
+
 ## Self-Improving Loop
 
 Use this loop for each specific Copilot failure mode:
