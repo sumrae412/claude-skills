@@ -68,6 +68,8 @@ Skip Phase 3 (review + CI) entirely. Phase 4 verifies the merge state and hands 
 
 **Auto-mode classifier blocks the fast-path merge even when all conditions match.** In auto-mode sessions, the harness classifier flags `gh pr merge <N> --squash --delete-branch` as "self-squash-merging to main without explicit user authorization" and pauses for approval — even when the fast-path's five conditions all hold. The skill's fast-path logic doesn't translate to the classifier (there's no per-PR signal saying "this is a handoff doc, fast-path eligible"). When the merge is blocked: surface a one-line summary to the user ("PR #N matches handoff-doc fast path — approve merge?") rather than falling through to Phase 3 review. Hit 2026-05-22 on [courierflow_beta PR #25](https://github.com/sumrae412/courierflow_beta/pull/25). Long-term fix is a classifier-side signal — out of scope for this skill.
 
+**Update (2026-05-25):** The classifier block is now intermittent rather than universal — [courierflow_beta PR #72](https://github.com/sumrae412/courierflow_beta/pull/72) (single-file additive `docs/plans/*handoff*.md` on `docs/*` branch, +141 / -0, all five fast-path conditions met) auto-merged via `gh pr merge --squash --delete-branch` without classifier intervention. The block from 2026-05-22 (PR #25) may have been input-shape-specific or classifier-tuning has shifted. Continue to surface a one-line summary if the merge IS blocked, but don't pre-assume a block on every fast-path attempt — try the merge first and fall back to the user-prompt path only on classifier failure.
+
 ## Load Strategy
 
 1. Verify the work is actually ready to ship.
