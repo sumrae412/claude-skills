@@ -101,6 +101,8 @@ Template frameworks (see `references/templates.md`): CO-STAR, RISEN, RTF
 6. **Closing reasoning line** — End with one instruction signaling reasoning depth
 7. **XML tags** — Use for multiple sections; skip for simple prompts
 8. **Role assignment** — Only when it meaningfully steers output
+9. **Prefill the assistant message** — Seed the response start (e.g., `{"` for JSON, `<answer>` for tagged output) to lock format and skip preamble. Essential for parseable outputs and any rigid template.
+10. **Prompt chaining** — When subtasks have different shapes (extract → classify → summarize), split into separate calls rather than one mega-prompt. Each call is easier to evaluate and fix in isolation.
 
 ---
 
