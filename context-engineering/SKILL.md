@@ -1,6 +1,7 @@
 ---
 name: context-engineering
 description: Optimizes agent context for better output quality. Use when starting a session, when output quality degrades, when switching tasks, or when setting up a new project for AI-assisted development.
+user-invocable: true
 ---
 
 # Context Engineering
