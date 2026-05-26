@@ -1,6 +1,6 @@
 ---
 name: structured-prompt-builder
-description: Build a production-ready XML-structured prompt through an interactive critique loop. The skill drafts a prompt using Anthropic's 10-component framework from Prompting 101, then audits it against an 11-rule checklist and iterates with the user until the prompt is clean and efficient. Use this skill whenever the user asks to draft, design, or improve a prompt, system prompt, or LLM instruction set — especially for classification, extraction, document analysis, multi-step reasoning, or any task where output format matters. Trigger on phrases like "write a prompt for", "design a system prompt", "prompt template", "prompt structure", or "how should I prompt Claude to do X". Also trigger when the user describes a production LLM workflow without explicitly asking for a prompt — they probably need one. NOT for managing prompts in production at scale (use prompt-governance). NOT for analyzing performance across prompt versions (use prompt-optimization). NOT for optimizing session context for an active agent (use context-engineering).
+description: Build a production-ready XML-structured prompt through an interactive critique loop. The skill drafts a prompt using Anthropic's 10-component framework from Prompting 101, then audits it against a multi-rule checklist and iterates with the user until the prompt is clean and efficient. Use this skill whenever the user asks to draft, design, or improve a prompt, system prompt, or LLM instruction set — especially for classification, extraction, document analysis, multi-step reasoning, or any task where output format matters. Trigger on phrases like "write a prompt for", "design a system prompt", "prompt template", "prompt structure", or "how should I prompt Claude to do X". Also trigger when the user describes a production LLM workflow without explicitly asking for a prompt — they probably need one. NOT for managing prompts in production at scale (use prompt-governance). NOT for analyzing performance across prompt versions (use prompt-optimization). NOT for optimizing session context for an active agent (use context-engineering).
 ---
 
 # Structured Prompt Builder
@@ -13,7 +13,7 @@ Apply `token-economy` whenever this skill would otherwise trigger broad explorat
 - Don't re-render unchanged sections of the prompt during iteration; show only the diff.
 - For simple prompts that pass the audit on v1, ship without belaboring the loop.
 
-Drafts a prompt, audits it against 11 rules, iterates with the user until clean.
+Drafts a prompt, audits it against the checklist, iterates with the user until clean.
 
 ## When to use
 
@@ -34,7 +34,7 @@ Use for prompts that:
 
 ### Phase 2 — Self-audit
 
-3. Apply the 11-rule checklist (next section) to v1. For each rule, decide pass (✅) or flag (⚠️). Each flag must point to a specific span or omission, not a vibe.
+3. Apply the audit checklist (next section) to v1. For each rule, decide pass (✅) or flag (⚠️). Each flag must point to a specific span or omission, not a vibe.
 
 ### Phase 3 — Present + iterate
 
@@ -45,7 +45,7 @@ Use for prompts that:
 
    Audit format:
    ```
-   ✅ R1, R2, R5, R10, R11
+   ✅ R1, R2, R5, R10, R11, R12, R13
    ⚠️ R3 — "key points" is undefined
    ⚠️ R6 — role missing domain and audience
    ⚠️ R9 — no escape hatch for empty/garbled input
@@ -58,10 +58,10 @@ Use for prompts that:
 
 Stop iterating when ANY of these is true:
 - User explicitly ships
-- All 11 rules pass AND user confirms they're satisfied
+- All checklist rules pass AND user confirms they're satisfied
 - User waives remaining flags ("ignore R8, this is too simple")
 
-## The 11-rule audit checklist
+## The audit checklist
 
 ### Structural rules
 
@@ -69,11 +69,13 @@ Stop iterating when ANY of these is true:
 
 **R2. Background = reference data only.** Check: no "if/then" logic in `<background>`. Common fix: move decision rules from background to instructions.
 
-**R3. Instructions = procedure + decision rules.** Check: numbered steps, specific about ordering, includes if/then logic. Common fix: replace vague verbs ("extract key points") with specific operations ("for each section in <background>, scan for matching content").
+**R3. Instructions = procedure + decision rules.** Check: numbered steps, specific about ordering, includes if/then logic. Common fix: replace vague verbs ("extract key points") with specific operations ("for each section in <background>, scan for matching content"). **Does not apply to agent prompts** — agents need heuristics + invariants, not numbered scripts. If the prompt drives a tool-using, multi-turn, or side-effecting agent, route to `agent-prompt-architecture` instead.
 
 **R4. Guardrails = escape hatches + hard stops.** Check: no overlap with `<instructions>`. Guardrails are the rules that apply *regardless of which step Claude is on* (don't invent data, return X when uncertain). Common fix: pull "do not" statements out of instructions into guardrails.
 
 **R5. No empty or placeholder sections.** Check: every XML tag has substantive content. Common fix: delete the tag rather than leave `[TODO]` or empty.
+
+**R12. Long inputs before the immediate task.** Check: when input data is large (docs, transcripts, code >1K tokens), `<input_data>` appears in the user message BEFORE the `<task>` statement. Common fix: move the task statement to the end so the model sees the input first, then the instruction. ~30% quality lift on long-context tasks; critical for Claude 2.1+.
 
 ### Content rules
 
@@ -86,6 +88,8 @@ Stop iterating when ANY of these is true:
 **R9. Escape hatch defined for uncertain inputs.** Check: `<guardrails>` or `<output_format>` specifies what to return when the model can't determine the answer confidently. Common fix: add `"needs_review"` / `null` / `"insufficient_input"` as a valid output value, with a guardrail telling the model when to use it.
 
 **R10. No aggregation rules in `<instructions>`.** Check: rules like "drop low-severity flags if there are 3+ medium ones" or "deduplicate before output" — these are post-processing operations, not per-item reasoning. Common fix: move them to a code-side post-processor, or split into a second prompt.
+
+**R13. Positive framing in instructions.** Check: `<instructions>` use "do X" constructions rather than "don't do Y". Common fix: rewrite "don't use bullets" as "write in flowing prose". Negative phrasing is fine in `<guardrails>` for hard stops ("do not invent data") but procedural steps should be affirmative.
 
 ### Efficiency rules
 
@@ -190,7 +194,7 @@ No if/then logic. Cacheable.]
 ### Audit results
 
 ```
-✅ R1, R2, R5, R10, R11
+✅ R1, R2, R5, R10, R11, R12, R13
 ⚠️ R3 — "extract key points" is undefined; no procedure for what counts
 ⚠️ R4 — no guardrails for empty/garbled transcripts
 ⚠️ R6 — role missing domain and audience
@@ -302,7 +306,7 @@ Return JSON only:
 ### Audit (v2)
 
 ```
-✅ R1–R11 all pass
+✅ R1–R13 all pass
 ```
 
 Ready to ship, or want to refine any section?
@@ -314,4 +318,4 @@ Ready to ship, or want to refine any section?
 - **Cacheability:** Anything in `<background>` should be stable across calls. If it changes per call, it's input data, not background.
 - **Aggregation belongs in code.** Rules like "drop low flags if 3+ mediums exist" or "deduplicate" are post-processing. The model can sort of do them, but unreliably. Move to a Python post-processor.
 - **Extended thinking is a crutch for prompt engineering.** With thinking enabled, you can skip `<thinking_guidance>` — but inspect the thinking traces to find prompt weaknesses.
-- **The audit is not a quality guarantee.** Passing 11 rules means the prompt is *structurally clean*, not that it produces good outputs. Test with real inputs.
+- **The audit is not a quality guarantee.** Passing every rule means the prompt is *structurally clean*, not that it produces good outputs. Test with real inputs.
