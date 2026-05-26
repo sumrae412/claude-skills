@@ -93,6 +93,23 @@ Rules:
 - Argue as if the view is genuinely persuasive.
 - Keep the goal understanding, not conversion.
 
+### Mode C — Single-component Tier 0 (variant of Mode A)
+
+Use when a multi-component design is being built incrementally and a single component needs pressure-testing in isolation BEFORE downstream components commit to it. Smaller scope than typical Tier 0 (one component vs. full plan); the chair's job is **synthesis across specialists for one artifact**, not weighing a whole plan.
+
+Process:
+
+1. Pick 3 specialist personas for the component's surface (e.g. for an agent persona block: AI forward-deployed engineer + UI/UX specialist + product manager; for an API schema: backend engineer + API consumer + security reviewer).
+2. Each specialist runs Mode A against ONLY the named component, scoped to their lens.
+3. Chair synthesis identifies:
+   - **Convergence** — findings ≥2 specialists flagged (highest-priority repairs).
+   - **Distinct critical findings** — specialist-unique findings worth keeping.
+   - **Fatal flaw** — the 1 cross-cutting pattern that, if uncorrected, propagates into downstream components.
+   - **Recommended repairs (smallest-change ordering)** — concrete edits ordered by blast radius.
+4. End with the standard Mode A close: `The strongest single argument against locking this as-is: …`
+
+Validated on courierflow_beta [PR #100](https://github.com/sumrae412/courierflow_beta/pull/100) Charlie persona component — panel surfaced the "persona writes checks the architecture has to cash" failure mode and 5 distinct repairs the user adopted before downstream components committed. Cheaper than full Tier 3, tighter than a full-plan Tier 0.
+
 ### Optional second pass — attack → repair
 
 If the user asks for improvements after a Devil's Advocate pass, switch from attack to repair:

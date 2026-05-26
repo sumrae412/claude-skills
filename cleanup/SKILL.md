@@ -72,6 +72,8 @@ This skill uses progressive disclosure. Load the phase file for the stage you're
 
 *Option 3 offers to remove worktree while keeping the branch on remote.
 
+**Option 2 covers two distinct cases.** (a) **Standard:** PR opened for normal review-then-merge cycle. (b) **Review-then-merge-later (design-doc / decision record / plan PR):** PR is intentionally not auto-merged — team review is the gate, not CI. In case (b), the handoff doc travels on the same branch and ships atomically with the PR contents; session-learnings still fires; config/skills repo sync still happens; worktree teardown still happens; the branch stays alive on remote for the next session to resume. Mark intent in the PR body's first line ("*Design doc for team review — do not auto-merge*") so a parallel session doesn't squash-merge it (composes with the parallel-session PR scope-expansion / merge-without-CI-green race entries in `courierflow_beta/CLAUDE.md`). Validated 2026-05-26 on courierflow_beta [PR #100](https://github.com/sumrae412/courierflow_beta/pull/100).
+
 ## Not in a Worktree?
 
 This skill works for regular branches too — it just skips Step 7. The git cleanup (merge/PR/discard), session-learnings, and repo sync steps work identically regardless of whether you're in a worktree.
