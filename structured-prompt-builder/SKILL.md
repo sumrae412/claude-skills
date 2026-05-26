@@ -13,7 +13,7 @@ Apply `token-economy` whenever this skill would otherwise trigger broad explorat
 - Don't re-render unchanged sections of the prompt during iteration; show only the diff.
 - For simple prompts that pass the audit on v1, ship without belaboring the loop.
 
-Drafts a prompt, audits it against 11 rules, iterates with the user until clean.
+Drafts a prompt, audits it against the checklist, iterates with the user until clean.
 
 ## When to use
 
@@ -58,7 +58,7 @@ Use for prompts that:
 
 Stop iterating when ANY of these is true:
 - User explicitly ships
-- All 11 rules pass AND user confirms they're satisfied
+- All checklist rules pass AND user confirms they're satisfied
 - User waives remaining flags ("ignore R8, this is too simple")
 
 ## The audit checklist
@@ -318,4 +318,4 @@ Ready to ship, or want to refine any section?
 - **Cacheability:** Anything in `<background>` should be stable across calls. If it changes per call, it's input data, not background.
 - **Aggregation belongs in code.** Rules like "drop low flags if 3+ mediums exist" or "deduplicate" are post-processing. The model can sort of do them, but unreliably. Move to a Python post-processor.
 - **Extended thinking is a crutch for prompt engineering.** With thinking enabled, you can skip `<thinking_guidance>` — but inspect the thinking traces to find prompt weaknesses.
-- **The audit is not a quality guarantee.** Passing 11 rules means the prompt is *structurally clean*, not that it produces good outputs. Test with real inputs.
+- **The audit is not a quality guarantee.** Passing every rule means the prompt is *structurally clean*, not that it produces good outputs. Test with real inputs.
