@@ -5,12 +5,12 @@ Run ALL applicable critics in parallel (one message, multiple tool calls):
 **Always run — DeepSeek Bug-Hunter + second external critic:**
 
 In **Codex runtime**, the second external critic is **Claude/Anthropic** by
-default, not GPT-4o. Use GPT-4o only when the user explicitly requests it.
+default, not GPT-5. Use GPT-5 only when the user explicitly requests it.
 Prompt Claude to review the same `/tmp/debate_artifact.md` and
 `/tmp/debate_scope.md`, focusing on architecture, completeness, sequencing,
 security/privacy, and scope control.
 
-In **Claude Code runtime**, keep the historical GPT-4o path unless the user
+In **Claude Code runtime**, keep the historical GPT-5 path unless the user
 explicitly asks to use Claude/Anthropic.
 
 ```bash
@@ -30,7 +30,7 @@ python3 ~/.claude/scripts/plancraft_review.py \
 # Do not send secrets, environment dumps, or unrelated repo content.
 python3 /tmp/claude_plan_review.py
 
-# Claude Code / explicit GPT-4o path — pick ONE based on IS_CODE / IS_NON_CODE:
+# Claude Code / explicit GPT-5 path — pick ONE based on IS_CODE / IS_NON_CODE:
 
 # If IS_CODE → Architecture critic (parallel)
 python3 ~/.claude/scripts/plancraft_review.py \

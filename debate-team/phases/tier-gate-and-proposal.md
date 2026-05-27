@@ -31,8 +31,8 @@ Tier 1 otherwise (or user says "quick review")
 ```
 
 **Tier routing:**
-- **Tier 1:** Skip to Step 3 (DeepSeek only, no Generator, no GPT-4o, no synthesis). Run DeepSeek Bug-Hunter with `OUT_OF_SCOPE` filtering. Output: Pass/flag list.
-- **Tier 2:** Skip to Step 3 (DeepSeek + GPT-4o in parallel, no Generator). Output: Adopt/Reject/Defer per finding via Step 4.
+- **Tier 1:** Skip to Step 3 (DeepSeek only, no Generator, no GPT-5, no synthesis). Run DeepSeek Bug-Hunter with `OUT_OF_SCOPE` filtering. Output: Pass/flag list.
+- **Tier 2:** Skip to Step 3 (DeepSeek + GPT-5 in parallel, no Generator). Output: Adopt/Reject/Defer per finding via Step 4.
 - **Tier 3:** Full protocol — Step 2 (Generator) → Step 3 (all critics) → Step 4 (synthesis) → Step 5 (present).
 
 Announce: "Running debate-team Tier [N] — [reason]."
