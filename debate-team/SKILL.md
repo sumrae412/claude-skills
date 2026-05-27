@@ -1,6 +1,6 @@
 ---
 name: debate-team
-description: Unified review skill with auto-tiering — absorbs PlanCraft and adversarial-thinking. Tier 0 (single-conversation devil's advocate or steelman, no API calls — for pressure-testing ideas, plans, decisions, beliefs, strategies, startup concepts, arguments, or assumptions before incurring multi-model cost). Tier 1 (DeepSeek scope check). Tier 2 (DeepSeek + second critic). Tier 3 (full debate). Trigger phrases for Tier 0: "attack this idea", "devil's advocate", "steelman", "find flaws", "argue against", "understand the other side". In Codex, use Claude/Anthropic as the second external critic instead of GPT-4o unless the user explicitly requests GPT-4o. Conditional Haiku Style critic for frontend.
+description: Unified review skill with auto-tiering — absorbs PlanCraft and adversarial-thinking. Tier 0 (single-conversation devil's advocate or steelman, no API calls — for pressure-testing ideas, plans, decisions, beliefs, strategies, startup concepts, arguments, or assumptions before incurring multi-model cost). Tier 1 (DeepSeek scope check). Tier 2 (DeepSeek + second critic). Tier 3 (full debate). Trigger phrases for Tier 0: "attack this idea", "devil's advocate", "steelman", "find flaws", "argue against", "understand the other side". In Codex, use Claude/Anthropic as the second external critic instead of GPT-5 unless the user explicitly requests GPT-5. Conditional Haiku Style critic for frontend.
 ---
 
 # Unified Review — Debate Team
@@ -21,7 +21,7 @@ Cross-model adversarial review for plans and code. Three tiers auto-selected by 
 
 ## Setup
 
-- Set **DEEPSEEK_API_KEY** and either **ANTHROPIC_API_KEY** (Codex default) or **OPENAI_API_KEY** (Claude Code default / explicit GPT-4o request) in your environment. Scripts read keys only from the environment; never put keys in plan files, scope files, or logs.
+- Set **DEEPSEEK_API_KEY** and either **ANTHROPIC_API_KEY** (Codex default) or **OPENAI_API_KEY** (Claude Code default / explicit GPT-5 request) in your environment. Scripts read keys only from the environment; never put keys in plan files, scope files, or logs.
 - The debate protocol is **single-user and serial** (one debate at a time). Fixed paths `/tmp/debate_artifact.md` and `/tmp/debate_scope.md` are acceptable; for parallel runs use unique paths (e.g. timestamp or UUID).
 
 ## When to Use
@@ -52,7 +52,7 @@ Cross-model adversarial review for plans and code. Three tiers auto-selected by 
 
 ## Tier 0 — Standalone Modes (No API Calls)
 
-Pure-Sonnet single-conversation pressure testing. No DeepSeek, no GPT-4o, no Claude critic, no Haiku. Use when the user wants to stress-test an idea, plan, or argument before incurring the multi-model cost of Tier 1+.
+Pure-Sonnet single-conversation pressure testing. No DeepSeek, no GPT-5, no Claude critic, no Haiku. Use when the user wants to stress-test an idea, plan, or argument before incurring the multi-model cost of Tier 1+.
 
 Two modes — infer from the request, ask only if unclear.
 
@@ -126,13 +126,13 @@ When Tier 0 is not enough → escalate to Tier 1+ (the API-driven tiers below) f
 |------|-------|------|------|
 | Generator | Sonnet (teammate) | Agent Teams | Always |
 | Bug-Hunter | DeepSeek (API) | External | Always |
-| Architecture / Completeness | Claude/Anthropic critic (Codex default) or GPT-4o via `--reviewer codex` (Claude Code default / explicit request) | External | Always as second external critic |
+| Architecture / Completeness | Claude/Anthropic critic (Codex default) or GPT-5 via `--reviewer codex` (Claude Code default / explicit request) | External | Always as second external critic |
 | Style/UI | Haiku (teammate) | Agent Teams | Frontend changes only |
 | Lead/Judge | Opus (you) | Lead | Always |
 
 **Second critic routing:**
-- **Codex runtime:** use Claude/Anthropic as the second external critic instead of GPT-4o, unless the user explicitly requests GPT-4o. Prompt Claude to review both architecture and completeness for the artifact type.
-- **Claude Code runtime:** use the existing GPT-4o reviewer path unless the user explicitly requests Claude/Anthropic.
+- **Codex runtime:** use Claude/Anthropic as the second external critic instead of GPT-5, unless the user explicitly requests GPT-5. Prompt Claude to review both architecture and completeness for the artifact type.
+- **Claude Code runtime:** use the existing GPT-5 reviewer path unless the user explicitly requests Claude/Anthropic.
 - **Code artifacts** (touches `app/`, `tests/`, `*.py`, `*.js`, `*.css`, `*.html`) → focus on separation of concerns, abstraction quality, API boundaries, schema/security risks, and project pattern consistency.
 - **Non-code artifacts** (skills, docs, AGENTS.md, CLAUDE.md, MEMORY.md, process specs) → focus on missing steps, contradictions, stale references, term consistency, and operational clarity.
 
@@ -179,7 +179,7 @@ Why this is mandatory: when round-N mods are folded back into the artifact body 
 
 - The review scripts (`plancraft_review.py`, `batch_review.py`) live in the **CourierFlow repo** at `scripts/` (also mirrored to active worktrees). When invoking from a non-script context, find them with `find ~/claude_code/courierflow -name plancraft_review.py -not -path '*/node_modules/*' | head -1`. The scripts are not on PATH and not packaged as a CLI — invoke as `python3 <full-path>/plancraft_review.py ...`.
 - If a critic run fails: re-run the same `plancraft_review.py` command with the same `--plan-file` and `--scope-file`, then inspect the JSON output. The `error` key (if present) explains the failure (e.g. missing API key, API timeout, HTTP 429 rate limit).
-- If a batch review fails: re-run `batch_review.py` with the same `--artifact-file` and `--scope-file`. Check the JSON `error` key. Common causes: `anthropic` not installed, `ANTHROPIC_API_KEY` not set (verify via `zsh -ic 'echo $ANTHROPIC_API_KEY'` — bare Bash subshells don't inherit zshrc), batch timeout (increase `--timeout`), GPT-4o TPM rate limit on large artifacts (drop to Tier 2 — see `references/cost-budget.md` "Operational fallbacks").
+- If a batch review fails: re-run `batch_review.py` with the same `--artifact-file` and `--scope-file`. Check the JSON `error` key. Common causes: `anthropic` not installed, `ANTHROPIC_API_KEY` not set (verify via `zsh -ic 'echo $ANTHROPIC_API_KEY'` — bare Bash subshells don't inherit zshrc), batch timeout (increase `--timeout`), GPT-5 TPM rate limit on large artifacts (drop to Tier 2 — see `references/cost-budget.md` "Operational fallbacks").
 
 ## Extending: Adding New Critics
 

@@ -71,9 +71,9 @@ Sort by: feature x model x token count. Usually 2-3 endpoints drive the majority
 
 | Complexity | Characteristics | Right Model Tier |
 |---|---|---|
-| Simple | Classification, extraction, yes/no, short output | Small (Haiku, GPT-4o-mini, Gemini Flash) |
-| Medium | Summarization, structured output, moderate reasoning | Mid (Sonnet, GPT-4o) |
-| Complex | Multi-step reasoning, code gen, long context | Large (Opus, GPT-4o, o3) |
+| Simple | Classification, extraction, yes/no, short output | Small (Haiku, GPT-5-mini, Gemini Flash) |
+| Medium | Summarization, structured output, moderate reasoning | Mid (Sonnet, GPT-5) |
+| Complex | Multi-step reasoning, code gen, long context | Large (Opus, GPT-5, o3) |
 
 ---
 
