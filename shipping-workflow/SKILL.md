@@ -68,6 +68,27 @@ Skip Phase 3 (review + CI) entirely. Phase 4 verifies the merge state and hands 
 
 **Auto-mode classifier blocks the fast-path merge even when all conditions match.** In auto-mode sessions, the harness classifier flags `gh pr merge <N> --squash --delete-branch` as "self-squash-merging to main without explicit user authorization" and pauses for approval — even when the fast-path's five conditions all hold. The skill's fast-path logic doesn't translate to the classifier (there's no per-PR signal saying "this is a handoff doc, fast-path eligible"). When the merge is blocked: surface a one-line summary to the user ("PR #N matches handoff-doc fast path — approve merge?") rather than falling through to Phase 3 review. Hit 2026-05-22 on [courierflow_beta PR #25](https://github.com/sumrae412/courierflow_beta/pull/25). Long-term fix is a classifier-side signal — out of scope for this skill.
 
+## No-review-wired-up fast path
+
+Some repos (notably docs-style ones — claude-skills is the canonical example) have no CodeRabbit, no `.github/workflows/`, and no human reviewers attached to PRs. A PR there is effectively ready-to-merge the moment it opens; waiting for review feedback that will never come is dead time and confuses handoff docs that assume CR is a gate.
+
+**Detection (run before entering Phase 3):**
+
+```bash
+env -u GH_TOKEN gh pr view <recent-merged-PR-#1> --json reviews,statusCheckRollup
+env -u GH_TOKEN gh pr view <recent-merged-PR-#2> --json reviews,statusCheckRollup
+```
+
+Pick the two most recently merged PRs in the same repo. If `reviews` is `[]` AND `statusCheckRollup` is `[]` on BOTH → no review wiring exists. Confirm by checking the tree: `ls .github/workflows/ 2>/dev/null` returns nothing and there's no `.coderabbit.yaml` / `.coderabbit.yml`.
+
+**When detected:** skip Phase 3's wait-for-review step. Phase 3's self-review checklist (the "10-step review") still runs as a self-audit, but stops blocking on external signal. Proceed to Phase 4 merge as soon as self-review passes.
+
+**Distinct from the handoff-doc fast path above:** that one fires on PR shape (single-file, additive, `docs/plans/*handoff*.md`). This one fires on REPO shape (no review automation). They compose — a handoff doc in a no-CR repo hits both.
+
+**Why this matters:** validated 2026-05-27 on [claude-skills PR #118](https://github.com/sumrae412/claude-skills/pull/118) — handoff doc treated "address CodeRabbit feedback" as a gating Phase 3 step. CodeRabbit had never been wired up in this repo; PRs #117 and #114 each had `reviews: []` and `statusCheckRollup: []`. Without this detection step, the resumer waits indefinitely for review that won't fire.
+
+**Composes with `next` skill's §5a "Re-verify on resume"** — that section makes the CR/CI check part of the resumer's preflight, so the no-review-wired-up state is known before Phase 3 starts.
+
 ## Load Strategy
 
 1. Verify the work is actually ready to ship.
