@@ -80,6 +80,15 @@ For open-ended codebase questions ("how does X work?", "find everything that tou
 
 Haiku is ~10–20× cheaper than Opus for tool-driven exploration. Every explored file that never enters your main-thread context is pure savings.
 
+### 7.5 Skip subagent dispatch when the controller already has the full spec
+
+`subagent-driven-development` defaults to dispatching even content-write tasks (markdown reference files, doc pages) to per-task subagents. When the orchestrator already holds the full spec for all N files in its current context — and the writes are sequential markdown with no independent exploration needed — the per-subagent briefing tokens exceed the savings, and there's no parallelism gain (each subagent re-pays the spec cost).
+
+- **Dispatch when:** files need independent exploration, the spec is large enough you'd re-paste it per subagent, or writes can genuinely parallelize on distinct surfaces (e.g. tests in unrelated modules).
+- **Stay main-thread when:** the controller drafted the spec this turn, files are pure content (no code execution), and writes are batchable as parallel `Write` calls in one assistant turn (see #2).
+
+Validated 2026-05-28 building [`sme-voice`](../sme-voice/SKILL.md): 4 reference markdown files written main-thread from the in-context plan; dispatching 4 subagents would have re-paid ~2K briefing tokens each for zero parallelism gain.
+
 ### 8. Introspect the live DB — don't read `schemas/` or `migrations/`
 
 If the task is "does column X exist?" or "what tables reference Y?", query the live DB's information schema (`\d+ tablename` via psql, or a DB MCP's table-introspection action). Reading the full migrations history to reconstruct schema costs 10–100× more tokens and is often wrong (migrations can be reverted, renamed, or stacked).
