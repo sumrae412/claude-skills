@@ -14,7 +14,7 @@ Ship the new `evals` skill PR (router + 5 phases + 3 references), respond to Cod
 - `evals/SKILL.md` — router (137 lines)
 - `evals/phases/phase-1-design.md` through `phase-5-production-evals.md` (1,111 lines across 5 phases)
 - `evals/references/judge-calibration.md`, `outcome-grader.md`, `eval-philosophy.md` (433 lines across 3 references — `eval-philosophy.md` was authored by the user mid-session on this branch)
-- `docs/plans/2026-05-27-evals-skill-modification-delta.md` — multi-round debate-team modification delta (R1 internal × 4, R2 DeepSeek + GPT-4o-codex, R3 GPT-5 with docs-tuned prompt). Records 34 ADOPTed mods and the per-mod ledger. Required by `debate-team/SKILL.md`'s multi-round mandate; ships atomically with the skill.
+- `docs/plans/2026-05-27-evals-skill-modification-delta.md` — multi-round debate-team modification delta (R1 internal × 4, R2 DeepSeek + GPT-4o-codex, R3 GPT-5 with docs-tuned prompt). Records 54 ADOPTed mods (R1: 20, R2: 14, R3: 20) and the per-mod ledger. Required by `debate-team/SKILL.md`'s multi-round mandate; ships atomically with the skill.
 
 **Untouched (out of scope this session):**
 - `prompt-governance/phases/phase-2-evals.md` (still a stub; the `evals` skill description points readers there for registry mechanics)
@@ -77,7 +77,7 @@ Suggested PR title: `docs(skills): add evals skill (offline + production, multi-
 
 PR body should call out:
 - The skill (router + 5 phases + 3 references)
-- The modification delta artifact and what it documents (R1+R2+R3 debate-team rounds, 34 ADOPTed mods, 17 load-bearing fixes)
+- The modification delta artifact and what it documents (R1+R2+R3 debate-team rounds, 54 ADOPTed mods, 17 load-bearing fixes)
 - The five R3-caught statistical bugs that both R1 and R2 endorsed (these are the "why this took three rounds" headline)
 
 ## Mode directive

@@ -77,7 +77,7 @@ Minimum viable example:
 {
   "id": "stable-uuid",
   "input": { ... },
-  "reference": { ... }   // optional, enables code-based eval
+  "reference": { ... },
   "metadata": {
     "failure_mode": "api_hallucination",
     "source": "prod_trace",
@@ -86,6 +86,9 @@ Minimum viable example:
   }
 }
 ```
+
+`reference` is optional — present it when ground truth exists (the
+key that unlocks code-based evaluators), omit it otherwise.
 
 Stable IDs matter — they let you join across runs to see *which*
 examples regressed, not just that the mean dropped.
