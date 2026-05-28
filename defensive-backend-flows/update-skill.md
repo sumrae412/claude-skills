@@ -45,3 +45,7 @@ Prompt:
    ---
    [paste pressure scenario prompt]"
 ```
+
+## See also
+
+- [`defensive-ui-flows/update-skill.md`](../defensive-ui-flows/update-skill.md) — same rubric for UI skill updates (RED/GREEN scenarios, evidence threshold, decision template).

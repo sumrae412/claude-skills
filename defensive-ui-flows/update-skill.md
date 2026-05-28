@@ -45,3 +45,7 @@ Prompt:
    ---
    [paste pressure scenario prompt]"
 ```
+
+## See also
+
+- [`defensive-backend-flows/update-skill.md`](../defensive-backend-flows/update-skill.md) — same rubric for backend skill updates (RED/GREEN scenarios, evidence threshold, decision template).

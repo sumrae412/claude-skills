@@ -1135,3 +1135,7 @@ Each is a failure to ask: **"What happens to the data if this fails halfway?"**
 | 4: Encapsulation | 5 | ❌ Not reproduced | ✅ Improved | Needs refinement |
 
 **Key finding:** Scenario 1 is the strongest validation — it caught a real anti-pattern where the agent acknowledged the need for logging but didn't implement it. Scenarios 2 and 4 need more subtle prompts that don't telegraph the correct answer.
+
+## See also
+
+- [`defensive-ui-flows/evidence.md`](../defensive-ui-flows/evidence.md) — UI-side evidence catalog (anti-patterns, RED/GREEN test runs, scenario effectiveness).
