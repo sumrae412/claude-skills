@@ -289,6 +289,40 @@ Independent of `--visual` and independent of the guard above: if `$plan` has a `
 
 ---
 
+## Step 5c: Emit Sprint Contract (Phase 4 → Phase 5 handoff)
+
+Before the User Approval Gate, emit a **Sprint Contract** alongside `$plan`. This is the load-bearing artifact Phase 5 consumes — it makes the scope boundary explicit so the implementer cannot quietly expand the diff.
+
+The contract has three required fields:
+
+- **scope** — the in-scope task IDs from `$plan.steps`. Copy verbatim; do not paraphrase.
+- **verification_standards** — for each in-scope task, the exact commands or artifacts that prove "done." Examples: `pytest tests/test_foo.py::test_bar exits 0`, `alembic upgrade head succeeds`, `curl localhost:8000/health returns 200`, `docs/foo.md contains section "Bar"`. No vague criteria ("the feature works", "looks right").
+- **exclusions** — explicit out-of-scope items the implementer MUST NOT touch in Phase 5. Name files, functions, refactors, or adjacent features the executor noticed during exploration but is deferring. The exclusions list is the novel field — it converts "this is in scope" thinking into "this is out of scope" thinking, which is what actually prevents scope creep.
+
+**Emit the contract to `.claude/sprint-contract.json` and link from `$plan`:**
+
+```json
+{
+  "scope": ["task-1", "task-2", "task-3"],
+  "verification_standards": {
+    "task-1": ["pytest tests/test_models.py::TestFoo exits 0"],
+    "task-2": ["alembic upgrade head succeeds", "new column visible in \\d+ output"],
+    "task-3": ["curl /api/foo returns 200 with expected JSON shape"]
+  },
+  "exclusions": [
+    "Do NOT refactor app/services/legacy_helper.py (deferred to follow-up)",
+    "Do NOT modify the existing /api/bar endpoint (out of scope for this sprint)",
+    "Do NOT add new dependencies to requirements.txt"
+  ]
+}
+```
+
+**Why exclusions matter:** existing Phase 4 / Phase 5 gates catch logic errors and verify acceptance, but neither has a structural way to say "you noticed this adjacent mess; ignore it." Without an explicit exclusions list, implementers either expand scope (PR balloons, review churn) or silently leave a comment like `# TODO: clean this up later` (technical debt with no owner). The exclusions field forces the trade-off into the architecture phase where it can be debated, not the implementation phase where it's already happening.
+
+Source: [Learn Harness Engineering, lecture 11](https://walkinglabs.github.io/learn-harness-engineering/en/) — Sprint Contracts as the durable handoff artifact between planning and execution.
+
+---
+
 ## User Approval Gate
 
 ```
