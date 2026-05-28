@@ -89,6 +89,11 @@ BACKTICK_PATH_RE = re.compile(r"`([A-Za-z0-9_./~-]+\.md)`")
 ABS_PATH_RE = re.compile(r"(?:~/claude_code/claude-skills/|~/\.claude/skills/)([A-Za-z0-9_./-]+\.md)")
 # Skill-name mentions: `slug` or `plugin:slug` or `/slug` (slash-command form)
 SKILL_MENTION_RE = re.compile(r"`(?:/)?([a-z][a-z0-9-]+(?::[a-z][a-z0-9-]+)?)`")
+# Obsidian-style wikilinks: [[basename]] or [[basename|display alias]]. The
+# captured group is the target basename — resolution appends `.md` if absent
+# and looks up via basename_index. Ambiguous matches (multiple files with the
+# same basename) are skipped to avoid false edges.
+WIKILINK_RE = re.compile(r"\[\[([^\]\|]+?)(?:\|[^\]]*)?\]\]")
 
 
 def collect_md(root: Path) -> list[Path]:
@@ -177,6 +182,18 @@ def extract_links(
         hit = skill_index.get(key)
         if hit and hit != md_path:
             targets.add(hit)
+
+    for raw in WIKILINK_RE.findall(text):
+        # `[[name]]` or `[[name.md]]` — resolve via basename_index.
+        # Skip ambiguous matches (multiple files share the basename); a single
+        # match wins. The display-alias half of `[[name|alias]]` is stripped
+        # by the regex.
+        name = raw.strip()
+        if not name.endswith(".md"):
+            name = name + ".md"
+        matches = basename_index.get(name, [])
+        if len(matches) == 1 and matches[0] != md_path:
+            targets.add(matches[0])
 
     return targets
 
