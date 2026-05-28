@@ -674,3 +674,7 @@ if (btn.disabled) {
 - File upload contract mismatches across different pages (partially addressed by Bug 13)
 - Auth-header patterns for non-iframe fetches (fetch + credentials vs blob URL)
 - Pre-check dependency patterns beyond Google Drive (Twilio, OpenAI, etc.)
+
+## See also
+
+- [`defensive-backend-flows/evidence.md`](../defensive-backend-flows/evidence.md) — backend-side evidence catalog (anti-patterns, RED/GREEN test runs, scenario effectiveness).

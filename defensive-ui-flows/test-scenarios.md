@@ -104,3 +104,7 @@ with no inline feedback inside the modal**
 - Does step navigation reset all state? (Bug 4)
 
 **Failure = ANY of the four anti-patterns present**
+
+## See also
+
+- [`defensive-backend-flows/test-scenarios.md`](../defensive-backend-flows/test-scenarios.md) — parallel test scenarios for backend defensive patterns (RED scenarios, what to watch for, pass/fail criteria).

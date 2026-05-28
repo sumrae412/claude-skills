@@ -121,3 +121,7 @@
 - Does any `except` block silently pass without logging? (Rule 1)
 
 **Failure = ANY of the three anti-patterns present**
+
+## See also
+
+- [`defensive-ui-flows/test-scenarios.md`](../defensive-ui-flows/test-scenarios.md) — parallel test scenarios for UI defensive patterns (RED scenarios, what to watch for, pass/fail criteria).
