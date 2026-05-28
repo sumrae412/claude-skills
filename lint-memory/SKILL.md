@@ -61,6 +61,14 @@ of `scripts/build_doc_graph.py` (available in `claude-skills/scripts/` and
   Validated 2026-05-12 on a 254-file corpus: 5/5 inferred pairs were
   complementary, 0/5 were duplicates. Read both files before consolidating;
   default action is to add a cross-reference, not retire one side.
+- **Obsidian-style `[[wikilinks]]` resolve via `basename_index`** (added in
+  [claude-skills PR #124](https://github.com/sumrae412/claude-skills/pull/124)):
+  vaults and memory dirs using `[[name]]` cross-references lint correctly.
+  Ambiguous basenames (multiple files same name) are silently skipped to
+  avoid false edges. Cross-corpus links via external URLs
+  (`https://github.com/...`) are filtered as external — per-corpus linting
+  only. See
+  [`~/claude_code/agent-vault/agent/doc-graph-tooling.md`](https://github.com/sumrae412/agent-vault/blob/main/agent/doc-graph-tooling.md).
 
 Run it before manual consolidation and after every batch of memory adds.
 
