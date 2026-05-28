@@ -23,6 +23,7 @@ Cross-model adversarial review for plans and code. Three tiers auto-selected by 
 
 - Set **DEEPSEEK_API_KEY** and **OPENAI_API_KEY** in your environment (or a documented secure source). The script reads keys only from the environment; never put keys in plan files, scope files, or logs.
 - The debate protocol is **single-user and serial** (one debate at a time). Fixed paths `/tmp/debate_artifact.md` and `/tmp/debate_scope.md` are acceptable; for parallel runs use unique paths (e.g. timestamp or UUID).
+- If keys were ever pasted into the chat transcript (even briefly), source them from `~/.zshrc` or another shell-profile file rather than the conversation buffer. The auto-mode safety classifier will (correctly) block external-API calls when chat-leaked keys are co-located with content-sending tools; this is an exfil pattern, not a bug.
 
 ## When to Use
 
@@ -102,10 +103,19 @@ Why this is mandatory: when round-N mods are folded back into the artifact body 
 
 **Applies to:** any debate-team invocation where the artifact under review has a prior debate-team artifact in `docs/plans/`, in MEMORY, or referenced in the prompt. Single-round reviews are exempt.
 
+## Cross-family critic for statistical/empirical claims
+
+When an artifact contains load-bearing **numeric claims** (sample-size formulas, statistical-test choices, CI rules, power calculations, throughput/latency targets, cost models), the standard DeepSeek + GPT-4o pair is insufficient — both families train heavily on the same web tutorials and co-endorse the same folk errors. **Add a third critic from a different family** (e.g., GPT-5, Gemini, Claude-non-Lead) with a domain-tuned system prompt before the artifact ships.
+
+**Trigger:** any claim of the form "use N samples", "p < X", "CI overlap means…", "this scales as O(…)", or any cited formula.
+
+**Anti-pattern:** stopping after two same-family critics endorse a numeric claim. That convergence is the *signal to escalate*, not the signal to ship. See `references/critic-calibration.md` PR #118 entry.
+
 ## Debugging
 
 - If a critic run fails: re-run the same `plancraft_review.py` command with the same `--plan-file` and `--scope-file`, then inspect the JSON output. The `error` key (if present) explains the failure (e.g. missing API key, API timeout).
 - If a batch review fails: re-run `batch_review.py` with the same `--artifact-file` and `--scope-file`. Check the JSON `error` key. Common causes: `anthropic` not installed, `ANTHROPIC_API_KEY` not set (check shell profile sourcing), batch timeout (increase `--timeout`).
+- `plancraft_review.py --reviewer codex-docs` is not implemented; the script hardcodes a code-reviewer system prompt and `gpt-4o`. For non-code artifacts, write a small wrapper (see `/tmp/gpt5_doc_critic.py` from PR #118) with a docs-tuned system prompt — code-review vocabulary produces ~10% ADOPT rate on docs vs ~90% with the docs prompt.
 
 ## Extending: Adding New Critics
 

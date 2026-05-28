@@ -17,6 +17,8 @@ Apply `token-economy` whenever this skill would otherwise trigger broad explorat
 
 **Announce at start:** "Using /next to write a handoff doc, then ship and clean up."
 
+**When to invoke proactively:** If a single phase or task has consumed ~60% of context, prefer `/next` over letting compaction fire. Resetting with a written handoff beats in-context summarization for long-running agentic work (Anthropic harness-design, 2026 — models develop "context anxiety" as the window fills and wrap up prematurely). This skill is the canonical reset path.
+
 Execute in this order. Do NOT interleave. Each step blocks the next.
 
 ## Step 1 — Write a continuation prompt
@@ -37,6 +39,18 @@ The continuation prompt must be **self-contained** — the next session has zero
 
 Write the handoff doc, then read it back and ask: "If I had no memory of this session, could I execute the next task from this doc alone?" If not, fill the gap before proceeding.
 
+This self-check is **mandatory, not advisory** — it has caught real gaps (PR #118: pre-flight commands didn't reference the in-flight modification-delta artifact). After writing the doc, read it back and answer literally: which file is the next agent's first read, which command is their first run, and which decision (if any) is already made for them? If any of those three is implicit, fix the doc before Step 2.
+
+### Note for the next session: reading this handoff before it lands on main
+
+The handoff doc ships as part of the same PR as the work it describes (Step 2 below), which means the *next* session reading it may pull a continuation prompt that references a file path that exists only on an open PR branch — not on local main. Fetch the single file without checking out the branch:
+
+```bash
+gh api repos/<owner>/<repo>/contents/<path>?ref=<branch> --jq .content | base64 -d
+```
+
+Cheaper than worktree-switching, doesn't perturb local state, and surfaces "handoff says X exists but local main doesn't have it" without ambiguity. The same pattern works for any file referenced from an unmerged PR (plan docs, design docs).
+
 ## Step 2 — Ship the current work
 
 Invoke the `shipping-workflow` skill (i.e. `/ship`). It handles: commit → push → PR → automated review → merge → cleanup delegation.
@@ -44,6 +58,8 @@ Invoke the `shipping-workflow` skill (i.e. `/ship`). It handles: commit → push
 If there are no uncommitted changes AND no unpushed commits, skip this step and move to Step 3. Do NOT run `/ship` on a clean tree — it has no work to do.
 
 The handoff doc from Step 1 is committed as part of the shipping PR, NOT as a separate commit. This ensures it ships atomically with the state it describes.
+
+If the session produced a `docs/plans/<date>-<artifact>-modification-delta.md` (debate-team multi-round artifact), it MUST be in the same PR as the artifact it reviews. Do not let the delta land in a follow-up PR — the audit trail decays the moment the artifact ships without its delta. Verify with `git status` before invoking `/ship`.
 
 ## Step 3 — Cleanup
 

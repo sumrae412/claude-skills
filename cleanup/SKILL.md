@@ -89,3 +89,4 @@ This skill works for regular branches too — it just skips Step 7. The git clea
 - **Merging from worktree when main is checked out elsewhere** — use `gh pr merge` or `/ship` instead
 - **Removing worktree before session-learnings resolves** — causes "folder no longer exists" error, kills ability to apply proposals
 - **Forgetting to sync config/skills repos** — session-learnings updates evaporate on machine switch
+- **Shipping a multi-round artifact without its modification delta** — if `docs/plans/` contains a `*-modification-delta.md` file from this session, confirm it's staged in the same commit/PR as the artifact it reviews. Splitting them across PRs destroys the audit trail of which mods are load-bearing.

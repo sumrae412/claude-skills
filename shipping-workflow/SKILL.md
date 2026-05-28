@@ -60,6 +60,7 @@ in phases and `reference.md`.
 - CI must pass before merge.
 - Confirm merge state before cleanup.
 - `/cleanup` owns final session-learnings, sync, and teardown.
+- **CodeRabbit on docs-only PRs:** real catches include number/count mismatches across sibling docs (PR #118: "34 vs 54 ADOPTed mods" between handoff and delta) and invalid inline syntax in code-fenced examples (PR #118: comment inside JSON example). False positives include "branch name mismatch" warnings — confirm against `git branch --show-current` before acting. Treat numeric discrepancies between sibling docs as default-real.
 
 ## Deliverables
 

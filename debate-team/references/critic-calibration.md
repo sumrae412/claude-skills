@@ -58,3 +58,17 @@ Tier 3 invocation surfaced two operational gotchas:
 
 **PR #534 review split:** 8 ADOPT / 5 REJECT / 0 DEFER (Tier 3 critics had concrete artifacts to cite because the smoke run was bundled in the same PR). Compare PR #533: 2/2/6. The bundling-with-smoke pattern produces a healthier review distribution.
 
+### PR #118 — evals skill docs (claude-skills, 2026-05-27)
+
+Three-round review (R1 internal four critics, R2 DeepSeek + codex, R3 cross-family GPT-5 with docs-tuned wrapper). The Lead initially called R3 "largely redundant"; user overruled. **R3 caught five statistical bugs both prior rounds had endorsed:**
+
+- CI-overlap rule (correct is CI on the paired difference)
+- Sample-size formula off by 10× (~9,800/arm, not 1,000, for 2pp at p<0.05, power 0.8)
+- "Repeat the judge when borderline" was p-hacking-prone (need pre-committed rep count)
+- Embedding model + version must be pinned alongside task + judge
+- Paired analyses for same-dataset A/B materially more powerful than independent tests
+
+**Convergence-is-not-correctness rule:** when N critics with overlapping training corpora (DeepSeek + GPT-4o/codex both trained on the same web tutorials) endorse the same numeric claim, treat that as a signal to run a **cross-family** third critic, not as confirmation. Statistical/empirical claims in docs are the highest-risk category for shared-corpus folk-error co-endorsement.
+
+**Role-mismatch — second documented instance.** Same OpenAI family, ~10% vs ~90% ADOPT rate driven entirely by system-prompt shape: `--reviewer codex` ("senior engineer reviewing code") produced "use Strategy Pattern / abstract classes / DRY" noise on a docs artifact; the same model with a docs-tuned wrapper at `/tmp/gpt5_doc_critic.py` produced the five-bug catch. **The fix is the prompt, not the model.** First instance: PR #534 above. The `--reviewer codex-docs` role mentioned in `tier-gate-and-proposal.md` is still aspirational in `plancraft_review.py` — until added, docs artifacts need a custom wrapper, not `--reviewer codex`.
+
