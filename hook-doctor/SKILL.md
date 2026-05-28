@@ -29,6 +29,8 @@ Hook configs rot quietly. Project `.claude/hooks.json` entries can reference scr
 
 Use `git log --all -- <script-path>` to distinguish "deleted, restore from history" from "never existed, remove the stale ref" when fixing each broken entry.
 
+**Authoring a new hook?** Output JSON shape, stdin envelope, and the "settings.json registrations don't take effect until next session restart" quirk live in [`~/claude_code/agent-vault/agent/hook-contracts.md`](https://github.com/sumrae412/agent-vault/blob/main/agent/hook-contracts.md). You can't smoke-test the end-to-end pipeline in the session that ships the hook — verify by running the script against a synthetic stdin payload first.
+
 ## The Process
 
 ### Step 0: Resolve Active Hook Profile
