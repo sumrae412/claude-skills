@@ -264,6 +264,7 @@ frontend-design guidance.
 | Guessing external API patterns | Hard gate: `/fetch-api-docs` before any API code |
 | Not tagging workflow failures | Apply taxonomy tags (see `references/failure-taxonomy.md`) |
 | Letting context grow unbounded | Tool-result clearing at ~50K, compaction at ~80% |
+| Compacting a long-running phase instead of resetting | When a phase exceeds ~60% context, prefer `/next` handoff + fresh session over in-context compression. Empirical claim from Anthropic harness-design (2026): models exhibit "context anxiety" and wrap up prematurely as the window fills, so a clean reset with a written handoff outperforms summarization. Compaction is fine for cross-task drift; resets are for mid-phase rescue. |
 | Running 10-step plans without context breaks | Fresh context for subagents at 5+ steps |
 | Carrying stale session context across unrelated tasks | `/clear` at task boundaries — auto-compaction only fires at ~80%; a small new task on top of a large done one pays for irrelevant history on every turn |
 | Running silent-failure-hunter and security-reviewer separately | Use merged `safety-reviewer` (Tier 2) — they're consolidated |

@@ -194,7 +194,8 @@ Present both options (post-advisor-refinement) to the user with the advisor's an
 
 After user chooses, write a structured plan using the `writing-plans` skill:
 - Numbered steps with specific files and changes
-- Test requirements per step
+- Test requirements per step (freeform prose — the *why*)
+- **`success_contract` populated on every step** per [plan.schema.md](../contracts/plan.schema.md). This is the machine-checkable *what proves it* — a `command`, `expected` truth-line, and optional `artifact`. Phase 5.5 executes every contract before declaring the phase done; vague contracts (`expected: "tests pass"`) get caught and rejected there. Maps to CLAUDE.md Guardrail 2 (evidence on completion claims) and Pipeline Discipline Rule 4 (define success, loop until verified). If a step is doc-only or pure-refactor with no executable check, set `command: N/A` and put the equivalent one-line check in `expected` — don't omit the field.
 - If `$requirements.risk_class.level == high`, include explicit rollback,
   observability, and blast-radius containment steps
 - **`depends_on` populated on every step** per [plan.schema.md](../contracts/plan.schema.md). For each upstream step, set `type` to one of:
