@@ -60,3 +60,17 @@ Tier 3 invocation surfaced two operational gotchas:
 **Speculative-finding rule held a SECOND iteration:** PR #533's DeepSeek-flagged "third blocker may exist" materialized in PR #534 with a different shape (empty-messages on `/connect` rather than duplicate non-consecutive system messages). Had the Tier 1 DEFER speculation been ADOPTed as a preemptive defense, it would have masked the real failure shape. **Empirical:** DEFER speculative findings; the next smoke names the real shape in minutes.
 
 **PR #534 review split:** 8 ADOPT / 5 REJECT / 0 DEFER (Tier 3 critics had concrete artifacts to cite because the smoke run was bundled in the same PR). Compare PR #533: 2/2/6. The bundling-with-smoke pattern produces a healthier review distribution.
+
+### PR #118 — `evals` skill (claude-skills, 2026-05-27)
+
+Three-round review of a 1,935-line docs artifact (router + 5 phases + 3 references). Modification delta: `docs/plans/2026-05-27-evals-skill-modification-delta.md`. Ledger: R1 internal × 4 → 20 ADOPT; R2 DeepSeek + GPT-4o codex → 14 ADOPT (DeepSeek) and ~10% adopt (codex, role-mismatched); R3 GPT-5 with docs-tuned wrapper → ~90% adopt, 5 load-bearing fixes neither earlier round caught.
+
+**Calibration lessons:**
+
+1. **Convergence across critics is not correctness when training corpora overlap.** R1 (four Anthropic-internal subagents) AND R2-DeepSeek both endorsed a sample-size figure that was off by 10× (~1,000 per arm vs the correct ~9,800 for p̄=0.5, Δ=0.02, power=0.8). Only R3-GPT-5 caught it. **Rule:** when N critics converge on a high-confidence *numeric* or *methodological* claim, treat that as a signal to run **one more cross-family critic**, not to stop. Concordance amplifies the value of a cross-family check; it does not substitute for one.
+
+2. **Role-mismatch is structural, not model-quality.** Same OpenAI family produced ~10% adopt-rate (`--reviewer codex` with code-review system prompt) vs ~90% adopt-rate (GPT-5 via custom wrapper with docs-tuned system prompt) on the same artifact. This is the second documented instance of the failure mode named in the PR #534 entry above. **Action:** either add a `--reviewer codex-docs` mode to `~/.claude/scripts/plancraft_review.py` (system prompt tuned for docs artifacts, no code-quality vocabulary), or document the prompt-override pattern as the supported workaround. Until then, treat `--reviewer codex` adopt-rates <30% on docs PRs as a role-mismatch signal, not a content signal.
+
+3. **Statistical / methodological bugs are the highest-value third-critic finding.** The five R3-only catches on PR #118 — paired-difference CI vs CI overlap, sample-size formula, pre-commit repetition count (anti-p-hacking), embedding model+version pinning, paired analyses for same-dataset A/B — are all textbook errors LLMs trained on online how-to content tend to get wrong the same way. Internal Anthropic subagents converged with one external critic and still missed all five. **Heuristic:** for any artifact teaching evaluation, statistics, or experimental design, R3 is not optional — schedule it from the start.
+
+**PR #118 review split (R1+R2+R3 aggregate):** 34 ADOPT / 17 load-bearing / ~10% codex (role-mismatched, excluded from aggregate adopt-rate). Single biggest signal-per-round: R3 (5 errors-of-substance that would have shipped).
