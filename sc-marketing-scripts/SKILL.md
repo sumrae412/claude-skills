@@ -38,6 +38,11 @@ This skill uses progressive disclosure. Load the reference file for the task you
 
 ---
 
+## See also
+
+- [`sme-voice`](../sme-voice/SKILL.md) — when editing or extending an SME's L0/lesson script, build a saved voice profile and apply it instead of re-inferring voice each session.
+- [`writing-voice`](../writing-voice/SKILL.md) — Summer's own voice (use when writing marketing copy in her name, not the SME's).
+
 ## After Every Session
 
 At the end of any session where this skill was used, always run the session learnings skill to capture new patterns, fixes, and examples discovered during the session. Update this skill's SKILL.md and repackage it before closing.
