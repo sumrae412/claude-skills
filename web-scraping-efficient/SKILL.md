@@ -145,6 +145,7 @@ Flag these and adjust strategy (back off, rotate UA, switch to authenticated ses
 |---|---|
 | 403, 503 | Blocked or under protection |
 | 429 | Rate-limited — honor `Retry-After` |
+| 402 | Auth wall (X/Twitter, etc.) — don't retry `WebFetch`. Fall back to Claude-in-Chrome MCP. See [`~/claude_code/agent-vault/agent/auth-walled-fetch-fallback.md`](https://github.com/sumrae412/agent-vault/blob/main/agent/auth-walled-fetch-fallback.md). |
 | `cf-ray` header, "Checking your browser" | Cloudflare challenge |
 | CAPTCHA elements (`g-recaptcha`, `hcaptcha`, Turnstile) | Stop — don't try to solve |
 | Empty body / content differs from real-browser fetch | Server is serving you a stub |
