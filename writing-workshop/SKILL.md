@@ -81,3 +81,8 @@ Produce five concise headline/about variants:
 Ban obvious sludge: `passionate`, `results-driven`, `innovative`, `leveraging`, `seasoned`, `dynamic`, `thought leader`.
 
 Recommend the best version for the stated audience and explain in one sentence.
+
+## See also
+
+- [`sme-voice`](../sme-voice/SKILL.md) — when the style mimicry target is a specific SME with reusable voice profile (build once from samples, apply repeatedly).
+- [`writing-voice`](../writing-voice/SKILL.md) — when drafting in Summer's own voice rather than mimicking someone else's.
