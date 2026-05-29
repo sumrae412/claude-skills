@@ -48,6 +48,17 @@ At Phase 6 exit (`complete` state): run `/goal clear` and record the terminal ac
 Reviews are structured as a cascade: Tier 1 runs first, then specialized
 reviewers fill gaps only when the budget and diff justify it.
 
+> **Optional — Workflow-tool-backed cascade.** The automatable span of this
+> cascade (steps 4–12: deterministic selection → Tier-1-gated early exit →
+> parallel per-tier fan-out → scored aggregation) can be executed by the Claude
+> Code **Workflow tool** instead of model-followed prose, which forces the
+> parallelism Opus 4.x under-executes and makes the Tier-1 early-exit a real
+> script branch. Opt-in, interactive sessions only; the review-base resolve,
+> diff scrub, manifest persistence, and the **ship/no-ship gate** stay in the
+> conversation around it, and `memory-injection` must be the first stage. See
+> `references/workflow-tool-orchestration.md` (Template A) for the script and the
+> full constraint list. The prose flow below remains the default.
+
 ### Active Flow
 
 1. Resolve the review base SHA from workflow state or git history:
