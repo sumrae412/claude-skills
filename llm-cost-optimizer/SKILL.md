@@ -104,6 +104,8 @@ Cache hit rates to target: >60% for document Q&A, >40% for chatbots with static 
 
 **Tool-use wrinkle:** With beta tool schemas (e.g. advisor-tool), each call may write a fresh cache instead of reading a prior one — verify `cache_read > 0` across consecutive calls, not just `cache_creation > 0` on the first.
 
+**One breakpoint at tail of `tools`, not separate `system` + `tools` markers.** Anthropic caches everything sent BEFORE the marked breakpoint — so one tail-of-`tools` breakpoint caches `system + tools` together as a single ~5-line diff. Marking BOTH `system` and `tools` forces `system: STRING` → `system: [{type:"text", text:..., cache_control:...}]` array restructuring and adds no cache benefit. Pair with a `--validate-cache` preflight CLI (mirror the `--validate-grader` pattern from deterministic-grader work): 2 probe calls asserting `cache_creation > 0` then `cache_read > 0`, exit non-zero on miss — catches the 4 silent-fail modes (under-minimum block, SDK wrapper strip, missing `anthropic-beta` header, per-call payload variability) that all produce `cache_creation=0` with NO error. **How to apply:** any eval/agent loop resending a ≥1K-token stable prefix every call gets caching + preflight + per-call telemetry logging (`cache_creation_input_tokens` / `cache_read_input_tokens` → `cacheHitRate` + `estimatedSavingsUsd` rollup) in the SAME PR — "wired" and "working" are different claims. Validated 2026-05-30 on [courierflow_beta PR #147](https://github.com/sumrae412/courierflow_beta/pull/147) (~80% Layer B nightly cost cut from ~$8.46/run baseline).
+
 ### 3. Output Length Control (20-40% reduction)
 
 LLMs over-generate by default. Force conciseness:
