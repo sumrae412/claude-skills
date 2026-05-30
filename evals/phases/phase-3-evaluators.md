@@ -232,3 +232,55 @@ and pull from there.
 For managed-agent / background-agent runs where no human reviews each
 step, the evaluator becomes a gating layer, not just a measurement
 tool. See `references/outcome-grader.md`.
+
+## Spike-methodology hygiene
+
+When reporting a grader-spike result (e.g. "regex matched 15/15"), name
+the SOURCE of each denominator item explicitly. A 15/15 against a
+mixed corpus (10 hand-labeled full replies + 5 judge-evidence quotes
+pulled from prior eval artifacts) is NOT the same signal as 15/15
+against 15 live model replies — the second is a true bottom-line; the
+first is partially testing the grader against PARAPHRASED summaries
+(the judge-evidence string is the judge's terse compression, not the
+SUT's literal reply). Before declaring a code-based grader ready to
+supersede an LLM judge, capture N live replies by calling the SUT
+directly (SDK, pinned snapshot, real system prompt) on the failing
+prompts and re-score. Cost is trivial (~$0.03 / 10 Haiku calls).
+Distinct from the calibration-set requirement above, which is about
+labeled NEGATIVES — this is about the denominator being live-source,
+not proxy.
+
+## Live-reply capture without the api-server
+
+To validate a code-based grader against the model's actual outputs
+without standing up the production chat surface (or a bypass route):
+regex-extract `SYSTEM_INSTRUCTIONS` (or whatever the prompt-package's
+exported constant is named) from the TS/JS source via Python, then
+call the SDK directly.
+
+```python
+import re
+from anthropic import Anthropic
+src = open("lib/<prompt-package>/src/index.ts").read()
+m = re.search(r"export const SYSTEM_INSTRUCTIONS\s*=\s*`(.*?)`;", src, re.DOTALL)
+system = m.group(1)
+client = Anthropic()  # API key from env
+for prompt in prompts:
+    resp = client.messages.create(
+        model="<pinned-snapshot>",  # not the alias — pin for reproducibility
+        system=system,
+        max_tokens=1024,
+        messages=[{"role": "user", "content": prompt}],
+    )
+    print(resp.content[0].text)
+```
+
+Skip `tools:` for informational queries that don't trigger tool use —
+the regex extraction stays simple. For tool-using flows, mirror the
+production tools array from the prompt package — same
+LLM-boundary-contract rule as backend bypass routes.
+
+Cost ~$0.003 per Haiku call → ~$0.03 for a 10-prompt spike. If the SDK
+throws `FileNotFoundError` on client init, an inherited `SSL_CERT_FILE`
+env var likely points at a missing path — run with
+`env -u SSL_CERT_FILE python3 …`.
