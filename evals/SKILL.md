@@ -77,6 +77,7 @@ hand-rolled harness.
 - When comparing two versions on the same examples, use **paired**
   analyses, not independent-sample CIs.
 - Every failed example is dataset material.
+- **For any evals-infra COST reduction PR, run a cost-audit subagent BEFORE writing code — produces per-suite $ attribution (`suite × N_calls × model × tokens × $/MTok`) and identifies the dominant driver.** Pin Anthropic pricing in the subagent prompt to avoid web-fetch drift. Without the audit, the natural failure mode is to optimize the visible cost (judge calls) when the real driver is the silent one (uncached SUT prefix resends). Validated 2026-05-30 on [courierflow_beta PR #147](https://github.com/sumrae412/courierflow_beta/pull/147): audit surfaced ~$7.6/run from uncached `SYSTEM_INSTRUCTIONS + tools` resent on ~175 Charlie calls; judge cost was <1% of total. Composes with the existing `/debate-team --harden` rule for evals-infra PRs — Tier 0 surfaces 5+ hardening repairs (wiring + telemetry + preflight + CI gate + decision record) that ALL belong in one PR.
 
 ## Deliverables
 
