@@ -204,6 +204,14 @@ All output follows the structured standard:
 | Synthetic-only A/B before committing to a routing change | Synthetic prompts miss the real call-site framing, prompt-cache shape, and downstream parsing — the actual savings/regression delta only appears on real traffic | If a pr-reviewer-style tool already runs the surface, do a 1-PR A/B in existing infra (~$0.10, <1min wall) as the first eval. Use it to size the calibration gap before designing the gold set |
 | Treating peer coding agents (OpenCode, Aider, Cline, Claude Code) as model providers | Coding agents *consume* model APIs — they don't expose one. They have no `complete(messages)` endpoint a router can call. Wrapping a peer agent inside another agent adds latency and constraints without adding capability | If the goal is free-tier model routing, add another model provider (Groq, Together, Cerebras, OpenRouter free models) next to NVIDIA in the router. If the goal is to offload human work, use the peer agent separately — workflow change, not code change |
 
+### Cost gates that meter only one call path are theater
+
+Any `--max-cost-usd` / cost-ceiling flag on an LLM eval or batch runner MUST tally cumulative spend across EVERY API call the run makes — both the system-under-test (SUT) calls and the judge calls. A gate that meters one path while another path bills uncapped reads "$0 used" at the threshold while real spend mounts elsewhere.
+
+**Validated 2026-05-30 on courierflow_beta [PR #157](https://github.com/sumrae412/courierflow_beta/pull/157):** `tools/phoenix/run_evals.py --max-cost-usd` gated the Haiku judge cost only; SUT (Sonnet `/api/eval/chat`) spend was unmetered. Memory-depth replays did ~175 SUT calls/run @ ~$8/run uncapped while the gate said "$0 used." Day's burn: ~$60. Fix landed a combined judge+SUT meter on the same ceiling.
+
+**How to apply:** when adding a cost ceiling to any LLM eval/batch runner, enumerate EVERY `messages.create()` / `complete()` call site — judge, SUT, structured-output, repair retries, multi-sample — and confirm each one adds to the same cumulative tally before the threshold-check fires. If the runner spawns a subprocess (e.g. backend route call), the cost meter needs the subprocess to return its spend back to the runner (header, JSON field, or shared file), not just count requests.
+
 ## Reranker caveats
 
 - **Haiku-as-reranker on small candidate sets can degrade ranking.** Validated 2026-04-29 (claude-flow scale experiment): Haiku reranking BM25 top-3 produced more reordering noise than signal vs. raw BM25 ordering. Threshold for rerank to help: candidate set should be large enough that BM25 top-K loses real signal at K (typically K≥10 over a corpus of hundreds).

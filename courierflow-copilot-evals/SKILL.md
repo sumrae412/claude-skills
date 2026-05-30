@@ -232,6 +232,16 @@ Recommended cadence:
 If an eval fails, preserve the prompt, response, DB diff, and Phoenix trace IDs
 in the failure report.
 
+## Authoring discipline for bulk eval enumeration
+
+When a task is "ship N records from a policy/spec doc":
+
+1. **Audit policy coverage FIRST** via one grep on the spec for the target IDs/categories. Three outcomes: all enumerated with example outputs → author; categories defined but records not → ask whether to enumerate inline or defer; undefined → STOP (policy-lock task, not authoring task). Skips relitigation mid-authoring.
+2. **Use `_seed_gap` for data-ahead-of-infra.** When a fixture's graded path needs seeder state the seeder doesn't yet support, ship with an underscore-prefixed `_seed_gap` field naming the specific blocker. A follow-up seeder-extension slice resolves the tags. Preserves corpus coverage without blocking on infra.
+3. **Partition large enumerations by ID range** across parallel sessions when the corpus is append-only (`.jsonl` + per-record sidecars). Disjoint ranges merge conflict-free off the same `origin/main` base.
+
+See courierflow_beta `CLAUDE.md` for full gotcha entries and validating PRs (slice 6a [#151](https://github.com/sumrae412/courierflow_beta/pull/151), slice 6b [#156](https://github.com/sumrae412/courierflow_beta/pull/156)).
+
 ## References
 
 For implementation details and script skeletons, read
