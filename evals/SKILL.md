@@ -77,6 +77,7 @@ hand-rolled harness.
 - When comparing two versions on the same examples, use **paired**
   analyses, not independent-sample CIs.
 - Every failed example is dataset material.
+- **Before fixing a failing eval, ask: does it measure what the user actually wants to measure?** A persistently-failing eval is often the wrong instrument, not a broken one. Validated 2026-05-27 on courierflow_beta correctness rubric ([PR #108](https://github.com/sumrae412/courierflow_beta/pull/108), commit `d0a795a`): semantic-consistency suite was failing across PRs #91/#95/#99; reframe from "fix the eval" → "replace with a correctness rubric" came when user stated measurement intent directly ("I just want to measure that the agent is giving consistently correct answers"). The failing semantic-consistency metric measured reply-to-reply similarity; what the user wanted was correctness-against-policy. **Apply when:** an eval has been "fixed" 2+ times and is failing again, OR the eval's pass/fail doesn't map cleanly to a sentence the user would say about model quality. Composes with the existing "don't tune eval questions to make tests pass" anti-pattern in `~/.claude/CLAUDE.md` — that rule says don't paper over model variance; this rule says don't paper over instrument mismatch either.
 
 ## Deliverables
 

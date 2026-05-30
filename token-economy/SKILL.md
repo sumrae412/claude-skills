@@ -148,6 +148,12 @@ When context shrinks — `/compact`, session handoff, summarizing for a fresh se
 
 **Why:** compression decisions made under pressure default to "summarize everything proportionally," which is the wrong shape — high-signal items get diluted and bulk items get retained at lower density. Pre-decide the categories.
 
+### 13. Read the current code before quoting any infrastructure-work estimate
+
+Conceptual framing inflates estimates 50–100×. Validated 2026-05-27 on the correctness-rubric session ([courierflow_beta PR #108](https://github.com/sumrae412/courierflow_beta/pull/108)): proposed "6+ months" for a multi-turn eval runner based on conceptual framing ("multi-turn agents are hard"). User pushed back ("would it really be that difficult?"); audit of `tools/phoenix/run_evals.py` revealed the backend already supported multi-turn — the bottleneck was a single hardcoded line. Real estimate: 2–4 days minimal tier.
+
+**Apply when:** about to quote any estimate for infra/tooling work in a codebase you haven't audited this session. Cheap audit first: one `grep` for the surface area + one targeted file read of the suspected bottleneck. Composes with `~/.claude/CLAUDE.md` Guardrail 2 (evidence on completion claims) — same shape, upstream: evidence on capability claims too. The user-pushback signal ("would it really be that hard?") is itself a flag to run the audit before re-asserting.
+
 ## How to apply in a session
 
 1. **At session start** for a read-heavy task, mentally flag patterns 1, 3, 4, 5.

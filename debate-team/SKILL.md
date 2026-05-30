@@ -120,6 +120,12 @@ If the user asks for improvements after a Devil's Advocate pass, switch from att
 
 When Tier 0 is not enough → escalate to Tier 1+ (the API-driven tiers below) for cross-model adversarial review.
 
+## 2-round stacking for "backbone of the app" stakes — Tier 0 first, Tier 3 second, NOT either-or
+
+Validated 2026-05-27 on [courierflow_beta PR #108](https://github.com/sumrae412/courierflow_beta/pull/108) (correctness rubric, commit `d0a795a`): Round 1 Tier 0 in-conversation (5 AI personas, no API cost) produced 37 findings; Round 2 Tier 3 external (DeepSeek + Claude Sonnet 4.5 + GPT-5) produced 39 **additional** findings — paradigm-level gaps the in-conversation echo chamber missed (privacy/data-minimization F-G7, date determinism F-G1, empty-state coverage F-D6, security/refusal F-D9, process-vs-outcome correctness F-C7). Lone-dissent Round 2 findings were the highest-signal — external critics surface what same-context personas can't.
+
+**Apply when:** artifact is "backbone" (eval rubric, schema, policy doc, prompt contract) AND Tier 0 produced ≥20 findings (cheap-side has converged, so residual blind spots are likely paradigm-level, which external critics catch). Don't substitute Tier 3 for Tier 0 — Tier 0's iteration cost is ~zero and seeds Tier 3 with sharper inputs.
+
 ## Team Composition
 
 | Role | Model | Type | When |
