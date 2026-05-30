@@ -228,6 +228,27 @@ That same reference also carries:
 - cross-cutting synthesis
 - optional post-review simplifier
 
+## Quality Document update
+
+After Findings Resolution completes (all HIGH+ findings either fixed or explicitly waived), update the repo's Quality Document at `docs/quality/QUALITY.md`. The full format, rubric, and update protocol live in `references/quality-document.md` — load it now.
+
+Summary of what happens here:
+
+1. Read `docs/quality/QUALITY.md` if it exists. If not, bootstrap it per the reference (one row per top-level module at grade B, note "Initial bootstrap").
+2. Identify modules touched by `$diff` (use the file list from the Active Flow step 2).
+3. For each touched module:
+   - If this review surfaced new HIGH+ findings that remain unresolved → consider a grade downgrade.
+   - If the review was clean AND the previous grade was C/D AND the diff materially improved the surface → consider a grade upgrade.
+   - Otherwise → update only the `Last updated` date and `Last reviewer` column (re-confirmation, no grade change).
+4. When a grade changes, append a one-line note citing the PR/reviewer that drove the change.
+5. Commit the QUALITY.md update as part of the Phase 6 finish-branch commit — NOT a separate commit. Keeping it in the same commit links the grade change to the diff that produced it.
+
+**Do not** change grades for modules NOT touched in this review. Grade changes require evidence from the current review; stale grades are better than guessed grades.
+
+The Quality Document outlives any single workflow run — Phase 0 (Context) reads it to decide which modules need extra care, and future Phase 6 reviews update it. A surface graded C/D should trigger smaller diffs, more reviewers, and mandatory tests in subsequent workflows.
+
+Source: [Learn Harness Engineering, lecture 12](https://walkinglabs.github.io/learn-harness-engineering/en/) — Quality Documents as the durable per-module quality signal that converts point-in-time review findings into a long-lived quality map.
+
 ## Static Analysis Gate
 
 ```bash
