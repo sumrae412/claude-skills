@@ -136,3 +136,13 @@ Produce only what the user needs:
   coverage explicitly.
 - Order evaluator cost: cheap deterministic checks first, expensive
   LLM-judge second, human review last.
+
+## Cost-discipline triad for stochastic eval surfaces
+
+**Cost-discipline triad for any stochastic eval surface that runs nightly or on `workflow_dispatch`:**
+
+1. **Combined cost meter** — every API call (SUT + judge + structured-output retries) tallies against ONE cumulative `cost_usd_total` checked before the next call. See `llm-cost-optimizer` "Cost gates that meter only one call path are theater."
+2. **Repetition-count cap on nightly multi-sample paths** — flag like `--memory-depths {3,5,8,10}` with a default that caps the replay matrix; PR-gate runs use a leaner default than nightly to keep iteration cheap (composes with the existing PR-gate vs nightly threshold split).
+3. **Path-trigger negation on PR workflows** — `paths:` with `!`-prefixed negations to exclude high-cost surfaces from PR triggers; reserve them for nightly + manual dispatch. See `vault/agent/ci-and-deploys.md` "paths AND paths-ignore in the same trigger block is forbidden" for the syntax constraint.
+
+Validated 2026-05-30 on courierflow_beta [PR #157](https://github.com/sumrae412/courierflow_beta/pull/157) after a $60 day where 5 of 6 `suite=all` Layer B dispatches failed mid-run, each burning partial budget through an uncapped SUT path. Triad addresses each leak independently — none alone is sufficient.
