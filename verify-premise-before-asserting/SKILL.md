@@ -48,6 +48,7 @@ You're about to write a sentence that asserts state about something external to 
 | Settings / config | `Read .claude/settings.json` or the config file |
 | Memory file index | `Read MEMORY.md` (don't trust prior session's claim of contents) |
 | GitHub Actions / CI state | `gh run list` or `gh pr checks <n>` |
+| "No macOS built-in exists for X" | `~/claude_code/agent-vault/agent/macos-native-features.md` catalog OR screenshot of System Settings → Accessibility / Keyboard / Shortcuts |
 
 ## Anti-patterns to catch yourself
 
