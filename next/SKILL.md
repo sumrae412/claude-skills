@@ -40,6 +40,7 @@ The continuation prompt must be **self-contained** — the next session has zero
 7. **Gates** — `./scripts/quick_ci.sh` (or project equivalent), `ruff format --check` on touched files, any test-subset command that isolates the relevant suite.
 8. **Ship instructions** — literal: "Ship via `/ship`. Update [specific doc row] with the PR number before merging." If the work is pattern-replication of an already-shipped PR, say so — the next agent should use `/ship`, not `/claude-flow`.
 9. **Mode directive** — `Auto mode. Surface premise contradictions only.`
+9a. **Unapproved drafts — embed verbatim, don't summarize.** If `/next` fires while drafts (decision records, spec amendments, PR bodies) are sitting in the conversation awaiting user sign-off, embed them VERBATIM in the handoff doc — not as a summary, not as a "see chat log" pointer. The next session has zero chat memory; a summary forces re-derivation and reopens decisions the current session had already worked through. Two reads of the user's `/next`-before-sign-off are valid (resume in cold context vs abandon the proposal); name both in the handoff and pick a default. Validated 2026-05-31 on courierflow_beta slice 7 binary-collapse handoff (PR #190): 6 spec amendment drafts embedded verbatim so the resuming session could ask for sign-off, then ship — no re-derivation.
 
 Write the handoff doc, then read it back and ask: "If I had no memory of this session, could I execute the next task from this doc alone?" If not, fill the gap before proceeding.
 
