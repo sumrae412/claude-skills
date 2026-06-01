@@ -80,13 +80,13 @@ Before exploring from scratch, check what's already known about this feature are
    → Prior workflow failures are the eval signal — use them
      to calibrate this run's effort allocation
 
-7. STRATEGY ANCHOR CHECK (if repo-root STRATEGY.md loaded in Phase 0)
+6. STRATEGY ANCHOR CHECK (if repo-root STRATEGY.md loaded in Phase 0)
    → Weight exploration toward the active tracks / stated approach
    → Flag feature-area work that pulls away from stated tracks as
      a scope question for Phase 3, not a silent expansion
    → See ../references/strategy-anchor.md
 
-6. RAG EXPERIENCE CHECK (optional, non-blocking)
+7. RAG EXPERIENCE CHECK (optional, non-blocking)
    → Query the local experience store for prior exploration chunks
    → Inject at most 5 chunks, only when output is non-empty
    → If the store, embeddings, or API key are unavailable, skip silently
