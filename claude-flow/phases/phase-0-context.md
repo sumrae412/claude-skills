@@ -54,6 +54,15 @@ Read the workspace `CLAUDE.md` (or equivalent project identity file) for:
 - stack
 - workflow constraints
 
+### Step 1.5: Load Strategy Anchor (if present)
+
+If a repo-root `STRATEGY.md` exists, load `references/strategy-anchor.md`
+and read the doc as durable product grounding — carry it through Phases
+2-4. Opt-in per project: consume it if present, never require or auto-create
+it. Skip silently when absent (claude-flow's own infra repo has none by
+design). It anchors actor-class framing (persona / target problem) the same
+way Guardrail 5 framing-verification does.
+
 ### Step 2: Load Core Skill
 
 If the workspace has a core project skill, load it for the trigger matrix and
