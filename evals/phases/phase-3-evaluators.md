@@ -37,6 +37,20 @@ Good: three separate judge prompts, one each.
 Multi-criterion prompts confuse models and confound results. You
 can't tell which axis drove the score.
 
+**Aggregation rule matters as much as sub-judge prompts.** When you
+decompose a multi-criterion judge into N single-criterion sub-judges,
+the aggregation function (any-fail / majority / weighted) is itself
+part of the judge contract and must be specified in the eval
+definition alongside the sub-judge prompts. Sub-judges that fire
+correctly on every criterion can still produce wrong aggregate labels
+under a poorly-chosen aggregation. Audit: per-item, log both each
+sub-judge's verdict AND the aggregate; if sub-judges look correct but
+aggregates disagree with humans, the aggregation rule is the bug.
+Validated on courierflow_beta slice 7 CCBM Phase A (4 sub-judges
+S/N/D/I): sub-judges fired correctly on missed-fail items; aggregation
+that mapped any-`partial` → aggregate `partial` blocked the binary
+fail signal humans expected.
+
 ### 2. Prefer binary or 3-class labels over 1–5 / 1–10
 
 Binary (`faithful` / `unfaithful`) and 3-class (`yes` / `partial` /
@@ -165,6 +179,33 @@ Guardrails need:
 - See `phases/phase-5-production-evals.md` § 2 for the production
   promotion procedure (NOOP → active with a measured false-positive
   budget).
+
+### Collapse to binary when fail-recall misses via `→ partial`, not `→ pass`
+
+When a 3-class measurement judge (`pass` / `partial` / `fail`) clears
+κ + pass-precision + pass-recall + fail-precision gates but misses
+**fail-recall**, audit the per-item rationales on the missed-fail
+items BEFORE tightening the rubric. If the dominant miscategorization
+is `human=fail → judge=partial` (and `→ pass` is rare or zero), the
+judge can draw the `pass / not-pass` boundary but cannot reliably draw
+the `partial / fail` boundary — the rubric isn't the bottleneck; the
+label space is.
+
+Default action: collapse the aggregate label space to binary (`pass` /
+`fail`), keeping `partial` only at the sub-judge layer if a
+decomposed-judge architecture is in play (see Phase A pattern in
+`~/claude_code/agent-vault/agent/eval-calibration.md`). Re-calibrate
+with **unweighted** Cohen's κ (binary) and recompute the noise floor
+against the binary label set — the prior 3-class noise floor is no
+longer comparable.
+
+Anchor: courierflow_beta slice 7 §9.5 (2026-05-31), 7-of-7 missed-fail
+items resolved via `→ partial` for both CCBM and CBA judges; decision
+record at `docs/decisions/2026-05-31-binary-label-space-for-guardrail-judges.md`.
+Composes with the "Prefer binary or 3-class labels" rule above — that
+rule picks between Likert and binary/3-class at design time; this one
+picks between 3-class and binary at calibration time when the data
+tells you which boundary is real.
 
 ## Judge model choice
 
