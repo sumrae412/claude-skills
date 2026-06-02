@@ -17,6 +17,7 @@ from scripts.signals import SignalResult
 
 
 def score(parcel: Parcel, *, as_of: date | None = None) -> SignalResult:
+    """Score the long-tenure + high-equity signal for `parcel`."""
     if (
         parcel.last_sale_date is None
         or parcel.last_sale_price is None
@@ -26,10 +27,9 @@ def score(parcel: Parcel, *, as_of: date | None = None) -> SignalResult:
         return SignalResult(matched=False, weight=0, reason="")
 
     today = as_of if as_of is not None else date.today()
-    years_owned = (today - parcel.last_sale_date).days // 365
-
-    if parcel.last_sale_price >= parcel.assessed_value:
-        return SignalResult(matched=False, weight=0, reason="")
+    years_owned = today.year - parcel.last_sale_date.year - (
+        1 if (today.month, today.day) < (parcel.last_sale_date.month, parcel.last_sale_date.day) else 0
+    )
 
     equity_pct = (parcel.assessed_value - parcel.last_sale_price) / parcel.assessed_value
 

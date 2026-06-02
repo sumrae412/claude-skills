@@ -32,6 +32,7 @@ def _extract_city_state(addr: str) -> tuple[str, str] | None:
 
 
 def score(parcel: Parcel) -> SignalResult:
+    """Score the absentee-owner signal for `parcel`."""
     prop = _extract_city_state(parcel.address)
     mail = _extract_city_state(parcel.owner_mailing)
     if prop is None or mail is None:

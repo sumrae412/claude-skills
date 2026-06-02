@@ -13,6 +13,7 @@ from scripts.signals import SignalResult
 
 
 def score(parcel: Parcel, *, as_of: date | None = None) -> SignalResult:
+    """Score the sheriff-sale-scheduled signal for `parcel`."""
     sale_date = parcel.sheriff_sale_date
     if sale_date is None:
         return SignalResult(matched=False, weight=0, reason="")

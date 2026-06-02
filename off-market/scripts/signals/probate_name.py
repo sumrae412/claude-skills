@@ -36,7 +36,8 @@ _CORPORATE_PATTERNS = [
 
 
 def score(parcel: Parcel) -> SignalResult:
-    name = parcel.owner_name or ""
+    """Score the probate-name-pattern signal for `parcel`."""
+    name = parcel.owner_name
     if any(p.search(name) for p in _CORPORATE_PATTERNS):
         return SignalResult(matched=False, weight=0, reason="")
     if any(p.search(name) for p in _PROBATE_PATTERNS):

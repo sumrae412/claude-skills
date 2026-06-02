@@ -13,6 +13,7 @@ from scripts.signals import SignalResult
 
 
 def score(parcel: Parcel) -> SignalResult:
+    """Score the tax-delinquency signal for `parcel`."""
     owed = parcel.tax_owed_usd
     if owed is None or owed <= 0:
         return SignalResult(matched=False, weight=0, reason="")
