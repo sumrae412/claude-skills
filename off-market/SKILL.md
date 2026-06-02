@@ -19,7 +19,7 @@ Personal toolkit for finding houses that aren't for sale yet but might be.
 ## Hard constraints
 
 - Free data only.
-- Never score on any HUD protected class (race, color, religion, national origin, sex, disability, familial status, age) — directly or by proxy. See `references/fair-housing.md`.
+- Never score on any federal FHA protected class (race, color, religion, national origin, sex, disability, familial status) — directly or by proxy. We also forbid `age` as a stricter internal policy. See `references/fair-housing.md`.
 - No divorce / bankruptcy filings even though legal — ethically inappropriate for owner-occupier outreach.
 
 ## Files
@@ -41,8 +41,8 @@ cp examples/criteria.yaml my-criteria.yaml
 $EDITOR my-criteria.yaml
 
 # 2) Discover candidates
-python -m off-market.scripts.discover allegheny_pa --criteria my-criteria.yaml
+python off-market/scripts/discover.py allegheny_pa --criteria my-criteria.yaml
 
 # 3) Draft letters for top candidates
-python -m off-market.scripts.outreach runs/2026-06-02-allegheny_pa/candidates.csv --top 20
+python off-market/scripts/outreach.py runs/2026-06-02-allegheny_pa/candidates.csv --top 20
 ```

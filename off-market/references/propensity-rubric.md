@@ -1,6 +1,6 @@
 # Propensity Rubric (Lean v1)
 
-Each candidate parcel is scored 0–100 by summing the weights of every signal that matches. Weights and reason codes are surfaced on every row so a human can audit why a score landed where it did.
+Each candidate parcel is scored on an open scale (rubric maxes at 105) by summing the weights of every signal that matches. Weights and reason codes are surfaced on every row so a human can audit why a score landed where it did.
 
 ## Rubric
 
@@ -8,9 +8,9 @@ Each candidate parcel is scored 0–100 by summing the weights of every signal t
 |---|---|---|
 | Sheriff sale scheduled (auction date set) | 40 | `sheriff_sale:<YYYY-MM-DD>` |
 | Tax-delinquent | 5 base + 0.5 per $1k owed (cap 25) | `tax_delinquent:$<amount>` |
-| Owner name matches `Estate of` / `Heirs of` / `, Deceased` | 20 | `probate_name_pattern` |
+| Owner name matches `Estate of` / `Heirs of` / `, Deceased` *(pattern hints: `r'^Estate of '`, `r' Heirs of '`, `r', Deceased$'` — exact regex finalized in Phase 2 task signals/probate_name.py)* | 20 | `probate_name_pattern` |
 | Absentee owner (mailing state ≠ property state) | 10 | `absentee:<owner_state>` |
-| Long tenure (≥20 yrs) AND equity ≥ 60% of est. value | 10 | `long_tenure_high_equity:<years>` |
+| Long tenure (≥20 yrs) AND equity ≥ 60% of est. value *(assessed_value from county adapter; no paid Zestimate dependency)* | 10 | `long_tenure_high_equity:<years>` |
 
 ## Cutoff tiers
 
@@ -41,6 +41,6 @@ Each candidate parcel is scored 0–100 by summing the weights of every signal t
 
 ## What is NOT in this rubric
 
-- No HUD-protected-class fields (race, religion, national origin, sex, disability, familial status, age) — directly or via proxy. Enforced by `references/fair-housing.md` + a unit test in `propensity.py`.
+- No federal FHA protected-class fields (race, color, religion, national origin, sex, disability, familial status) — directly or via proxy. We also forbid `age` as a stricter internal policy. Enforced by `references/fair-housing.md` + a unit test in `propensity.py`.
 - No divorce / bankruptcy filings — legal but inappropriate for owner-occupier outreach.
 - No per-address vacancy (only census-tract aggregates are free).

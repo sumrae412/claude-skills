@@ -52,8 +52,8 @@ Every letter should have at least one of each:
 >
 > Either way, thanks for taking care of a beautiful home.
 >
-> — Summer Rae
-> sumrae412@gmail.com
+> — <Your Name>
+> <your-email>
 
 ## Length
 
@@ -68,3 +68,4 @@ Every letter should have at least one of each:
 - [ ] Real human signature (first + last name).
 - [ ] No deadline / urgency / scarcity language.
 - [ ] If you swapped the address out, the letter would no longer make sense — it's not a mail merge.
+- [ ] *Self-check:* the letter says nothing inferring the **recipient's** family composition, age, or household — even framing-by-omission. Writer-side family framing ("our family is looking") is fine; recipient-side ("your kids must be grown") is not.

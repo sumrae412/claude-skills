@@ -1,12 +1,14 @@
 # Fair Housing Rules
 
-## Forbidden classes (HUD)
+## Forbidden classes (HUD + stricter house policy)
 
-Race, color, religion, national origin, sex, disability, familial status, age.
+The federal Fair Housing Act (FHA / HUD) protects 7 classes: race, color, religion, national origin, sex, disability, familial status.
+
+We also forbid `age` as a stricter internal policy even though it isn't a federal FHA class (it's covered by ECOA for credit and by some state/local fair-housing laws).
 
 ## Enforcement in this skill
 
-- `propensity.py` imports `FORBIDDEN_FIELDS = frozenset({"race", "ethnicity", "religion", "sex", "family_status", "disability", "age", "national_origin"})`.
+- `propensity.py` imports `FORBIDDEN_FIELDS = frozenset({"race", "color", "religion", "national_origin", "sex", "disability", "familial_status", "age"})`.
 - A unit test asserts no scoring expression references any forbidden field.
 - The skill refuses CLI flags or `criteria.yaml` keys whose name matches a protected class.
 - Neighborhood targeting is allowed by polygon / zip / boundary — NEVER by demographic descriptor.

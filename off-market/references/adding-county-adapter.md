@@ -23,6 +23,8 @@ class CountyAdapter:
         """
 ```
 
+*`Parcel` and `Criteria` are dataclasses defined in `scripts/models.py` and `scripts/criteria.py` respectively (Phase 1 deliverables — stub now, fill later).*
+
 The adapter is responsible for:
 
 1. Fetching parcel data from the county assessor (or equivalent).
@@ -43,14 +45,14 @@ A complete adapter pulls four data feeds:
 | Tax delinquency | County treasurer annual list | 7 days |
 | Sheriff sales | County sheriff's office, weekly auction list | 7 days |
 
-Optional / Tier 1+ feeds an adapter can add later:
+Optional / v1.1 feeds an adapter can add later:
 
 - Code violations (city housing department).
 - Vacant-property registry (some cities maintain one).
 - Probate filings (Orphans' Court or equivalent — augments the name-pattern signal with hard cases).
 - Pre-foreclosure notices / Lis Pendens (county recorder).
 
-A minimally viable adapter ships with just parcels + sales. The other two unlock the highest-weight signals (sheriff sale, tax delinquency); without them the rubric still works but recall drops sharply.
+Minimally viable: `parcel_id, address, owner_name, owner_mailing` (the four contract-required fields). Strongly recommended for v1 signals: `last_sale_date, last_sale_price` (needed by tenure/equity), plus `tax_owed_usd` and `sheriff_sale_date` if the county publishes them. Without the tax-delinquency and sheriff-sale feeds the rubric still works but recall drops sharply on its highest-weight signals.
 
 ## Canonical worked example: Allegheny PA (WPRDC)
 
@@ -88,6 +90,6 @@ The reference implementation lives at `scripts/county_adapters/allegheny_pa.py`.
 3. Save fixture rows from each new data source under `tests/fixtures/<county>_<source>.{csv,html}`.
 4. Write fixture-driven tests for each fetcher.
 5. Wire the new class into `discover.py`'s adapter registry (a dict mapping county name → adapter class).
-6. Add a sample `examples/<county>-<city>.yaml` criteria file.
+6. Add a sample criteria file: `examples/criteria.yaml` is the generic template, and per-county filled-in examples live as `examples/<county>_<state>.yaml` (use UNDERSCORES to match adapter file naming, e.g. `examples/allegheny_pa.yaml` — NOT `allegheny-pittsburgh.yaml`).
 
 The propensity scorer, listings subtraction, and letter drafting all just work — they only see `Parcel` objects, not county-specific data.
