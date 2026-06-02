@@ -81,7 +81,7 @@ The 5-layer model is architectural; the SKILL.md Quick Reference rows are specif
 | 1 — Provenance tagging | `LLM Prompt Injection (User Content)` |
 | 2 — Least privilege | `Fail-Closed Webhook Validators`, `Subprocess Shell Injection` |
 | 3 — Output validation | `Escape XML/TwiML Substitutions`, `Context-Aware Sanitizers`, `Error Leaking` |
-| 4 — HITL | (no direct row — gap candidate) |
+| 4 — HITL | `HITL Confirmation Trust` |
 | 5 — Monitoring | `Telemetry Fail-Open` |
 
-The "no direct row" gap for HITL is an open candidate for a new Quick Reference entry the next time the pattern bites in CourierFlow.
+The HITL row was backfilled directly from Layer 4 alongside this file's introduction — it does not wait for a CourierFlow incident because the anti-pattern (rendering `{model_summary}` in the confirmation UI) is structural, not incident-derived.

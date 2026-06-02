@@ -74,6 +74,7 @@ Before finishing backend code, verify your code against the catalog. The Quick R
 | Telemetry Fail-Open | Noisy telemetry bug breaks the critical path it measures | Emit guarded with try/except + env-var opt-out (`REVIEW_LEDGER=0`) + import availability check? Reference: `scripts/plancraft_review.py` `_emit_invocation_record()`. |
 | API Key Shape Diagnosis | "Invalid key" without telling user which kind of invalid | Before asserting an API key is invalid, run `echo "${KEY:0:8}… len=${#KEY}"` + one targeted curl against the provider's cheapest endpoint (e.g. `/v1/models`). Shapes: Anthropic user `sk-ant-…` ~108c, Anthropic admin `sk-ant-admin01-…`, OpenAI project `sk-proj-…` ~164c, OpenAI user `sk-…` ~51c, NVIDIA `nvapi-…`. Catches wrong-provider-key-in-wrong-slot vs revoked vs typo. Hit 2026-05-20: `sk-proj-` (OpenAI) pasted into `ANTHROPIC_API_KEY` returned 401 — shape check made the diagnosis 30 seconds instead of debugging round-trip. |
 | Loader Fail-Loud on Unrecognized Keys | Silent no-op on miswritten overlay/fixture/config | Loader enumerates supported keys; throws named error listing both unrecognized keys found AND supported keys; stub type-annotated for compile-time shape check (e.g. `const overlay: FixtureOverlay = {...}`)? Validated in [courierflow_beta PR #16](https://github.com/sumrae412/courierflow_beta/pull/16). |
+| HITL Confirmation Trust | Model-summarized action looks benign but the tool call mutates state | Confirmation UI rendered from the tool call's **typed arguments**, NOT from a model-generated natural-language summary? E.g. UI says *"Send SMS to +1-555-… body: «Your rent is due Friday.»"* (reconstructed from `tool_input`), NOT *"Confirm: {model_summary}"*. The HITL prompt itself is treated as untrusted — a malicious model can summarize a state-mutating call as a benign read. See [`references/llm-defense-in-depth.md`](references/llm-defense-in-depth.md) Layer 4. |
 
 ## Red Flags — STOP and Fix
 
@@ -123,6 +124,7 @@ Before finishing backend code, verify your code against the catalog. The Quick R
 - F-string interpolation of AI/user content into XML/TwiML/RSS without `xml.sax.saxutils.escape`
 - Interpolating user-supplied content (SMS body, email body, tenant input) into an LLM prompt using triple-quotes, backticks, or any open-coded quote scoping instead of a named XML delimiter + data-not-instructions preamble
 - A loader that silently no-ops when its input has unrecognized keys (makes every miswritten fixture/overlay/config invisible — throw instead, listing both found and expected keys)
+- A human-in-the-loop confirmation UI that renders the model's natural-language summary of an action (`"Confirm: {model_summary}"`) instead of reconstructing the confirmation text from the underlying tool call's typed arguments — a malicious model can phrase a state-mutating call as a benign read
 
 ## Pre-flight Construction Smoke (Third-Party SDK Migration)
 
