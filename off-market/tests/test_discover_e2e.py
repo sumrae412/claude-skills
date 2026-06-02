@@ -13,7 +13,6 @@ from __future__ import annotations
 
 import csv
 from datetime import date
-from pathlib import Path
 
 import pytest
 
@@ -123,7 +122,7 @@ def patched_discover(monkeypatch):
 
 
 def test_discover_writes_all_three_files(patched_discover, tmp_path):
-    result = discover(
+    discover(
         "allegheny_pa",
         Criteria(zips=["15217"]),
         output_dir=tmp_path,

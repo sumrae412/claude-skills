@@ -1,6 +1,6 @@
 import pytest
 
-from scripts.criteria import Criteria, load_criteria, FORBIDDEN_FIELDS
+from scripts.criteria import load_criteria, FORBIDDEN_FIELDS
 
 
 def test_criteria_loads_valid_yaml(tmp_path):

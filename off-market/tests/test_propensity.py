@@ -1,7 +1,7 @@
 from datetime import date
 
 from scripts.models import Parcel
-from scripts.propensity import score, tier_for, PropensityScore
+from scripts.propensity import score, tier_for
 
 
 # Tier boundaries

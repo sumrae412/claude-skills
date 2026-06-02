@@ -1,4 +1,3 @@
-from datetime import date
 from scripts.models import Parcel
 from scripts.signals.absentee import score
 

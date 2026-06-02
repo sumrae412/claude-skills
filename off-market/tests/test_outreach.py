@@ -1,6 +1,5 @@
 """Tests for outreach letter drafting helpers."""
 
-from pathlib import Path
 
 from scripts.outreach import (
     CandidateBrief,

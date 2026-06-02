@@ -32,7 +32,7 @@ def test_render_outreach_brief_matches_snapshot():
     actual = render_outreach_brief(CANONICAL, CANONICAL_VOICE)
     expected = SNAPSHOT_PATH.read_text()
     assert actual == expected, (
-        f"Prompt brief drifted. Update snapshot with:\n"
-        f"  pathlib.Path(__file__).parent / 'fixtures' / 'outreach_brief_snapshot.txt'"
-        f"\nThen confirm intent before committing."
+        "Prompt brief drifted. Update snapshot with:\n"
+        "  pathlib.Path(__file__).parent / 'fixtures' / 'outreach_brief_snapshot.txt'"
+        "\nThen confirm intent before committing."
     )

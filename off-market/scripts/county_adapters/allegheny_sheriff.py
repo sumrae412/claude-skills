@@ -48,7 +48,6 @@ from __future__ import annotations
 
 import logging
 import os
-import re
 from datetime import date, datetime
 from typing import Iterable
 
@@ -64,7 +63,7 @@ DATASTORE_URL = "https://data.wprdc.org/api/3/action/datastore_search"
 # every join (sheriff sale vs parcel, listing vs parcel) collapse identically.
 # We re-export under the historical name ``normalize_address`` for callers
 # that already import it from this module.
-from scripts.listings.address_norm import normalize as normalize_address  # noqa: F401
+from scripts.listings.address_norm import normalize as normalize_address  # noqa: F401, E402
 
 
 def _parse_date(value: object) -> date | None:
