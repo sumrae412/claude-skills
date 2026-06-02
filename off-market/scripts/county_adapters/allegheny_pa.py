@@ -61,16 +61,10 @@ from scripts.models import Parcel
 logger = logging.getLogger(__name__)
 
 
-# Pattern matching the trailing ", CITY, STATE 12345" portion of a composed
-# parcel address. The WPRDC parcels adapter composes addresses as
-# "<house> <street>[, CITY, STATE ZIP]"; we strip the comma-led tail to
-# isolate the street portion for sheriff-sale address joining.
-_ADDR_TAIL_RE = re.compile(r",\s*[A-Z .]+,\s*[A-Z]{2}\s*\d{5}(?:-\d{4})?\s*$", re.IGNORECASE)
-
-
-def _street_only(parcel_address: str) -> str:
-    """Drop the trailing ", CITY, STATE ZIP" portion of a composed address."""
-    return _ADDR_TAIL_RE.sub("", parcel_address).strip()
+# Address-tail stripping + abbreviation expansion are shared with the listings
+# subtractor — see ``scripts.listings.address_norm.normalize``. The shared
+# normalizer handles trailing ", CITY, STATE ZIP" itself, so no separate
+# `_street_only` helper is needed at this layer.
 
 
 @dataclass
@@ -208,8 +202,9 @@ class AlleghenyPAAdapter:
         if tax_owed is not None:
             parcel.tax_owed_usd = tax_owed
 
-        # Sheriff side joins on normalized street-only address.
-        sheriff_key = normalize_address(_street_only(parcel.address))
+        # Sheriff side joins on the shared normalized address (which already
+        # strips ", CITY, STATE ZIP" tails and expands abbreviations).
+        sheriff_key = normalize_address(parcel.address)
         sale_date = sheriff.get(sheriff_key)
         if sale_date is not None:
             parcel.sheriff_sale_date = sale_date

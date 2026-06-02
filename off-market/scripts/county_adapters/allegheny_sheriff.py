@@ -59,44 +59,12 @@ RESOURCE_ID = "b4899889-fbf4-43a5-a5ba-ae178fa07347"
 DATASTORE_URL = "https://data.wprdc.org/api/3/action/datastore_search"
 
 
-# Street-type abbreviation table for normalization. Both sides of an
-# address-join must collapse to the same canonical form, so we expand
-# short forms (ST → STREET, AVE → AVENUE) rather than the other direction.
-_STREET_ABBREV = {
-    "st": "street",
-    "str": "street",
-    "ave": "avenue",
-    "av": "avenue",
-    "rd": "road",
-    "dr": "drive",
-    "blvd": "boulevard",
-    "ln": "lane",
-    "ct": "court",
-    "pl": "place",
-    "ter": "terrace",
-    "pkwy": "parkway",
-    "hwy": "highway",
-    "cir": "circle",
-}
-
-
-def normalize_address(addr: str) -> str:
-    """Normalize a free-form street address into a stable join key.
-
-    Lowercase, strip punctuation, collapse whitespace, expand common street
-    abbreviations. The output is the JOIN KEY — not a display string.
-    """
-    if not addr:
-        return ""
-    s = str(addr).lower()
-    # Drop punctuation we don't want as a join-key signal.
-    s = re.sub(r"[.,#]+", " ", s)
-    # Collapse all whitespace.
-    s = re.sub(r"\s+", " ", s).strip()
-    # Expand street-type abbreviations only when they appear as standalone tokens.
-    tokens = s.split(" ")
-    expanded = [_STREET_ABBREV.get(tok, tok) for tok in tokens]
-    return " ".join(expanded).strip()
+# Address normalization is shared with the listings subtractor; the canonical
+# implementation lives in ``scripts.listings.address_norm`` so both sides of
+# every join (sheriff sale vs parcel, listing vs parcel) collapse identically.
+# We re-export under the historical name ``normalize_address`` for callers
+# that already import it from this module.
+from scripts.listings.address_norm import normalize as normalize_address  # noqa: F401
 
 
 def _parse_date(value: object) -> date | None:
