@@ -63,8 +63,10 @@ _DIRECTIONALS: dict[str, str] = {
 
 # Trailing ", CITY, STATE 12345" or ", CITY, STATE 12345-1234" patterns.
 # Case-insensitive; STATE is a 2-letter alpha token; CITY may have spaces.
+# The state-zip gap accepts ``[,\s]+`` so both ``"... PITTSBURGH, PA 15222"``
+# and the WPRDC-published shape ``"... PITTSBURGH, PA, 15222"`` strip cleanly.
 _CITY_TAIL_RE = re.compile(
-    r",\s*[A-Za-z .]+,\s*[A-Za-z]{2}\s*\d{5}(?:-\d{4})?\s*$"
+    r",\s*[A-Za-z .]+,\s*[A-Za-z]{2}[,\s]+\d{5}(?:-\d{4})?\s*$"
 )
 
 # Apartment / unit suffixes at end of string.

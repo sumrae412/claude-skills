@@ -42,7 +42,6 @@ from __future__ import annotations
 
 import dataclasses
 import logging
-import re
 from dataclasses import dataclass, field
 from datetime import date
 from typing import Any, Callable
@@ -73,8 +72,11 @@ class AlleghenyPAAdapter:
 
     cache: Cache | None = None
     # Per-fetcher row caps. Live fetchers stream paginated; these bound the
-    # working set during one-shot loads.
-    parcels_limit: int = 1_000
+    # working set during one-shot loads. ``parcels_limit`` was raised from
+    # 1_000 to 10_000 alongside the server-side zip push-down — a single
+    # zip's worth of parcels comfortably fits but the prior cap was tight
+    # enough to truncate even 2-3 mid-density zips on an unfiltered run.
+    parcels_limit: int = 10_000
     sales_limit: int = 10_000
     delinquency_limit: int = 10_000
     sheriff_limit: int = 1_000
@@ -148,19 +150,23 @@ class AlleghenyPAAdapter:
         )
         return decode(cached) if decode else cached
 
-    def _load_parcels(self) -> list[Parcel]:
+    def _load_parcels(self, zips: list[str] | None = None) -> list[Parcel]:
+        # Cache key includes zip scope so a single-zip run doesn't poison the
+        # cache for a later wider-scope run (and vice versa).
+        source = "parcels" if not zips else f"parcels__zips={','.join(sorted(zips))}"
         return self._maybe_cached(
-            "parcels",
-            lambda: fetch_parcels(limit=self.parcels_limit),
+            source,
+            lambda: fetch_parcels(limit=self.parcels_limit, zips=zips),
             ttl_days=30,
             encode=self._encode_parcels,
             decode=self._decode_parcels,
         )
 
-    def _load_sales(self) -> dict[str, Sale]:
+    def _load_sales(self, zips: list[str] | None = None) -> dict[str, Sale]:
+        source = "sales" if not zips else f"sales__zips={','.join(sorted(zips))}"
         return self._maybe_cached(
-            "sales",
-            lambda: fetch_sales(limit=self.sales_limit),
+            source,
+            lambda: fetch_sales(limit=self.sales_limit, zips=zips),
             ttl_days=7,
             encode=self._encode_sales,
             decode=self._decode_sales,
@@ -246,11 +252,12 @@ class AlleghenyPAAdapter:
             parcel.assessed_value is not None and parcel.assessed_value > c.price_max
         ):
             return False
-        if c.zips:
-            # ZIP appears at the tail of the composed address; match by substring
-            # against each candidate ZIP (5-digit) to avoid mid-string false hits.
-            if not any(re.search(rf"\b{re.escape(z)}\b", parcel.address) for z in c.zips):
-                return False
+        # NOTE: ``c.zips`` is intentionally NOT re-checked here — when criteria
+        # specify zips, ``load()`` pushes the filter down to CKAN's
+        # ``datastore_search`` via the ``filters`` query param so parcels arrive
+        # pre-filtered by ``PROPERTYZIP``. Re-applying a Python-side regex on
+        # the composed address would only fire false negatives on rows whose
+        # PROPERTYZIP was set but address composition dropped the zip token.
         return True
 
     # ---------- load (orchestrator) ----------
@@ -261,9 +268,17 @@ class AlleghenyPAAdapter:
         ``as_of`` is reserved for future point-in-time queries (e.g. "what
         would the off-market list have looked like on date X"). Unused
         today — the underlying datasets don't carry historical snapshots.
+
+        When ``criteria.zips`` is non-empty, parcels + sales are fetched
+        with a server-side ``PROPERTYZIP`` filter (push-down). Without this,
+        a single-zip criteria typically returned 0 parcels because the
+        ``limit``-sized fetch was a random slice across 580K county rows.
+        Delinquency + sheriff feeds have no zip column, so they're still
+        post-joined by ``parcel_id`` / normalized address.
         """
-        parcels = self._load_parcels()
-        sales = self._load_sales()
+        zips = list(criteria.zips) if criteria.zips else None
+        parcels = self._load_parcels(zips=zips)
+        sales = self._load_sales(zips=zips)
         delinquency = self._load_delinquency()
         sheriff = self._load_sheriff()
 

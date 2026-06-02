@@ -17,6 +17,7 @@ a date filter.
 
 from __future__ import annotations
 
+import json
 import logging
 import os
 from dataclasses import dataclass
@@ -94,19 +95,33 @@ def parse_sales(records: Iterable[dict]) -> dict[str, Sale]:
     return best
 
 
-def fetch_sales(limit: int = 10) -> dict[str, Sale]:
-    """Live CKAN fetch; parses through ``parse_sales``."""
+def fetch_sales(limit: int = 10, zips: list[str] | None = None) -> dict[str, Sale]:
+    """Live CKAN fetch; parses through ``parse_sales``.
+
+    When ``zips`` is supplied (non-empty), pushes the filter down to CKAN
+    via the ``filters`` param on ``PROPERTYZIP``. This dataset stores
+    ``PROPERTYZIP`` as a STRING (e.g. ``"15217"``, verified against fixture
+    + live response) — different from the parcels dataset which stores it
+    as int. Bad inputs are dropped; an entirely unparseable list falls
+    through to an unfiltered fetch.
+    """
     import httpx
 
     cert_path = os.environ.get("SSL_CERT_FILE")
     if cert_path and not os.path.exists(cert_path):
         os.environ.pop("SSL_CERT_FILE", None)
 
-    resp = httpx.get(
-        DATASTORE_URL,
-        params={"resource_id": RESOURCE_ID, "limit": limit},
-        timeout=60,
-    )
+    params: dict[str, object] = {"resource_id": RESOURCE_ID, "limit": limit}
+    if zips:
+        zip_strs: list[str] = []
+        for z in zips:
+            s = str(z).strip()
+            if s:
+                zip_strs.append(s)
+        if zip_strs:
+            params["filters"] = json.dumps({"PROPERTYZIP": zip_strs})
+
+    resp = httpx.get(DATASTORE_URL, params=params, timeout=60)
     resp.raise_for_status()
     payload = resp.json()
     if not payload.get("success"):

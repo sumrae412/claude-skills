@@ -93,13 +93,35 @@ def _canned_sheriff() -> dict[str, date]:
 
 @pytest.fixture
 def patched_fetchers(monkeypatch):
-    """Patch every fetcher the adapter calls into canned data."""
-    monkeypatch.setattr(
-        allegheny_pa, "fetch_parcels", lambda **kw: _canned_parcels()
-    )
-    monkeypatch.setattr(
-        allegheny_pa, "fetch_sales", lambda **kw: _canned_sales()
-    )
+    """Patch every fetcher the adapter calls into canned data.
+
+    ``fetch_parcels`` honors the ``zips`` kwarg in the same way the real
+    CKAN call does (server-side filter on ``PROPERTYZIP``) so adapter
+    tests exercise the push-down path. ``fetch_sales`` is filtered the
+    same way (sales dataset publishes PROPERTYZIP too). Other fetchers
+    accept the kwarg as a no-op for adapter symmetry.
+    """
+
+    def _fake_fetch_parcels(**kw):
+        zips = kw.get("zips") or None
+        parcels = _canned_parcels()
+        if not zips:
+            return parcels
+        zip_set = {str(z).strip() for z in zips}
+        return [p for p in parcels if any(z in p.address for z in zip_set)]
+
+    def _fake_fetch_sales(**kw):
+        zips = kw.get("zips") or None
+        sales = _canned_sales()
+        if not zips:
+            return sales
+        # The canned sales don't carry an address; join through parcel_ids of
+        # the pre-zip-filtered canned parcels for fidelity.
+        keep_ids = {p.parcel_id for p in _fake_fetch_parcels(zips=zips)}
+        return {pid: s for pid, s in sales.items() if pid in keep_ids}
+
+    monkeypatch.setattr(allegheny_pa, "fetch_parcels", _fake_fetch_parcels)
+    monkeypatch.setattr(allegheny_pa, "fetch_sales", _fake_fetch_sales)
     monkeypatch.setattr(
         allegheny_pa, "fetch_delinquency", lambda **kw: _canned_delinquency()
     )

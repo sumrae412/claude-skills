@@ -69,8 +69,17 @@ def parse_delinquency(records: Iterable[dict]) -> dict[str, float]:
     return totals
 
 
-def fetch_delinquency(limit: int = 10) -> dict[str, float]:
-    """Live CKAN fetch; parses through ``parse_delinquency``."""
+def fetch_delinquency(
+    limit: int = 10, zips: list[str] | None = None
+) -> dict[str, float]:
+    """Live CKAN fetch; parses through ``parse_delinquency``.
+
+    ``zips`` is accepted for adapter symmetry but is a NO-OP — the
+    tax-liens dataset publishes ``municipality`` / ``ward`` instead of a
+    zip column, so server-side zip filtering isn't available. The
+    downstream parcel-side filter already restricts the join surface;
+    delinquency is post-joined by ``parcel_id``.
+    """
     import httpx
 
     cert_path = os.environ.get("SSL_CERT_FILE")

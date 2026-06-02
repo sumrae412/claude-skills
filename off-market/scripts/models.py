@@ -13,7 +13,11 @@ from datetime import date
 # US 2-letter state followed by optional 5-digit ZIP at the end of the address.
 # Anchored to end-of-string (allowing trailing whitespace) so we don't match
 # stray two-letter tokens earlier in the string (e.g. street abbreviations).
-_STATE_RE = re.compile(r"\b([A-Z]{2})(?:\s+\d{5}(?:-\d{4})?)?\s*$")
+# The state-zip gap accepts ``[,\s]+`` so we tolerate both ``"PA 15222"`` and
+# the WPRDC-published shape ``"PA, 15222"`` (real fixture: "239 FORT PITT
+# BLVD, PITTSBURGH, PA, 15222"). Previously the comma form silently failed
+# state extraction → ``is_absentee()`` returned False on every WPRDC parcel.
+_STATE_RE = re.compile(r"\b([A-Z]{2})(?:[,\s]+\d{5}(?:-\d{4})?)?\s*$")
 
 
 def _extract_state(addr: str) -> str | None:

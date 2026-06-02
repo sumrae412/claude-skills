@@ -17,6 +17,19 @@ def test_normalize_strips_city_state_zip():
     assert normalize("123 Elm St, Pittsburgh, PA 15217") == "123 elm street"
 
 
+def test_normalize_strips_wprdc_comma_before_zip():
+    """WPRDC publishes addresses like ``"... PITTSBURGH, PA, 15222"``.
+
+    The trailing-city-tail strip must accept both ``"PA 15222"`` and the
+    comma-before-zip form, or the normalizer leaves the city/state/zip
+    bolted onto the join key and every WPRDC↔listings join misses.
+    """
+    assert (
+        normalize("239 Fort Pitt Blvd, Pittsburgh, PA, 15222")
+        == "239 fort pitt boulevard"
+    )
+
+
 def test_normalize_expands_directionals():
     assert normalize("789 N Main Blvd") == "789 north main boulevard"
     # SW is not in the cardinal-4 list — leave alone rather than guess wrong.

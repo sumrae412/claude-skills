@@ -30,6 +30,7 @@ populated for residential improved parcels. Bathrooms total = full + 0.5*half.
 
 from __future__ import annotations
 
+import json
 import logging
 import os
 from typing import Iterable
@@ -147,8 +148,18 @@ def parse_parcels(records: Iterable[dict]) -> list[Parcel]:
     return out
 
 
-def fetch_parcels(limit: int = 10) -> list[Parcel]:
+def fetch_parcels(limit: int = 10, zips: list[str] | None = None) -> list[Parcel]:
     """Live CKAN fetch; parses through ``parse_parcels``.
+
+    When ``zips`` is supplied (non-empty), pushes the filter down to CKAN's
+    ``datastore_search`` via the ``filters`` query param so we no longer
+    rely on a random ``limit``-sized slice happening to hit the requested
+    zip. The dataset stores ``PROPERTYZIP`` as an INT (e.g. ``15217``, not
+    ``"15217"``) — we coerce supplied zip strings to ints accordingly. Bad
+    inputs (non-numeric strings) are dropped from the filter list rather
+    than raised; if every supplied zip is unparseable we fall through to
+    an unfiltered fetch (caller will get nothing useful, but the call
+    succeeds).
 
     Imported lazily so unit tests don't require httpx at import time.
     """
@@ -161,11 +172,21 @@ def fetch_parcels(limit: int = 10) -> list[Parcel]:
     if cert_path and not os.path.exists(cert_path):
         os.environ.pop("SSL_CERT_FILE", None)
 
-    resp = httpx.get(
-        DATASTORE_URL,
-        params={"resource_id": RESOURCE_ID, "limit": limit},
-        timeout=60,
-    )
+    params: dict[str, object] = {"resource_id": RESOURCE_ID, "limit": limit}
+    if zips:
+        zip_ints: list[int] = []
+        for z in zips:
+            try:
+                zip_ints.append(int(str(z).strip()))
+            except (TypeError, ValueError):
+                logger.debug("wprdc.parcels: dropping unparseable zip %r", z)
+        if zip_ints:
+            # CKAN datastore_search accepts a single value or a JSON list for
+            # multi-valued column filters. PROPERTYZIP is stored as int in this
+            # dataset (verified against fixture + live response).
+            params["filters"] = json.dumps({"PROPERTYZIP": zip_ints})
+
+    resp = httpx.get(DATASTORE_URL, params=params, timeout=60)
     resp.raise_for_status()
     payload = resp.json()
     if not payload.get("success"):

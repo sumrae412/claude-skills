@@ -34,6 +34,23 @@ def test_parcel_absentee_handles_unparseable_addresses_conservatively():
     assert p.is_absentee() is False
 
 
+def test_parcel_is_absentee_handles_wprdc_comma_before_zip():
+    """WPRDC publishes addresses with a comma between state and zip.
+
+    Real fixture shape: "239 FORT PITT BLVD, PITTSBURGH, PA, 15222". The
+    state-extraction regex must tolerate the comma — otherwise every
+    WPRDC parcel silently fails state extraction and ``is_absentee()``
+    returns False even when the owner is in a different state.
+    """
+    p = Parcel(
+        parcel_id="x",
+        address="239 FORT PITT BLVD, PITTSBURGH, PA, 15222",
+        owner_name="Doe, John",
+        owner_mailing="999 BEACH RD, MIAMI, FL, 33101",
+    )
+    assert p.is_absentee() is True
+
+
 def test_parcel_accepts_optional_fields():
     p = Parcel(
         parcel_id="x",
