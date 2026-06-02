@@ -41,13 +41,30 @@ Personal toolkit for finding houses that aren't for sale yet but might be.
 ## How to use
 
 ```bash
-# 1) Set up criteria
-cp examples/criteria.yaml my-criteria.yaml
+# 1) Set up criteria — copy a starter template and edit it
+cp off-market/examples/allegheny_pa.yaml my-criteria.yaml
 $EDITOR my-criteria.yaml
 
-# 2) Discover candidates
-python off-market/scripts/discover.py allegheny_pa --criteria my-criteria.yaml
+# 2) Discover candidates (writes to ./runs/<date>-<county>/)
+python3.11 off-market/scripts/discover.py allegheny_pa --criteria my-criteria.yaml
 
-# 3) Draft letters for top candidates
-python off-market/scripts/outreach.py runs/2026-06-02-allegheny_pa/candidates.csv --top 20
+# 3) Draft letters for top 20 candidates
+python3.11 off-market/scripts/outreach.py runs/2026-06-02-allegheny_pa/candidates.csv --top 20
 ```
+
+Output structure per run:
+
+```
+runs/2026-06-02-allegheny_pa/
+├── candidates.csv       # ranked candidates with scores + signals
+├── report.md            # human-readable summary + bucket counts
+├── health.json          # data-freshness + source counts
+└── letters/             # populated by stage 2
+    └── <address>.md     # one draft per top-N candidate
+```
+
+## Counties supported
+
+- **`allegheny_pa`** — Allegheny County, PA (Pittsburgh and inner suburbs). Source: WPRDC (Western PA Regional Data Center).
+
+More counties via plug-in adapters — see `references/adding-county-adapter.md` for the checklist. A new county needs a single Python file in `scripts/county_adapters/` exposing `fetch_parcels()`, `fetch_sales()`, `fetch_tax_liens()`, and `fetch_sheriff_sales()`.
