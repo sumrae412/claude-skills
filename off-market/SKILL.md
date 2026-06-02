@@ -33,6 +33,11 @@ Personal toolkit for finding houses that aren't for sale yet but might be.
 - `voice/profile.md` — user's saved voice profile.
 - `examples/criteria.yaml` — template buying criteria.
 
+## Known limitations (v1 — Allegheny County)
+
+- **Sheriff-sale data is stale.** The WPRDC `sheriff-sales` dataset stopped updating in late 2022; "Current Bid List" maxes out at `SaleDate=2022-12-05`. The signal still fires (40 points) for historical auctions, but won't catch currently-distressed owners. To fix when actively using the tool: swap the WPRDC fetcher in `scripts/county_adapters/allegheny_sheriff.py` for a live scrape of `https://www.alleghenycountypa.gov/services/sheriff/real-estate-sales/`. Adapter architecture supports this without touching the orchestrator.
+- **Owner name is a code, not a name.** WPRDC publishes `OWNERDESC` (`REGULAR` / `CORPORATION`) rather than actual owner names. The mailing address IS real, so letters reach the right house — they just can't address the recipient by name. Letter drafting (Phase 7) opens with a generic salutation. Workaround for higher-value targets: look up the actual name on Allegheny's Real Estate Portal manually before mailing.
+
 ## How to use
 
 ```bash
