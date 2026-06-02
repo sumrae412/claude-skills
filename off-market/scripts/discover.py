@@ -31,11 +31,18 @@ from __future__ import annotations
 
 import csv
 import logging
+import sys
 import urllib.parse
 from dataclasses import dataclass, field
 from datetime import date
 from pathlib import Path
 from typing import Any
+
+# When invoked as `python off-market/scripts/discover.py`, the `scripts`
+# package isn't on sys.path. Inject the off-market/ root so the absolute
+# `scripts.X` imports below resolve. No-op when imported normally.
+if __name__ == "__main__" and __package__ in (None, ""):
+    sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from scripts.cache import Cache
 from scripts.county_adapters.allegheny_pa import AlleghenyPAAdapter
@@ -334,3 +341,82 @@ def discover(
         health=health,
         tier_counts=tier_counts,
     )
+
+
+# ---------- CLI ----------
+
+
+def _format_summary(result: DiscoverResult, output_dir: Path) -> str:
+    """Build the post-run summary printed by the CLI."""
+    tc = result.tier_counts
+    lines = [
+        f"Discovery complete ({result.county}, {result.as_of.isoformat()})",
+        f"- Parcels considered: {result.parcels_total:,}",
+        f"- Active listings subtracted: {result.health.get('listings_subtracted', 0)}",
+        f"- Candidates (score ≥ 15): {result.candidates_kept:,}",
+        f"  - Act this week: {tc.get('act_this_week', 0)}",
+        f"  - High priority: {tc.get('high_priority', 0)}",
+        f"  - Worth a letter: {tc.get('worth_a_letter', 0)}",
+        "- Outputs:",
+    ]
+    for path in result.output_files:
+        try:
+            rel = path.relative_to(output_dir)
+        except ValueError:
+            rel = path
+        lines.append(f"  - {rel}")
+    return "\n".join(lines)
+
+
+def main(argv: list[str] | None = None) -> int:
+    """argparse entrypoint. Returns process exit code."""
+    import argparse
+
+    from scripts.criteria import load_criteria
+
+    parser = argparse.ArgumentParser(
+        prog="discover.py",
+        description=(
+            "Stage 1 — discover off-market candidate parcels for a county. "
+            "Writes candidates.csv, candidates.md, health.md."
+        ),
+    )
+    parser.add_argument(
+        "county",
+        choices=sorted(_ADAPTER_REGISTRY),
+        help="County adapter to run (e.g. allegheny_pa).",
+    )
+    parser.add_argument(
+        "--criteria",
+        type=Path,
+        default=None,
+        help="Path to criteria.yaml. Defaults to no constraints (all parcels).",
+    )
+    parser.add_argument(
+        "--output-dir",
+        type=Path,
+        default=Path.cwd(),
+        help="Parent directory for the timestamped run output. Default: cwd.",
+    )
+    parser.add_argument(
+        "--no-cache",
+        action="store_true",
+        help="Bypass the on-disk cache at ~/.cache/off-market/.",
+    )
+
+    args = parser.parse_args(argv)
+
+    criteria = load_criteria(args.criteria) if args.criteria else Criteria()
+
+    result = discover(
+        args.county,
+        criteria,
+        output_dir=args.output_dir,
+        use_cache=not args.no_cache,
+    )
+    print(_format_summary(result, args.output_dir))
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
