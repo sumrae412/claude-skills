@@ -1,0 +1,20 @@
+# Off-market house-buying criteria.
+# All fields optional. Leave blank or omit to skip the filter.
+# Protected-class keys (race, color, religion, etc.) are rejected on load.
+
+# beds_min: 3
+# baths_min: 1.5
+# lot_sqft_min: 4000
+# lot_sqft_max: 20000
+# sqft_min: 1200
+# sqft_max: 3500
+# year_built_min: 1900
+# year_built_max: 2010
+# price_min: 100000
+# price_max: 400000
+# zips:
+#   - "15217"
+#   - "15232"
+# neighborhoods:
+#   - "Squirrel Hill"
+#   - "Friendship"
