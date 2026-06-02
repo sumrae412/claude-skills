@@ -141,6 +141,16 @@ pre-flighting.** Local venv drift is silent — a stale venv (older
 pinned version, missing pinned packages) produces false-positive smokes
 that let no-op code ship.
 
+## LLM Defense in Depth (5-Layer Reference)
+
+When the backend exposes an LLM behind a tool surface (CourierFlow Charlie, any agent that calls services, any endpoint that renders model-generated content), the Quick Reference rows above cover specific anti-patterns but not the architectural frame. Load [`references/llm-defense-in-depth.md`](references/llm-defense-in-depth.md) for the 5-layer model (provenance tagging → least privilege → output validation → human-in-the-loop → application monitoring) when:
+
+- Designing a new agent surface — walk all 5 layers explicitly in the design doc.
+- Reviewing an existing LLM endpoint — pick one layer per pass, easier than auditing all 5 at once.
+- Triaging an injection incident — the layer that failed tells you the structural fix; don't patch the prompt.
+
+Source: ToxSec, "LLM Defense in Depth: Assume Breach and Contain the Blast" (2026-05). Pairs with the `LLM Prompt Injection (User Content)`, `Escape XML/TwiML Substitutions`, `Context-Aware Sanitizers`, and `Telemetry Fail-Open` rows above.
+
 ## When NOT to Use
 
 - Simple CRUD with no error handling complexity

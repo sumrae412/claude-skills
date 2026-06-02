@@ -37,6 +37,8 @@ This file is a router. Keep the step details in phases.
 
 Skip for free-form brainstorming or lightweight gut checks.
 
+**Breadth-first vs depth-first idea search:** This skill is for depth-first pressure-testing of ONE idea. If the user is still in breadth-first exploration ("I have five ideas — which one?"), time-box that phase first: ≤1 week of user interviews per idea before opening this skill, otherwise the dopamine of exploring new categories blocks any single idea from getting tested. (Harj Taggar, 2026-06.) When in doubt, ask: *"Is this idea picked and ready to pressure-test, or are we still narrowing from a set?"*
+
 ## Load Strategy
 
 1. Gather the minimum startup context once.
@@ -98,6 +100,7 @@ Two non-CLEARFRAME paths to surface during Phase 4–5 when the founder (not the
 
 - [`references/distribution-first-counterexamples.md`](references/distribution-first-counterexamples.md) — viral format as the moat (consumer B2C, short-form social distribution, quick-exit profile).
 - [`references/brand-first-counterexamples.md`](references/brand-first-counterexamples.md) — founder expertise + audience as the moat (creator-economy solopreneurship, owned-media distribution, sustained solo revenue).
+- [`references/competitor-teardown-prompt.md`](references/competitor-teardown-prompt.md) — Phase 4 reusable prompt for single-competitor or analogue-company teardowns using the Harvard case-study spine.
 
 ## Guardrails
 

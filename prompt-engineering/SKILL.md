@@ -11,6 +11,8 @@ Thin router over four prompt sub-skills. The router itself stays small; each sub
 
 All sub-skills implement these. Cite them by name when audit-flagging a prompt.
 
+**External validation:** the skills-as-modular-prompts approach below is reinforced by guidance from Anthropic's "Code with Claude" event (San Francisco, May 2026): *if you repeat a prompt instruction twice, turn it into a skill; modularize 600-line monolithic prompts; use code for deterministic logic instead of asking the model to re-derive it.* The principle list below is the per-prompt mechanics; the skills-system shape is the deployment surface.
+
 ### Universal (apply to every prompt)
 
 1. **XML tag structure** — separate role, background, instructions, examples, input

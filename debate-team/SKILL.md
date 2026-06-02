@@ -110,6 +110,38 @@ Process:
 
 Validated on courierflow_beta [PR #100](https://github.com/sumrae412/courierflow_beta/pull/100) Charlie persona component — panel surfaced the "persona writes checks the architecture has to cash" failure mode and 5 distinct repairs the user adopted before downstream components committed. Cheaper than full Tier 3, tighter than a full-plan Tier 0.
 
+### Mode D — Council (5 specialists with peer review)
+
+Use when the decision is **high-stakes AND has genuine uncertainty** (pricing, pivot, hire, big bet) and you want broader coverage than Mode A/C plus an internal cross-check before synthesis. Distinct from Mode C: more roles (5 vs 3), explicit peer-review pass, and chairman synthesizes a single concrete next step, not a list of repairs.
+
+Source: Karpathy's LLM Council methodology — five thinking styles run independently, peer-review each other's responses, and a chairman synthesizes. Adapted for single-conversation Tier 0 (no API calls).
+
+**The five advisors** — pick voices, not personas:
+
+| Advisor | Lens |
+|---|---|
+| **Contrarian** | Fatal flaws, missing risks, what kills the idea |
+| **First Principles Thinker** | Strip assumptions, rebuild from constraints |
+| **Expansionist** | Hidden upside, adjacent opportunities, what the framing misses |
+| **Outsider** | Fresh eyes — catch the curse of knowledge, name what insiders assume |
+| **Executor** | Feasibility only — fastest path to action, what blocks shipping |
+
+**Process:**
+
+1. **Frame** — enrich the question with workspace context (stage, audience, constraints, deadline). One paragraph.
+2. **Independent responses** — each advisor produces 150–300 words against the SAME framing. No peeking at each other.
+3. **Peer-review pass** — each advisor reads the four others' responses and names: (a) strongest point made by another voice, (b) blind spot in another voice, (c) where their own response was weakest in light of the others. Anonymous to the advisors (don't tell the Contrarian which voice was the Executor).
+4. **Chairman synthesis** — identify:
+   - **Convergence** — points ≥3 advisors agreed on (highest confidence).
+   - **Active clash** — where two voices contradict; name which one the synthesis sides with and why.
+   - **Single concrete next step** — one action, named owner, named deadline. Not a menu.
+
+**Why peer-review (Mode D extension over Mode C):** Mode C synthesizes specialist findings directly. Mode D adds the peer-review pass because in genuinely uncertain decisions, advisors' blind spots often only surface against another voice's frame. The pass routinely changes which finding the chairman treats as fatal.
+
+End with the standard Mode A close: `The single most important thing to do next: …`
+
+**Skip Mode D for:** factual lookups, simple choices, decisions already made (use Mode A to pressure-test instead). Mode D's overhead pays off only when the decision is expensive and the uncertainty is real.
+
 ### Optional second pass — attack → repair
 
 If the user asks for improvements after a Devil's Advocate pass, switch from attack to repair:
