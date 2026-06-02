@@ -87,6 +87,12 @@ Fall through to custom scraping in this order:
 
 4. **Does it require JavaScript execution?** Use Playwright headless. Extract via `page.evaluate(...)` running JS *in the browser* so only JSON crosses the boundary — don't return `page.content()` to Python and parse there.
 
+### CKAN / civic open-data portals
+
+WPRDC, data.gov, NYC OpenData, and most municipal portals run CKAN — `datastore_search` accepts `filters=<url-encoded-json>` for server-side WHERE clauses. **Always push filters down**; never `limit=1000` + Python-side filter — CKAN returns a random slice when the result exceeds `limit`, so a single-zip query against 600K parcels returns 0 hits ~95% of the time. Watch for column-type drift across sibling datasets (e.g. WPRDC `PROPERTYZIP` is `int` in parcels, `str` in sales — coerce in the filter JSON). Validated 2026-06-02 on [claude-skills PR #149](https://github.com/sumrae412/claude-skills/pull/149) `off-market` Phase 6 zip pushdown fix.
+
+Also: **"live" ≠ "fresh."** A dataset labeled "Current Bid List" can be frozen years back (WPRDC `sheriff-sales` frozen at 2022-12-05 despite the title). Check `last_modified` on dataset metadata before trusting freshness; the dataset's title is documentation, not freshness.
+
 ## Reconnaissance — when you must explore
 
 One `curl`. No browser. **Cache to a stable path so subsequent steps don't refetch.**
