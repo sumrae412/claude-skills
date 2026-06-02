@@ -89,6 +89,18 @@ Haiku is ~10–20× cheaper than Opus for tool-driven exploration. Every explore
 
 Validated 2026-05-28 building [`sme-voice`](../sme-voice/SKILL.md): 4 reference markdown files written main-thread from the in-context plan; dispatching 4 subagents would have re-paid ~2K briefing tokens each for zero parallelism gain.
 
+### 7.6 Combine spec + quality review in one dispatch for tightly-spec'd phases
+
+When a phase's tasks are individually small (≤50 LoC each) AND the spec is concrete (test bodies given verbatim), dispatch ONE reviewer subagent that does BOTH passes — spec-compliance first, then code-quality — in clearly separated sections of one prompt. Reviewer re-pays the diff-read cost once instead of twice. Stay split when reviews need distinct viewpoints (e.g. security vs perf) or when spec divergence is a likely outcome that should short-circuit the quality pass.
+
+Validated 2026-06-02 on [claude-skills PR #149](https://github.com/sumrae412/claude-skills/pull/149) `off-market` Phase 2 (5 signal modules, ~50 LoC each, test bodies in the brief verbatim) — saved ~40% on reviewer tokens vs split, caught the same leap-year off-by-one bug.
+
+### 7.7 Surgical fixup dispatch BETWEEN phases prevents compounded broken state
+
+When live-smoke surfaces a phase-N bug whose fix is one file + one signal, dispatch a focused fixup BEFORE moving to phase N+1. Bundling the fix into the next phase's PR loses bisect-ability and the fix dies in review noise. Pattern: one fix → one commit → one re-run → next phase. The fixup's brief is ~½ a normal phase brief (just the bug + verification command), and the cost beats discovering N+1 was built on a broken N.
+
+Validated 2026-06-02 on [claude-skills PR #149](https://github.com/sumrae412/claude-skills/pull/149) `off-market` — WPRDC server-side zip pushdown + comma-before-zip regex fixup between Phase 6 and Phase 7 took candidates surfaced from 0 to 4 on real 15217 data.
+
 ### 8. Introspect the live DB — don't read `schemas/` or `migrations/`
 
 If the task is "does column X exist?" or "what tables reference Y?", query the live DB's information schema (`\d+ tablename` via psql, or a DB MCP's table-introspection action). Reading the full migrations history to reconstruct schema costs 10–100× more tokens and is often wrong (migrations can be reverted, renamed, or stacked).
