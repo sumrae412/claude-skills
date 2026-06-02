@@ -78,6 +78,46 @@ Local SQLite-backed code knowledge graph that agents query instead of scanning f
 
 ---
 
+## jwill824/nudge-mcp — token telemetry MCP
+
+**Repo:** https://github.com/jwill824/nudge-mcp
+**License:** MIT
+**Saved from Mem reading queue 2026-06-02. Not installed/audited yet — see "Pre-install gate" below.**
+
+MCP server that reads `~/.claude/projects/` JSONL session files and exposes per-session cost and efficiency metrics as tools the agent can query mid-conversation. Also tracks Copilot CLI from `~/.copilot/session-state/`.
+
+**Exposed tools:**
+- `claude_session_report` — recent sessions with cost and efficiency metrics
+- `claude_monthly_summary` — total token usage and spend vs. budget
+- `analyze_copilot_session` — prompt quality, tool batching, context overhead
+- `copilot_model_efficiency` — whether the active model matched task complexity
+- `configure_subscription` — update plans and monthly budgets
+
+**Author's reported thresholds** (un-validated until trial — see protocol above):
+
+| Metric | Healthy | Warning |
+|---|---|---|
+| Cache hit % | >80% (stable prompts) | <60% (unstable prompts or short sessions) |
+| Tokens/turn | 40–60k | >150k (speculative reads or oversized context) |
+
+**Maps to skill patterns:**
+- Empirical layer for the whole skill — turns "read less" (advisory) into "your tokens/turn is 180k; pattern 4 likely applies" (measurable).
+- Pattern 12 (compaction signal): a tokens/turn spike is the early-warning that compaction should be planned, not deferred.
+
+**When to install:**
+- Long-running coding sessions where per-session numerics would change pattern selection.
+- Multi-project cost accountability — when Summer needs monthly totals across CourierFlow + DLAI work.
+
+**When to skip:**
+- Single-shot lookups (telemetry overhead exceeds the gain).
+- Cost-constrained sessions where the MCP itself adds tool-list tokens to every prompt.
+
+**Pre-install gate** (mandatory before `claude mcp add`): run `skill-security-auditor` against `https://github.com/jwill824/nudge-mcp`. Repo had 0 stars at save time; the MCP reads local session JSONL files which contain prompt/response payloads. Audit must verify (a) no network exfiltration from the MCP server, (b) no write access outside the configured monthly-budget file, (c) `uvx`-pinned version. Until audited, this entry is documentation only — do not install.
+
+**Install (after audit passes):** `claude mcp add nudge-mcp -- uvx nudge-mcp`.
+
+---
+
 ## Subagent + MCP scoping (least-privilege pattern)
 
 **Source:** Philschmid, "How to correctly use MCP servers with your AI Agents" (philschmid.de, 2026-05).
