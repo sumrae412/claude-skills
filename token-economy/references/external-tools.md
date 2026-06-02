@@ -82,7 +82,7 @@ Local SQLite-backed code knowledge graph that agents query instead of scanning f
 
 **Repo:** https://github.com/jwill824/nudge-mcp
 **License:** MIT
-**Saved from Mem reading queue 2026-06-02. Not installed/audited yet — see "Pre-install gate" below.**
+**Saved from Mem reading queue 2026-06-02. Audited via `skill-security-auditor` on 2026-06-02 (verdict: contextual pass; install: DEFERRED — see "Audit outcome" below).**
 
 MCP server that reads `~/.claude/projects/` JSONL session files and exposes per-session cost and efficiency metrics as tools the agent can query mid-conversation. Also tracks Copilot CLI from `~/.copilot/session-state/`.
 
@@ -112,9 +112,29 @@ MCP server that reads `~/.claude/projects/` JSONL session files and exposes per-
 - Single-shot lookups (telemetry overhead exceeds the gain).
 - Cost-constrained sessions where the MCP itself adds tool-list tokens to every prompt.
 
-**Pre-install gate** (mandatory before `claude mcp add`): run `skill-security-auditor` against `https://github.com/jwill824/nudge-mcp`. Repo had 0 stars at save time; the MCP reads local session JSONL files which contain prompt/response payloads. Audit must verify (a) no network exfiltration from the MCP server, (b) no write access outside the configured monthly-budget file, (c) `uvx`-pinned version. Until audited, this entry is documentation only — do not install.
+**Audit outcome (2026-06-02):** `skill-security-auditor` returned a literal FAIL verdict (1 CRITICAL, 7 HIGH). Hand-review of every flagged line determined all findings are false positives in the MCP-server context:
 
-**Install (after audit passes):** `claude mcp add nudge-mcp -- uvx nudge-mcp`.
+| Auditor flag | Line | Actual behavior | Verdict |
+|---|---|---|---|
+| `CRED-HARVEST` reads `GH_TOKEN` | `core/copilot.py:892` | Used only to authenticate against `api.github.com` for the documented `copilot_premium_usage` feature | False positive |
+| `NET-EXFIL` × 4 (urllib) | `core/copilot.py:927–982` | All four `urllib.request` calls target `api.github.com` for the same GitHub Copilot billing feature | False positive |
+| `STRUCTURE` missing SKILL.md | n/a | Auditor scans for skill shape; this is an MCP server | Wrong tool for surface |
+| `FS-HIDDEN` `.mcp.json`, `.github` | repo root | Expected for an MCP project (mcp.json is the MCP config; .github holds CI) | False positive |
+
+**No malicious patterns detected in current code.** Install remains DEFERRED for residual risks the auditor cannot resolve:
+
+1. **Supply-chain trust** — `uvx nudge-mcp` pulls from PyPI; the repo→package hash binding is not verified, so the installed code may diverge from the audited code.
+2. **0-star single-maintainer repo** — future versions can change behavior; `uvx` auto-pulls unless pinned to a specific revision.
+3. **JSONL session read access** — the MCP reads `~/.claude/projects/*.jsonl`, which contain full prompt/output history across every project. Current code does NOT exfil that data, but a future update could (and would not require any new dependency or API).
+
+**Conditional install (when residual risks are mitigated):**
+
+```bash
+# Pin to a specific repo commit, not the floating PyPI release.
+claude mcp add nudge-mcp -- uvx --from "git+https://github.com/jwill824/nudge-mcp.git@<commit-sha>" nudge-mcp
+```
+
+Plus OS-level egress monitoring to alert on any destination other than `api.github.com` while the MCP is running. Until those mitigations are in place, this entry is reference documentation only.
 
 ---
 
