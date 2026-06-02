@@ -268,6 +268,27 @@ Precision@K, Recall@K, MRR, NDCG, faithfulness, context-relevance.
 Don't reinvent — load `rag-architect/references/rag_evaluation_framework.md`
 and pull from there.
 
+## Counterfactual-pair evaluators (bias detection)
+
+For bias evals, build **counterfactual pairs** — inputs that vary on a
+single demographic dimension (name, gender, ethnicity, age, accent)
+and hold everything else constant. Score each variant with the same
+fixed metric (sentiment, refusal rate, recommendation, scoring
+decision) and **gate on the cross-pair range, not the absolute
+score**. Wide range across an otherwise-matched pair set → bias
+signal; escalate for DS / fairness review.
+
+- Construct ≥10 pairs per dimension; one-off pairs are anecdote, not
+  evidence.
+- The metric must be deterministic or pinned (regex / classifier with
+  a fixed snapshot) — an LLM-judge introduces its own bias surface.
+- Treat this as a **screening evaluator**, not a guardrail: it
+  surfaces candidates for human review, not auto-block decisions.
+
+Pattern from
+[JosephTLucas/llm_test](https://github.com/JosephTLucas/llm_test)
+(`test_counterfactual_sentiment.py`).
+
 ## Outcome graders (production)
 
 For managed-agent / background-agent runs where no human reviews each
