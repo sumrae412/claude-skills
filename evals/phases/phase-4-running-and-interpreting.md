@@ -139,6 +139,27 @@ A complete eval result has:
 Without those, the result isn't reproducible and shouldn't drive
 decisions.
 
+### Recipe-not-rendered for large inputs
+
+When the eval input itself is large — long context, multi-document
+RAG, image-heavy multimodal — storing the rendered prompt per result
+row balloons a single sweep into gigabytes. Store the **recipe**
+instead:
+
+- Per-row: source identifier (haystack hash / dataset slice), seed,
+  insertion indices, sampling parameters — everything needed to
+  regenerate the exact input deterministically.
+- Provide a separate `reconstruct` step that walks the recipe and
+  produces a byte-identical input string for the row. Used for
+  debugging individual failures without re-running the whole sweep.
+- Keeps artifact size linear in row count, not in prompt size.
+- Composes with the version-pinning rule above — recipe + pinned
+  dependencies = full reproducibility.
+
+Pattern from
+[gkamradt/needle-in-a-haystack v2](https://github.com/gkamradt/needle-in-a-haystack)
+result schema.
+
 ### Access control
 
 Eval results are a privacy surface:

@@ -90,6 +90,25 @@ positive/negative coverage, with measured inter-annotator agreement
 
 The tension: a faithful answer can be useless. Score both, separately.
 
+**Sweep design for long-context retrieval evals.** Single-point
+measurements at one length and one depth hide the failure surface —
+models degrade unevenly across `(context length, needle depth%)`. Design
+the eval as a 2D sweep:
+
+- **Length axis:** ~8 points from a short baseline to the model's
+  documented limit, linear scale.
+- **Depth axis:** ~11 points across 0–100% of the context, **sigmoid
+  scale** (concentrates samples at the edges where models typically
+  degrade most).
+- **Seeds:** ≥3 per cell for variance. Each row = `(length × depth ×
+  seed)`.
+- **Task:** single-fact NIAH saturates on frontier models. Prefer
+  **UUID-chain** (plant `A→B→C→D→E` at scattered depths; ask for the
+  value at `A` *without* revealing the chain structure — the model
+  must discover the hops). Score fractionally as `hops_correct /
+  chain_length` rather than binary pass/fail. Pattern from
+  [gkamradt/needle-in-a-haystack v2](https://github.com/gkamradt/needle-in-a-haystack).
+
 ---
 
 ## Build-Analyze cycle & maturity stages
@@ -120,3 +139,17 @@ Optimize cost and latency *after* quality is proven, not before.
   beat the noise floor? (EDD + `phases/phase-4`.)
 - Before scaling an eval pipeline, ask: is the process good, or am I
   amplifying a bad one? (Yan's rule.)
+
+---
+
+## Further reading
+
+- [alopatenko/LLMEvaluation](https://github.com/alopatenko/LLMEvaluation)
+  — curated compendium of LLM eval methods, leaderboards, eval
+  software, and papers organized by surface (RAG, agents, multi-turn,
+  hallucinations, long-context, vertical-specific). Go-to index when
+  you need to dive deeper on one eval surface.
+- Anthropic, *Demystifying evals for AI agents* (Jan 2026) —
+  [anthropic.com/engineering/demystifying-evals-for-ai-agents](https://www.anthropic.com/engineering/demystifying-evals-for-ai-agents).
+- Eugene Yan, *Product Evals in Three Simple Steps* (Nov 2025) —
+  [eugeneyan.com/writing/product-evals/](https://eugeneyan.com/writing/product-evals/).
