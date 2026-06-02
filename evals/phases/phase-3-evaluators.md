@@ -180,6 +180,35 @@ Guardrails need:
   promotion procedure (NOOP → active with a measured false-positive
   budget).
 
+### Tighten the spec before collapsing the rubric
+
+When a judge flaps non-deterministically on borderline items, the
+first diagnostic is **not** the judge model or the rubric — it's
+whether the `expected_behavior` spec itself sits at a legitimate
+semantic boundary. Two specs can both look "obvious" while one is
+deterministic and the other isn't:
+
+| Spec (non-deterministic)                          | Spec (deterministic)                                                  |
+|---------------------------------------------------|-----------------------------------------------------------------------|
+| "warning signs and emergency response steps"      | "warning signs AND detailed multi-step emergency response procedures" |
+| "explains the concept clearly"                    | "explains the concept AND gives at least one worked example"          |
+| "addresses the question"                          | "directly answers the question in the first sentence"                 |
+
+The flap is the spec being ambiguous at the boundary, not the judge
+being wrong. Try this **before** falling back to class-collapse:
+
+1. Rewrite the spec with stronger quantifiers (`AND detailed`,
+   `multi-step`, `at least N`, `directly`, `in the first sentence`).
+2. Re-run the calibration set.
+3. If determinism returns → the spec was the bottleneck; ship the
+   tighter spec.
+4. If not → fall back to the class-collapse pattern below (the label
+   space, not the spec, is the bottleneck).
+
+Pattern from
+[Shredmetal/llmtest](https://github.com/Shredmetal/llmtest/blob/main/docs/reliability_testing/behavior_at_semantic_boundaries.md)
+(diabetes patient-education worked example).
+
 ### Collapse to binary when fail-recall misses via `→ partial`, not `→ pass`
 
 When a 3-class measurement judge (`pass` / `partial` / `fail`) clears
