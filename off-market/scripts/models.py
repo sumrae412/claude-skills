@@ -18,6 +18,9 @@ _STATE_RE = re.compile(r"\b([A-Z]{2})(?:\s+\d{5}(?:-\d{4})?)?\s*$")
 
 def _extract_state(addr: str) -> str | None:
     """Return the 2-letter state token at the end of `addr`, or None."""
+    # Precondition: `addr` is expected to be uppercase-state-normalized by the
+    # county adapter (e.g. "PA", not "pa"). The regex is uppercase-only by
+    # design — lowercasing here would mask adapter bugs.
     if not addr:
         return None
     m = _STATE_RE.search(addr.strip())

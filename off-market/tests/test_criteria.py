@@ -1,8 +1,3 @@
-import sys
-import pathlib
-
-sys.path.insert(0, str(pathlib.Path(__file__).parent.parent))
-
 import pytest
 
 from scripts.criteria import Criteria, load_criteria, FORBIDDEN_FIELDS
@@ -44,3 +39,23 @@ def test_criteria_empty_yaml_yields_defaults(tmp_path):
     c = load_criteria(yml)
     assert c.beds_min is None
     assert c.zips == []
+
+
+@pytest.mark.parametrize("key", ["Race", "RACE", "Color", "DiSaBiLiTy"])
+def test_criteria_rejects_protected_class_key_case_insensitive(tmp_path, key):
+    yml = tmp_path / "c.yaml"
+    yml.write_text(f"{key}: oops\nbeds_min: 3\n")
+    with pytest.raises(ValueError, match="protected-class"):
+        load_criteria(yml)
+
+
+def test_criteria_rejects_protected_class_in_nested_structure(tmp_path):
+    yml = tmp_path / "c.yaml"
+    yml.write_text("""
+beds_min: 3
+neighborhoods:
+  - name: "Squirrel Hill"
+    race: "any"
+""")
+    with pytest.raises(ValueError, match="protected-class"):
+        load_criteria(yml)

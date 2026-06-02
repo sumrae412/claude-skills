@@ -1,8 +1,3 @@
-import sys
-import pathlib
-
-sys.path.insert(0, str(pathlib.Path(__file__).parent.parent))
-
 import json
 from datetime import datetime, timedelta, timezone
 
@@ -67,3 +62,11 @@ def test_cache_reraises_when_no_cache_and_fetcher_raises(tmp_path):
 
     with pytest.raises(RuntimeError, match="network down"):
         c.get_or_fetch("a", "x", boom, ttl_days=30)
+
+
+def test_cache_rejects_path_traversal_in_keys(tmp_path):
+    c = Cache(root=tmp_path)
+    with pytest.raises(ValueError, match="invalid cache key"):
+        c.write("../etc", "passwd", {"a": 1})
+    with pytest.raises(ValueError, match="invalid cache key"):
+        c.read("ok", "../etc/passwd")

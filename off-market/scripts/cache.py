@@ -12,12 +12,24 @@ from __future__ import annotations
 
 import json
 import logging
+import os
+import re
+import tempfile
 from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any, Callable
 
 logger = logging.getLogger(__name__)
+
+# Cache keys must look like safe filename segments — no path separators, no
+# ".." traversal, no shell metacharacters. Validated in `_path` against both
+# `county` and `source`.
+_SAFE_KEY_RE = re.compile(r"[A-Za-z0-9_-]+")
+
+
+def _now_iso() -> str:
+    return datetime.now(timezone.utc).isoformat()
 
 
 @dataclass
@@ -27,70 +39,82 @@ class Cache:
     root: Path
 
     def _path(self, county: str, source: str) -> Path:
+        for arg in (county, source):
+            if not isinstance(arg, str) or not _SAFE_KEY_RE.fullmatch(arg):
+                raise ValueError(f"invalid cache key: {arg!r}")
         return Path(self.root) / county / f"{source}.json"
 
-    def read(self, county: str, source: str) -> dict | None:
-        """Return the stored payload (unwrapped from the timestamp envelope) or None."""
+    def _read_envelope(
+        self, county: str, source: str
+    ) -> tuple[datetime | None, Any | None]:
+        """Return (fetched_at, payload). Returns (None, None) on missing/malformed."""
         path = self._path(county, source)
         if not path.exists():
-            return None
-        envelope = json.loads(path.read_text())
-        if isinstance(envelope, dict) and "data" in envelope and "_fetched_at" in envelope:
-            return envelope["data"]
-        # Backwards-compat / hand-written payload: return as-is.
-        return envelope
+            return None, None
+        try:
+            envelope = json.loads(path.read_text())
+        except json.JSONDecodeError:
+            logger.warning("cache: corrupted JSON at %s; ignoring", path)
+            return None, None
+        if (
+            not isinstance(envelope, dict)
+            or "_fetched_at" not in envelope
+            or "data" not in envelope
+        ):
+            logger.warning("cache: malformed envelope at %s; ignoring", path)
+            return None, None
+        try:
+            ts = datetime.fromisoformat(envelope["_fetched_at"])
+        except (TypeError, ValueError):
+            # Treat as infinitely old but still return the payload.
+            return None, envelope["data"]
+        return ts, envelope["data"]
 
-    def write(self, county: str, source: str, payload: dict) -> None:
-        """Store `payload` wrapped with the current UTC timestamp."""
+    def read(self, county: str, source: str) -> Any | None:
+        """Return the stored payload (unwrapped from the timestamp envelope) or None."""
+        return self._read_envelope(county, source)[1]
+
+    def write(self, county: str, source: str, payload: Any) -> None:
+        """Store `payload` wrapped with the current UTC timestamp (atomically)."""
         path = self._path(county, source)
         path.parent.mkdir(parents=True, exist_ok=True)
-        envelope = {
-            "_fetched_at": datetime.now(timezone.utc).isoformat(),
-            "data": payload,
-        }
-        path.write_text(json.dumps(envelope))
-
-    def _fetched_at(self, county: str, source: str) -> datetime | None:
-        path = self._path(county, source)
-        if not path.exists():
-            return None
-        envelope = json.loads(path.read_text())
-        ts = envelope.get("_fetched_at") if isinstance(envelope, dict) else None
-        if not ts:
-            return None
+        envelope = {"_fetched_at": _now_iso(), "data": payload}
+        # Atomic write: write to temp file in same directory, then rename.
+        fd, tmp_name = tempfile.mkstemp(prefix=path.name + ".", dir=path.parent)
         try:
-            return datetime.fromisoformat(ts)
-        except ValueError:
-            return None
+            with os.fdopen(fd, "w") as f:
+                json.dump(envelope, f)
+            os.replace(tmp_name, path)
+        except Exception:
+            if os.path.exists(tmp_name):
+                os.unlink(tmp_name)
+            raise
 
     def get_or_fetch(
         self,
         county: str,
         source: str,
-        fetcher: Callable[[], dict],
+        fetcher: Callable[[], Any],
         ttl_days: int,
-    ) -> dict:
+    ) -> Any:
         """Serve fresh cache or call fetcher; fall back to stale on fetcher failure."""
-        fetched_at = self._fetched_at(county, source)
-        if fetched_at is not None:
+        fetched_at, cached = self._read_envelope(county, source)
+        if fetched_at is not None and cached is not None:
             age = datetime.now(timezone.utc) - fetched_at
             if age <= timedelta(days=ttl_days):
-                cached = self.read(county, source)
-                if cached is not None:
-                    return cached
+                return cached
 
         try:
             fresh = fetcher()
         except Exception as exc:
-            stale = self.read(county, source)
-            if stale is not None:
+            if cached is not None:
                 logger.warning(
                     "fetcher for %s/%s failed (%s); serving stale cache as fallback",
                     county,
                     source,
                     exc,
                 )
-                return stale
+                return cached
             raise
 
         self.write(county, source, fresh)
