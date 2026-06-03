@@ -212,6 +212,14 @@ Any `--max-cost-usd` / cost-ceiling flag on an LLM eval or batch runner MUST tal
 
 **How to apply:** when adding a cost ceiling to any LLM eval/batch runner, enumerate EVERY `messages.create()` / `complete()` call site — judge, SUT, structured-output, repair retries, multi-sample — and confirm each one adds to the same cumulative tally before the threshold-check fires. If the runner spawns a subprocess (e.g. backend route call), the cost meter needs the subprocess to return its spend back to the runner (header, JSON field, or shared file), not just count requests.
 
+### Get per-component token breakdown BEFORE back-calculating from an average
+
+When diagnosing an LLM cost split (input vs cache_read vs cache_creation vs output), pull the provider's per-component breakdown from the usage API or console FIRST. Average-rate math ("$X / Y million tokens at $Z/M = N% must be output") has multiple solutions and the wrong one looks plausible.
+
+**Failure mode:** a back-calc framing of "80/20 input/output is typical for chat" led to an "output tokens are 87% of the bill" diagnosis that survived until the user pulled the Anthropic console split — actual output share was 0.9% of volume, and the real cost was uncached input on a sibling route. Hours of investigation routed at the wrong layer.
+
+**How to apply:** any time the available signal is one aggregate number (daily $ spend, total tokens), the FIRST tool call should be the provider's per-component breakdown — Anthropic console → Usage → split by `input` / `cache_read` / `cache_creation` / `output`; OpenAI dashboard → cached vs uncached input. Only back-calculate when per-component is genuinely unavailable, and flag the result as `unverified`. Validated 2026-06-03 on courierflow_beta during the Jun 01-03 $60-100/day spend investigation.
+
 ## Reranker caveats
 
 - **Haiku-as-reranker on small candidate sets can degrade ranking.** Validated 2026-04-29 (claude-flow scale experiment): Haiku reranking BM25 top-3 produced more reordering noise than signal vs. raw BM25 ordering. Threshold for rerank to help: candidate set should be large enough that BM25 top-K loses real signal at K (typically K≥10 over a corpus of hundreds).
