@@ -43,6 +43,42 @@ All sub-skills implement these. Cite them by name when audit-flagging a prompt.
 20. **Memory persistence** — write durable facts (preferences, constraints) to memory tools; do not write transient state.
 21. **Adversarial test triad** — before shipping, run vague / multi-issue / distraction inputs. A prompt that fails any ships brittle.
 
+## Pre-flight prompt debugger (mandatory for coding-work prompts)
+
+Lightweight in-conversation debugger. Fires BEFORE the prompt is deployed, not after a failure. Mandatory for any prompt that will drive coding work (LLM generating, editing, refactoring, reviewing, or shipping code); recommended for single-turn classifiers. Operationalizes Universal #12 (test-driven iteration) and Agent #21 (adversarial triad) into a runnable 5-case checklist with a diagnosis grid.
+
+### Build the tiny eval suite
+
+For the prompt under test:
+
+1. **Control case (1)** — should always pass. The happy path. If this fails, the prompt is broken at baseline; do not proceed to edge cases.
+2. **Edge cases (3)** — plausible inputs where the prompt could fail. For agents, draw from the adversarial triad (vague / multi-issue / distraction). For single-turn, draw from domain failure modes (ambiguous category, missing field, conflicting signals).
+3. **Capability-boundary case (1)** — input where the agent SHOULD escalate, ask for help, or refuse. Tests the escape hatch (Universal #4) and side-effect guards (Agent #19). Distinct from edge cases: edge tests correctness; boundary tests honest deferral.
+
+Run each case mentally or against the model. State the expected behavior per case before running.
+
+### Diagnose each failure into ONE bucket
+
+| Bucket | Symptom | Fix surface |
+|---|---|---|
+| **Prompt issue** | Instructions unclear, missing escape hatch, format underspecified, conflicting heuristics, role/audience vague | Edit the prompt |
+| **Missing tool or capability** | Agent has the right intent but no way to act (no search tool, no file read, no escalation channel, no enum value for the case) | Add a tool, expand a tool schema, or add a capability |
+| **Harness / workflow issue** | Prompt and tools are correct but the runtime can't execute it (no assistant-message prefill, no extended thinking budget, wrong adapter, missing env var, upstream caller not passing field) | Fix the harness, switch adapter, or change deployment shape |
+
+### Suggest the smallest change to test next
+
+One targeted change per iteration, then re-run the 5-case suite. Resist rewriting the prompt blindly — most "prompt failures" on coding-work agents are actually tool gaps or harness limits, and rewriting the prompt against them just shuffles the failure.
+
+**Heuristic:** if ≥2 of 5 failures diagnose as `harness / workflow`, stop editing the prompt and fix the harness first.
+
+### When to fire (mandatory vs. recommended)
+
+- **Mandatory:** any prompt that will drive coding work; any ≥10-line change on a production agent prompt; any new tool added to an existing agent (the new tool needs its own capability-boundary case).
+- **Recommended:** single-turn classifiers, extractors, summaries.
+- **Skip:** trivial wording tweaks on a prompt with a passing suite from the last week.
+
+Composes with `prompt-optimizer` (which is the reactive debugger — same framework, applied after a failure) and `evals` (which scales this to golden datasets + LLM-as-judge for regression gating).
+
 ## Routing
 
 | User intent | Sub-skill |
