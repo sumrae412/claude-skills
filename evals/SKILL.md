@@ -122,6 +122,18 @@ Produce only what the user needs:
   Husain ("Look at the Data™", impact hierarchy), Eugene Yan (EDD,
   scientific cycle, faithfulness vs helpfulness). Read when
   designing the eval *practice*, not picking tactics.
+- `references/eval-tool-prior-art.md` — Shredmetal/llmtest
+  (behavioral-assert form factor; "treat the LLM as a closed-source
+  third-party library") and google/litmus (GCP-native eval platform
+  with Ragas / DeepEval backends). Read before standing up a new
+  eval surface — borrow the vocabulary even when you keep your own
+  runner. Composes with the "tune system prompt, not eval QUESTIONS"
+  anti-pattern in `~/.claude/CLAUDE.md` § Evals — Nouha Dziri's
+  "jagged intelligence" framing (pattern matching vs reasoning;
+  dense RL rewards beat sparse correct/incorrect signals) is the
+  theoretical grounding for why retuning questions papers over
+  model variance rather than fixing it ([Open Data Science, ODSC AI
+  East 2026 keynote](https://opendatascience.com/nouha-dziri-on-jagged-intelligence-and-the-limits-of-llm-reasoning/)).
 
 ## Guardrails
 
