@@ -148,6 +148,16 @@ Produce only what the user needs:
   coverage explicitly.
 - Order evaluator cost: cheap deterministic checks first, expensive
   LLM-judge second, human review last.
+- When claiming an eval surface is cached, NAME the workflow event +
+  route that produced the `cacheHitRate>0` evidence. `cacheHitRate=1.0`
+  measured on `workflow_dispatch` runs against `/eval/chat` does NOT
+  transfer to `pull_request` runs hitting `/eval/chat/dryrun` even if
+  both routes share the same `cache_control` shape — Anthropic's
+  account-level cache key is route+payload-scoped. Before extending a
+  cache claim across routes, run a live call on each sibling route and
+  assert `usage.cache_read_input_tokens > 0` on turn 2+. See
+  `agent-vault/agent/ci-and-deploys.md` § "Failure-loop × full SUT
+  spend" for the cost shape this guards against.
 
 ## Cost-discipline triad for stochastic eval surfaces
 
