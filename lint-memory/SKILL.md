@@ -70,7 +70,7 @@ of `scripts/build_doc_graph.py` (available in `claude-skills/scripts/` and
   only. See
   [`~/claude_code/agent-vault/agent/doc-graph-tooling.md`](https://github.com/sumrae412/agent-vault/blob/main/agent/doc-graph-tooling.md).
 
-Run it before manual consolidation and after every batch of memory adds.
+Run it before manual consolidation and after every batch of memory adds. The script is wrapped as the [`doc-graph`](../doc-graph/SKILL.md) skill — same script, with read-the-report and interpretation guidance for direct user invocation.
 
 ## Check Map
 
