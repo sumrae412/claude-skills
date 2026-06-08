@@ -158,3 +158,24 @@ Produce only what the user needs:
 3. **Path-trigger negation on PR workflows** — `paths:` with `!`-prefixed negations to exclude high-cost surfaces from PR triggers; reserve them for nightly + manual dispatch. See `vault/agent/ci-and-deploys.md` "paths AND paths-ignore in the same trigger block is forbidden" for the syntax constraint.
 
 Validated 2026-05-30 on courierflow_beta [PR #157](https://github.com/sumrae412/courierflow_beta/pull/157) after a $60 day where 5 of 6 `suite=all` Layer B dispatches failed mid-run, each burning partial budget through an uncapped SUT path. Triad addresses each leak independently — none alone is sufficient.
+
+## Cost-meter honesty fields — `unmeteredSurfaces: []`
+
+Eval runners with multiple LLM call sites need explicit per-surface cost accumulation AND an `unmeteredSurfaces` honesty field in the results artifact, not just a `totalCostUsd` field. A `totalCostUsd` that secretly meters only one surface is the same anti-pattern the cost-discipline triad above guards against — judge-only metering is theater for `totalCost` the same way it is for a cost ceiling.
+
+**Pattern for the results artifact:**
+
+```jsonc
+"summary": {
+  "judgeCostUsd": 0.0,           // metered (0 here = no LLM judge)
+  "classifierCostUsd": 0.0123,   // metered from response.usage
+  "totalCostUsd": 0.0123,        // = sum of per-surface fields
+  "unmeteredSurfaces": []        // explicit honesty list
+}
+```
+
+The `unmeteredSurfaces: []` empty list is the load-bearing field. It tells reviewers "we believe nothing on this eval surface is silently unmetered" — and if a future change introduces a new `anthropic.messages.create()` call site on this code path, the developer MUST either add a new `<surface>CostUsd` field or name the surface in `unmeteredSurfaces`. Reviewers cross-check the runner's call sites against the array; any unlisted call site is a bug.
+
+Validated 2026-06-07 on courierflow_beta [PR #332](https://github.com/sumrae412/courierflow_beta/pull/332) `tools/inbound/run_inbound_eval.py` — first downstream use of the courierflow_beta CLAUDE.md "totalCostUsd is judge-only" lesson (PR #322). The Gate D runner's `judgeCostUsd` is fixed-zero (no LLM judge in this regime), `classifierCostUsd` is metered from the bypass route's `usage` field, `totalCostUsd` = sum, `unmeteredSurfaces: []` is the explicit honesty signal.
+
+Composes with the cost-discipline triad above (same family, scoped to artifact schema rather than runtime metering).
