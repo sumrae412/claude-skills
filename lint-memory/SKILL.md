@@ -39,6 +39,8 @@ This file is a router. Do not keep all six check definitions resident.
 2. Load only the phase files needed for that mode.
 3. For mechanical checks, prefer deterministic scanning.
 4. Only load semantic contradiction guidance when running the full lint.
+5. Load phase 5 only in full mode AND only when phases 2-3 surfaced drift
+   (stale refs, moderate-overlap pairs, contradictions) worth a decision.
 
 ## Phase Map
 
@@ -46,6 +48,7 @@ This file is a router. Do not keep all six check definitions resident.
 2. `phases/phase-2-mechanical-checks.md`
 3. `phases/phase-3-semantic-checks.md`
 4. `phases/phase-4-reporting-and-fixes.md`
+5. `phases/phase-5-maintenance-outcomes.md` (full mode, only when Phase 2/3 surfaced drift)
 
 ## Companion tooling — `build_doc_graph.py`
 
@@ -80,6 +83,9 @@ Run it before manual consolidation and after every batch of memory adds. The scr
   frontmatter schema, stale code references
 - Semantic, manual:
   contradictions
+- Maintenance decision (full mode, post-detection):
+  five-outcome model (Keep / Update / Consolidate / Replace / Delete) +
+  stale-marking — see `phases/phase-5-maintenance-outcomes.md`
 
 ## Session Rules
 
@@ -101,5 +107,11 @@ Include errors, warnings, auto-fixes applied, and clean yes/no summary.
 ## Guardrails
 
 - Do not auto-fix stale references or contradictions.
+- When drift is too fundamental to confidently rewrite, mark the entry
+  `status: stale` (with `stale_reason` + `stale_date`) rather than guessing
+  at a Replace — stale-marking is reversible; a wrong Replace misleads
+  silently. See phase 5.
+- Consolidate/merge only at 4-5/5 overlap dimensions; below that, add a
+  cross-reference (default), don't retire either side.
 - Keep quick lint mechanical; avoid expensive grep or LLM judgment unless
   full mode explicitly calls for it.
