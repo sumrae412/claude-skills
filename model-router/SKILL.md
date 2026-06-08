@@ -77,6 +77,8 @@ Classify the task into one of four tiers, then route to the corresponding model:
 
 **First-match precedence within tier:** evaluate trivial → simple → complex → architectural. Mixed signals bias toward cheaper models — escalation after the fact is cheaper than over-spend.
 
+**Fast disambiguator — the rubric-gradability test.** When a task sits on the boundary between mechanical and judgment work (the trivial/simple vs. architectural split), ask one question: *could you write a rubric a machine could grade the output against?* If yes — the success criteria are enumerable in advance (matches a spec, passes named tests, follows a fixed format, transforms data to a defined shape) — route to the cheap tier; the work is execution, not judgment. If no — success depends on taste, tradeoff reasoning, or "I'll know it when I see it" — it needs Opus. This mirrors the orchestrator/executor split (Opus decides *what* and grades the result; the cheap tier executes the rubric-gradable steps) and `claude-flow`'s Rule 5 (use the model only for judgment calls; route deterministic transforms to code or the cheap tier). The test is decisive on the ~20% of cases where the tier table is ambiguous — if you're hesitating between Sonnet and Opus, a clean rubric you could hand to a grader is the signal to drop a tier.
+
 **For ambiguous cases, the full weighted-signal table, and worked examples of edge cases, see [`references/signal-scoring.md`](references/signal-scoring.md).** Load it only when the tier isn't obvious from the lookup above (~20% of cases).
 
 ### Step 3 — Override rules (force-model, regardless of tier)
