@@ -75,3 +75,15 @@ Rules:
 - End only when the user can state the key insight in their own words.
 
 At the end, briefly break character and identify the key insight, the moment of understanding, and the next question you would have asked.
+
+## Progress Files (multi-session arcs)
+
+For learning that spans sessions, persist state to the learning directory so each session resumes without re-diagnosis:
+
+- `MISSION.md` — the goal, level diagnosis, and current position in the plan.
+- `RESOURCES.md` — sources in play, ranked by usefulness.
+- `records/<date>.md` — one per session: what was covered, quiz results, weak spots to feed the next session's focus.
+
+Run the diagnostic (level + goal questions) only when `MISSION.md` is absent or stale; otherwise read it and continue.
+
+Pattern adopted from Matt Pocock's `/teach` skill ([AI Hero, 2026-06](https://www.aihero.dev/learn-anything-with-my-teach-skill)) — diagnostic-first teaching with durable progress records is what makes the tailoring compound across sessions.
