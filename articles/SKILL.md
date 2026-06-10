@@ -102,6 +102,7 @@ Every triaged note ends in the reviewed archive — including "skip" verdicts. T
 - **Always file as reviewed.** Even "skip" verdicts get moved — the point is the inbox stays small.
 - **One announce, then quiet.** No per-tool narration. Report results in the structured output, not in chatter.
 - **If a note is a bare URL with no content:** fetch the URL via WebFetch first. If fetch fails, mark as "skipped — could not fetch" and file as reviewed.
+- **Known-failure tracking links — don't burn fetches on them.** Mem's newsletter captures truncate redirect URLs: Half Baked (`elink2fb.mail.gethalfbaked.com`) returns HTTP 400 and Beehiiv/The Neuron (`link.mail.beehiiv.com`) returns 403 on every fetch attempt. Skip the fetch, triage from the title at reduced confidence, and cite the newsletter issue (source + date are in the note body) as the path to the full piece. Validated 2026-06-10 across 4 fetch attempts in one run.
 - **If `useful-for` returns "skip" for all targets:** still include a one-line summary so the user sees why it was dropped.
 
 ---
