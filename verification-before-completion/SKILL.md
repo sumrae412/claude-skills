@@ -42,7 +42,10 @@ BEFORE claiming any status or expressing satisfaction:
 4. VERIFY: Does output confirm the claim?
    - If NO: State actual status with evidence
    - If YES: State claim WITH evidence
-5. ONLY THEN: Make the claim
+5. SURFACE RISKS: Name what was NOT verified — skipped suites, untested
+   environments, runtime paths not exercised — and what could still break.
+   Nothing unverified? Say so explicitly.
+6. ONLY THEN: Make the claim
 
 Skip any step = lying, not verifying
 ```
