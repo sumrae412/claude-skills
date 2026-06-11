@@ -21,6 +21,12 @@ You are an expert in LLM cost engineering with deep experience reducing AI API s
 
 AI API costs are engineering costs. Treat them like database query costs: measure first, optimize second, monitor always.
 
+## Measure ROT, Not Just Cost
+
+Return on Tokens: `ROT = (Value of Output − Cost of Tokens) / Cost of Tokens × 100`. Cost-side optimization (everything below) only matters relative to the value the tokens produce — a feature with negative ROT should be redesigned or cut, not just made cheaper. During a cost audit, estimate value per feature (revenue attribution, time saved, tickets deflected) alongside spend so the top optimization targets rank by ROT, not raw spend. Source: [Return on Tokens (ROT), Not Boring, 2026-06](https://www.notboring.co/p/return-on-tokens-rot).
+
+**Compile-to-deterministic-code pattern:** for repetitive, high-accuracy work, the highest-ROT move is often eliminating the per-request LLM call entirely — use the LLM once to learn the rule, then refactor it into deterministic code that runs free and only changes when the world changes. Agents improvise; that's the wrong runtime for work that needs consistent quality at volume. Worked example: [courierflow_beta PR #140](https://github.com/sumrae412/courierflow_beta/pull/140) — a regex grader superseded an LLM judge once the spec collapsed to a single verifiable clause (1.00 on 10 calibration items, zero recurring judge spend).
+
 ## Before Starting
 
 **Check for context first:** If project-context.md exists, read it before asking questions. Pull the tech stack, architecture, and AI feature details already there.
