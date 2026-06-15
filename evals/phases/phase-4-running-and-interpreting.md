@@ -120,6 +120,27 @@ noise floor as the production canary's halt criteria (see
 noise floor** (live variance is larger). When CI passes but canary
 halts (or vice versa), investigate — don't dismiss as a fluke.
 
+### Where the eval signal meets the rest of the test suite
+
+Evals are not the whole test layer — they're the non-deterministic half
+of a **two-layer** split. Keep them separate so a stochastic judge
+never gates a deterministic assertion:
+
+- **Layer A — deterministic** (Playwright / unit / integration): runs on
+  every PR, blocking, fast, binary pass/fail. Owns "did the wiring fire,
+  did the route return 200, did the tool get invoked."
+- **Layer B — non-deterministic** (the evals in this skill): LLM-judge
+  and quality metrics, run on a **nightly** cadence (or a leaner PR
+  smoke set), thresholds not binary asserts. Owns "was the answer
+  faithful / helpful / correctly-toned."
+
+Tag failures by which layer (and which sub-cause) so triage is cheap —
+e.g. context-assembly failures (the wrong inputs reached the model) vs.
+execution failures (right inputs, wrong output). A regression gate
+(above) is the Layer-B-into-CI bridge; it should run a *smoke subset*,
+never the full nightly matrix, so PR latency stays low. The eval owns
+the *signal*; the test architecture owns *what blocks the merge*.
+
 ## Reporting
 
 A complete eval result has:
@@ -173,6 +194,31 @@ Eval results are a privacy surface:
 - Include the eval dataset and result store in the system's
   data-processing register. See `phases/phase-5-production-evals.md`
   § 6 for the privacy surface in production sampling.
+
+## Eval harness implementation pitfalls
+
+When you build or run a custom eval-loop harness (multi-iteration
+benchmark, baseline-vs-candidate comparison), four things bite silently:
+
+- **Directory / field-name contracts are load-bearing.** Aggregators
+  routinely glob a strict prefix (e.g. `eval-*/`) — a descriptively
+  named dir matches nothing and is silently skipped. Result files often
+  need specific summary keys (`pass_rate`, `passed`, `failed`, `total`);
+  a missing key blocks aggregate math without a clear error. Verify the
+  harness's expected layout before naming dirs or writing results.
+- **Baseline drift across iterations is noise, not signal.** When the
+  eval prompts themselves change between iterations, the baseline
+  pass-rate fluctuates even though the system-under-test is unchanged.
+  **Compare baseline-vs-candidate *within* one iteration** — never
+  baseline-iter-N vs baseline-iter-M. The within-iteration delta is the
+  only honest comparison.
+- **Validate a fix by holding prompts fixed and expanding assertions,
+  then re-running** — not by editing the questions until it passes (see
+  the "tune the system prompt, not the eval QUESTIONS" anti-pattern in
+  `references/eval-tool-prior-art.md`).
+- **Wall-clock convergence speed is a secondary signal.** A harness that
+  converges faster isn't better if its pass-rate semantics shifted;
+  read the per-item rationale diff before trusting an aggregate move.
 
 ## Failure → dataset → next iteration
 

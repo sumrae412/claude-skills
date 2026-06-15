@@ -108,6 +108,18 @@ Produce only what the user needs:
 - `rag-architect` (`references/rag_evaluation_framework.md`) — RAG has
   its own metric family (Precision@K, MRR, NDCG, faithfulness). Use
   alongside this skill for retrieval features.
+- `llm-cost-optimizer` — eval runs are an LLM-spend surface. Use for
+  the combined-cost-meter rationale ("cost gates that meter only one
+  call path are theater"), the cache-the-stable-SUT-prefix pattern
+  (the uncached `system + tools` prefix resent across every SUT call
+  is usually the dominant eval-run cost — judge calls are often <1%),
+  and the cross-provider calibration gotcha (two correctly-functioning
+  providers can disagree ~2× on the same input — agreement measures
+  similarity, not correctness).
+- `debate-team` (`references/critic-calibration.md`) — the
+  three-critic / critic-concordance rule for validating eval
+  *artifacts* (see Guardrails below). Calibrating critic agents is
+  the meta-evaluation case of calibrating judges.
 
 ## References
 
@@ -148,12 +160,30 @@ Produce only what the user needs:
   coverage explicitly.
 - Order evaluator cost: cheap deterministic checks first, expensive
   LLM-judge second, human review last.
+- **Critic concordance on statistical/methodological claims is weak
+  evidence — run a cross-family third critic.** When two reviewers with
+  overlapping training corpora agree on a numeric or methodological
+  claim in an eval design (sample size, power, CI interpretation, paired
+  vs. independent analysis), do *not* treat the agreement as
+  confirmation. Statistical errors are the highest-value third-critic
+  finding and not every model family catches them. Validated on this
+  skill's own [PR #118](https://github.com/sumrae412/claude-skills/pull/118):
+  R1 + R2 (same family) both missed a 10× sample-size bug; only a
+  cross-family R3 caught it. This is the meta-evaluation case — you are
+  calibrating the evaluators of your eval. See
+  `debate-team/references/critic-calibration.md`.
+- **When introducing a *new* judge model family as a baseline, calibrate
+  it against a 30–50-example human-labeled gold set first** — don't
+  promote it on agreement with the old judge. Two correctly-functioning
+  providers can disagree ~2× on the same input; agreement measures
+  similarity, not correctness. See `llm-cost-optimizer` (cross-provider
+  agreement gotcha).
 
 ## Cost-discipline triad for stochastic eval surfaces
 
 **Cost-discipline triad for any stochastic eval surface that runs nightly or on `workflow_dispatch`:**
 
-1. **Combined cost meter** — every API call (SUT + judge + structured-output retries) tallies against ONE cumulative `cost_usd_total` checked before the next call. See `llm-cost-optimizer` "Cost gates that meter only one call path are theater."
+1. **Combined cost meter** — every API call (SUT + judge + structured-output retries) tallies against ONE cumulative `cost_usd_total` checked before the next call. See `llm-cost-optimizer` "Cost gates that meter only one call path are theater." **Before optimizing, cache the stable SUT prefix** — the uncached `system + tools` block resent on every SUT call is routinely the dominant driver (judge calls often <1%); wrap it with prompt caching and log `cache_creation_input_tokens` / `cache_read_input_tokens → cacheHitRate` per call so the meter proves the cache is hitting.
 2. **Repetition-count cap on nightly multi-sample paths** — flag like `--memory-depths {3,5,8,10}` with a default that caps the replay matrix; PR-gate runs use a leaner default than nightly to keep iteration cheap (composes with the existing PR-gate vs nightly threshold split).
 3. **Path-trigger negation on PR workflows** — `paths:` with `!`-prefixed negations to exclude high-cost surfaces from PR triggers; reserve them for nightly + manual dispatch. See `vault/agent/ci-and-deploys.md` "paths AND paths-ignore in the same trigger block is forbidden" for the syntax constraint.
 
