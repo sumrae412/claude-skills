@@ -117,6 +117,20 @@ For skills with `requirements.txt`, `package.json`, or inline `pip install`:
 | **Large files** | Files >1MB that could hide payloads | ⚪ INFO |
 | **Symlinks** | Symbolic links pointing outside skill directory | 🔴 CRITICAL |
 
+### 5. Agent Trust & Permission Patterns
+
+Audits for agentic-AI-specific risks where a skill *itself* is benign but its
+combination of capabilities or its data-handling assumptions create a high-blast-radius
+runtime. Sources: [Anthropic — How we contain Claude across products](https://www.anthropic.com/engineering/how-we-contain-claude) (2026-05-25); [ToxSec — Google I/O: Agentic Security and New Threats](https://www.toxsec.com/p/ai-agent-security-after-google-io) (2026-05-25).
+
+| Check | What It Does | Severity |
+|-------|-------------|----------|
+| **Lethal Trifecta** | Skill combines (a) read untrusted content (web fetch, file ingest, message read), (b) access sensitive data (Gmail, Drive, vault, env vars), AND (c) external communication (network egress, message send, repo push). All three together enable autonomous data exfiltration via prompt injection. | 🔴 CRITICAL |
+| **Egress treated as destination filter** | Skill restricts outbound calls by URL/domain allowlist rather than by *capability* (what data is allowed to leave, regardless of destination). Approved destinations can still exfiltrate when the model is induced to send sensitive data to a benign-looking domain. Look for `ALLOWED_DOMAINS = [...]` patterns without payload-scope checks. | 🟡 HIGH |
+| **Trust-boundary parsing** | Skill parses project-local config (`.claude/`, `package.json` scripts, repo-local hooks, `.env`) BEFORE establishing a trust boundary — e.g. running a project's `prestart` or `postinstall` script in the same process as the agent's privileged tools. | 🔴 CRITICAL |
+| **Permission scope creep** | Skill accumulates standing permissions (Gmail+Drive+filesystem+network) across sessions without per-action confirmation for sensitive actions. Indicator: skill requests broad OAuth scopes / `permissions.allow` entries that exceed its stated function. | 🟡 HIGH |
+| **No human-in-the-loop for sensitive actions** | Skill performs irreversible or externally-visible actions (send message, push commit, charge card, delete file, sign document) without an explicit confirmation step or audit log. | 🟡 HIGH |
+
 ## Audit Workflow
 
 1. **Run the scanner** on the skill directory or repo URL
@@ -190,6 +204,18 @@ done
 ## Threat Model Reference
 
 For the complete threat model, detection patterns, and known attack vectors against AI agent skills, see [references/threat-model.md](references/threat-model.md).
+
+## Future expansion candidates
+
+The [mukul975/Anthropic-Cybersecurity-Skills](https://github.com/mukul975/Anthropic-Cybersecurity-Skills) repo (community-authored, despite the name — 754 skills under Apache-2.0, mapped to MITRE ATT&CK / NIST CSF / ATLAS / D3FEND / NIST AI RMF) has 5 skills directly applicable to extending this auditor's pattern coverage. Logged as candidates rather than imported wholesale — each must be vetted with this auditor before bundling.
+
+| Upstream skill | What it would add | Where it lands |
+|---|---|---|
+| `detecting-ai-model-prompt-injection-attacks` | 25+ named prompt-injection regex patterns (delimiter escapes, role-play escapes, encoding obfuscation, multi-language obfuscation) + heuristic scoring (instruction density, special-char ratio) | New `references/extended-patterns.md` (loaded on scan only) |
+| `detecting-typosquatting-packages-in-npm-pypi` | PEP 503 normalization, QWERTY-distance keyboard substitution, combosquatting/StarJacking, weighted scoring | Port to `scripts/skill_security_auditor.py` as `--check-supply-chain` flag |
+| `deobfuscating-javascript-malware` | Explicit obfuscation taxonomy beyond base64/hex (`String.fromCharCode` chains, array-lookup dispatchers, `new Function()`, control-flow flattening, opaque predicates) | `references/extended-patterns.md` |
+| `implementing-llm-guardrails-for-security` | Indirect prompt-injection via retrieved/referenced content (RAG poisoning) + PII-in-prompt detection | Append to `references/threat-model.md` |
+| `analyzing-supply-chain-malware-artifacts` | Binary-integrity checks (PE-section entropy, import-table diffing, code-signing anomalies) — gives teeth to the existing "Binary files" CRITICAL check | Port to `scripts/skill_security_auditor.py` as `--check-binary-integrity` flag |
 
 ## Limitations
 
