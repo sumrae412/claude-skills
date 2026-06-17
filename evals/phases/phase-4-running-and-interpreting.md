@@ -230,3 +230,13 @@ The loop closes here. For every example that regressed or scored low:
    know the right answer).
 4. Iterate the prompt / model / architecture and re-run.
 
+Capture a one-line root cause before writing the regression case (bad
+retrieval / wrong tool / prompt gap / model limitation / stale context).
+The case should encode the cause, not just the input → output pair: name
+it after the failure mode, put the diagnosis in metadata, and assert the
+specific behavior that broke. A case that only pins the old bad output
+regresses silently when the symptom shifts but the cause persists. Every
+diagnosed failure becomes one permanent, root-cause-tagged regression
+case — that is what keeps the gate honest as the system changes
+underneath it.
+
