@@ -59,7 +59,7 @@ When you find a pair worth linking, add the cross-reference on both sides — a 
 
 The report distinguishes "true orphans" from files that look orphaned but shouldn't be flagged:
 
-- **Progressive-disclosure references** — files under `<skill>/references/`, `<skill>/phases/`, `<skill>/contracts/`, `<skill>/diagrams/` when a `SKILL.md` router exists in the same skill dir. These are loaded by the Read tool from the router, not by markdown link.
+- **Progressive-disclosure references** — files under `<skill>/references/`, `<skill>/phases/`, `<skill>/contracts/`, `<skill>/diagrams/`, or `<skill>/rules/` when a `SKILL.md` router exists as a sibling of that dir. These are loaded by the Read tool from the router, not by markdown link. Detection is position-independent, so nested skill collections like `.agents/skills/<skill>/rules/` (imported Vercel/Cursor-style skills) are recognized too — not just root-level skills.
 - **Command files** — top-level repo-root `.md` files (slash commands, workflow docs, project registries).
 - **Archive files** — anything under `archive/` at any depth.
 - **Reference dirs** — `audits/`, `perf/`, `runbooks/`, `setup/`, `deployment/`, `templates/`, `prompts/`, `marketing/`, `mockups/`, `evidence/`, `compliance/`, `routines/`, `dev/`, `implementation-notes/`, `superpowers/`, `copilot-canary-*`, `copilot-baseline-*`.

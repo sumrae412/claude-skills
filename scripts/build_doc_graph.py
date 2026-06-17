@@ -264,19 +264,33 @@ def rel(p: Path, root: Path) -> str:
         return str(p)
 
 
+# Subdirs whose .md contents are loaded by the Read tool from a sibling
+# SKILL.md router, not by markdown link. `rules/` covers imported Vercel/Cursor
+# -style skills (one .md per rule); the rest are the native Claude layout.
+_PROGRESSIVE_SUBDIRS = {"references", "phases", "contracts", "diagrams", "rules"}
+
+
 def _is_progressive_disclosure(p: Path, root: Path) -> bool:
-    """True if file lives in a skill's references/, phases/, or contracts/ dir
-    and the skill has a SKILL.md router. These are typically loaded by the
-    Read tool from the router, not by markdown link — flagging them as
-    orphans is a false positive.
+    """True if file lives in a skill's references/, phases/, contracts/,
+    diagrams/, or rules/ dir and the skill has a SKILL.md router as a sibling
+    of that dir. These are typically loaded by the Read tool from the router,
+    not by markdown link — flagging them as orphans is a false positive.
+
+    Position-independent: handles both root-level skills
+    (`<skill>/references/x.md`) and nested skill collections
+    (`.agents/skills/<skill>/rules/x.md`).
     """
     parts = p.relative_to(root).parts if p.is_relative_to(root) else p.parts
     if len(parts) < 3:
         return False
-    if parts[1] not in {"references", "phases", "contracts", "diagrams"}:
-        return False
-    skill_router = root / parts[0] / "SKILL.md"
-    return skill_router.exists()
+    # Find a progressive-disclosure subdir anywhere in the path (not the
+    # filename), then require a SKILL.md router as that subdir's sibling.
+    for i in range(1, len(parts) - 1):
+        if parts[i] in _PROGRESSIVE_SUBDIRS:
+            skill_router = root.joinpath(*parts[:i]) / "SKILL.md"
+            if skill_router.exists():
+                return True
+    return False
 
 
 def _is_command_file(p: Path, root: Path) -> bool:
@@ -387,8 +401,10 @@ def render_report(root: Path, paths, forward, reverse, missing) -> str:
         "- **Confidence:** EXTRACTED (explicit markdown links only) — "
         "INFERRED keyword-cluster suggestions in the missing-links section. "
         "Files under `<skill>/references/`, `<skill>/phases/`, `<skill>/contracts/`, "
-        "or `<skill>/diagrams/` are loaded by the Read tool from the router "
-        "SKILL.md and are NOT counted as orphans even when no markdown link points to them. "
+        "`<skill>/diagrams/`, or `<skill>/rules/` are loaded by the Read tool from the router "
+        "SKILL.md and are NOT counted as orphans even when no markdown link points to them "
+        "(detection is position-independent — nested collections like "
+        "`.agents/skills/<skill>/rules/` are covered). "
         "Top-level repo-root `.md` files (slash commands, workflow docs, project registries), "
         "anything under `archive/`, and standalone-reference dirs (`audits/`, `perf/`, `runbooks/`, "
         "`setup/`, `deployment/`, `templates/`, `prompts/`, `marketing/`, `mockups/`, `evidence/`, "
