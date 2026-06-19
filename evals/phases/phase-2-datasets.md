@@ -117,3 +117,12 @@ Every interesting failure in a real run is dataset material. Wire a
 one-click "add to dataset" path from your trace viewer. A static
 dataset stops representing prod within months — the loop is what
 keeps it honest.
+
+## Two-arm datasets (evaluating a change, not a system)
+
+When the thing under test is a *change* — a new skill, prompt, model, or
+tool description — you don't just need tasks, you need the **same tasks
+run through two arms** (treatment vs baseline / previous version) so the
+delta is measurable. The dataset shape, the with/without harness, the
+cost-vs-quality delta table, and the disable-and-retest deprecation
+check live in `references/skill-and-prompt-baseline-evals.md`.
