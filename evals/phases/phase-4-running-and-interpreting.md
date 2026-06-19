@@ -55,6 +55,25 @@ dice.
 Skip repetitions only when both task and judge are deterministic
 (code-based eval on temperature-0 task).
 
+### `pass@k` vs `pass^k` — pick the right aggregation
+
+Once you run k trials per task, a single mean pass-rate hides which
+reliability question you're answering. Name it:
+
+- **`pass@k`** — at least **one** of k trials succeeds. A *capability
+  ceiling*: "can the agent ever do this?" Rises with k. Use for
+  capability evals where retries/sampling are allowed at serving time.
+- **`pass^k`** — **all** k trials succeed. A *reliability floor*:
+  "can the agent do this every time?" Falls with k. Use for
+  regression/reliability gates where one bad run is a user-visible
+  failure.
+
+The two move in opposite directions as k grows, so always report which
+one and at what k. A change that lifts `pass@k` while dropping `pass^k`
+made the agent more capable *and* less reliable — the mean alone hides
+that. Match the metric to the serving regime: retries allowed →
+`pass@k`; one-shot → `pass^k`.
+
 ## Interpreting deltas
 
 Before celebrating a score increase:
@@ -80,6 +99,26 @@ Before celebrating a score increase:
 4. **Failure-mode breakdown.** Report scores split by
    `metadata.failure_mode`. A win on average that's actually a loss
    on the hardest cohort is not a win.
+
+### The harness is a confound
+
+When you compare *models* (not prompts), the harness — system prompt,
+tool descriptions, scaffold — is a hidden variable. A fixed harness
+tuned on one model can quietly favor it; a long system prompt may sit
+better in one model's latent space than another's. So:
+
+- **Hold the harness fixed** across arms for a fair, reproducible
+  comparison — but know it likely **under-elicits** some models. A
+  fixed harness measures "model + this scaffold," not "model."
+- **Per-model harness tuning** (the Cursor approach) maximizes each
+  model's elicited performance but destroys comparability and is a
+  bottomless time sink. Pick one stance and **report which** — a
+  ranking from a fixed neutral harness and a ranking from per-model
+  tuning can disagree.
+- Harness tuning **does not transfer across versions**: a scaffold
+  tuned for model vN often under-serves vN+1 in the same family. Re-eval
+  the harness on a model upgrade; don't assume last version's prompt is
+  still optimal.
 
 ### Noise floor is dynamic
 
@@ -222,7 +261,29 @@ benchmark, baseline-vs-candidate comparison), four things bite silently:
 
 ## Failure → dataset → next iteration
 
-The loop closes here. For every example that regressed or scored low:
+The loop closes here. Failure analysis is where the bulk of eval
+effort pays off — budget for it, don't rush to re-run.
+
+**First, triage what kind of failure it is** before tagging it as an
+agent miss:
+
+- **Infra failure** — timeout, rate limit, pipeline bug, flaky network.
+  Rule these out first; they masquerade as agent errors.
+- **Grader failure** — the agent was right, the grader was wrong (brittle
+  match, mis-calibrated judge, ambiguous task). Fix the grader, not the
+  agent. "Failures should seem fair" — if a failure looks unfair on
+  inspection, suspect the grader.
+- **Task failure** — a genuine agent miss. Only these become regression
+  cases.
+
+For genuine misses, **walk the trace to where the failure *originates*,
+not where it surfaced** — a wrong answer on the last step often traces
+to a bad tool call three steps earlier. As misses accumulate, group them
+into a **ranked failure taxonomy** (a named vocabulary of what breaks,
+ordered by frequency × severity) so you fix classes of failure, not
+one-offs.
+
+For every example that regressed or scored low:
 
 1. Inspect the trace.
 2. If it's a new failure mode, tag it and add to coverage tracking.

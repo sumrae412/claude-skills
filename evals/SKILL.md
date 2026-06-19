@@ -22,6 +22,12 @@ loading.
 Eval toolkit for LLM features: pick what to measure, build a dataset,
 write evaluators, run experiments, interpret results, gate regressions.
 
+Covers single-turn LLM features **and** multi-turn / agent surfaces,
+where tool calls and state mutate across turns and mistakes propagate
+and compound. For agent-specific grading by type (coding /
+conversational / research / computer-use), see
+`references/agent-type-graders.md`.
+
 This file is a router. Do not keep the whole eval catalog resident.
 
 Inspired by the dataset / evaluator / experiment / executor model used
@@ -73,6 +79,20 @@ hand-rolled harness.
 - Repetitions matter — LLM scores have variance. A single run is a
   point estimate, not a result. **Pre-commit the repetition count;**
   don't add reps post-hoc on "borderline" examples.
+- Across k trials, report `pass@k` (≥1 success — capability ceiling)
+  OR `pass^k` (all succeed — reliability floor), not a bare mean.
+  Match it to the serving regime: retries allowed → `pass@k`;
+  one-shot → `pass^k`. See `phases/phase-4-running-and-interpreting.md`.
+- Tag each eval set **capability** (should start low; 100% = saturated,
+  no signal) or **regression** (target ~100%; any drop gates CI). The
+  same pass-rate means opposite things per tag.
+- For agents, grade the **outcome/end-state**, not a prescribed step
+  sequence — agents find valid paths designers didn't anticipate.
+  Assert on a step only when the step *is* the spec.
+- Triage every failure before tagging it an agent miss: **infra** (rule
+  out first), **grader** (agent right, grader wrong — fix the grader),
+  or **task** (genuine miss — becomes a regression case). Walk the trace
+  to where the failure *originates*, not where it surfaced.
 - Score deltas under noise floor are not improvements.
 - When comparing two versions on the same examples, use **paired**
   analyses, not independent-sample CIs.
@@ -103,6 +123,12 @@ Produce only what the user needs:
   reviewer agents (explorers, architects, reviewers).
 - `prompt-optimizer` — use when iterating the wording of a single
   judge prompt during calibration. Judge prompts are prompts.
+- `anthropic-skills:skill-creator` — automates the with/without-skill
+  baseline-delta loop for Claude Skills (runs both arms, grades
+  assertions, aggregates benchmarks). Use it when the artifact under
+  test is a Skill; use `references/skill-and-prompt-baseline-evals.md`
+  here for the method and for the prompt / model / tool-description
+  cases it doesn't cover.
 - `token-economy` — apply when running large eval batches; parallelize
   judge calls, delegate dataset sourcing to cheap subagents.
 - `rag-architect` (`references/rag_evaluation_framework.md`) — RAG has
@@ -123,6 +149,23 @@ Produce only what the user needs:
 
 ## References
 
+- `references/agent-type-graders.md` — grader-stack playbook by agent
+  type (coding / conversational / research / computer-use), the
+  per-dimension metric table (task success / tool / params / efficiency
+  / safety), conditional scorers, fault injection, and the
+  isolate-trials harness rule. Sources: Anthropic "Demystifying evals
+  for AI agents," Braintrust "Agent evaluation."
+- `references/skill-and-prompt-baseline-evals.md` — evaluating a *change*
+  (skill / prompt / model / tool description) by the **delta** against a
+  baseline or previous version; cost-vs-quality trade table;
+  disable-and-retest deprecation check. Generalizes the loop
+  `skill-creator` automates for Skills.
+- `references/propensity-and-eval-awareness.md` — propensity/safety evals
+  (does the agent lie / manipulate / power-seek under incentive),
+  measured as a **trend across model versions**, scored in reasoning
+  traces *and* actions, with system-prompt ablation to isolate drivers;
+  plus the **eval-awareness** validity threat (models behave differently
+  when they detect a test — real-world runs mitigate). Source: Andon Labs.
 - `references/judge-calibration.md` — ADOPT/REJECT cadence,
   noisiness detection, gold-like-bias check (generalized from
   debate-team critic calibration).
@@ -158,6 +201,20 @@ Produce only what the user needs:
   set — not a rule waiver by default.
 - Do not let the dataset drift to only easy cases. Track failure-mode
   coverage explicitly.
+- A valid capability eval **discriminates** — a known-strong model must
+  beat a known-weak one by more than the noise floor. If all models
+  score the same (all at chance, or all saturated near the top), the
+  eval measures nothing.
+- Treat **eval-awareness** as a validity threat for safety/propensity
+  evals: a suspiciously clean pass may mean the model detected the test,
+  not that it's safe. Corroborate with real-world runs. See
+  `references/propensity-and-eval-awareness.md`.
+- Build **two-sided** sets — cases where the behavior should fire AND
+  cases where it should not. One-sided evals reward one-sided
+  optimization (an agent that always says yes).
+- **Isolate every trial from a clean environment.** Agents mutate
+  state; shared state across trials corrupts later runs and a
+  "failure" may be contamination, not a real miss.
 - Order evaluator cost: cheap deterministic checks first, expensive
   LLM-judge second, human review last.
 - **Critic concordance on statistical/methodological claims is weak

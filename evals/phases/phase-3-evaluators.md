@@ -290,6 +290,29 @@ These live next to your judges and run on the same dataset. Treat
 any numeric threshold (cost, retrieval, latency) as a calibrated
 per-system value, not a portable constant.
 
+### Grade the outcome, not the trajectory
+
+The most common agent-eval bug: asserting on a **prescribed sequence
+of steps**. Agents regularly find valid approaches the eval designer
+didn't anticipate, so a rigid step-sequence check rejects correct work
+and rewards mimicry of one blessed path. Default to grading the
+**end-state/outcome**; only assert on a step when that step *is* the
+spec (e.g. "must call the refund API before confirming a refund," "must
+not delete before backing up"). For multi-component tasks, give
+**partial credit** per component rather than all-or-nothing — it
+yields a usable gradient instead of a flat zero that hides which part
+broke.
+
+Also build **two-sided** sets: include cases where the behavior
+**should** fire *and* cases where it **should not**. A one-sided eval
+(all positives) rewards an agent that always says yes, and you'll
+optimize straight into that failure.
+
+Two more agent-grader patterns live in
+`references/agent-type-graders.md`: **conditional scorers** (route the
+grader by the agent's action — tool-call vs direct answer) and **fault
+injection** (break tools/APIs deliberately to grade resilience).
+
 ## RAG-specific metrics
 
 If you're evaluating retrieval, the metric family is different:

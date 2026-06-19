@@ -108,6 +108,16 @@ contaminated; treat scores as upper bounds."
 
 ## 2. Blocking guardrails (real-time)
 
+> **Propensity evals are the offline complement to these rails.** Rails
+> block bad *output* on the request path; propensity evals ask whether
+> the agent *chooses* to lie / manipulate / collude / seek power under
+> incentive, tracked as a trend across model versions and read in
+> reasoning traces as well as actions. Critical for autonomous,
+> side-effecting agents. See `references/propensity-and-eval-awareness.md`
+> — which also covers the **eval-awareness confound** (models behave
+> differently when they detect a test; real-world deployment runs are
+> the mitigation).
+
 A guardrail is a check that runs **on the request path** and can
 block the response. Different from Phase 3 measurement: must be fast
 (<200ms typical budget), cheap, and conservative on false positives.
