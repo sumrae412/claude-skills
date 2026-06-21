@@ -133,3 +133,4 @@ If it feels forced, pull back. Less imitation, more inhabitation.
 - [`sme-voice`](../sme-voice/SKILL.md) — inverse skill: capture and apply someone else's voice (SMEs at DLAI) instead of Summer's own.
 - [`writing-workshop`](../writing-workshop/SKILL.md) — editing, rewriting, and style mimicry from samples for any drafted writing.
 - [`sc-marketing-scripts`](../sc-marketing-scripts/SKILL.md) — DLAI course-script authoring; pair with `sme-voice` when the script is in an SME's voice.
+- [`ai-writing`](../ai-writing/SKILL.md) — consolidated de-slop gate for AI-authored prose; load these rules under any voice profile.
