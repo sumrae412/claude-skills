@@ -18,7 +18,9 @@ user-invocable: true
 
 The problem with AI writing is not that it's *bad*. It's that it's *interchangeable* — padded, hedged, structurally predictable, and swap-the-noun generic. This skill is the antidote: one consolidated gate the draft passes before it ships.
 
-Consolidates the AI-relevant rules from [`writing-voice`](../writing-voice/SKILL.md), [`writing-workshop`](../writing-workshop/SKILL.md), [`brevity`](../brevity/SKILL.md), and [`shared/communication-principles.md`](../shared/communication-principles.md). When a voice is named, load that profile *on top of* these rules — they don't replace it.
+Consolidates the AI-relevant rules from [`writing-voice`](../writing-voice/SKILL.md), [`writing-workshop`](../writing-workshop/SKILL.md), [`brevity`](../brevity/SKILL.md), and [`shared/communication-principles.md`](../shared/communication-principles.md). These rules are the floor; a voice profile sits *on top of* them.
+
+**Default voice: always Summer's.** Load [`writing-voice`](../writing-voice/SKILL.md) by default for any draft. Switch to [`sme-voice`](../sme-voice/SKILL.md) ONLY when Summer names a specific SME or asks to ghostwrite in someone else's voice. Never draft voiceless — if no voice is named, it's Summer's.
 
 ---
 
