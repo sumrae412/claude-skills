@@ -89,6 +89,22 @@ hand-rolled harness.
 - For agents, grade the **outcome/end-state**, not a prescribed step
   sequence — agents find valid paths designers didn't anticipate.
   Assert on a step only when the step *is* the spec.
+- **Session ≠ trace.** A session is the full multi-turn arc (many
+  traces); session-level failures (lost context, unresolved issue across
+  N turns) are invisible at trace level. Add session-arc graders for
+  conversational agents; they usually require a second LLM simulating
+  the user. See `phases/phase-1-design.md` § Session-level evaluation
+  and `phases/phase-3-evaluators.md` § Span / trace evaluators.
+- **When absolute scoring is unreliable, use pairwise ("A vs B").**
+  LLMs discriminate between options more reliably than they assign
+  absolute scores. Control position bias (run both orderings; flip =
+  tie). Aggregate as win-rate or Elo. See `phases/phase-3-evaluators.md`
+  § Pairwise / preference evaluation.
+- **Monitor INPUT distributions, not just output scores.** Distribution
+  shift moves production data away from your test set before output
+  scores reveal it. Trigger dataset refresh and judge re-calibration on
+  input shift, not just score drop. See `phases/phase-5-production-evals.md`
+  § 3.
 - Triage every failure before tagging it an agent miss: **infra** (rule
   out first), **grader** (agent right, grader wrong — fix the grader),
   or **task** (genuine miss — becomes a regression case). Walk the trace
@@ -180,15 +196,17 @@ Produce only what the user needs:
 - `references/eval-tool-prior-art.md` — Shredmetal/llmtest
   (behavioral-assert form factor; "treat the LLM as a closed-source
   third-party library") and google/litmus (GCP-native eval platform
-  with Ragas / DeepEval backends). Read before standing up a new
-  eval surface — borrow the vocabulary even when you keep your own
-  runner. Composes with the "tune system prompt, not eval QUESTIONS"
-  anti-pattern in `~/.claude/CLAUDE.md` § Evals — Nouha Dziri's
-  "jagged intelligence" framing (pattern matching vs reasoning;
-  dense RL rewards beat sparse correct/incorrect signals) is the
-  theoretical grounding for why retuning questions papers over
-  model variance rather than fixing it ([Open Data Science, ODSC AI
-  East 2026 keynote](https://opendatascience.com/nouha-dziri-on-jagged-intelligence-and-the-limits-of-llm-reasoning/)).
+  with Ragas / DeepEval backends); also the public agent benchmark
+  landscape (SWE-bench Verified, τ-bench/τ2-bench, GAIA,
+  WebArena/OSWorld, AgentRewardBench) with saturation/validity caveats.
+  Read before standing up a new eval surface — borrow the vocabulary
+  even when you keep your own runner. Composes with the "tune system
+  prompt, not eval QUESTIONS" anti-pattern in `~/.claude/CLAUDE.md`
+  § Evals — Nouha Dziri's "jagged intelligence" framing (pattern
+  matching vs reasoning; dense RL rewards beat sparse correct/incorrect
+  signals) is the theoretical grounding for why retuning questions
+  papers over model variance rather than fixing it ([Open Data Science,
+  ODSC AI East 2026 keynote](https://opendatascience.com/nouha-dziri-on-jagged-intelligence-and-the-limits-of-llm-reasoning/)).
 
 ## Guardrails
 

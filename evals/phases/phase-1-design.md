@@ -32,6 +32,29 @@ downstream:
   goal spec. The simulator is itself a prompt — pin and version it,
   or your eval moves when the simulator moves.
 
+### Session-level evaluation
+
+A **trace** = one agent invocation (one turn). A **session** = the
+full multi-turn conversation (many traces). Session-level failures are
+invisible at trace level — the agent may score well on every individual
+turn while still:
+
+- losing context between turns (forgetting what the user said two
+  turns ago),
+- failing to connect information across tool calls (retrieved fact A
+  and retrieved fact B never get joined),
+- drifting in tone or role across the arc,
+- never resolving the user's underlying issue even after N turns of
+  technically-correct replies.
+
+**Evaluate the session arc, not just each trace:** was the issue
+resolved across N turns? Did context accumulate correctly? Was tone
+held? Session-level grading typically requires a second LLM to simulate
+realistic user behavior (topic changes, frustration, ambiguity, follow-up
+questions), evaluated after the full conversation closes — not inline
+after each turn. Cross-ref: `phases/phase-3-evaluators.md` § Span / trace
+evaluators for how session-arc checks compose with per-trace assertions.
+
 Pick the **evaluation level** to match — these map to what your tracing
 captures:
 
@@ -121,6 +144,20 @@ Estimate before building:
 If a full eval costs more than $20 or takes more than 10 minutes, plan
 a tiered setup: a small smoke set on every CI run, the full set on
 nightly / pre-release.
+
+**Cost-normalized accuracy (CNA).** When comparing two approaches
+with different cost profiles, raw accuracy is misleading. Compute
+`CNA = accuracy ÷ cost_per_call` to compare on a fair basis — a 2%
+accuracy gain that doubles inference cost may not be worth it; a 1%
+accuracy drop that halves cost might be the right trade. Use CNA as
+one signal alongside the single optimizing metric, not a replacement.
+
+**CLEAR dimensions** — a cost-aware eval frame for agent surfaces
+(Cost / Latency / Efficacy / Assurance / Reliability). Treat Efficacy
+as the primary optimizing dimension and the rest as satisficing
+constraints with explicit thresholds. Covers the same ground as the
+per-dimension agent metric table in `references/agent-type-graders.md`
+but names the satisficing structure explicitly.
 
 ## Step 5: Write the one-pager
 
