@@ -272,9 +272,134 @@ versions). When a judge model you depend on is scheduled for sunset:
 Track judge deprecation announcements alongside model version
 upgrades — it's a recurring operational cost, not a one-time setup.
 
+## Component isolation & ablation
+
+Use these when a multi-step pipeline fails and you need to attribute
+the error to a specific stage.
+
+**Component isolation:** test a stage with controlled, clean inputs
+*independent of the upstream stage*. Feed the reasoning step a
+perfect retrieval result — does it still err? Feed the formatter a
+correct answer — does it present it well? If yes, the problem is
+upstream. If not, the problem is the stage itself. This is the
+orthogonalization principle from `references/eval-philosophy.md`
+applied at implementation time.
+
+**Ablation:** remove or disable a component entirely and measure the
+delta on your primary metric. If the delta is near zero, the component
+earns neither its latency nor its cost — consider removing it. Example:
+does the "rephrase for clarity" post-processing step actually improve
+quality, or does it just add 300ms and 500 tokens? An ablation answers
+that cheaply; user intuition does not.
+
+**Pairs well with orthogonal debugging** (change one variable at a
+time, measure independently). Distinct from the `isolate-trials` rule
+in `references/agent-type-graders.md` — that's environmental isolation
+per trial (clean sandbox per run); component isolation is structural
+isolation per pipeline stage (clean inputs per evaluator).
+
+## Pairwise / preference evaluation
+
+When absolute scoring is unreliable (open-ended generation, style,
+overall quality), ask "is A better than B?" instead.
+
+**Why:** LLMs discriminate between options more reliably than they
+assign absolute scores. A judge that gives both outputs "4/5" often
+produces a clear preference when shown them side by side.
+
+**How to run:**
+1. Show the judge both outputs (order randomized) and ask: "Which
+   better satisfies the criterion?"
+2. **Control position bias** — run both orderings (A before B, and B
+   before A). If the verdict flips, the outputs are too similar to
+   distinguish; call it a tie.
+3. Aggregate as **win-rate** (% of comparisons won) across a test set,
+   or **Elo** across a larger versioning history.
+
+**When to use:**
+- "Is the new prompt better than the old one?" (regression/improvement
+  decision with no clear ground truth)
+- Model selection when cost trade-offs exist (A is cheaper but B might
+  be better — by how much?)
+- Regression check: "is this at least as good as production?"
+
+**Cross-ref:** see § Counterfactual-pair evaluators below — counterfactual
+pairs detect bias by varying one demographic dimension; pairwise evaluation
+measures preference between two system outputs. Related structure, different
+goal.
+
+## Multi-judge / LLM-as-jury
+
+When a single judge introduces too much variance or a failure mode you
+can't calibrate away, use multiple independent judges and aggregate.
+
+**Setup:**
+- Use **diverse model families or providers** — same-family judges
+  share training-data correlations and will agree on each other's
+  errors, not catch them.
+- Aggregate by **majority vote** or **weighted vote** (weight by each
+  judge's validated accuracy on your calibration set, not by model size
+  or cost).
+- **Disagreement = ambiguous case** — route to human review rather than
+  forcing a tie-break algorithmically.
+- Assign **different dimensions to different judges** when possible
+  (one for faithfulness, one for style, one for safety) rather than
+  asking all three to score the same criterion.
+
+**Diminishing returns:** more than 3–5 judges rarely improves accuracy
+meaningfully on well-defined criteria — and cost multiplies linearly.
+Reserve multi-judge setups for high-stakes decisions (model selection,
+safety guardrail calibration); a single calibrated judge is fine for
+routine quality monitoring.
+
+**Cross-ref:** `debate-team/references/critic-calibration.md` — the
+meta-evaluation case: calibrating the judges of your eval is itself a
+multi-judge problem. The critic-concordance rule there (cross-family
+third critic for statistical claims) applies directly.
+
+## Agent-as-a-judge
+
+A tool-using judge that queries real systems — database lookups, web
+search, code execution, doc retrieval — to ground its grading in
+external evidence.
+
+**When to use:**
+- **Fact-checking:** "did the agent actually look up the correct account
+  balance?" — run a DB query to verify.
+- **Groundedness:** "is every claim in this response traceable to the
+  retrieved documents?" — the judge retrieves and checks.
+- **Exploratory failure analysis over a batch:** give the agent-judge
+  a batch of failures and ask it to cluster them — "23% are
+  right-info-wrong-product → propose a 'product relevance' evaluator."
+- **Competitive comparison:** the judge queries a reference system and
+  scores against its output.
+
+**Risks:**
+- **Non-determinism compounds:** the judge's tool calls introduce their
+  own variance on top of the task agent's. Run multiple repetitions if
+  the judge itself calls an LLM.
+- **Slower and more expensive** than a prompt-only judge — budget
+  accordingly; reserve for high-stakes or exploratory runs, not routine
+  nightly grading.
+- **Meta-evaluation:** the agent-judge itself needs calibration. A
+  tool-using judge with a wrong SQL query or a bad search is harder to
+  debug than a wrong word in a prompt-judge.
+
+**Cross-ref:** `references/outcome-grader.md` for the managed-agent /
+background-agent grading pattern where the judge gates production
+decisions (same shape, production-context flavor).
+
 ## Span / trace evaluators
 
-For agent behavior. Examples:
+For agent behavior. A **trace** covers one agent invocation; a
+**session** covers the full multi-turn arc (many traces). Session-level
+graders check arc-level invariants — did context accumulate across
+turns, was the issue resolved, did tone hold end-to-end — and usually
+require a second LLM to simulate realistic user behavior. See
+`phases/phase-1-design.md` § Session-level evaluation for when to
+add session graders on top of per-trace assertions.
+
+Examples of trace/span assertions:
 
 - "Tool X was called with valid args" — assert on span attributes
 - "No tool was called more than 2x in a row" — span sequence check

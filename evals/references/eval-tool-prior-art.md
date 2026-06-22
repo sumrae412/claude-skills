@@ -57,6 +57,33 @@ When designing a new eval surface, run a five-minute "is one of these a better s
 - This skill's calibration-set sizing — both tools punt on calibration; you still own the N≥30 (or domain-tier larger) gate.
 - `/llm-cost-optimizer` — both tools call judges in the test path; the cost-gate triad (combined meter, repetition cap, paths-negation) still applies.
 
+## Public agent benchmark landscape
+
+When calibrating your eval surface or validating discriminative power,
+these benchmarks are the established reference points as of mid-2026:
+
+| Benchmark | Domain | Notes |
+| --- | --- | --- |
+| **SWE-bench Verified** | Code / software engineering | Human-verified subset of SWE-bench; standard bar for coding agents |
+| **τ-bench / τ2-bench** | Tool use / agentic tasks | Tool-interaction tasks across domains; τ2 adds multi-hop tool chains |
+| **GAIA** | General assistant / multi-step | "General AI Assistants" — multi-step web + tool tasks; hard for current models |
+| **WebArena / OSWorld** | Web / desktop computer use | Real browser and OS interaction; high fidelity, slow to run |
+| **AgentRewardBench** | Reward model / judge quality | Meta-benchmark for grading how well judge models rank agent outputs |
+
+**Saturation and validity concern:** public benchmarks saturate as
+models overfit to their format and training corpora. Watch for:
+- "Do-nothing" baselines passing tests designed around specific action
+  sequences.
+- Rigid step-sequence grading penalizing valid alternative solutions
+  (same failure mode as the "grade outcome, not trajectory" rule in
+  `phases/phase-3-evaluators.md`).
+- Contamination of training data with benchmark items.
+
+Use public benchmarks as a **calibration check** on your own eval
+surface (does our eval discriminate the same way SWE-bench does?),
+not as a replacement for domain-specific evals on your actual
+production failure modes.
+
 ## Sources
 
 - Shredmetal/llmtest — [github.com/Shredmetal/llmtest](https://github.com/Shredmetal/llmtest) (MIT, 2025–2026).

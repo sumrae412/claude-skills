@@ -242,6 +242,25 @@ runtime before locking SLOs:
 Drift = the world changed; your golden dataset and your past
 calibration are now lying to you. Watch three layers:
 
+> **Monitor INPUT distributions, not just output scores.** A stable
+> quality score on a drifted input distribution is false reassurance —
+> the score is measuring a distribution your test set no longer
+> represents. New product launches, seasonal query patterns, and
+> evolving user phrasing can shift production data away from your
+> offline golden set faster than scores reveal it.
+>
+> **Detect the shift early, before it causes failures.** Once output
+> scores drop significantly, you've already been serving degraded
+> responses for however long the shift went unnoticed. Input-distribution
+> monitoring (PSI, embedding distance, categorical-proportion tracking)
+> should trigger a **dataset refresh and judge re-calibration** as soon
+> as a material input shift is detected — not after the failure signal
+> appears in the output metrics.
+>
+> This is the most common gap in production eval setups that only
+> monitor output scores. Add input-distribution tracking as a first-class
+> signal in your alerting stack (see § 5 below).
+
 ### Input drift
 User-input distribution shifts. New topics, new languages, new
 length distribution, new device cohort.
@@ -524,6 +543,30 @@ Track judge spend as a separate cost line and against the
 judge-spend SLO from § 1. When spend exceeds the SLO ceiling, the
 sampling strategy is the fix (lower rate, cheaper judge, smarter
 weighting), not raising the budget reflexively.
+
+## 7. Layered / Swiss-cheese eval coverage
+
+No single eval layer catches everything. The production eval stack is
+**overlapping layers**, each with different blind spots:
+
+| Layer | What it catches | What it misses |
+| --- | --- | --- |
+| Offline / CI (Phases 1–4) | Regressions on known failure modes; unit-level behavior | New failure modes; distribution drift; real-user reactions |
+| Online sampling (§ 1) | Live quality on sampled traffic | Low-volume cohorts; rare event types |
+| Blocking guardrails (§ 2) | High-severity violations on the request path | Subtle quality degradation; drift not encoded in the rule |
+| Shadow / canary (§ 4) | Distributional shifts before full rollout | Stateful multi-turn failures; side-effect divergence |
+| Human review | Subtle judgment; novel failure modes | Scale; speed; cost |
+
+Apply all layers that are practical for your surface — not one or two.
+The Swiss-cheese metaphor: each layer has holes; composing layers with
+different hole patterns is what actually catches real failures.
+
+**Compose with the cost-ordering rule** from `SKILL.md` Guardrails:
+cheap deterministic checks first, LLM-judge second, human last. Apply
+the same cost-ordering across layers: offline CI runs cheaply on every
+PR; online sampling runs cheaply at 1–5%; human review is the last
+resort on flagged cases. Do not substitute an expensive layer for a
+cheap one when the cheap one could catch the failure.
 
 ## What this phase still does *not* cover
 

@@ -118,6 +118,33 @@ one-click "add to dataset" path from your trace viewer. A static
 dataset stops representing prod within months — the loop is what
 keeps it honest.
 
+## Failure funnels — find the highest-loss stage first
+
+An agent's pipeline has sequential stages (retrieve → reason → format
+→ respond). Map the error/dropout rate at each stage like a conversion
+funnel to identify where most failures originate.
+
+**Why it matters:** if retrieval fails 30% of the time, fixing the
+reasoning step won't help those 30% — they arrive at reasoning already
+broken. Fix the upstream stage first; downstream fixes are wasted until
+upstream is solid.
+
+**How to apply:** for each stage, track "fraction of inputs that arrive
+correct AND leave correct." Compute the cumulative loss:
+
+```
+stage          inputs correct  outputs correct  stage loss
+retrieval      100%            70%              30%   ← fix this first
+reasoning       70%            63%               7%
+formatting      63%            61%               2%
+```
+
+This is a dataset-design concern: your test set must include examples
+that exercise each stage independently so you can localize failure. See
+`references/eval-philosophy.md` for the orthogonalization principle
+(each knob affects one thing); failure funnels are its applied form for
+pipeline agents.
+
 ## Two-arm datasets (evaluating a change, not a system)
 
 When the thing under test is a *change* — a new skill, prompt, model, or
