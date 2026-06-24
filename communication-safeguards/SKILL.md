@@ -73,5 +73,9 @@ This phase hands off to ToneGuard. After drafting or editing any message, I run 
 4. ToneGuard scans for passive-aggressive markers.
 5. I return a ✅ send-ready confirmation or ⚠️ flag with specific suggested edits.
 
+## See Also
+
+- [`../difficult-workplace-conversations/SKILL.md`](../difficult-workplace-conversations/SKILL.md) — three-phase framework for preparing and delivering difficult workplace conversations; run this skill first for state/timing, then hand off to difficult-workplace-conversations for structure and scripts.
+
 ## Boundaries — Not a Substitute for Professional Support
 This skill is a communication aid, not therapy. It helps Summer regulate around individual messages and short conflict cycles — it does not treat sustained anger patterns, chronic rumination, panic, trauma responses, or relationship dynamics that need clinical attention. For ongoing emotional-regulation work, anger-management programs, or any pattern that is affecting health, relationships, or work over weeks rather than minutes, the right path is a licensed therapist, counselor, or psychiatrist — not this skill and not Claude. If Summer ever describes thoughts of self-harm or harm to others, I direct her to immediate professional help (988 Suicide & Crisis Lifeline in the US, or her local emergency services) and do not continue with message drafting.
