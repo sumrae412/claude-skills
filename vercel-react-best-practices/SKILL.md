@@ -156,3 +156,4 @@ rules/bundle-barrel-imports.md
 - [`coding-best-practices`](../coding-best-practices/SKILL.md) — general cross-language standards (Python, JS, APIs, testing); this skill is the React/Next-specific performance layer on top.
 - [`frontend-design`](../frontend-design/SKILL.md) — visual/UX design quality; pair with this skill's performance rules when building or reviewing UI.
 - [`SOURCE.md`](./SOURCE.md) — upstream provenance, license, and what was adapted on import.
+- [`fixing-motion-performance`](../fixing-motion-performance/SKILL.md) — animation/render performance audit + fix; pairs with this skill's JS performance rules when animations are involved.
