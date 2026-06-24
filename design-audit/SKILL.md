@@ -125,3 +125,7 @@ If a design improvement requires a functional change, flag it:
 - Use `/fixing-accessibility` for HTML implementation a11y fixes (ARIA, keyboard, focus, semantics, form errors)
 - Use `/design:design-system` for token and component documentation
 - Use `/defensive-ui-flows` for state/feedback/failure-mode patterns on interactive surfaces
+
+## See also
+
+- [impeccable](../impeccable/SKILL.md) — full design-craft command suite (craft, shape, polish, bolder, colorize, animate, and more); pairs with design-audit for end-to-end UI quality work

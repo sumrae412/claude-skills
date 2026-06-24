@@ -155,3 +155,4 @@ requestAnimationFrame(() => { el.style.transition = 'transform 0.3s'; el.style.t
 
 - `design-audit` — visual audit skill; pairs well when auditing motion alongside layout/spacing/hierarchy issues
 - `vercel-react-best-practices` — React performance patterns that compose with animation performance work
+- [impeccable](../impeccable/SKILL.md) — full design-craft suite including `animate` and `overdrive` commands for purposeful motion and advanced visual effects
