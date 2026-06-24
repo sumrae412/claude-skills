@@ -76,3 +76,7 @@ Produce five versions under the user's character limit, usually:
 - minimal
 
 Use concrete credibility signals. Avoid buzzwords and inflated claims.
+
+## See Also
+
+- [`../difficult-workplace-conversations/SKILL.md`](../difficult-workplace-conversations/SKILL.md) — structured framework for delivering difficult conversations (performance feedback, peer conflict, raise asks); use when you need preparation + delivery structure, not just roleplay.
