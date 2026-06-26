@@ -88,58 +88,108 @@ python3 -c "import json,glob; [print(json.load(open(f))) for f in glob.glob('$HO
 **Capture CodeRabbit findings** as a structured list with `file`, `line`, `severity`, `title`, `comment`.
 Group into: Critical, High, Medium, Low.
 
-### Stage 2 — Claude gap-fill (conditional, parallel where possible)
+### Stage 2 — Claude gap-fill (two parallel axes)
 
 Only run the checks below. Do NOT re-run generic code review — CodeRabbit already did that.
 
-Dispatch the conditional checks in parallel via the Task tool (single message, multiple Task calls).
-Each subagent gets the diff + a narrow prompt. Do not use the full `pr-review-toolkit` plugin —
-this skill replaces it.
+Run both axes as parallel subagents via the Task tool (single message, two Task calls). Each axis
+reports separately — a change can pass Standards and fail Spec, or vice versa. The two axes are
+deliberately kept separate so one axis's pass cannot mask the other's miss.
 
-#### 2a. Project convention check (always run)
+Do not use the full `pr-review-toolkit` plugin — this skill replaces it.
 
-CodeRabbit doesn't know your project's CLAUDE.md rules. Read `CLAUDE.md` (and any nested ones in the
-changed paths). For each rule of the form "don't X", "always Y", "NOT a standalone Z", grep the
-diff for violations. Report matches with file:line.
+Adapted from `mattpocock/skills` `review` (Standards/Spec axis separation), 2026-06-26 source read.
 
-#### 2b. Over-engineering / vanity check (run when ≥3 new files or new abstractions)
+---
 
-Trigger heuristics:
-- `git diff --stat` shows ≥3 new files, OR
-- Diff introduces new abstract classes / interfaces with a single implementation, OR
-- Config files added that exceed the code they configure, OR
-- Plugin/registry/factory patterns introduced for <3 concrete cases
+#### Axis A — Standards
 
-Run this prompt inline (not as a sub-agent — it's fast):
+**What it checks:** does this change follow our conventions, house style, and engineering quality
+expectations? This is independent of what the PR was supposed to do.
 
-> Review the diff for vanity engineering — complexity added without proportional user value.
-> Score each finding V0 (cosmetic) to V3 (compounding). For each V1+ finding, report: what,
-> where (file:line), severity, why it fails "does a user need this?", the simpler alternative,
-> and kill cost (hours/days). Max 5 findings. Skip V0.
+Dispatch a single Task subagent with:
+- The diff
+- The relevant CLAUDE.md contents (read `CLAUDE.md` and any nested ones in the changed paths)
+- This prompt:
 
-#### 2c. Type-design check (run when new types added)
+> Run the following checks against the diff. Report each finding with file:line and a one-line
+> recommendation. Deduplicate against CodeRabbit findings already captured (skip file+line already
+> flagged). Return a Standards Report with sections for each check that produced findings.
+>
+> **A1. Project conventions (always run)**
+> For each rule in CLAUDE.md of the form "don't X", "always Y", "NOT a standalone Z", grep the
+> diff for violations.
+>
+> **A2. Over-engineering / vanity (run when ≥3 new files or new abstractions)**
+> Triggers: `git diff --stat` ≥3 new files; new abstract class/interface with single impl;
+> config files larger than the code they configure; plugin/registry/factory for <3 concrete cases.
+> Score each finding V0-V3. Report V1+ only: what, file:line, simpler alternative, kill cost.
+> Max 5 findings.
+>
+> **A3. Type design (run when new types added)**
+> Triggers: diff adds `class`, `interface`, `type`, `@dataclass`, `TypedDict`, `NamedTuple`.
+> Rate each new type 1-10 on Encapsulation, Invariant Expression, Usefulness, Enforcement.
+> Flag concerns in <3 sentences. Skip types that score ≥8 on all four.
+> (Alternatively dispatch `pr-review-toolkit:type-design-analyzer` if the plugin is enabled.)
+>
+> **A4. Silent-failure check (run when error-handling code changed)**
+> Triggers: diff contains `try`, `catch`, `except`, `.catch(`, `Result<`, or error-handling patterns.
+> Flag CRITICAL: empty catches, broad catches hiding unrelated errors, mock/stub fallbacks in
+> production, errors returned as null/undefined without logging.
+> Flag HIGH: missing actionable user feedback, missing error IDs for observability.
 
-Trigger: diff adds `class`, `interface`, `type`, `@dataclass`, `TypedDict`, or `NamedTuple`.
+---
 
-Dispatch the `pr-review-toolkit:type-design-analyzer` agent if the plugin is enabled, OR
-inline prompt:
+#### Axis B — Spec
 
-> For each new type in the diff, rate 1-10: Encapsulation, Invariant Expression, Usefulness,
-> Enforcement. Flag concerns in <3 sentences each. Skip types that score ≥8 on all four.
+**What it checks:** does this change implement the intended behavior? Does it cover the cases the
+PR author specified? Are there business-rule gaps or edge cases the diff doesn't handle?
 
-#### 2d. Silent-failure check (run when try/catch or error-handling code changed)
+**Spec source — find it first:**
+1. Check if a spec doc / PRD / linked issue is available in context or referenced in the PR
+   description.
+2. If a spec doc is found: compare the diff against its requirements section by section.
+3. **If no spec doc is available:** fall back to "intent inferred from the PR description + test
+   coverage" — state this explicitly in the Spec Report header so a missing spec doesn't silently
+   void the axis.
 
-Trigger: diff contains `try`, `catch`, `except`, `.catch(`, `Result<`, or error-handling patterns.
+Dispatch a single Task subagent with:
+- The diff
+- The PR description / commit message
+- The spec doc (if found) OR the instruction to infer from PR description + tests
+- This prompt:
 
-CodeRabbit sometimes catches these, but not always for project-specific patterns. Run this inline:
+> Run a Spec review against the diff. Return a Spec Report with sections for each check that
+> produced findings. Open with one line stating the spec source used (linked doc, PR description,
+> or inferred-from-tests).
+>
+> **B1. Intent coverage**
+> List the behaviors the PR description (or spec) says this change should produce. For each,
+> confirm whether the diff implements it. Flag any stated intent with no corresponding code change.
+>
+> **B2. Business-rule correctness**
+> Identify the domain invariants the change touches (e.g. "a refund cannot exceed the original
+> charge", "only authenticated users can write"). For each invariant, verify the diff enforces it
+> correctly — wrong condition, off-by-one, missing guard, etc.
+>
+> **B3. Edge cases vs. specified behavior**
+> For each user-facing behavior in the diff, check: null/empty input, boundary values, concurrent
+> access (if relevant), error path. Flag cases the PR description specified that the diff doesn't
+> handle, AND cases the diff silently handles differently from the spec.
+>
+> **B4. Test coverage of spec**
+> Scan added/changed tests. For each specified behavior in B1, is there a test that would fail if
+> that behavior regressed? Flag specified behaviors with no test. Flag tests that mirror
+> implementation 1:1 (mock returns X, assert returns X) without defending a named invariant.
 
-> Scan every catch/except/error-handler in the diff. Flag CRITICAL: empty catches, broad catches
-> that could hide unrelated errors, fallbacks to mock/stub in production, errors returned as
-> null/undefined without logging. Flag HIGH: missing actionable user feedback, missing error IDs
-> for observability. Report file:line, hidden-error-types, recommendation. Skip locations that
-> CodeRabbit already flagged (dedupe by file+line).
+---
 
-#### 2e. Security-sensitive check (run when auth/session/permission paths touched)
+#### Stage 2 agent dispatches (run conditionally, alongside the axes)
+
+These run as separate Task calls alongside the two axes when their triggers fire. They are not
+part of the Standards or Spec axis — they own their own domains.
+
+**Security (run when auth/session/permission paths touched)**
 
 Trigger: diff touches files matching `auth*`, `session*`, `permission*`, `jwt*`, `password*`,
 `oauth*`, `token*`, or `.env*`.
@@ -147,7 +197,7 @@ Trigger: diff touches files matching `auth*`, `session*`, `permission*`, `jwt*`,
 Dispatch the `security-reviewer` agent (Task tool, subagent_type="security-reviewer") with the
 diff summary. Its findings feed into the final report.
 
-#### 2f. Production-readiness check (run when user says "pre-ship" or when deploy config changed)
+**Production readiness (run when user says "pre-ship" or deploy config changed)**
 
 Trigger:
 - User invoked with `--pre-ship` flag, OR
@@ -193,34 +243,83 @@ Never resolve a thread without actually addressing it or replying with a reasone
 
 ### Stage 3 — Merge and report
 
-Deduplicate findings across CodeRabbit + Claude stages by `(file, line)` proximity.
+Deduplicate findings across CodeRabbit + Claude axes by `(file, line)` proximity.
 When CodeRabbit and Claude flag the same spot, prefer CodeRabbit's finding (more specific)
 unless Claude adds unique context.
 
-Output a single report:
+The Standards and Spec axes report separately before the unified severity roll-up. This is
+intentional — a change that passes Standards can still fail Spec, and vice versa. Keeping
+the axes separate makes that visible instead of collapsing it into a single severity list.
+
+Output a single report with this structure:
 
 ```markdown
 ## PR Review Summary
 
 **Scope:** N files changed, M lines added, L lines removed.
 **CodeRabbit:** C critical · H high · M medium · L low findings
-**Claude gap-fill:** X additional findings across [which 2b-2f checks ran]
+**Standards axis:** X findings (A1 conventions · A2 over-engineering · A3 types · A4 silent-failures)
+**Spec axis:** Y findings | spec source: [linked doc / PR description / inferred-from-tests]
+**Agent dispatches run:** [security-reviewer / production-readiness-check / none]
 
-### Critical (X)
+---
+
+### Standards Report (Axis A)
+
+> Does this change follow our conventions and quality expectations?
+
+#### A1 — Project conventions
+- Rule from CLAUDE.md — violated in file:line
+
+#### A2 — Over-engineering
+- V2 · file.ts:42 — <what> · simpler: <alternative> · kill cost: <X hours>
+
+#### A3 — Type design
+- TypeName · Invariant Expression: 4/10 — <concern in one sentence>
+
+#### A4 — Silent failures
+- CRITICAL · file.ts:88 — empty catch hides <error-type>
+
+---
+
+### Spec Report (Axis B)
+
+> Does this change implement the intended behavior?
+> Spec source: [linked doc at path/url | PR description | inferred from tests — no spec doc found]
+
+#### B1 — Intent coverage
+- MISS · "users can reset password via email" — no diff change corresponds to this stated intent
+
+#### B2 — Business-rule correctness
+- WRONG · file.ts:120 — refund guard uses `>` not `>=`; allows refund equal to original charge
+
+#### B3 — Edge cases
+- UNHANDLED · empty array input at file.ts:55 — spec requires "return empty state, not error"
+
+#### B4 — Test coverage of spec
+- NO TEST · "password reset email" behavior has no test
+- SNAPSHOT · auth.test.ts:33 — mocks return value and asserts same value; no invariant named
+
+---
+
+### Unified severity roll-up (CodeRabbit + both axes + agent dispatches)
+
+#### Critical (X)
 - [source] file.ts:42 — description
+
+#### High (X)
 - ...
 
-### High (X)
+#### Medium (X)
 - ...
 
-### Medium (X)
-- ...
+#### Project-convention violations (X)
+- Rule from CLAUDE.md — violated in file:line
 
-### Project-convention violations (X)
-- Rule from CLAUDE.md:line — violated in file:line
+---
 
 ### Recommended action
-1. Fix critical first
+1. Fix critical first — address any Spec axis B2 business-rule failures before Standards issues
 2. Address high before merge
 3. Consider medium/low
 4. Re-run `/review-pr` after fixes
@@ -229,11 +328,17 @@ Output a single report:
 ## Notes
 
 - Do not re-run CodeRabbit findings through Claude — that's double-paying for the same check.
-- Only run stages 2a-2f that match their triggers. Running all of them unconditionally wastes
-  Claude tokens and re-introduces the bloat this skill was designed to kill.
-- The `--pre-ship` flag runs 2a + 2f regardless of other triggers.
-- The `--quick` flag runs only stage 1 (CodeRabbit) + stage 2a (project conventions) —
+- The two Claude axes (Standards, Spec) always run. Within each axis, individual checks are
+  conditional on their triggers — running all checks unconditionally wastes tokens.
+- **Standards axis** (Axis A) is trigger-conditional per check: A1 always, A2-A4 on triggers.
+- **Spec axis** (Axis B) always runs. When no spec doc is present, B1-B4 infer from PR
+  description + tests and say so explicitly — a missing spec does NOT void the axis.
+- The `--pre-ship` flag adds the production-readiness agent dispatch regardless of other triggers.
+- The `--quick` flag runs only Stage 1 (CodeRabbit) + Axis A check A1 (project conventions) —
   appropriate for small PRs.
+- Axis separation is intentional: a change can pass Standards (correct conventions, good types)
+  and fail Spec (wrong business rule, unhandled edge case), or vice versa. Collapsing them into
+  one severity list hides that signal.
 
 ## Related
 
