@@ -204,6 +204,8 @@ After user chooses, write a structured plan using the `writing-plans` skill:
   - `knowledge` — only needs to know the predecessor's *shape* or *decision*. Parallelizable; the subagent records assumptions in its context.
 
   If a step has no real upstream requirement, set `depends_on: []` (explicit empty list, not omitted). Phase 5 uses these types to fan out parallel implementers — an absent or empty-by-default `depends_on` drops the step into the heuristic-fallback path which conservatively serializes. Err toward `knowledge` over `build` when in doubt; the Phase 5 guard regression check at step 3b catches mis-typed parallel races.
+- **Four-way failure encoding for every known failure mode.** Each failure the plan must defend against appears in ALL of: (a) a numbered step constraint or business rule, (b) a fixture / repro case, (c) an acceptance criterion (the step's `success_contract`), and (d) the test plan. One failure = one unit — specified, reproduced, and tested together. A rule with no test, or a test with no stated rule, is a half-encoded failure that ships defended-in-prose-only. Pattern from `Carr1005/spec-build-lab`.
+- **Regeneration test — the plan-quality bar.** Before finalizing, ask: could a fresh agent rebuild behaviorally-equivalent output from this plan alone, with no access to this conversation or the Phase 2 exploration notes? Any divergence points to a missing constraint — fold it back in. The plan says *what* and *why*, never *how*; encode contracts as schemas, not prose, because agents hallucinate shapes from prose. Pattern from `Carr1005/spec-build-lab`.
 
 ---
 
