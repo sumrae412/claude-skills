@@ -76,6 +76,16 @@ hand-rolled harness.
   balanced sets with reported CIs. Report agreement.
 - One judge, one criterion. Don't ask a judge to score "helpfulness
   and accuracy and tone" in one call.
+- **When scoring on two decoupled axes (e.g. spec-fidelity vs
+  ground-truth-fidelity), tell each grader explicitly NOT to do the
+  other's job.** The ground-truth grader must not penalize the build
+  for something the spec legitimately scoped out; the spec grader must
+  not penalize for something the source never required. Without the
+  explicit non-overlap instruction the two graders double-count the
+  same gap and stop being independent signals. Pattern from
+  `Carr1005/spec-build-lab`'s split graders — its materials grader
+  states it "does NOT penalize the build for not implementing something
+  the materials didn't cover — that belongs in the spec eval."
 - Repetitions matter — LLM scores have variance. A single run is a
   point estimate, not a result. **Pre-commit the repetition count;**
   don't add reps post-hoc on "borderline" examples.
