@@ -140,6 +140,13 @@ This requires no A* implementation, no world-state model, no action graph. It is
 
 4. **No test coverage for mid-plan pivots.** claude_flow has no current eval for "detects plan-invalidating discovery mid-Phase 5." Adding this mechanic without evals means we can't verify it helps. Mitigation: add a synthetic eval case (plan step 3 of 5 discovers the DB schema is wrong; does the check surface it?).
 
+   **Validation status — BLOCKED (key not available in worktree env; script built and ready).**
+   Date: 2026-06-26 | Target model: `claude-sonnet-4-5-20251022` (pinned snapshot; Sonnet used because it is the model that executes Phase 5 in production, maximizing fidelity).
+   Script: `claude-flow/scripts/validate_coherence_judgment.py` (standalone, NOT wired into CI).
+   Fixtures: 4 total — 2 positive (expect `surface`: schema-mismatch, auth-constraint discovery), 2 negative (expect `continue`: clean-progress, minor-fix-not-invalidating). N=3 samples per fixture. Pass threshold: ≥2/3 per fixture.
+   To retire this risk: `export ANTHROPIC_API_KEY=sk-ant-... && python3 claude-flow/scripts/validate_coherence_judgment.py`. Update this entry with the actual pass rates and change status to `resolved` or `resolved-with-caveat` or `detection-weakness-found`.
+   If surface-recall is low: tune the coherence-check PROMPT in `phase-5-implementation.md` § "Mid-Plan Coherence Check" — do NOT adjust fixtures to manufacture a pass.
+
 ---
 
 ## GO / NO-GO / GO-WITH-SCOPE recommendation
