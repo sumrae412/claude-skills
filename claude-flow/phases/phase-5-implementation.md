@@ -150,6 +150,54 @@ For each plan step:
    If gate fails → fix regression → re-verify → then proceed.
 ```
 
+### Mid-Plan Coherence Check (every 3-5 steps)
+
+After every N completed plan steps (default: every 3 steps; for plans with ≥8 steps,
+every 5 steps), run a compact structured self-check BEFORE starting the next step.
+This is a prompt-level gate — no new subagent, no world-state model, no A*.
+
+**Trigger condition:** step index mod N == 0 AND at least one more plan step remains.
+
+**Coherence check prompt (inject inline, ~150 tokens):**
+
+```
+PLAN COHERENCE CHECK — pause before step [N+1] of [total].
+
+Answer three questions based only on what has been built and discovered so far:
+
+1. COMPLETED: Which steps are done with passing tests?
+   (List step numbers only.)
+
+2. INVALIDATED: Has anything discovered or built since the plan was written
+   changed the preconditions or approach for any REMAINING step?
+   (If yes, name the step and what changed. If no, say "none".)
+
+3. VERDICT:
+   - "continue" — remaining steps are still valid as written; proceed.
+   - "surface" — a discovery invalidates at least one remaining step;
+     describe it and stop for user input before proceeding.
+```
+
+**Routing on verdict:**
+- `continue` — proceed immediately to the next plan step; log the check result in the
+  run manifest.
+- `surface` — DO NOT proceed to the next step. Surface the invalidating discovery
+  to the user with: (a) which step is affected, (b) what changed, (c) a proposed
+  amendment or a request for direction. Wait for user input before resuming.
+  Log the escalation in the run manifest.
+
+**Scope guard:** the coherence check is bounded to three questions and returns one of
+two verdicts. It does not re-derive the plan, re-run Phase 4 analysis, or spawn
+additional agents. A "surface" verdict is not a restart — it is a targeted flag.
+Local fixes (a test fails on a type error) stay local and do not trigger "surface."
+Only plan-invalidating discoveries (the architecture doesn't fit, a discovered
+constraint blocks a remaining step) warrant "surface."
+
+**Skipped when:** plan has ≤2 remaining steps after the check trigger, or the task
+is Lite-mode with <3 total steps (the inter-task gate already covers those).
+
+---
+
 ### Long Loops and Fresh Context
 
 If the plan has 5+ steps or context pressure is noticeable, load
