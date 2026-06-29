@@ -160,3 +160,8 @@ Chrome headless): `references/render-pdf.md`.
 - no fabricated numbers — every metric traceable to user-provided source
 - no "disrupting" / "AI-powered" / "platform" filler — concrete claims only
 - if the user can't supply traction, name the gap honestly; don't invent it
+
+## See also
+
+- `elevator-pitch` — spoken 10/30/60/90-second verbal pitches (Villain-Hero framework); use before or alongside a deck.
+- `startup-analysis` — validate the idea before building the deck.
