@@ -22,8 +22,8 @@ USAGE
 
     # Optional overrides:
     python3 claude-flow/scripts/validate_coherence_judgment.py \\
-        --samples 5 \\
-        --model claude-sonnet-4-5-20251022 \\
+        --samples 10 \\
+        --model claude-sonnet-4-6 \\
         --output /tmp/coherence_validation_results.json
 
 MODEL PINNING
@@ -32,6 +32,9 @@ The model is pinned to a published snapshot string to prevent alias-rotation
 from silently shifting pass-rate semantics between runs. The default is Sonnet
 (the model that actually executes Phase 5) for fidelity. Haiku is acceptable
 if cost is a concern — pass --model claude-haiku-4-5-20251022.
+
+Default model updated 2026-06-29: claude-sonnet-4-5-20251022 → claude-sonnet-4-6
+(prior pin 404'd on live API; sonnet-4-6 is the current valid snapshot).
 
 ANTI-PATTERN GUARD
 ------------------
@@ -67,7 +70,7 @@ from typing import Any
 # document that this validation ran against it.
 # ---------------------------------------------------------------------------
 
-DEFAULT_MODEL = "claude-sonnet-4-5-20251022"
+DEFAULT_MODEL = "claude-sonnet-4-6"
 
 # ---------------------------------------------------------------------------
 # The EXACT coherence-check prompt from Phase 5, lines 163-179 of
@@ -442,8 +445,8 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument(
         "--samples",
         type=int,
-        default=3,
-        help="Number of model samples per fixture (default: 3)",
+        default=10,
+        help="Number of model samples per fixture (default: 10)",
     )
     parser.add_argument(
         "--model",

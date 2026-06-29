@@ -140,12 +140,46 @@ This requires no A* implementation, no world-state model, no action graph. It is
 
 4. **No test coverage for mid-plan pivots.** claude_flow has no current eval for "detects plan-invalidating discovery mid-Phase 5." Adding this mechanic without evals means we can't verify it helps. Mitigation: add a synthetic eval case (plan step 3 of 5 discovers the DB schema is wrong; does the check surface it?).
 
-   **Validation status — BLOCKED (key not available in worktree env; script built and ready).**
-   Date: 2026-06-26 | Target model: `claude-sonnet-4-5-20251022` (pinned snapshot; Sonnet used because it is the model that executes Phase 5 in production, maximizing fidelity).
-   Script: `claude-flow/scripts/validate_coherence_judgment.py` (standalone, NOT wired into CI).
-   Fixtures: 4 total — 2 positive (expect `surface`: schema-mismatch, auth-constraint discovery), 2 negative (expect `continue`: clean-progress, minor-fix-not-invalidating). N=3 samples per fixture. Pass threshold: ≥2/3 per fixture.
-   To retire this risk: `export ANTHROPIC_API_KEY=sk-ant-... && python3 claude-flow/scripts/validate_coherence_judgment.py`. Update this entry with the actual pass rates and change status to `resolved` or `resolved-with-caveat` or `detection-weakness-found`.
-   If surface-recall is low: tune the coherence-check PROMPT in `phase-5-implementation.md` § "Mid-Plan Coherence Check" — do NOT adjust fixtures to manufacture a pass.
+   **Validation status — parser fixed; clean re-run pending.**
+   Date fixed: 2026-06-29.
+
+   **What happened on the first validation attempt (2026-06-26):** the one-time run
+   produced a "50% FAIL / detection-weakness-found" result that triggered a
+   "prompt too aggressive / fails to detect" auto-caveat. This was a MEASUREMENT
+   ARTIFACT — NOT a genuine detection weakness. Three compounding causes:
+
+   1. **Parser gap (now fixed).** `parse_verdict` required the VERDICT label and
+      the verdict keyword on the **same line** (`[^\n]*` in the regex). The model
+      correctly emitted `**3. VERDICT**\nContinue.` (label on one line, keyword on
+      the next), but the old pattern returned `"unknown"` for that format. All 6
+      clean-state ("continue") samples were misclassified — the model judgment was
+      sound; the parser was wrong. Fix: extended `_CONTINUE_PATTERN` and
+      `_SURFACE_PATTERN` in `coherence_check.py` to match keyword on the next line
+      after a standalone VERDICT label, including trailing punctuation and prose
+      (`Continue.` / `Continue. Steps 3 and 4 are valid.` /
+      `Surface — step 4 invalidated.`). Regression tests added in
+      `test_coherence_check.py` (`test_continue_verdict_next_line_format`,
+      `test_continue_verdict_next_line_with_trailing_prose`,
+      `test_surface_verdict_next_line_with_trailing_prose`).
+
+   2. **Dead model-id (now fixed).** Script pinned `claude-sonnet-4-5-20251022`,
+      which 404'd on the live API. Updated to `claude-sonnet-4-6`.
+
+   3. **Small-N noise.** N=3 samples per fixture means a single misclassified
+      sample drops one fixture below the 2/3 pass threshold. Bumped default to
+      N=10 to reduce small-sample variance on the clean re-run.
+
+   **What the raw model outputs confirmed:** on the negative fixtures (clean state),
+   the model answered `**3. VERDICT**\nContinue.` — correct reasoning, wrong parser.
+   The positive fixtures (plan-invalidating discovery) were NOT re-examined in the
+   one-time run (parser was treating continue samples as unknown, not surface), so
+   the positive/surface direction still needs a clean re-run to confirm.
+
+   **The coherence-check PROMPT in `phase-5-implementation.md` was NOT changed** —
+   the model judgment was correct; tuning the prompt would have been wrong.
+
+   To close this risk: `export ANTHROPIC_API_KEY=sk-ant-... && python3 claude-flow/scripts/validate_coherence_judgment.py`. Update this entry with the actual pass rates and change status to `resolved` or `resolved-with-caveat` or `detection-weakness-found`.
+   If surface-recall is low on the clean re-run: tune the coherence-check PROMPT in `phase-5-implementation.md` § "Mid-Plan Coherence Check" — do NOT adjust fixtures to manufacture a pass.
 
 ---
 
