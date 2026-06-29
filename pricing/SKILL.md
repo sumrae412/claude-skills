@@ -224,3 +224,4 @@ Identifies which features customers value most:
 - `launch` - pricing strategy for launch moments
 - `copywriting` - pricing page copy
 - `product-marketing` - positioning context this skill reads
+- `pricing-strategy` - WTP-research-deep and iteration frameworks from 46 product leaders; coexists with this skill

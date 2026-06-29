@@ -141,3 +141,5 @@ other audiences, swap the frame. Use one frame per pitch; do not blend.
 - `startup-analysis` — validate the idea before pitching it.
 - `sc-marketing-scripts` — script discipline for spoken / teleprompter delivery.
 - `resume-tailor` — Villain-Hero adapts to a career-change personal pitch.
+- `fundraising-email` — pair spoken pitches with written investor outreach and follow-ups.
+- `investor-research` — identify and tier the investors before you pitch them.
