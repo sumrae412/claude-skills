@@ -265,6 +265,142 @@ def test_surface_verdict_next_line_with_trailing_prose():
 
 
 # ---------------------------------------------------------------------------
+# P2-regression (bold-wrapped keyword) — parser gap fixed 2026-06-29
+# ---------------------------------------------------------------------------
+# These fixtures reproduce the EXACT raw formats captured in the Phase 5
+# validation run where the model answered CORRECTLY but parse_verdict returned
+# "unknown". The model commonly bolds the verdict keyword when it bolds the
+# label (e.g. **3. VERDICT**\n**Continue.**). The old regex handled plain
+# next-line keywords but not bold/italic-wrapped ones.
+# These tests MUST fail on the old regex and PASS after the fix.
+# Do not modify the fixture strings — they are the evidence.
+
+CONTINUE_BOLD_WRAPPED_FIXTURE = """\
+PLAN COHERENCE CHECK — pause before step 4 of 6.
+
+1. COMPLETED: Steps 1, 2, 3 are done with passing tests.
+
+2. INVALIDATED: none. No discoveries changed the preconditions for any
+   remaining step.
+
+**3. VERDICT**
+**Continue.**
+"""
+
+CONTINUE_BOLD_TRAILING_PROSE_FIXTURE = """\
+PLAN COHERENCE CHECK — pause before step 4 of 6.
+
+1. COMPLETED: Steps 1, 2, 3 are done with passing tests.
+
+2. INVALIDATED: none. All remaining steps are still valid as written.
+
+**3. VERDICT**
+**Continue.** Steps 4 and 5 remain valid.
+"""
+
+CONTINUE_BOLD_LOWERCASE_EMDASH_FIXTURE = """\
+PLAN COHERENCE CHECK — pause before step 4 of 6.
+
+1. COMPLETED: Steps 1, 2, 3 are done with passing tests.
+
+2. INVALIDATED: none. No changes to preconditions detected.
+
+**3. VERDICT**
+**continue** — remaining steps are valid.
+"""
+
+SURFACE_BOLD_WRAPPED_FIXTURE = """\
+PLAN COHERENCE CHECK — pause before step 4 of 6.
+
+1. COMPLETED: Steps 1, 2, 3 done with passing tests.
+
+2. INVALIDATED: Step 4 assumed the payments table exists locally; it does not.
+
+**3. VERDICT**
+**Surface.**
+"""
+
+SURFACE_BOLD_TRAILING_PROSE_FIXTURE = """\
+PLAN COHERENCE CHECK — pause before step 4 of 6.
+
+1. COMPLETED: Steps 1, 2, 3 done with passing tests.
+
+2. INVALIDATED: Step 4 assumed the payments table exists locally; it does not.
+
+**3. VERDICT**
+**Surface — step 4 invalidated.**
+"""
+
+
+def test_continue_verdict_bold_wrapped():
+    """Regression P2: VERDICT on own line, '**Continue.**' bold-wrapped keyword parses correctly.
+
+    Exact format captured from the Phase 5 validation run. Old regex returned
+    'unknown'; fix extends _CONTINUE_PATTERN to strip leading/trailing bold markers.
+    """
+    result = parse_verdict(CONTINUE_BOLD_WRAPPED_FIXTURE)
+
+    assert result["verdict"] == "continue", (
+        f"Expected 'continue' but got {result['verdict']!r}. "
+        "Regression: **3. VERDICT**\\n**Continue.** is not parsed. "
+        "Fix must extend _CONTINUE_PATTERN to accept bold-wrapped keywords."
+    )
+
+
+def test_continue_verdict_bold_with_trailing_prose():
+    """Regression P2: bold-wrapped 'Continue.' with trailing prose parses correctly.
+
+    Exact format: **3. VERDICT**\\n**Continue.** Steps 4 and 5 remain valid
+    """
+    result = parse_verdict(CONTINUE_BOLD_TRAILING_PROSE_FIXTURE)
+
+    assert result["verdict"] == "continue", (
+        f"Expected 'continue' but got {result['verdict']!r}. "
+        "Regression: bold keyword with trailing prose on next-line must parse."
+    )
+
+
+def test_continue_verdict_bold_lowercase_emdash():
+    """Regression P2: bold-wrapped lowercase 'continue' with em-dash prose parses correctly.
+
+    Exact format: **3. VERDICT**\\n**continue** — remaining steps are valid
+    """
+    result = parse_verdict(CONTINUE_BOLD_LOWERCASE_EMDASH_FIXTURE)
+
+    assert result["verdict"] == "continue", (
+        f"Expected 'continue' but got {result['verdict']!r}. "
+        "Regression: bold lowercase keyword with em-dash prose must parse."
+    )
+
+
+def test_surface_verdict_bold_wrapped():
+    """Regression P1: VERDICT on own line, '**Surface.**' bold-wrapped keyword parses correctly.
+
+    Exact format captured by symmetry with continue bold-wrapped case.
+    """
+    result = parse_verdict(SURFACE_BOLD_WRAPPED_FIXTURE)
+
+    assert result["verdict"] == "surface", (
+        f"Expected 'surface' but got {result['verdict']!r}. "
+        "Regression: **3. VERDICT**\\n**Surface.** is not parsed. "
+        "Fix must extend _SURFACE_PATTERN to accept bold-wrapped keywords."
+    )
+
+
+def test_surface_verdict_bold_with_trailing_prose():
+    """Regression P1: bold-wrapped 'Surface — …' with trailing prose parses correctly.
+
+    Exact format: **3. VERDICT**\\n**Surface — step 4 invalidated.**
+    """
+    result = parse_verdict(SURFACE_BOLD_TRAILING_PROSE_FIXTURE)
+
+    assert result["verdict"] == "surface", (
+        f"Expected 'surface' but got {result['verdict']!r}. "
+        "Regression: bold surface keyword with trailing prose on next-line must parse."
+    )
+
+
+# ---------------------------------------------------------------------------
 # P3 — spec integrity
 # ---------------------------------------------------------------------------
 
