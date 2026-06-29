@@ -213,6 +213,16 @@ This requires no A* implementation, no world-state model, no action graph. It is
    (now done); the routing rule was the wrong surface. Henry re-runs to confirm the
    updated pass rate after the bold-markdown fix.
 
+   **Confirmed post-fix re-run (2026-06-29, `claude-sonnet-4-6`, N=10, 40 samples):**
+   overall **88% PASS** (up from 70%); surface-recall 85%, continue-precision 90%
+   (up from 70%); all 4 fixtures pass (0.80 / 0.90 / 1.00 / 0.80). The `unknown`
+   parse rate dropped from ~30% to ~12.5% (5 of 40). Still **0 wrong-direction
+   verdicts** across all 40 samples. The bold-markdown fix resolved the bulk of the
+   residual; the remaining ~12.5% `unknown` is a small long-tail of other output
+   formats — NOT a detection weakness — and chasing it further is diminishing returns.
+   **§Risks#4 final status: RESOLVED-WITH-CAVEAT — the check's judgment is confirmed
+   sound (0/40 wrong-direction); a minor residual unknown-parse tail is accepted.**
+
 ---
 
 ## GO / NO-GO / GO-WITH-SCOPE recommendation
