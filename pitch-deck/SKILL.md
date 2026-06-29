@@ -176,3 +176,4 @@ Chrome headless): `references/render-pdf.md`.
 
 - `elevator-pitch` — spoken 10/30/60/90-second verbal pitches (Villain-Hero framework); use before or alongside a deck.
 - `startup-analysis` — validate the idea before building the deck.
+- [`../client-pitch-builder/SKILL.md`](../client-pitch-builder/SKILL.md) — prospect-tailored B2B sales pitch with live research and .pptx output; use when pitching a specific named client rather than building a generic investor deck.
