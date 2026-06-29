@@ -140,7 +140,7 @@ This requires no A* implementation, no world-state model, no action graph. It is
 
 4. **No test coverage for mid-plan pivots.** claude_flow has no current eval for "detects plan-invalidating discovery mid-Phase 5." Adding this mechanic without evals means we can't verify it helps. Mitigation: add a synthetic eval case (plan step 3 of 5 discovers the DB schema is wrong; does the check surface it?).
 
-   **Validation status — parser fixed; clean re-run pending.**
+   **Validation status — RESOLVED-WITH-CAVEAT (clean re-run complete 2026-06-29).**
    Date fixed: 2026-06-29.
 
    **What happened on the first validation attempt (2026-06-26):** the one-time run
@@ -178,8 +178,12 @@ This requires no A* implementation, no world-state model, no action graph. It is
    **The coherence-check PROMPT in `phase-5-implementation.md` was NOT changed** —
    the model judgment was correct; tuning the prompt would have been wrong.
 
-   To close this risk: `export ANTHROPIC_API_KEY=sk-ant-... && python3 claude-flow/scripts/validate_coherence_judgment.py`. Update this entry with the actual pass rates and change status to `resolved` or `resolved-with-caveat` or `detection-weakness-found`.
-   If surface-recall is low on the clean re-run: tune the coherence-check PROMPT in `phase-5-implementation.md` § "Mid-Plan Coherence Check" — do NOT adjust fixtures to manufacture a pass.
+   **Clean re-run result (2026-06-29, `claude-sonnet-4-6`, N=10, 4 fixtures = 40 samples):**
+   - Overall **70% PASS** (threshold 0.67) — verdict `resolved-with-caveat`.
+   - surface-recall 70% (pos-1 0.70, pos-2 0.70); continue-precision 70% (neg-1 0.70, neg-2 0.70). Every fixture landed exactly 7/10.
+   - **Decisive signal: 0 of 40 samples produced a wrong-direction verdict.** The model never emitted `continue` on a plan-invalidating discovery, nor `surface` on a clean state. Every miss was an `unknown` parse — never a flipped judgment. The check's *judgment* is sound.
+   - **Residual caveat (open follow-on):** a ~30% `unknown` parse rate persists even after the parser fix — the model emits ~3-in-10 verdicts in a format `parse_verdict` still can't read. This is a measurement/format gap, NOT a detection weakness. In production, phase-5 routing defines only `continue`/`surface`, so an `unknown` verdict is currently unhandled. Follow-on: harden the parser further AND/OR define `unknown → surface` (conservative) routing in `phase-5-implementation.md`.
+   - The coherence-check PROMPT and the fixtures were NOT changed to reach this result.
 
 ---
 
