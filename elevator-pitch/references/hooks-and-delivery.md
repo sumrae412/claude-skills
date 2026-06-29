@@ -46,6 +46,18 @@ Adapt to the specific business; never ship the bracketed template as-is.
 Run each candidate hook through the generic-swap test (§9 of the shared
 communication principles) — if it works for a competitor, it is not a hook yet.
 
+## Closing lines
+
+The close decides whether there is a next conversation. Two moves beat
+"please refer me":
+
+- **Flip focus to them.** "I'd love to hear how you've seen [relevant topic]
+  play out." A two-way exchange builds rapport; a cold favor-ask does not.
+- **Offer a low-friction next step.** A specific "could we grab 20 minutes?"
+  beats an open "let's stay in touch."
+
+Earn the next touch before asking for a referral or money cold.
+
 ## Delivery coaching (spoken pitches)
 
 **Body language:** grounded stance, shoulders back. Eye contact during the
@@ -54,6 +66,10 @@ before the ask — let the tension sit.
 
 **Voice:** lower and slower for the villain (gravity); lift energy for the hero
 (excitement); slow down on key numbers so they land; keep momentum on context.
+
+**Self-review:** record yourself delivering the pitch and watch it back (or hand
+the clip to a reviewer). Check for filler words, a rushed ask, flat energy on
+the hero beat, and whether it sounds like natural dialogue or a resume recital.
 
 ## Mistakes that kill spoken pitches
 

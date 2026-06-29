@@ -55,3 +55,25 @@ opportunity]. Our next milestone is [specific goal]; with this raise we'll
 
 For cold outreach, the relevance line is load-bearing: a generic opener gets
 deleted. Tie the villain to something specific about the recipient.
+
+## Personalize for a known contact
+
+When you know who you are pitching, tailor before the meeting. Pull what you can
+about them — their role, their portfolio or recent work, a shared interest, a
+problem their world is facing right now (a LinkedIn profile or recent post is
+enough). Then:
+
+- Frame the villain as one *they* would recognize from their own work.
+- Pick the proof point closest to their stated interests.
+- Make the close a question about their experience, not a generic ask.
+
+The aim is rapport, not a recital. Walk in sounding like you came prepared.
+
+## Career / personal pitch
+
+The Villain-Hero shape adapts to a personal pitch (career change, networking,
+"tell me about yourself"). The villain is the problem the candidate solves; the
+hero is the candidate, with metrics as proof; the ask is the role, intro, or
+conversation. Build per-industry value props (one differentiator each, with a
+measurable result) when targeting more than one field. For full résumé framing
+and ATS alignment, hand off to `resume-tailor`.

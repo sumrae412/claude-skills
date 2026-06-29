@@ -83,16 +83,32 @@ Three acts, every length:
 Never open with the company name. Never feature-dump. Always close with a
 specific ask.
 
+A pitch worked when the listener says **"tell me more."** The goal is the next
+conversation, not closing in the elevator.
+
+## Pick the frame
+
+Villain-Hero is the default and fits investor pitches (founder as hero). For
+other audiences, swap the frame. Use one frame per pitch; do not blend.
+
+- **Golden Circle (Sinek)** — open with Why, then How, then What. Reach for it
+  when the mission is the differentiator.
+- **StoryBrand (SB7)** — make the *listener* the hero and the founder the guide
+  with a plan. Better than founder-as-hero for sales and consumer pitches.
+- **Sparkline (Duarte)** — oscillate between "what is" and "what could be" to
+  build tension. Good for vision-led pitches.
+
 ## Quick Reference
 
 | Want | Go to |
 |---|---|
 | 10s one-liner, 30s, 60s, 90s scripts | `references/length-variations.md` |
 | Conference / cold-email / meeting-opener / follow-up versions | `references/length-variations.md` |
+| Personalize for a known contact, or a career / personal pitch | `references/length-variations.md` |
 | Technical-investor pitch (IP, moat, performance) | `references/investor-types.md` |
 | Market / growth-investor pitch (TAM, unit economics) | `references/investor-types.md` |
 | Customer-obsessed-investor pitch (persona, NPS, retention) | `references/investor-types.md` |
-| Opening hooks, delivery coaching, A/B tests | `references/hooks-and-delivery.md` |
+| Opening hooks, closing lines, delivery coaching, A/B tests | `references/hooks-and-delivery.md` |
 
 ## Common Mistakes
 
