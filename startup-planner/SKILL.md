@@ -103,3 +103,8 @@ Next stage: [X+1 name]
 - Validate market assumptions with real customers, not only framework
   exercises.
 - Go/NoGo decisions should involve real stakeholders.
+
+## See also
+
+- [`../client-pitch-builder/SKILL.md`](../client-pitch-builder/SKILL.md) — once the plan is solid, use this to build a prospect-tailored B2B sales pitch deck (live research + .pptx output) for a specific named client.
+- [`../pitch-deck/SKILL.md`](../pitch-deck/SKILL.md) — investor or product-launch deck flow (generic, not prospect-specific).
