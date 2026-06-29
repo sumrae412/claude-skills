@@ -176,3 +176,6 @@ Chrome headless): `references/render-pdf.md`.
 
 - `elevator-pitch` — spoken 10/30/60/90-second verbal pitches (Villain-Hero framework); use before or alongside a deck.
 - `startup-analysis` — validate the idea before building the deck.
+- `yc-pitch-deck` — YC-style investor deck with PptxGenJS .pptx production and Kevin Hale design system; more opinionated than this skill.
+- `investor-research` — identify and tier target investors before tailoring the deck narrative.
+- `fundraising` — strategic fundraising process and "should I raise?" framing before building the deck.

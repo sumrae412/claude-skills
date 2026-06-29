@@ -309,3 +309,9 @@ Read only what you need for the current phase.
 | `frameworks.md` | During Phase 3 | ~132 | Dunford/Moore/Neumeier/JTBD/Ries reference |
 | `research-scaling.md` | After intake, before Phase 2 | ~96 | Complexity scoring, tier definitions, wave configurations |
 | `verification-agent.md` | After synthesis | ~128 | Verification protocol, universal + skill-specific checks |
+
+## See also
+
+- `pricing-strategy` — positioning determines what value you charge for; run positioning before pricing.
+- `fundraising` — investors buy into positioning before they buy into the business.
+- `measuring-pmf` — segment-level PMF informs where to position; run together when narrowing ICP.
