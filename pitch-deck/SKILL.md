@@ -43,6 +43,8 @@ one-pager (no slide structure needed).
 3. **Duration** — 5 / 10 / 20 minutes? (controls slide count)
 4. **The ask** — what should they do after?
 5. **Source content** — startup brief, product spec, traction data, team bios
+6. **Delivery mode** — live pitch (you present) or send-ahead (read with no
+   presenter)? Sets the per-slide word budget (Step 2).
 
 If audience and purpose conflict ("investor deck for a sales meeting"), ask
 once which dominates.
@@ -65,13 +67,19 @@ VC vs angel, C-suite vs technical buyer.
 
 ### Step 2 — Write each slide
 
-For every slide produce four fields:
+For every slide produce these fields:
 
 - **Headline** — *one takeaway sentence*, not a label. Headlines tell the
   story even if every body is hidden.
-- **Body** — 3–5 bullets max. Under 30 words total.
+- **Body** — 3–5 bullets max. Word budget depends on delivery mode: live-pitch
+  decks stay under ~40 words/slide (the visual carries it); send-ahead decks
+  can run ~60-80 words so they read without a presenter.
 - **Visual** — chart / diagram / image suggestion. One per slide.
 - **Speaker notes** — what to say out loud. 2–4 sentences.
+- **Investor question** — *(investor decks)* the question in the investor's
+  head at this point that the slide must answer ("Is this problem real and
+  expensive?", "Why now?", "Why this team?"). A slide that answers no real
+  question gets cut. For sales decks, substitute the buyer's question.
 
 ### Step 3 — Quality check
 
@@ -99,6 +107,7 @@ Use this exact structure so downstream rendering works:
 - Point 3
 **Visual:** [Suggestion]
 **Speaker notes:** [What to say]
+**Investor question:** [the implicit question this slide answers — investor decks]
 
 [continue for all slides]
 ```
@@ -124,13 +133,15 @@ Before delivering:
 
 - [ ] Every headline is a takeaway, not a label
 - [ ] One main idea per slide
-- [ ] Body text under 30 words per slide
+- [ ] Body within the delivery-mode word budget (live ~40 / send-ahead ~60-80)
+- [ ] Every slide answers a real investor (or buyer) question; none answers nothing
 - [ ] Visual suggested for every slide
 - [ ] Speaker notes for every slide
 - [ ] Final slide has a clear, specific ask
 - [ ] Logical flow — story arc, not a feature dump
 - [ ] No information overload (move detail to appendix)
 - [ ] Audience-tuned register (see `references/audiences.md`)
+- [ ] Send-ahead decks: a partner could follow it alone at 11pm on their iPad, no presenter
 
 Common pitfalls and fixes: `references/pitfalls.md`.
 
