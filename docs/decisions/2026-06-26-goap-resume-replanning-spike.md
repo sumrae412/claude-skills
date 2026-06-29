@@ -185,6 +185,44 @@ This requires no A* implementation, no world-state model, no action graph. It is
    - **Residual caveat (open follow-on):** a ~30% `unknown` parse rate persists even after the parser fix — the model emits ~3-in-10 verdicts in a format `parse_verdict` still can't read. This is a measurement/format gap, NOT a detection weakness. In production, phase-5 routing defines only `continue`/`surface`, so an `unknown` verdict is currently unhandled. Follow-on: harden the parser further AND/OR define `unknown → surface` (conservative) routing in `phase-5-implementation.md`.
    - The coherence-check PROMPT and the fixtures were NOT changed to reach this result.
 
+   **Bold-markdown parser gap fixed (2026-06-29, follow-on to the clean re-run).**
+   Henry captured the raw model outputs from the clean re-run and proved the cause of
+   the residual ~30% `unknown` rate: the model wraps the verdict keyword in
+   **markdown bold** when it bolds the label. Exact failing formats (model judgment
+   correct in every case — purely a parser gap):
+   - `**3. VERDICT**\n**Continue.**` (bold keyword + period)
+   - `**3. VERDICT**\n**Continue.** Steps 4 and 5 remain valid` (bold + trailing prose)
+   - `**3. VERDICT**\n**continue** — remaining steps are valid` (bold lowercase + em-dash)
+   - Symmetric surface cases: `**3. VERDICT**\n**Surface.**` / `**Surface — step 4 invalidated.**`
+
+   Fix: extended `_CONTINUE_PATTERN` and `_SURFACE_PATTERN` in `coherence_check.py`
+   to allow optional `[*_]{0,2}` markers before and after the verdict keyword on the
+   next-line branch (layout (c), in addition to the existing plain next-line layout (b)).
+   Regression tests added in `test_coherence_check.py`:
+   `test_continue_verdict_bold_wrapped`, `test_continue_verdict_bold_with_trailing_prose`,
+   `test_continue_verdict_bold_lowercase_emdash`, `test_surface_verdict_bold_wrapped`,
+   `test_surface_verdict_bold_with_trailing_prose`. Full suite: **20 passed, 0 failed.**
+
+   **`unknown → surface` routing CONSIDERED and REJECTED on evidence.**
+   Henry proposed routing `unknown → surface` (conservative: when the parser can't read
+   the verdict, escalate to the user rather than proceeding). Rejected for this reason:
+   the clean re-run raw outputs showed the unknowns are predominantly correct `continue`
+   verdicts the old parser could not read — not missed `surface` calls. Routing
+   `unknown → surface` would convert those correct "proceed" answers into false user
+   interruptions, adding noise without safety benefit. The right fix was the parser
+   (now done); the routing rule was the wrong surface. Henry re-runs to confirm the
+   updated pass rate after the bold-markdown fix.
+
+   **Confirmed post-fix re-run (2026-06-29, `claude-sonnet-4-6`, N=10, 40 samples):**
+   overall **88% PASS** (up from 70%); surface-recall 85%, continue-precision 90%
+   (up from 70%); all 4 fixtures pass (0.80 / 0.90 / 1.00 / 0.80). The `unknown`
+   parse rate dropped from ~30% to ~12.5% (5 of 40). Still **0 wrong-direction
+   verdicts** across all 40 samples. The bold-markdown fix resolved the bulk of the
+   residual; the remaining ~12.5% `unknown` is a small long-tail of other output
+   formats — NOT a detection weakness — and chasing it further is diminishing returns.
+   **§Risks#4 final status: RESOLVED-WITH-CAVEAT — the check's judgment is confirmed
+   sound (0/40 wrong-direction); a minor residual unknown-parse tail is accepted.**
+
 ---
 
 ## GO / NO-GO / GO-WITH-SCOPE recommendation

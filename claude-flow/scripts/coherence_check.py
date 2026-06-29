@@ -75,16 +75,21 @@ REQUIRED_SPEC_PHRASES = [
 #       Matched by: VERDICT label alone on its line, keyword on the very next
 #       non-empty line (with optional leading/trailing quotes, punctuation,
 #       and trailing prose after the keyword).
+#   (c) Bold-wrapped keyword on next line: "**3. VERDICT**\n**Continue.**"
+#       Same as (b) but the keyword itself is wrapped in markdown bold (**) or
+#       italics (* or _). The model commonly bolds the verdict when it bolds the
+#       label. The `[*_]{0,2}` groups before/after the keyword handle this.
 #
-# The alternation handles both without a DOTALL flag (which would cause [^\n]*
-# to accidentally swallow cross-line content in other patterns).
+# The alternation handles all three without a DOTALL flag (which would cause
+# [^\n]* to accidentally swallow cross-line content in other patterns).
 _CONTINUE_PATTERN = re.compile(
     r'(?:'
     # (a) VERDICT and keyword on the same line
     r'\b(?:VERDICT)[^\n]*["\']?continue["\']?'
     r'|'
-    # (b) VERDICT alone on its line, keyword first word of next non-empty line
-    r'\b(?:VERDICT)[*\s]*\n[^\S\n]*["\']?continue["\']?'
+    # (b)/(c) VERDICT alone on its line, keyword first word of next non-empty
+    # line — with optional markdown bold/italic wrapping (**keyword** or *keyword*)
+    r'\b(?:VERDICT)[*\s]*\n[^\S\n]*[*_]{0,2}["\']?continue["\']?[*_]{0,2}'
     r')',
     re.IGNORECASE,
 )
@@ -93,8 +98,9 @@ _SURFACE_PATTERN = re.compile(
     # (a) VERDICT and keyword on the same line
     r'\b(?:VERDICT)[^\n]*["\']?surface["\']?'
     r'|'
-    # (b) VERDICT alone on its line, keyword first word of next non-empty line
-    r'\b(?:VERDICT)[*\s]*\n[^\S\n]*["\']?surface["\']?'
+    # (b)/(c) VERDICT alone on its line, keyword first word of next non-empty
+    # line — with optional markdown bold/italic wrapping (**keyword** or *keyword*)
+    r'\b(?:VERDICT)[*\s]*\n[^\S\n]*[*_]{0,2}["\']?surface["\']?[*_]{0,2}'
     r')',
     re.IGNORECASE,
 )
