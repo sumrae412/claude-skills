@@ -67,12 +67,35 @@ REQUIRED_SPEC_PHRASES = [
 # Regex patterns for each verdict keyword. Accept variations in whitespace,
 # casing, quoting, and surrounding punctuation so the parser is robust to
 # minor formatting differences in agent output.
+#
+# Two supported layouts:
+#   (a) Same-line: "3. VERDICT: continue — reason"
+#       Matched by: VERDICT label followed by the keyword on the same line.
+#   (b) Next-line: "**3. VERDICT**\nContinue."  or  "**3. VERDICT**\nContinue. Steps …"
+#       Matched by: VERDICT label alone on its line, keyword on the very next
+#       non-empty line (with optional leading/trailing quotes, punctuation,
+#       and trailing prose after the keyword).
+#
+# The alternation handles both without a DOTALL flag (which would cause [^\n]*
+# to accidentally swallow cross-line content in other patterns).
 _CONTINUE_PATTERN = re.compile(
-    r'\b(?:VERDICT|verdict)[^\n]*["\']?continue["\']?',
+    r'(?:'
+    # (a) VERDICT and keyword on the same line
+    r'\b(?:VERDICT)[^\n]*["\']?continue["\']?'
+    r'|'
+    # (b) VERDICT alone on its line, keyword first word of next non-empty line
+    r'\b(?:VERDICT)[*\s]*\n[^\S\n]*["\']?continue["\']?'
+    r')',
     re.IGNORECASE,
 )
 _SURFACE_PATTERN = re.compile(
-    r'\b(?:VERDICT|verdict)[^\n]*["\']?surface["\']?',
+    r'(?:'
+    # (a) VERDICT and keyword on the same line
+    r'\b(?:VERDICT)[^\n]*["\']?surface["\']?'
+    r'|'
+    # (b) VERDICT alone on its line, keyword first word of next non-empty line
+    r'\b(?:VERDICT)[*\s]*\n[^\S\n]*["\']?surface["\']?'
+    r')',
     re.IGNORECASE,
 )
 

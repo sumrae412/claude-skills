@@ -185,6 +185,86 @@ def test_unknown_verdict_on_missing_keyword():
 
 
 # ---------------------------------------------------------------------------
+# P2-regression — next-line VERDICT format (parser gap fixed 2026-06-29)
+# ---------------------------------------------------------------------------
+# These fixtures reproduce the EXACT format that caused the "50% FAIL /
+# detection-weakness-found" measurement artifact in the one-time validation run.
+# The model answered correctly ("Continue.") but parse_verdict returned "unknown"
+# because the old regex required VERDICT and the keyword on the SAME line.
+# The tests below MUST fail against the old single-line regex and pass after
+# the fix. Do not modify these fixture strings — they are the evidence.
+
+CONTINUE_NEXT_LINE_FIXTURE = """\
+PLAN COHERENCE CHECK — pause before step 4 of 6.
+
+1. COMPLETED: Steps 1, 2, 3 are done with passing tests.
+
+2. INVALIDATED: none. No discoveries changed the preconditions for any
+   remaining step.
+
+**3. VERDICT**
+Continue.
+"""
+
+CONTINUE_NEXT_LINE_TRAILING_PROSE_FIXTURE = """\
+PLAN COHERENCE CHECK — pause before step 4 of 6.
+
+1. COMPLETED: Steps 1, 2, 3 are done with passing tests.
+
+2. INVALIDATED: none. All remaining steps are still valid as written.
+
+**3. VERDICT**
+Continue. Steps 3 and 4 are valid.
+"""
+
+SURFACE_NEXT_LINE_TRAILING_PROSE_FIXTURE = """\
+PLAN COHERENCE CHECK — pause before step 4 of 6.
+
+1. COMPLETED: Steps 1, 2, 3 done with passing tests.
+
+2. INVALIDATED: Step 4 assumed the payments table exists locally; it does not.
+
+**3. VERDICT**
+Surface — step 4 invalidated.
+"""
+
+
+def test_continue_verdict_next_line_format():
+    """Regression P2: VERDICT on its own line, 'Continue.' on next line parses correctly.
+
+    This is the EXACT format the validation run produced on clean-state fixtures.
+    The old regex required VERDICT and keyword on the same line, returning 'unknown'.
+    """
+    result = parse_verdict(CONTINUE_NEXT_LINE_FIXTURE)
+
+    assert result["verdict"] == "continue", (
+        f"Expected 'continue' but got {result['verdict']!r}. "
+        "Regression: **3. VERDICT**\\nContinue. format is not parsed. "
+        "The fix must extend _CONTINUE_PATTERN to match keyword on the next line."
+    )
+
+
+def test_continue_verdict_next_line_with_trailing_prose():
+    """Regression P2: VERDICT on own line, 'Continue. Steps …' trailing prose parses correctly."""
+    result = parse_verdict(CONTINUE_NEXT_LINE_TRAILING_PROSE_FIXTURE)
+
+    assert result["verdict"] == "continue", (
+        f"Expected 'continue' but got {result['verdict']!r}. "
+        "Regression: trailing prose after Continue. on next-line must not block parsing."
+    )
+
+
+def test_surface_verdict_next_line_with_trailing_prose():
+    """Regression P1: VERDICT on own line, 'Surface — …' trailing prose parses correctly."""
+    result = parse_verdict(SURFACE_NEXT_LINE_TRAILING_PROSE_FIXTURE)
+
+    assert result["verdict"] == "surface", (
+        f"Expected 'surface' but got {result['verdict']!r}. "
+        "Regression: trailing prose after Surface on next-line must not block parsing."
+    )
+
+
+# ---------------------------------------------------------------------------
 # P3 — spec integrity
 # ---------------------------------------------------------------------------
 

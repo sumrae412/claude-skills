@@ -140,6 +140,51 @@ This requires no A* implementation, no world-state model, no action graph. It is
 
 4. **No test coverage for mid-plan pivots.** claude_flow has no current eval for "detects plan-invalidating discovery mid-Phase 5." Adding this mechanic without evals means we can't verify it helps. Mitigation: add a synthetic eval case (plan step 3 of 5 discovers the DB schema is wrong; does the check surface it?).
 
+   **Validation status — RESOLVED-WITH-CAVEAT (clean re-run complete 2026-06-29).**
+   Date fixed: 2026-06-29.
+
+   **What happened on the first validation attempt (2026-06-26):** the one-time run
+   produced a "50% FAIL / detection-weakness-found" result that triggered a
+   "prompt too aggressive / fails to detect" auto-caveat. This was a MEASUREMENT
+   ARTIFACT — NOT a genuine detection weakness. Three compounding causes:
+
+   1. **Parser gap (now fixed).** `parse_verdict` required the VERDICT label and
+      the verdict keyword on the **same line** (`[^\n]*` in the regex). The model
+      correctly emitted `**3. VERDICT**\nContinue.` (label on one line, keyword on
+      the next), but the old pattern returned `"unknown"` for that format. All 6
+      clean-state ("continue") samples were misclassified — the model judgment was
+      sound; the parser was wrong. Fix: extended `_CONTINUE_PATTERN` and
+      `_SURFACE_PATTERN` in `coherence_check.py` to match keyword on the next line
+      after a standalone VERDICT label, including trailing punctuation and prose
+      (`Continue.` / `Continue. Steps 3 and 4 are valid.` /
+      `Surface — step 4 invalidated.`). Regression tests added in
+      `test_coherence_check.py` (`test_continue_verdict_next_line_format`,
+      `test_continue_verdict_next_line_with_trailing_prose`,
+      `test_surface_verdict_next_line_with_trailing_prose`).
+
+   2. **Dead model-id (now fixed).** Script pinned `claude-sonnet-4-5-20251022`,
+      which 404'd on the live API. Updated to `claude-sonnet-4-6`.
+
+   3. **Small-N noise.** N=3 samples per fixture means a single misclassified
+      sample drops one fixture below the 2/3 pass threshold. Bumped default to
+      N=10 to reduce small-sample variance on the clean re-run.
+
+   **What the raw model outputs confirmed:** on the negative fixtures (clean state),
+   the model answered `**3. VERDICT**\nContinue.` — correct reasoning, wrong parser.
+   The positive fixtures (plan-invalidating discovery) were NOT re-examined in the
+   one-time run (parser was treating continue samples as unknown, not surface), so
+   the positive/surface direction still needs a clean re-run to confirm.
+
+   **The coherence-check PROMPT in `phase-5-implementation.md` was NOT changed** —
+   the model judgment was correct; tuning the prompt would have been wrong.
+
+   **Clean re-run result (2026-06-29, `claude-sonnet-4-6`, N=10, 4 fixtures = 40 samples):**
+   - Overall **70% PASS** (threshold 0.67) — verdict `resolved-with-caveat`.
+   - surface-recall 70% (pos-1 0.70, pos-2 0.70); continue-precision 70% (neg-1 0.70, neg-2 0.70). Every fixture landed exactly 7/10.
+   - **Decisive signal: 0 of 40 samples produced a wrong-direction verdict.** The model never emitted `continue` on a plan-invalidating discovery, nor `surface` on a clean state. Every miss was an `unknown` parse — never a flipped judgment. The check's *judgment* is sound.
+   - **Residual caveat (open follow-on):** a ~30% `unknown` parse rate persists even after the parser fix — the model emits ~3-in-10 verdicts in a format `parse_verdict` still can't read. This is a measurement/format gap, NOT a detection weakness. In production, phase-5 routing defines only `continue`/`surface`, so an `unknown` verdict is currently unhandled. Follow-on: harden the parser further AND/OR define `unknown → surface` (conservative) routing in `phase-5-implementation.md`.
+   - The coherence-check PROMPT and the fixtures were NOT changed to reach this result.
+
 ---
 
 ## GO / NO-GO / GO-WITH-SCOPE recommendation
