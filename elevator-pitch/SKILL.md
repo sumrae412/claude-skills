@@ -50,8 +50,8 @@ winning pitch into slides with `pitch-deck`.
 1. **Gather the six inputs.** Use `AskUserQuestion` to collect, in one pass:
    villain (the painful problem + who suffers), weapon (the solution), superpower
    (the unfair advantage), proof (traction / evidence), audience (which investor
-   type), and the ask (amount + milestone). Ask only for the gaps context
-   doesn't already fill.
+   type), and the ask (amount + milestone + timeframe). Ask only for the gaps
+   context doesn't already fill.
 2. **Research the real numbers.** Run `WebSearch` for the market size, recent
    funding rounds in the space, competitor positioning language, and a shocking
    stat to anchor the villain. Specific real numbers beat "it's a huge market."
@@ -60,7 +60,8 @@ winning pitch into slides with `pitch-deck`.
    pitch.
 4. **Position the hero.** State the weapon, the origin story (why this founder),
    the proof, and the quest (the world after the villain dies). Confident, never
-   arrogant.
+   arrogant. State traction as a metric paired with a timeframe ("0 to 1,000
+   users in 8 weeks"), never a standalone number.
 5. **Produce the version(s) asked for.** Default to the length the user named.
    For an investor pitch, pick the matching script from
    `references/investor-types.md`. For length variants and context adaptations,
@@ -68,6 +69,11 @@ winning pitch into slides with `pitch-deck`.
 6. **Sharpen.** Load `references/hooks-and-delivery.md` for opening hooks,
    delivery coaching, and the iteration tests. Run the §9 sameness pass, then
    read every version aloud and time it before shipping.
+7. **Rehearse, score, and stress-test.** Run the **2-Sentence Test** — have
+   someone (or Claude) paraphrase your one-liner back; if they cannot, simplify
+   before going further. Then use `references/practice-and-scoring.md` to
+   self-score across eight dimensions and run an investor roleplay before the
+   real conversation.
 
 ## The Villain-Hero Framework
 
@@ -85,6 +91,11 @@ specific ask.
 
 A pitch worked when the listener says **"tell me more."** The goal is the next
 conversation, not closing in the elevator.
+
+**Lead with strength.** After the villain lands, surface your single strongest
+dimension — breakout traction, a rare team, a non-obvious insight, or a huge
+market — inside the first 60 seconds rather than saving it for the end.
+Attention is earned in the opening minute; do not bury your best card.
 
 ## Pick the frame
 
@@ -109,6 +120,8 @@ other audiences, swap the frame. Use one frame per pitch; do not blend.
 | Market / growth-investor pitch (TAM, unit economics) | `references/investor-types.md` |
 | Customer-obsessed-investor pitch (persona, NPS, retention) | `references/investor-types.md` |
 | Opening hooks, closing lines, delivery coaching, A/B tests | `references/hooks-and-delivery.md` |
+| Rehearse, self-score (8 dimensions), investor roleplay | `references/practice-and-scoring.md` |
+| Investor types by funding stage (angel / seed / Series A / accelerator) | `references/investor-types.md` |
 
 ## Common Mistakes
 

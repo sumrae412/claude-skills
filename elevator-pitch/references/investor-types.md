@@ -102,3 +102,21 @@ detail]. [They're] not alone — [X million] people hit this exact wall."
 
 If you do not know the investor's lean, default to B and keep one technical proof
 point and one user quote in reserve for the Q&A.
+
+## By funding stage
+
+The A/B/C split above is *what they optimize for*. This is a second axis —
+*where they invest* — which shifts what proof they expect and what questions
+they ask. Use these personas for the investor roleplay in
+[`practice-and-scoring.md`](practice-and-scoring.md).
+
+| Persona | Optimizes for | Characteristic questions | What earns the meeting |
+|---|---|---|---|
+| **Angel** | The founder and the story | "Why you? Why does this matter to you?" | Conviction, founder-market fit, a clear early signal |
+| **Seed VC** | Early traction + insight | "What have you learned? What's the non-obvious insight?" | Fast learning loop, design partners / LOIs / early usage |
+| **Series A VC** | Repeatable growth + economics | "Is GTM repeatable? What are the unit economics?" | Real revenue, a working channel, a path to 3-5x |
+| **Accelerator partner** | Coachability + velocity | "How fast do you ship? Will you take feedback?" | Momentum week-over-week, a team that executes |
+
+Match the proof in your pitch to the persona: an angel wants the story, a Series
+A VC wants the cohort curve. Leading with the wrong proof for the stage is the
+most common reason a strong pitch still misses.
