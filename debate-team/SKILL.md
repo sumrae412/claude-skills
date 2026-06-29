@@ -174,6 +174,20 @@ When Tier 0 is not enough → escalate to Tier 1+ (the API-driven tiers below) f
 - **Code artifacts** (touches `app/`, `tests/`, `*.py`, `*.js`, `*.css`, `*.html`) → focus on separation of concerns, abstraction quality, API boundaries, schema/security risks, and project pattern consistency.
 - **Non-code artifacts** (skills, docs, AGENTS.md, CLAUDE.md, MEMORY.md, process specs) → focus on missing steps, contradictions, stale references, term consistency, and operational clarity.
 
+## Co-failure ceiling — panel diversity rule
+
+Any multi-model panel or ensemble selection policy caps at accuracy ≤ 1−β, where **β = the rate at which EVERY model in the pool fails on the same query** (joint failure rate). Practical consequences:
+
+- Gains come from models that fail on *different* questions — diversity, not count.
+- Adding more models that fail on the same hard queries does not raise the ceiling; it only increases cost and latency.
+- Pairwise correlation reporting under-prices this risk: two critics with low pairwise correlation can still co-fail on a shared blind spot class, keeping β high.
+
+**Apply when assembling a panel:** pick genuinely diverse models or lenses — different training distributions, different reasoning styles, different failure-mode profiles. Redundant critics (e.g. two large chat-tuned models from the same provider family) converge on the same β, adding no ceiling lift. A domain-expert specialist critic or an adversarially-trained model on the failing query class raises the ceiling measurably.
+
+**Report joint failure rate alongside pairwise correlation** when evaluating panel quality. Pairwise correlation alone is insufficient.
+
+Source: [When Does Combining Language Models Help? (arXiv:2606.27288)](https://arxiv.org/abs/2606.27288)
+
 
 ## Workflow
 

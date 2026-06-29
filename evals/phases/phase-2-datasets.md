@@ -19,6 +19,19 @@ In rough order of value:
 4. **Synthetic generation** — useful for stress-testing coverage, but
    never the *only* source. Synthetic data inherits the bias of the
    generator model.
+5. **Generative benchmarking from your own corpus** — use an LLM to
+   generate a representative eval dataset from your *own* documents,
+   traces, or knowledge base instead of relying on generic public
+   benchmarks (which are often too clean, may be in training data, and
+   don't generalize to your production distribution). Key technique:
+   **Distinct Query Generation** — feed the ground-truth queries to
+   the generator as *negative examples* so generated queries are
+   genuinely unseen. Naive generation without this step reproduces
+   ground-truth queries verbatim, defeating the purpose. Validation
+   finding: public-benchmark model rankings don't always hold on a
+   production corpus, so a domain-generated set is the trustworthy
+   signal for your deployment. Source:
+   [Chroma Generative Benchmarking](https://www.trychroma.com/research/generative-benchmarking).
 
 ## Size
 
