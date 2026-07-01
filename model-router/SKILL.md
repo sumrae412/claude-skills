@@ -133,6 +133,37 @@ Modifiers cap at one tier in either direction — don't chain them. The point is
 
 ---
 
+## Advisor Tool (executor+advisor pairing)
+
+Anthropic's advisor tool (beta, header `advisor-tool-2026-03-01`; Claude API + AWS Claude Platform only — not Bedrock/GCP/Foundry) is a routing primitive distinct from subagent fleets and `opusplan`: a cheap **executor** model consults a stronger **advisor** mid-generation. The advisor sees the full transcript server-side and returns plan/course-correction text — near-advisor-quality output at executor generation rates, without a second full model pass. See [Anthropic docs](https://platform.claude.com/docs/en/agents-and-tools/tool-use/advisor-tool).
+
+**When to route to it:**
+
+| Situation | Move |
+|---|---|
+| Sonnet handling a complex task | Add an Opus advisor for a quality lift at similar-or-lower cost than upgrading the executor to Opus outright |
+| Haiku needing a step up | Opus advisor beats upgrading the executor tier — cheaper than running Sonnet/Opus end-to-end |
+
+**Pairing rule:** advisor must be ≥ Sonnet 4.6 and ≥ executor capability — a weaker-than-executor advisor produces noise, not correction.
+
+**Weak fit — don't reach for this:** single-turn Q&A, pass-through model pickers, or any task needing advisor-grade output on every turn (at that point just run the advisor as the executor).
+
+**Cost knobs (tested):**
+- `max_tokens: 2048` on the advisor tool definition — ~7× less advisor output vs. no cap, no measured quality loss. Below `1024` truncates guidance (~10% loss).
+- A user-message steer line ("Advisor: please keep your guidance under 80 words...") shrinks advisor turns further.
+- Advisor-side prompt caching (`{type: ephemeral, ttl: 5m}`) breaks even at ≥3 advisor calls per conversation — don't bother caching below that.
+- Sonnet executor at medium effort + Opus advisor ≈ Sonnet-at-default-effort quality, at lower cost than either straight Sonnet-high-effort or straight Opus.
+
+**Billing gotcha:** advisor tokens land in `usage.iterations[]` at advisor rates and are **excluded from top-level usage totals** — any cost-tracking code reading only the top-level `usage` block will silently undercount. Read `iterations[]` explicitly.
+
+**Failure mode:** advisor errors degrade gracefully — the executor continues without advice rather than failing the turn. Don't add manual fallback handling for this; it's built in.
+
+**Budget cap:** to bound advisor calls per conversation, count them client-side. At the cap, remove the advisor tool AND strip prior `advisor_tool_result` blocks from history — leaving stale advisor blocks in context after the tool is removed will error on the next call.
+
+For production cost-observability once this is wired into a shipped feature (not an in-session Claude Code decision), see `llm-cost-optimizer`.
+
+---
+
 ## Output Card Format
 
 Print the card BEFORE the model switch is suggested or applied. The user sees the decision and can override before any action is taken — this supports the advisory framing and lets the user redirect mid-stream.

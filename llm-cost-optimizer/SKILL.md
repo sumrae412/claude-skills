@@ -91,6 +91,8 @@ Apply techniques in this order (highest ROI first):
 
 Route by task complexity, not by default. Use a lightweight classifier or rule engine.
 
+For the executor+advisor pairing pattern (cheap model executes, stronger model advises mid-generation via Anthropic's beta advisor tool) — see [`model-router`'s Advisor Tool section](../model-router/SKILL.md#advisor-tool-executoradvisor-pairing).
+
 Decision framework:
 - **Use small models** for: classification, extraction, simple Q&A, formatting, short summaries
 - **Use mid models** for: structured output, moderate summarization, code completion
