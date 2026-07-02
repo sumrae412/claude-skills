@@ -1,19 +1,6 @@
 ---
 name: sme-voice
-description: >
-  Captures another person's writing voice from samples and applies it when
-  ghostwriting or editing in their voice — primarily for SME (subject-matter
-  expert) scripts at DeepLearning.AI. Two phases: build a saved voice profile
-  from 2+ samples (Phase A), then apply that profile when editing or extending
-  the SME's scripts (Phase B). Saved profiles live in
-  ~/claude_code/agent-vault/sme-voices/ so they sync across machines.
-
-  Trigger on: "build a voice profile for [name]", "capture [name]'s voice",
-  "edit this in [name]'s voice", "rewrite as [name]", "keep [SME's] style",
-  "ghostwrite as [name]", or "/sme-voice ...".
-
-  Do NOT use this skill when writing as Summer herself (use writing-voice
-  instead), running ToneGuard analysis, or summarizing/analyzing documents.
+description: "Captures another person's writing voice from samples and applies it when ghostwriting or editing in their voice — primarily for SME (subject-matter expert) scripts at DeepLearning.AI. Phase A builds a saved voice profile from samples; Phase B applies it when editing or extending the SME's scripts. Profiles live in ~/claude_code/agent-vault/sme-voices/ to sync across machines. Trigger on 'capture [name]'s voice', 'edit this in [name]'s voice', 'ghostwrite as [name]', or '/sme-voice'. NOT for writing as Summer herself (use writing-voice), ToneGuard analysis, or summarizing/analyzing documents."
 user-invocable: true
 ---
 

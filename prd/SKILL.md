@@ -1,6 +1,6 @@
 ---
 name: prd
-description: Use when authoring a Product Requirements Document (PRD) — a sharable spec doc — before handing a feature to claude-flow or another AI coding agent. Triggers on "write/draft/create a PRD", "spec out [feature]", "product spec", "feature spec", "write product requirements", "requirements doc for [feature]", "PRD for [feature]". The PRD output maps directly onto claude-flow's $requirements contract (user stories, EARS acceptance criteria, scope.in/out, edge cases, risk class, non-functional) so Phase 3 can ingest it instead of re-asking the same questions. Distinct from claude-flow's inline Phase 3 — use this when the PM / founder / requester wants a durable spec document up front that survives across sessions, before kicking off the build.
+description: "Use when authoring a Product Requirements Document — a durable, sharable spec — before handing a feature to claude-flow or another AI coding agent. Triggers on 'write a PRD', 'spec out [feature]', 'product spec', 'requirements doc'. Output maps onto claude-flow's $requirements contract (user stories, EARS acceptance criteria, scope in/out, edge cases, risk class, non-functional) so Phase 3 ingests it instead of re-asking. Distinct from claude-flow's inline Phase 3: use when the PM / founder / requester wants a spec that survives across sessions."
 user-invocable: true
 metadata:
   hermes:

@@ -1,6 +1,6 @@
 ---
 name: prompt-engineering
-description: Router for all prompt-engineering work — dispatches to structured-prompt-builder (single-turn authoring), agent-prompt-architecture (tool-using agents), prompt-optimizer (improving), prompt-optimization (variant analysis at scale), or prompt-governance (production management). Centralizes the shared Anthropic prompting principles each sub-skill enforces. Use when the user asks about prompts in general, isn't sure which sub-skill applies, or needs an end-to-end pipeline (write → improve → govern). Triggers on "prompt engineering", "help with a prompt", "Anthropic prompting best practices", "how should I prompt Claude", or any prompt-related ask that doesn't cleanly map to one sub-skill. If the request clearly fits one sub-skill, invoke that directly.
+description: "Router for all prompt-engineering work — dispatches to structured-prompt-builder (single-turn authoring), agent-prompt-architecture (tool-using agents), prompt-optimizer (improving), prompt-optimization (variant analysis at scale), or prompt-governance (production management); centralizes the shared Anthropic prompting principles each sub-skill enforces. Use when a prompt-related ask doesn't cleanly map to one sub-skill or needs the write → improve → govern pipeline; triggers on 'prompt engineering', 'how should I prompt Claude'. If the request clearly fits one sub-skill, invoke that directly."
 ---
 
 # Prompt Engineering

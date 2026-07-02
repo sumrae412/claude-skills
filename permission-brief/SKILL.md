@@ -1,6 +1,6 @@
 ---
 name: permission-brief
-description: Use when the user is considering granting an AI agent (or any automation) access to a system, tool, or account and wants a one-page risk/permission brief before flipping the switch. Triggers on "draft a permission brief", "agent risk review", "what should this agent be allowed to do", "scope this agent's access", "review before I connect X to an agent", or pasting an integration/MCP/connector setup with a "should I let it…" question. Produces a structured one-pager covering allowed/ask-first/never actions, spending and data limits, required logs, failure + rollback, and a low-risk first-week test plan. Pairs well with skill-security-auditor (which audits skill code) — this skill scopes the runtime privileges around the agent itself.
+description: "Use when the user is considering granting an AI agent or automation access to a system, tool, or account and wants a one-page risk/permission brief before flipping the switch. Triggers on 'permission brief', 'agent risk review', 'scope this agent's access', or a pasted integration/MCP/connector setup with a 'should I let it…' question. Produces allowed/ask-first/never actions, spending and data limits, required logs, failure + rollback, and a low-risk first-week test plan. Pairs with skill-security-auditor (audits skill code) — this scopes the runtime privileges around the agent."
 user-invocable: true
 ---
 

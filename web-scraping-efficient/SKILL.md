@@ -1,6 +1,6 @@
 ---
 name: web-scraping-efficient
-description: Token-efficient Python web scraping. Use whenever the user wants to scrape, crawl, extract, or pull data from a website, HTML page, online article, or GitHub repo — even when they don't say "token-efficient." Triggers on "scrape this site," "get the data from this page," "extract the article," "summarize this URL," "what's in this GitHub repo," or pasting a URL with an extraction goal. The skill's whole point is to keep raw HTML out of Claude's context: fetch and parse in a Python subprocess, return only the structured fields the user asked for. **Default behavior:** pick a bundled script, run it, write JSON to disk, show a head. Multi-step exploration is the exception.
+description: "Token-efficient Python web scraping. Use whenever the user wants to scrape, crawl, or extract data from a website, HTML page, online article, or GitHub repo — even when they don't say 'token-efficient'; triggers on 'scrape this site' or a pasted URL with an extraction goal. Keeps raw HTML out of Claude's context: fetch and parse in a Python subprocess, return only the structured fields asked for. Default: pick a bundled script, run it, write JSON to disk, show a head; multi-step exploration is the exception."
 ---
 
 # Token-efficient web scraping
