@@ -63,6 +63,27 @@ runs/2026-06-02-allegheny_pa/
     └── <address>.md     # one draft per top-N candidate
 ```
 
+## Listing-change monitoring
+
+Re-scraping a listing to check for a price drop or delisting doesn't need a full re-read — diff the snapshot instead.
+
+- Snapshot scraped listing content as markdown on disk, keyed by URL + date: `snapshots/<url-hash>/<date>.md`.
+- On re-scrape, run Python's `difflib.unified_diff` against the most recent snapshot and surface **only the changed hunks** — a price drop, a status change (`Active` → `Pending` / `Off Market`), a delisting.
+- Skip snapshots that produce zero diff; only act on candidates whose listing actually moved.
+
+```python
+import difflib
+old = open(f"snapshots/{url_hash}/{prev_date}.md").readlines()
+new = open(f"snapshots/{url_hash}/{today}.md").readlines()
+diff = list(difflib.unified_diff(old, new, lineterm=""))
+if diff:
+    print(f"{url}: changed\n" + "\n".join(diff))
+```
+
+No embeddings, no LLM call per re-scrape — a plain unified diff is enough to catch the signals that matter (price, status, delisting) without re-reading the whole listing each time.
+
+(Pattern source: firecrawl's change-tracking feature — plain unified diff over markdown snapshots, [`apps/api/src/services/monitoring/diff.ts`](https://github.com/firecrawl/firecrawl/blob/main/apps/api/src/services/monitoring/diff.ts). This is a from-scratch local version, no API dependency.)
+
 ## Counties supported
 
 - **`allegheny_pa`** — Allegheny County, PA (Pittsburgh and inner suburbs). Source: WPRDC (Western PA Regional Data Center).
