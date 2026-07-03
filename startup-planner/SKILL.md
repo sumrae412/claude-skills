@@ -1,6 +1,6 @@
 ---
 name: startup-planner
-description: Heavy, explicit-invocation startup planning workshop — 12 stages spanning Kawasaki Conception (genesis, sweet spot, mantra, business model, cofounder, MATT) and execution planning (Business Model Canvas, TAM/SAM/SOM, MVP/MoSCoW, Go/NoGo, Marp pitch deck). Also houses three optional add-on techniques: PRO/CON debate validation, AI stakeholder-clone rehearsal, and customer segmentation matrix. Heavy skill — ONLY invoke when the user explicitly says "/startup-planner", "run the startup planner", "work the startup planning workshop", or asks for Business Model Canvas / Kawasaki workshop / Marp pitch deck specifically. Do NOT auto-fire on vague phrases like "plan a startup" or "business idea" — use `startup-analysis` for brutal 6-step CLEARFRAME validation instead.
+description: "Heavy, explicit-invocation startup planning workshop spanning Kawasaki Conception (genesis, sweet spot, mantra, business model, cofounder, MATT) and execution planning (Business Model Canvas, TAM/SAM/SOM, MVP/MoSCoW, Go/NoGo, Marp pitch deck), plus optional PRO/CON debate validation, AI stakeholder-clone rehearsal, and customer segmentation matrix. ONLY invoke on explicit '/startup-planner' or a named ask for the Business Model Canvas / Kawasaki workshop / Marp deck. Do NOT auto-fire on vague 'plan a startup' or 'business idea' — use startup-analysis for CLEARFRAME validation instead."
 license: MIT
 metadata:
   author: summerela

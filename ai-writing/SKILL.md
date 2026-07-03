@@ -1,16 +1,6 @@
 ---
 name: ai-writing
-description: >
-  Best practices for AI-authored writing — the consolidated rules for when Claude
-  (or any LLM) drafts prose that a human will put their name on. Use whenever you
-  ask an AI to write, draft, rewrite, summarize, or polish anything and you want
-  the output to NOT read as generic AI sludge: emails, posts, newsletters, docs,
-  scripts, bios, marketing copy. Triggers on "/ai-writing", "make this not sound
-  like AI", "de-slop this draft", "best practices for AI writing", "write this so
-  it doesn't read as ChatGPT". Pulls the AI-relevant rules from the writing and
-  communication skills into one pre-ship gate. NOT a voice profile (use
-  writing-voice for Summer's voice, sme-voice for someone else's) and NOT a
-  conflict/timing layer (use communication-safeguards for heated messages).
+description: "Best practices for AI-authored writing — consolidated rules for when Claude (or any LLM) drafts prose a human will put their name on: emails, posts, newsletters, docs, scripts, bios, marketing copy. Use whenever AI-drafted output must not read as generic AI sludge; triggers on '/ai-writing', 'de-slop this draft', 'make this not sound like AI'. Pulls the AI-relevant rules from the writing and communication skills into one pre-ship gate. NOT a voice profile (use writing-voice for Summer's voice, sme-voice for someone else's) and NOT a conflict/timing layer (use communication-safeguards for heated messages)."
 user-invocable: true
 ---
 

@@ -1,23 +1,6 @@
 ---
 name: writing-voice
-description: >
-  Loads Summer Rae's personal voice profile and applies it to any writing task
-  she's doing — fiction, personal essays, blog posts, newsletters, social posts,
-  course marketing hooks, L0 scripts, business emails, business documents, and
-  any other writing she'll put her name on. Trigger whenever Summer asks you to
-  write or draft anything: "write this for me", "draft an email", "help me
-  write", "write as me", "in my voice", "write a doc about", "draft a message".
-  Default to this skill for any writing task unless she's clearly editing
-  someone else's work or ghostwriting in another person's voice.
-
-  The skill loads two things: (1) her voice for creative/personal writing —
-  sensory, deadpan dark humor, show-don't-tell; (2) her preferences for
-  business writing — minimal, direct, lead with the ask, no hollow openers.
-
-  Do NOT use this skill when: editing an SME's course content where you're
-  preserving their voice (use sme-voice instead), ghostwriting entirely in
-  someone else's voice (use sme-voice), running ToneGuard analysis, or
-  summarizing/analyzing documents.
+description: "Loads Summer Rae's personal voice profile for any writing she'll put her name on — fiction, personal essays, blog posts, newsletters, social posts, course marketing hooks, L0 scripts, business emails and documents. Applies her creative voice (sensory, deadpan dark humor, show-don't-tell) and her business-writing preferences (minimal, direct, lead with the ask, no hollow openers). Default whenever Summer asks you to write or draft anything ('write this for me', 'in my voice'). NOT for ghostwriting or preserving an SME's voice (use sme-voice), ToneGuard analysis, or summarizing/analyzing documents."
 ---
 
 # Writing Voice: Summer Rae

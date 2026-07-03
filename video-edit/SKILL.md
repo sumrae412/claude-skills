@@ -1,6 +1,6 @@
 ---
 name: video-edit
-description: Use when the user wants QC/cut-list/pacing analysis of a screencast, tutorial, or narrated recording — generates a timestamped incident log of stumbles, repeated phrases, filler words ("um", "uh", "like"), dead air, inaudible audio, and visual issues (frozen view, stuck cursor, wrong tab, black frames, audio-visual mismatch) without modifying the source video. Triggers include "review this video for pacing", "check for stumbles", "generate a cut list", "analyze this screencast for errors", "find dead air in this recording", "where did I fumble in this take", "did the cursor get stuck", "is the wrong tab showing", "audio doesn't match visuals". Companion to automated-screencast-director — that skill records screencasts, this one QCs them.
+description: "Use for QC / cut-list / pacing analysis of a screencast, tutorial, or narrated recording — generates a timestamped incident log of stumbles, repeated phrases, filler words, dead air, inaudible audio, and visual issues (frozen view, stuck cursor, wrong tab, black frames, audio-visual mismatch) without modifying the source video. Triggers on 'review this video for pacing', 'generate a cut list', 'find dead air'. Companion to automated-screencast-director — that skill records screencasts, this one QCs them."
 ---
 
 # Screencast Pacing & Repetition Notator

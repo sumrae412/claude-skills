@@ -1,6 +1,6 @@
 ---
 name: debate-team
-description: Unified review skill with auto-tiering — absorbs PlanCraft and adversarial-thinking. Tier 0 (single-conversation devil's advocate or steelman, no API calls — for pressure-testing ideas, plans, decisions, beliefs, strategies, startup concepts, arguments, or assumptions before incurring multi-model cost). Tier 1 (DeepSeek scope check). Tier 2 (DeepSeek + second critic). Tier 3 (full debate). Trigger phrases for Tier 0: "attack this idea", "devil's advocate", "steelman", "find flaws", "argue against", "understand the other side". In Codex, use Claude/Anthropic as the second external critic instead of GPT-5 unless the user explicitly requests GPT-5. Conditional Haiku Style critic for frontend.
+description: "Unified review skill with auto-tiering — absorbs PlanCraft and adversarial-thinking. Tier 0: single-conversation devil's advocate or steelman, no API calls, for pressure-testing ideas, plans, decisions, strategies, or assumptions ('attack this idea', 'find flaws', 'steelman', 'argue against'). Tier 1: DeepSeek scope check. Tier 2: DeepSeek + second critic. Tier 3: full debate. In Codex, use Claude/Anthropic as the second external critic unless the user explicitly requests GPT-5. Conditional Haiku Style critic for frontend."
 ---
 
 # Unified Review — Debate Team
