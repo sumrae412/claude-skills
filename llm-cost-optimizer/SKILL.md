@@ -27,6 +27,19 @@ Return on Tokens: `ROT = (Value of Output − Cost of Tokens) / Cost of Tokens �
 
 **Compile-to-deterministic-code pattern:** for repetitive, high-accuracy work, the highest-ROT move is often eliminating the per-request LLM call entirely — use the LLM once to learn the rule, then refactor it into deterministic code that runs free and only changes when the world changes. Agents improvise; that's the wrong runtime for work that needs consistent quality at volume. Worked example: [courierflow_beta PR #140](https://github.com/sumrae412/courierflow_beta/pull/140) — a regex grader superseded an LLM judge once the spec collapsed to a single verifiable clause (1.00 on 10 calibration items, zero recurring judge spend).
 
+## Keep Costs Flat While Usage Grows (policy posture)
+
+When usage is growing, the goal is flat spend through infrastructure, not usage
+caps. Five levers, in the order Coinbase reported applying them at scale
+(Brian Armstrong, X, 2026-06): (1) cheaper open-weight defaults for
+non-judgment traffic (e.g. GLM/Kimi tiers — matches the eval-iteration tier
+pattern below); (2) prompt-preprocessing routing (see `model-router`);
+(3) cache-aware request shaping — their reported cache-hit move was 5%→60%;
+(4) lean context + disconnecting unused tools per request; (5) **visibility
+over suppression** — tie spend to feature-level impact (the ROT framing above)
+and alert on anomalies, rather than hard-capping users. Suppression hides
+demand signal; visibility converts it into routing decisions.
+
 ## Before Starting
 
 **Check for context first:** If project-context.md exists, read it before asking questions. Pull the tech stack, architecture, and AI feature details already there.

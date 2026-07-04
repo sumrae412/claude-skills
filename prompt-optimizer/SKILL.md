@@ -115,6 +115,27 @@ Template frameworks (see `references/templates.md`): CO-STAR, RISEN, RTF
 
 ---
 
+## Step 7 (optional): Close the Loop with Evals
+
+For prompts that run repeatedly in production (judges, classifiers, agent system
+prompts), one-shot optimization is a guess — close the loop against failures:
+
+1. **Build an eval corpus from your own git history.** Merged PRs + their linked
+   issues + the tests that shipped are labeled examples of "what good looked
+   like" for this codebase — mine them instead of hand-authoring cases from
+   scratch. (Pattern: Arize's prompt-learning loop,
+   https://github.com/arize-ai/prompting — "your git history is your own
+   SWE-bench.")
+2. **Run the current prompt against the corpus, collect failures.**
+3. **Feed failures to a meta-prompt that rewrites the target prompt**, then
+   re-run. Keep the change only if the pass rate moves.
+
+Skip this step for one-off prompts — the corpus cost only pays back on prompts
+with recurring traffic. For variant analysis at scale, hand off to
+`prompt-optimization`; for judge-prompt integrity rules, see `evals`.
+
+---
+
 ## Scripts
 
 ```bash

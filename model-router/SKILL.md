@@ -112,6 +112,17 @@ Modifiers cap at one tier in either direction — don't chain them. The point is
 
 ---
 
+## Live pricing data (optional upgrade)
+
+The tier tables above hardcode the Claude price ratios. When routing decisions
+need cross-provider or up-to-the-day data (a GLM-vs-Haiku eval tier call, a
+"cheapest model above quality bar X" question), the **OpenRouter MCP** exposes
+live per-provider pricing, latency, and benchmark scores for 400+ models —
+query it instead of trusting a stale table. Not installed by default; connect
+it only for sessions that genuinely need cross-provider routing, and treat its
+benchmark scores as one signal, not the verdict. (Surfaced 2026-07-04 via
+/articles triage; static tables remain the default path.)
+
 ## Subagent Fleet Routing
 
 **Highest-leverage section.** When dispatching 2+ parallel agents, model choice multiplies across the fleet — a 5-agent Opus dispatch costs 5× more than a 5-agent Sonnet dispatch, and the marginal recall from Opus on file-search tasks is near zero. Conversely, dispatching Haiku reviewers for a security audit is false economy: each one produces shallow critiques and the orchestrator has to redo the work on Opus anyway.
