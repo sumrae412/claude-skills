@@ -45,7 +45,27 @@ Call `mcp__a5ce767d-48cc-4ac0-b83a-4a0e2432ee4a__list_notes` with `collection_id
 
 Do NOT pull from any other collection. If a note appears in both Claude articles and another collection (e.g. Article Collection), it is still in scope, but only because of its Claude-articles membership.
 
-Default cap: 10 notes per run. If the queue is larger, ask the user "20 unread items — process all, or first 10?" before continuing.
+**Queue-size routing:**
+
+- **≤10 notes** → serial triage in the main thread (steps 2–5 below). Below this size, serial is cheaper than fan-out and the cache stays warm.
+- **11–40 notes** → **swarm mode** (step 1b): group by theme, one agent per group, all in parallel. Announce the grouping plan in one line, then proceed — no confirmation needed.
+- **>40 notes** → ask before burning the fan-out ("62 unread — swarm-process all, or newest 40?").
+
+### 1b. Swarm mode — group, fan out, synthesize
+
+For large queues, don't triage serially and don't dispatch one agent per note — group first, then one agent per group.
+
+1. **Group in the main thread, from titles alone.** `list_notes` already returned titles — cluster them into 3–6 thematic groups of ~4–8 notes each (e.g. "agent orchestration", "prompting/evals", "product/startup", "misc"). Do NOT fetch note bodies to group; titles are enough, and a "misc" group is a legitimate bucket for stragglers.
+2. **One agent per group, all dispatched in ONE parallel block.** Use a `general-purpose` executor with an explicit down-tier model override (sonnet) — never let a swarm agent inherit the orchestrator's model. Each brief is self-contained and MUST include:
+   - The group's note ids + titles, the full Targets list, and the verdict rubric + per-article output format from steps 2–3 (agents fetch bodies themselves via `get_note` — they can load Mem tools through ToolSearch).
+   - The triage-mode rules that bite downstream, restated: body-less captures = LOW-confidence title-level verdicts; known-failure tracking links (Half Baked, Beehiiv) = never fetch; code-repo links = the agent does the source-read itself, inline in its own foreground.
+   - `[read-only]` — read, fetch, and assess only. NO archiving, no collection writes, no repo edits, no PRs. Findings come back to the orchestrator.
+   - *"Work in your own foreground; do NOT spawn background sub-agents."*
+   - *"Return results immediately after the tool call that found them. Do NOT emit commentary between tool calls."* Plus a per-article report cap (~120 words).
+3. **Synthesize in the main thread.** Collate group reports into the step-3 per-article sections and the step-4 rollup. Dedup across groups: the same article captured twice gets one section; two groups proposing edits to the same target skill/file get their "next action" merged so the user sees one edit, not two.
+4. **Archiving stays in the main thread.** Swarm agents never touch collections — after synthesis, the orchestrator runs step 5's Batch A/B over the full note-id list exactly as in a serial run.
+
+Why grouping instead of per-note fan-out: each dispatch re-pays its briefing + tool-discovery overhead (fan-out costs ~7–10× a serial pass per agent), and related articles triaged together produce coherent, non-duplicative verdicts against the same target.
 
 ### 2. Triage each note via `useful-for`
 
