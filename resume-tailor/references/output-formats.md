@@ -306,7 +306,14 @@ Before the final confirmation, load `references/resume-qa.md` and run its sectio
 
 - **DOCX:** use pandoc with `--reference-doc=` pointing at the appropriate template in `templates/` — this inherits the user's fonts, margins, and heading styles on every render. See `templates/README.md` for the exact command. If `pandoc` is unavailable, deliver reviewed markdown and stop there unless the user requests a different conversion path you can actually verify.
 - **DOCX via `/tmp/` script:** if generating with a standalone node script that imports `docx-js`, the module is often installed globally. Wrap the call: `NODE_PATH="$(npm root -g)" node /tmp/generate_resume_docx.js`. Without `NODE_PATH`, node can't resolve global packages from scripts outside an npm project and fails with `Cannot find module 'docx'`.
-- **PDF:** convert from DOCX (Word, Pages, LibreOffice) OR render markdown via pandoc. Avoid PDF as primary source — ATS parses PDF unreliably. Submit DOCX when allowed; PDF only when required.
+- **PDF (Summer's default output — see note below):** the styling-preserving path is DOCX → PDF via LibreOffice (`soffice --headless --convert-to pdf out.docx`). When LibreOffice AND weasyprint are both unavailable (weasyprint needs pango/gobject native libs that are often missing on macOS Python.org installs and fails with `OSError: cannot load library 'gobject-2.0-0'`), the verified fallback is pandoc → styled HTML → Chrome headless:
+  ```bash
+  pandoc resume.md -t html5 -s --css=resume.css --embed-resources -o resume.html
+  "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome" --headless --disable-gpu \
+    --no-pdf-header-footer --print-to-pdf="$PWD/resume.pdf" "file://$PWD/resume.html"
+  ```
+  A single-column ATS-safe CSS (Georgia body, Helvetica-family headings, ALL-CAPS `h1` with a bottom border, italic date line via the `h2 + p` selector) renders cleanly. **Gotcha:** pandoc emits the name/headline `custom-style` divs as `data-custom-style="Title"` / `data-custom-style="Subtitle"` in HTML — target `div[data-custom-style="Title"] p` in the CSS, NOT `div[custom-style="Title"]` (no `data-` prefix), or the name silently renders as plain body text while a bolded contact line outweighs it. Tighten `@page` margins and `h1`/`h2` top-margins to pull a lone trailing line back onto the prior page. Count pages with `python3 -c "import re;print(len(re.findall(rb'/Type\s*/Page[^s]', open('resume.pdf','rb').read())))"` (macOS `mdls` page count is often null before Spotlight indexes). Avoid PDF as ATS *primary* source when DOCX is accepted; render PDF when the form requires it or the user prefers it.
+- **Summer's standing preference:** deliver the resume as **PDF, not DOCX** (set 2026-07-04; see project memory `resume-output-pdf-preference`). Render the PDF, keep the `.md` source, and do not leave a DOCX behind unless she asks.
 - **Plain text:** for pasting into LinkedIn or ATS forms, generate a plain-text version stripped of markdown syntax.
 
 Never offer HTML, LaTeX, or heavily-designed templates as default. They fail ATS parsers.
