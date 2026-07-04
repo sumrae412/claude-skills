@@ -279,6 +279,7 @@ He writes like he's writing a screenplay. Speaks words out loud with no polish, 
 
 ### Never:
 - Em dashes (reads as AI writing)
+- Open with "Honestly," / "To be honest," / "Honestly speaking," — a filler opener that implies the rest isn't honest
 - "All the best" or equivalent performative closings
 - "Here's what actually matters" / "Let me tell you how this works" — presumptuous openers
 - Long, fancy words to signal intelligence rather than convey meaning
@@ -328,6 +329,7 @@ The goal is to internalize her sensibility, not to mechanically apply every patt
 
 - **HARD RULE** — Never violate:
   - No em dashes
+  - Never open anything with "Honestly," (or "Honestly speaking," / "To be honest,") — it signals the rest wasn't
   - Never explain the meaning of a story when you can show it
   - No "All the best" or equivalent hollow closings
   - Never write something she doesn't believe under her name
