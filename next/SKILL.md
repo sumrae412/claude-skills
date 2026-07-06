@@ -66,6 +66,8 @@ Do not manually invoke session-learnings, sync repos, or remove worktrees — `/
 
 If Step 2 was skipped (clean tree, nothing to ship), invoke `/cleanup` directly instead.
 
+**Session-learnings is NOT skippable at /next.** Run it even if a learnings pass already fired earlier in the session — /next is a cluster boundary, and work done after the earlier pass (fixes, corrections, shipped rules) is exactly the material that otherwise dies in chat scroll. "The learning was already codified into a rule this session" is not a skip reason either: the analyst's job includes checking whether the codified rule needs cross-links or coverage elsewhere. The ONLY valid skip is a session with zero substantive work since the last pass (pure lookup/status sessions). Origin: 2026-07-06 — a /next close-out skipped learnings with a plausible-sounding rationale; Summer corrected: the next command should include running session learnings.
+
 ## Step 4 — Output the continuation prompt
 
 At the end, output ONE fenced block the user can copy into their next session:
