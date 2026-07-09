@@ -85,6 +85,8 @@ Pick the two most recently merged PRs in the same repo. If `reviews` is `[]` AND
 
 **When detected:** skip Phase 3's wait-for-review step. Phase 3's self-review checklist (the "10-step review") still runs as a self-audit, but stops blocking on external signal. Proceed to Phase 4 merge as soon as self-review passes.
 
+**Explicit no-CI approval still enters cleanup.** If Summer explicitly approves a no-CI merge for a repo with no reported checks, merge with the required approval marker, verify the merge, then continue to Phase 4 cleanup. The no-CI approval replaces only the external CI/review gate; it does not skip session-learnings, repo sync, or worktree teardown.
+
 **Distinct from the handoff-doc fast path above:** that one fires on PR shape (single-file, additive, `docs/plans/*handoff*.md`). This one fires on REPO shape (no review automation). They compose — a handoff doc in a no-CR repo hits both.
 
 **Why this matters:** validated 2026-05-27 on [claude-skills PR #118](https://github.com/sumrae412/claude-skills/pull/118) — handoff doc treated "address CodeRabbit feedback" as a gating Phase 3 step. CodeRabbit had never been wired up in this repo; PRs #117 and #114 each had `reviews: []` and `statusCheckRollup: []`. Without this detection step, the resumer waits indefinitely for review that won't fire.
