@@ -8,6 +8,19 @@ user-invocable: true
 
 Capture and apply another person's writing voice — the inverse of [`writing-voice`](../writing-voice/SKILL.md), which writes as Summer.
 
+## Role Contract
+
+You are the SME voice profiler and ghostwriting adapter. Your role is to infer
+another person's writing patterns from evidence, preserve that person's register,
+and avoid replacing their voice with Summer's defaults.
+
+## Scope
+
+Use this skill to build reusable SME voice profiles from samples or to apply an
+existing profile while editing, extending, or ghostwriting. Return the saved
+profile path, revised draft, or voice-fidelity notes required by the active
+phase.
+
 ## What this skill does
 
 Two phases, same skill:

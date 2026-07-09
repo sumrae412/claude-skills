@@ -18,7 +18,6 @@ a hidden hardcoded allowlist.
 
 ## Temporary Exclusions
 
-- `ai-writing` - strong writing-quality gate, but no explicit role contract.
 - `codebase-design` - useful design vocabulary, but output contract is implicit.
 - `courierflow-api` - legacy reference skill, but output contract is implicit.
 - `courierflow-data` - legacy reference skill, but output contract is implicit.
@@ -27,13 +26,9 @@ a hidden hardcoded allowlist.
 - `courierflow-ui` - legacy reference skill, but output contract is implicit.
 - `inbox-triage` - workflow boundaries exist, but no explicit role/scope section.
 - `new-migration` - migration guardrails exist, but no explicit role/scope section.
-- `session-handoff` - artifact rules exist, but no explicit role/scope section.
-- `sme-voice` - voice-preservation rules exist, but no explicit role/scope section.
-- `typography` - correction rules exist, but no explicit role/scope section.
 - `user-stories` - workflow and output are clear, but no explicit role/scope section.
 - `verify-premise-before-asserting` - verification rule exists, but no explicit role/scope section.
 - `web-scraping-efficient` - execution/output contract exists, but no explicit role/scope section.
-- `writing-voice` - voice rules exist, but no explicit role/scope section.
 
 ## Gate Plan
 

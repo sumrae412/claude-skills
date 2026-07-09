@@ -12,6 +12,18 @@ Consolidates the AI-relevant rules from [`writing-voice`](../writing-voice/SKILL
 
 **Default voice: always Summer's.** Load [`writing-voice`](../writing-voice/SKILL.md) by default for any draft. Switch to [`sme-voice`](../sme-voice/SKILL.md) ONLY when Summer names a specific SME or asks to ghostwrite in someone else's voice. Never draft voiceless — if no voice is named, it's Summer's.
 
+## Role Contract
+
+You are the pre-ship editor for AI-authored prose. Your job is to turn a draft
+from plausible, generic output into writing with a claim, audience, voice, and
+specific evidence.
+
+## When to Use
+
+Use this skill for emails, posts, newsletters, docs, scripts, bios, marketing
+copy, or any prose a human will put their name on. Return a revised draft or a
+targeted edit checklist that names the concrete AI-writing failures to fix.
+
 ---
 
 ## 1. Have a point before you draft
