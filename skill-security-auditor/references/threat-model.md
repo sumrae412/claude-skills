@@ -104,6 +104,23 @@ AI agent skills have three attack surfaces:
 | Dependency confusion | Private namespace collision | Public package shadows private one |
 | Runtime install | pip install in scripts | Install packages at runtime, bypassing review |
 
+### T6: Agent Trust & Permission Patterns
+
+**Goal:** Exploit the agent's capability composition rather than the skill's code directly. The skill is "benign" line-by-line but creates a high-blast-radius runtime when combined with the agent's other tools / standing permissions.
+
+| Vector | Technique | Example |
+|--------|-----------|---------|
+| Lethal Trifecta | (a) read untrusted + (b) sensitive access + (c) external comms in one agent | Skill that fetches web pages, has Gmail read scope, and can send messages → prompt-injected page can autonomously exfiltrate inbox |
+| Egress = destination filter | Allowlist by URL/domain, not by data scope | `ALLOWED_HOSTS = ["api.openai.com"]` — model can be induced to send sensitive payloads to an allowed but attacker-controlled tenant |
+| Trust-boundary parsing | Parse project-local config before trust boundary | Running `package.json` `postinstall` or `.claude/hooks` script in same process as agent's privileged tools |
+| Permission scope creep | Standing broad OAuth scopes / `permissions.allow` | Gmail+Drive+filesystem+network all granted without per-action confirmation |
+| No HITL for sensitive actions | Irreversible/visible action without confirm step | `git push`, `send_email`, `delete_*`, `charge_card` with no audit log or confirmation gate |
+| Agent Card poisoning (A2A) | Malicious metadata in agent discovery | Attacker controls capability claims at well-known URLs; authentication proves identity but not honesty |
+
+**Sources:**
+- [Anthropic — How we contain Claude across products](https://www.anthropic.com/engineering/how-we-contain-claude) (2026-05-25) — origin of egress-as-capability-grant lesson, custom-security-as-weakest-link warning, and trust-boundary timing for config parsing.
+- [ToxSec — Google I/O: Agentic Security and New Threats](https://www.toxsec.com/p/ai-agent-security-after-google-io) (2026-05-25) — origin of "Lethal Trifecta" naming, A2A Agent Card poisoning, scope-creep diagnosis.
+
 ---
 
 ## Attack Vectors by Skill Component
