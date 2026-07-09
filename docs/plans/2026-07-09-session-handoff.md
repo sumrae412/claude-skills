@@ -94,6 +94,19 @@ yes for PR #208. If PR #208 is already merged, start PR 3 from fresh
 `origin/main` and update this handoff doc or a new dated handoff entry with the
 new PR number before merging.
 
+## PR 3 Update
+
+- PR #208 is merged.
+  - Merge commit: `73249a6e04b14a602f317a73466bf98e7bc13b6f`.
+- PR #209 is open for the first exclusion burn-down batch.
+  - Branch: `codex/persona-contract-pr3`.
+  - Scope: `ai-writing`, `typography`, `writing-voice`, `sme-voice`, and
+    `session-handoff`.
+  - Local baseline after patch: `127` skills, `11` weak, `11` excluded,
+    `0` unexcluded.
+- This repo still reports no PR checks, so PR #209 should not be auto-merged
+  unless Summer explicitly approves a no-CI merge or CI is added first.
+
 ## Mode Directive
 
 Auto mode. Surface premise contradictions only.
