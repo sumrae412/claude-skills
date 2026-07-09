@@ -46,6 +46,28 @@ Never pass to subagents:
 User must approve the plan before any implementation begins.
 </HARD-GATE>
 
+### Read the Sprint Contract first
+
+Before any tool calls, read `.claude/sprint-contract.json` (emitted by Phase 4 Step 5c). The `exclusions` array is a **hard boundary** — items listed there are out of scope for this phase. Do not touch them even if they look related, broken, or trivially improvable. If the in-flight work surfaces a real reason to violate an exclusion, stop and surface it to the user as a scope-amendment request — do not silently expand.
+
+The `verification_standards` map is the per-task definition-of-done. A task is not complete until its listed commands/artifacts produce the expected result; see WIP=1 + VCR below.
+
+Source: [Learn Harness Engineering, lecture 11](https://walkinglabs.github.io/learn-harness-engineering/en/) — exclusions as the structural defense against scope creep.
+
+### WIP=1 + Verified Completion Rate (VCR) invariant
+
+**WIP=1:** Exactly one task in `$plan.steps` may have status `in_progress` at any time. Mark the next task `in_progress` only after the previous task is `verified_complete` (not just `complete`).
+
+**Verified Completion Rate:** `VCR = verified_complete / total_attempted` reported at every task boundary.
+
+- A task is `verified_complete` only when its `verification_standards` from the Sprint Contract have been run and produced the expected result (command exited 0, artifact exists with expected content, test passed). Reading the diff and concluding "looks right" does NOT count.
+- A task that was marked `complete` but failed verification is `attempted_not_verified` and contributes to the denominator but not the numerator.
+- The existing Phantom-Completion Audit (HARD GATE before Phase 5.5) is the canonical VCR computation — its output (`X [X] tasks audited, Y verified, Z downgraded to [~]`) IS the VCR signal. Wire the audit's numerator/denominator into the phase-exit summary as `vcr: 0.XX`.
+
+**Block new task activation when `vcr < 1.0`.** If any prior task is `attempted_not_verified`, do not mark the next task `in_progress`. Either finish the verification (run the standards command, fix the gap) or amend the plan with an explicit `[~]` and justification. This converts the silent-skip failure mode (mark complete → move on → audit catches it at phase exit) into a per-task gate.
+
+Source: [Learn Harness Engineering, lecture 07](https://walkinglabs.github.io/learn-harness-engineering/en/) — WIP=1 and Verified Completion Rate as the two invariants that keep agentic execution honest at task granularity, not just phase granularity.
+
 ### Goal-mode entry (when `--goal` is set)
 
 After the plan approval gate clears and BEFORE invoking the External API Contract gate, check `state.flags.goal === true` and inject the Phase 5 goal:
@@ -311,6 +333,38 @@ For each `[X]` task in the plan, verify the promised artifacts (files, symbols, 
 and iteration < 3, load `references/phase-5-retry-and-facts.md` and follow the
 retry ladder. If iteration limit is reached, set status to "failed" and surface
 it to the user.
+
+---
+
+## Agent-Oriented Error Messages (what + why + fix)
+
+Error and diagnostic output produced during Phase 5 — hook output, lint rules, finding payloads, test failures emitted by project-local helpers, structured logs — must follow a three-element format so the consuming agent has enough signal to act without re-deriving context:
+
+```
+ERROR: <what failed, as observable fact>
+WHY:   <root cause or most-likely cause, named concretely>
+FIX:   <the next concrete action — command, edit, or decision>
+```
+
+Example (good):
+
+```
+ERROR: pytest tests/test_workflows.py::test_create exited 1 with AssertionError on line 42.
+WHY:   The fixture `workflow_factory` returns a Workflow with status=draft, but the assertion expects status=active. The fixture default changed in commit a1b2c3d.
+FIX:   Either update the assertion to expect `draft`, or pass `status="active"` to the factory call on line 38.
+```
+
+Example (bad — what's wrong, no signal on why or fix):
+
+```
+AssertionError: expected 'active', got 'draft'
+```
+
+**Where to apply:** any hook that emits to stdout/stderr during Phase 5, custom lint rules and detectors, finding payloads from in-repo reviewers (`pr-reviewer/triage.ts` in the claude_flow repo is the canonical implementation site — output finding JSON should include `what`/`why`/`fix` keys, not just `message`), test-helper assertion messages, and structured-log statements that another agent or human will read.
+
+**Where NOT to apply:** raw tool output from third-party CLIs (pytest, ruff, semgrep) — wrapping their output would lose grep-ability. The rule covers messages this codebase emits, not messages it merely passes through.
+
+Source: [Learn Harness Engineering, lecture 10](https://walkinglabs.github.io/learn-harness-engineering/en/) — Agent-Oriented Error Messages as the diagnostic contract that lets downstream agents recover without round-tripping for context.
 
 ---
 
