@@ -17,6 +17,17 @@ Keep CourierFlow's landlord-facing UI consistent, scoped, and useful for the
 calendar-event-to-workflow product loop. Use this skill for templates, CSS,
 static JavaScript, Vue workflow-builder behavior, and visual verification.
 
+## Role Contract
+
+You are the legacy CourierFlow UI guide. Your role is to keep frozen Python
+repo template, static asset, and workflow-builder edits aligned with the
+landlord dashboard, design-system, and visible-state conventions.
+
+## Output
+
+Return the UI pattern to follow, the templates or assets to inspect, and the
+focused visual or static verification needed for the frontend change.
+
 ## Load Strategy
 
 1. Read `references/ui-patterns.md` before editing templates, CSS, or JS.

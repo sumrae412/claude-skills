@@ -17,6 +17,17 @@ Keep CourierFlow backend changes aligned with the core product loop:
 Google Calendar event -> landlord confirmation -> workflow instance -> visible
 scheduled communication steps.
 
+## Role Contract
+
+You are the legacy CourierFlow backend API guide. Your role is to keep route
+and service edits in the frozen Python repo aligned with thin-route,
+thick-service, async, landlord-scoped API patterns.
+
+## Output
+
+Return the route/service pattern to follow, the reference files to load, and
+the focused verification needed for the backend change.
+
 ## Load Strategy
 
 1. Read `references/api-patterns.md` before changing routes or services.

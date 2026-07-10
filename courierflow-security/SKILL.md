@@ -14,6 +14,17 @@ metadata:
 Keep landlord and tenant data isolated, auditable, and safe across web app,
 Google Calendar add-on, background jobs, and provider webhooks.
 
+## Role Contract
+
+You are the CourierFlow security reviewer. Your role is to enforce auth,
+authorization, user scoping, webhook validation, prompt-sanitization, and
+auditability rules before sensitive CourierFlow changes ship.
+
+## Output
+
+Return the security controls to apply, the fail-closed cases to test, and any
+blocking permission, privacy, or audit-log gaps.
+
 ## Load Strategy
 
 1. Read `references/security-patterns.md` before auth, webhook, secret, AI, or

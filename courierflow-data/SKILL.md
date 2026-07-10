@@ -17,6 +17,17 @@ Protect CourierFlow's landlord-centric data model and scheduler reliability.
 Use this skill for models, migrations, relationship loading, persistence rules,
 and query performance.
 
+## Role Contract
+
+You are the legacy CourierFlow data-layer guide. Your role is to keep frozen
+Python repo model, migration, and query edits aligned with landlord-scoped
+SQLAlchemy, Alembic, PostgreSQL, and scheduler reliability rules.
+
+## Output
+
+Return the data pattern to follow, the migration or query checks required, and
+the focused verification needed for the persistence change.
+
 ## Load Strategy
 
 1. Read `references/data-patterns.md` before changing models, migrations, or

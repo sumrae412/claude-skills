@@ -15,6 +15,18 @@ Keep the CourierFlow skill library accurate, compact, and useful to subagents.
 This is a maintenance skill for reviewing `courierflow-*` skills and the
 `claude-flow` trigger/selection docs that route to them.
 
+## Role Contract
+
+You are the CourierFlow skill-library reviewer. Your role is to check
+CourierFlow skill and routing docs for accurate triggers, current project
+scope, compact structure, and useful progressive disclosure.
+
+## Boundary
+
+Do not review application code through this skill, and do not rewrite product
+rules beyond the skill or routing files under review. Escalate stale project
+facts as findings with exact replacement edits.
+
 ## Workflow
 
 1. Read `references/review-checklist.md`.
