@@ -105,6 +105,8 @@ V1 certified "TenantCloud messages editable = counter-example" as clean — it w
 
 Append a `## V2 Adversarial Fact-Check` section to `verification-report.md`: one row per claim — claim, primary source checked, verdict (CONFIRMED / REFUTED / UNVERIFIABLE), and the correction if refuted.
 
+The verdict applies to the claim AS STATED — no partial or hedged verdicts ("partially refuted" softens a refutation into a keeper). If a narrowed version of a refuted claim survives, the verdict is still REFUTED and the salvageable narrowing goes in the correction column.
+
 ## Propagation Rule: Correct raw/ Evidence in the Same Pass
 
 When verification corrects a derived deliverable in place, the uncorrected `raw/` evidence reports that fed it must be corrected or bannered in the SAME pass. Downstream authors (parallel sessions, handoff prompts, later phases) write from `raw/` and will re-import refuted claims.
