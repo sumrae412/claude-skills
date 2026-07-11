@@ -41,12 +41,13 @@ python3 ~/claude_code/claude-skills/scripts/build_doc_graph.py --root .
 
 ## Reading the report
 
-The report has five sections. Treat each one differently:
+The report has six sections. Treat each one differently:
 
 | Section | Confidence | Default action |
 |---|---|---|
 | **Hubs (>10 inbound refs)** | EXTRACTED | Do NOT retire. Deletion dangles N references silently. Consider splitting if overloaded. |
 | **True orphans** | EXTRACTED | Real deletion candidates — but verify nothing references them implicitly (e.g. CLAUDE.md routing) before deleting. |
+| **Dead links** (markdown links to missing .md files) | EXTRACTED | Fix the path, restore the file, or delete the reference. Checked against disk, so links into excluded dirs (archive/) are NOT flagged. Corpus-wide complement to `lint-memory`'s per-dir broken-link check. |
 | **Sinks** (referenced, never link out) | EXTRACTED | Often leaf nodes (specs, glossaries). Usually fine as-is. |
 | **Suggested missing cross-links** | INFERRED (keyword overlap) | **Default: add bidirectional `See also` links, NOT merge.** Read both files first. |
 | **Suggested questions for review** | INFERRED | Prompts for the human pass, not action items. |

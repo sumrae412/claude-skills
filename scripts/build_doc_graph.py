@@ -2,7 +2,7 @@
 """Build a doc-graph report for a markdown corpus.
 
 Walks the repo for .md files, extracts cross-references, and emits a
-GRAPH_REPORT.md with hubs, orphans, and missing-link suggestions.
+GRAPH_REPORT.md with hubs, orphans, dead links, and missing-link suggestions.
 
 Pure stdlib — zero external deps. Designed for the claude-skills repo but
 works on any markdown folder. Run from repo root:
@@ -198,6 +198,36 @@ def extract_links(
     return targets
 
 
+def extract_dead_links(md_path: Path, root: Path) -> list[str]:
+    """Explicit markdown links [text](target.md) whose target is missing on disk.
+
+    Deliberately narrower than extract_links: only LINK_RE targets are
+    checked — backtick mentions, skill slugs, and wikilinks are too fuzzy to
+    call "dead" without false positives. Existence is checked against the
+    filesystem, not the corpus, so links into SKIP_DIRS (archive/, worktrees)
+    don't count as dead.
+    """
+    # Doc examples use literal placeholder targets — not rot, skip them.
+    PLACEHOLDERS = {"path.md", "file.md", "example.md", "name.md", "slug.md"}
+    dead: list[str] = []
+    text = md_path.read_text(errors="ignore")
+    for _label, target in LINK_RE.findall(text):
+        if target.startswith(("http://", "https://", "mailto:", "tel:")):
+            continue
+        s = target.split("#", 1)[0].split("?", 1)[0].strip()
+        if not s.endswith(".md") or s in PLACEHOLDERS:
+            continue
+        if s.startswith("~"):
+            if not Path(s).expanduser().exists():
+                dead.append(s)
+        elif s.startswith("/"):
+            if not Path(s).exists():
+                dead.append(s)
+        elif not ((md_path.parent / s).exists() or (root / s).exists()):
+            dead.append(s)
+    return dead
+
+
 def extract_keywords(md_path: Path, top_n: int = 15) -> set[str]:
     text = md_path.read_text(errors="ignore").lower()
     # Strip code blocks (rough but good enough for keyword signal)
@@ -363,7 +393,7 @@ def _is_reference_dir_file(p: Path, root: Path) -> bool:
     return False
 
 
-def render_report(root: Path, paths, forward, reverse, missing) -> str:
+def render_report(root: Path, paths, forward, reverse, missing, dead) -> str:
     total_files = len(paths)
     total_edges = sum(len(v) for v in forward.values())
     hubs = sorted(paths, key=lambda p: len(reverse[p]), reverse=True)[:15]
@@ -393,6 +423,7 @@ def render_report(root: Path, paths, forward, reverse, missing) -> str:
         f"- **Cross-references found:** {total_edges}",
         "- **Hub nodes (top 15 by inbound refs):** see below",
         f"- **True orphans (zero links + not in any excluded asset class):** {len(true_orphans)}",
+        f"- **Dead links (markdown links whose .md target is missing on disk):** {sum(len(v) for v in dead.values())}",
         f"- **Progressive-disclosure references (Read-loaded, not orphans):** {len(pd_orphans)}",
         f"- **Command files (repo-root .md, slash commands or workflow docs — not orphans):** {len(cmd_orphans)}",
         f"- **Archive files (under `archive/`, intentional history — not orphans):** {len(archive_orphans)}",
@@ -431,6 +462,16 @@ def render_report(root: Path, paths, forward, reverse, missing) -> str:
             lines.append(f"- {rel(p, root)}")
     lines.append("")
 
+    lines.append("## Dead links (markdown links to missing .md files)")
+    lines.append("")
+    dead_items = [(p, t) for p in paths for t in dead.get(p, [])]
+    if not dead_items:
+        lines.append("_None._")
+    else:
+        for p, t in dead_items:
+            lines.append(f"- **{rel(p, root)}** → `{t}`")
+    lines.append("")
+
     lines.append("## Sinks (referenced but never link out)")
     lines.append("")
     if not sinks:
@@ -461,6 +502,11 @@ def render_report(root: Path, paths, forward, reverse, missing) -> str:
             f"- Should the {len(true_orphans)} true orphan file(s) be linked from "
             "an index, merged into a hub, or removed?"
         )
+    if dead_items:
+        lines.append(
+            f"- {len(dead_items)} dead link(s) point at missing files — fix the "
+            "path, restore the file, or delete the reference."
+        )
     if missing:
         a, b = missing[0][1], missing[0][2]
         lines.append(
@@ -485,7 +531,8 @@ def main():
 
     paths, forward, reverse, keywords = build_graph(root)
     missing = find_missing_links(paths, forward, keywords, threshold=args.missing_threshold)
-    out.write_text(render_report(root, paths, forward, reverse, missing))
+    dead = {p: extract_dead_links(p, root) for p in paths}
+    out.write_text(render_report(root, paths, forward, reverse, missing, dead))
     print(f"wrote {out} — {len(paths)} files, {sum(len(v) for v in forward.values())} edges")
 
     if args.json:
