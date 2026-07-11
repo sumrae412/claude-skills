@@ -211,6 +211,10 @@ def extract_dead_links(md_path: Path, root: Path) -> list[str]:
     PLACEHOLDERS = {"path.md", "file.md", "example.md", "name.md", "slug.md"}
     dead: list[str] = []
     text = md_path.read_text(errors="ignore")
+    # Links inside fenced code blocks / inline code are examples or test
+    # fixtures, not navigable references — strip before scanning.
+    text = re.sub(r"```.*?```", " ", text, flags=re.DOTALL)
+    text = re.sub(r"`[^`]+`", " ", text)
     for _label, target in LINK_RE.findall(text):
         if target.startswith(("http://", "https://", "mailto:", "tel:")):
             continue
