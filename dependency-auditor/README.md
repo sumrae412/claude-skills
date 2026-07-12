@@ -398,7 +398,7 @@ fi
 The `assets/` directory contains sample dependency files for testing:
 
 - `sample_package.json`: Node.js project with various dependencies
-- `sample_requirements.txt`: Python project dependencies
+- `sample_requirements.fixture`: Python project dependencies (requirements.txt format; `.fixture` extension keeps GitHub's dependency graph from raising dependabot alerts on the intentionally vulnerable pins)
 - `sample_go.mod`: Go module dependencies
 
 The `expected_outputs/` directory contains example reports showing the expected format and content.
