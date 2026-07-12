@@ -66,6 +66,11 @@ live in `../phases/phase-2-datasets.md`. On top of those:
   one-line prompt fix; keep cases that reveal lasting problems. Every
   kept case has a recurring cost (reruns on every change; judgment cases
   need review) — target coverage, not volume.
+- **Mining outputs assert; they don't prove.** Any mined claim about
+  fixture or dataset contents ("case X contains/lacks Y") must quote the
+  file line that proves it before entering a taxonomy or merged doc —
+  one unquoted claim cost a correction PR (2026-07-12, Q016,
+  [courierflow_beta#671](https://github.com/sumrae412/courierflow_beta/pull/671)).
 - **Synthetic diversity axes** — vary along three independent axes
   rather than generating more of the same:
   - *situation* (the scenario itself),
@@ -90,6 +95,16 @@ revise the task or rubric until explicit criteria resolve it. Run this
 on a sample before investing in grader calibration
 (`../phases/phase-3-evaluators.md` § Calibration assumes the task itself
 is answerable).
+
+Also run dual-review on existing FAILURE CLUSTERS before any
+grader-repair work — it localizes grader-vs-task cheaply at zero API
+cost (subagent reviewers only). Read both agreement patterns: a
+disagreement flags an ambiguous task; unanimous human-PASS/grader-FAIL
+flags rubric over-exactness. Validated 2026-07-12 (charley correctness
+suite, [courierflow_beta#671](https://github.com/sumrae412/courierflow_beta/pull/671)):
+14 contested cases, 13/14 reviewer agreement — the 1 disagreement and
+the 4 unanimous PASS/FAIL splits were equally load-bearing, and the
+review overturned one merged taxonomy label.
 
 Reference solutions serve the same pre-flight role: a known-good output
 proves the task is solvable AND the grader is configured correctly. For
