@@ -96,4 +96,4 @@ No layer is bulletproof. Use this skill on load-bearing claims and accept that y
 
 ## Why this exists
 
-Decision: [docs/decisions/2026-05-11-confidence-overclaim-discipline-failure.md](decisions/2026-05-11-confidence-overclaim-discipline-failure.md) (in CourierFlow). Recurring failure mode: extrapolation from a narrow verified case to broader uncovered surfaces in prose, with no signal for the user to intercept. Composes with `feedback_spike_unfalsifiable_when_prop_unaccessed.md` (same genus on a different artifact) and `feedback_verify_premise_before_executing_contradictory_plan.md` (premise-verification before acting).
+Decision: `~/claude_code/courierflow/docs/decisions/2026-05-11-confidence-overclaim-discipline-failure.md` (in the CourierFlow legacy repo). Recurring failure mode: extrapolation from a narrow verified case to broader uncovered surfaces in prose, with no signal for the user to intercept. Composes with `feedback_spike_unfalsifiable_when_prop_unaccessed.md` (same genus on a different artifact) and `feedback_verify_premise_before_executing_contradictory_plan.md` (premise-verification before acting).
