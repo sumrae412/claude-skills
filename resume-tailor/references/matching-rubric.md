@@ -112,6 +112,8 @@ If the reframe requires asserting something the user hasn't already demonstrated
 
 **The rule:** a reframe is reshuffling existing truth; a discovery question is asking for truth not yet on the page. If the reframed sentence contains a claim you cannot trace to a bullet in the current resume, you're over the line.
 
+**Never rewrite the candidate's actual job title — even when a different title is more accurate to the work.** Employment and background checks verify the title of record; a "truer" title (e.g. "Product Manager" → "Engineering Lead") fails verification and can sink an offer. Signal expanded or cross-functional scope through the role descriptor line and the bullets, not by changing the title itself.
+
 ## Bullet-level Sanity Checks
 
 Before shipping a reframe to the checkpoint:

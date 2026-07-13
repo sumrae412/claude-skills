@@ -1,0 +1,60 @@
+/* Brand sheet for the resume template's HTML->Chrome PDF fallback (output-formats.md §4).
+   Colors/fonts mirror resume-template.docx word/styles.xml: Title #353744 30pt,
+   Subtitle #00ab44 18pt, section h1 #00ab44 14pt, role h2 #353744 12pt, Proxima Nova.
+   Regenerate from styles.xml if the template changes. @page/font-size/line-height are
+   the only knobs to touch for page fit. */
+@page { margin: 0.42in 0.6in; }
+body {
+  font-family: 'Proxima Nova', 'Helvetica Neue', Arial, sans-serif;
+  font-size: 9.5pt;
+  line-height: 1.22;
+  color: #353744;
+  margin: 0;
+}
+div[data-custom-style="Title"] p {
+  font-family: 'Proxima Nova', 'Helvetica Neue', Arial, sans-serif;
+  font-size: 27pt;
+  font-weight: 700;
+  letter-spacing: 0.3px;
+  color: #353744;
+  margin: 0 0 1pt 0;
+}
+div[data-custom-style="Subtitle"] p {
+  font-family: 'Proxima Nova', 'Helvetica Neue', Arial, sans-serif;
+  font-size: 14pt;
+  font-weight: 600;
+  color: #00ab44;
+  margin: 0 0 6pt 0;
+}
+h1 {
+  font-family: 'Proxima Nova', 'Helvetica Neue', Arial, sans-serif;
+  font-size: 13pt;
+  font-weight: 700;
+  color: #00ab44;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  border-bottom: 1px solid #00ab44;
+  padding-bottom: 2pt;
+  margin: 8pt 0 3pt 0;
+}
+h2 {
+  font-family: 'Proxima Nova', 'Helvetica Neue', Arial, sans-serif;
+  font-size: 11pt;
+  font-weight: 700;
+  color: #353744;
+  margin: 7pt 0 0 0;
+}
+h2 + p {
+  color: #666666;
+  font-size: 9pt;
+  letter-spacing: 0.3px;
+  margin: 1pt 0 2pt 0;
+}
+p { margin: 3pt 0; }
+strong { font-weight: 700; color: #353744; }
+ul { margin: 2pt 0 5pt 0; padding-left: 15pt; }
+li { margin: 1.5pt 0; }
+a { color: #353744; text-decoration: none; }
+h1, h2 { break-after: avoid; }
+h2 + p { break-after: avoid; }
+li { break-inside: avoid; }
