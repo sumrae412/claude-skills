@@ -106,6 +106,10 @@ The `--reference-doc` flag pulls styles (Heading 1, Heading 2, body font, page m
 
 If `pandoc` is unavailable, stop at reviewed markdown unless the user explicitly asks for a different conversion path you can verify in the current host.
 
+## PDF / HTML rendering (fallback path)
+
+When LibreOffice is unavailable, the render goes markdown → HTML → Chrome headless (see `output-formats.md` §4). That path needs a CSS that mirrors this template's brand — the same fonts/colors `styles.xml` defines: Proxima Nova body; Title `#353744` 30pt; Subtitle `#00ab44` (green) 18pt; section `h1` `#00ab44` 14pt bold; role `h2` `#353744` 12pt. A committed brand sheet lives here as `resume.css` — copy it (adjust `@page`/font-size/`line-height` only for page fit) rather than copying a `resume.css` from a prior application folder, which ships that render's styling, not this template's. If the template ever changes, regenerate the CSS from `unzip -p resume-template.docx word/styles.xml`. Selectors must be `div[data-custom-style="Title"] p` / `div[data-custom-style="Subtitle"] p` (pandoc emits `data-custom-style`, not `custom-style`).
+
 ## When to deviate
 
 Deviate from template conventions only when:
