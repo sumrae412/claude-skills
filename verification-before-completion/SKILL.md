@@ -174,6 +174,20 @@ Validated 2026-05-22 on courierflow_beta PR #17 (cache-sync hook): post-fix bund
 
 **Pre-flight check before any runtime verification on a feature branch:** run `git log --oneline origin/main..HEAD` and `git merge-base HEAD origin/main` to know which fixes the bundle DOES NOT include. A branch forked before a fix lands ships the buggy bundle even when `main` is green.
 
+## False-Confidence Audit (test effectiveness, not just presence)
+
+A passing test suite is only evidence if the tests would actually *fail* when the behavior breaks. A test that passes whether or not the code works proves nothing — it is false confidence, and a green run built on it is a lie dressed as verification.
+
+Before claiming green on a test-backed change, audit test **effectiveness**:
+
+1. **Break the behavior on purpose** — revert the fix, comment out the guard, or corrupt the value the test depends on.
+2. **Run the suite — it MUST fail**, and fail for the *right reason* (the assertion that targets your change, not an unrelated error).
+3. **Restore and re-run — green again.**
+
+A test that stays green through step 2 asserts nothing about your change; fix the test before trusting the score. This is the general form of the TDD red-green cycle and the red-green-revert pattern above — applied as a gate on *any* "tests pass" claim, not just newly-written regression tests.
+
+Source: Jamon Holmgren's agentic verification setup (from the 2026-07-14 /articles triage).
+
 ## Why This Matters
 
 From 24 failure memories:
