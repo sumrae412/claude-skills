@@ -76,6 +76,10 @@ Read [`references/application-guide.md`](references/application-guide.md). It wa
 | "Update this script keeping the instructor's voice" | this skill (apply, ad-hoc if no profile) |
 | "Ghostwrite a LinkedIn post as Andrew" | this skill (apply) |
 
+## Voice-preservation boundary
+
+When preserving an SME's voice, use AI for research and fact-checking only — never to generate the prose itself. Once the words are machine-drafted, the SME's voice is gone no matter how good the profile; the profile guides *your* edits of their words, it does not license synthesizing new prose in their name. Source: Craig Mod, "How a Writer Uses AI Without Losing His Voice" (Every), from the 2026-07-14 /articles triage.
+
 ## Anti-overfitting reminder
 
 The profile is a source of truth, not a checklist. Three tendencies used naturally beats ten forced in awkwardly. Ask:

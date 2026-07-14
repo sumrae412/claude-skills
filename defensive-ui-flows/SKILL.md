@@ -89,6 +89,19 @@ This skill is a living document. Each bug fixed should make the next similar bug
 
 ---
 
+## Boundary Check vs. AI-Padded Check
+
+Guard clauses defend the UI, but not every check earns its keep. Before adding (or keeping) one, classify it:
+
+- **Boundary defensive check — KEEP.** Guards genuinely-reachable external input or mutable state: DOM query results (`getElementById` can return `null`), fetch/API responses, user input, framework state that other handlers mutate, `postMessage`/`chrome.runtime` payloads from another context. The condition can actually be false at runtime, so the guard is real defense.
+- **AI-padded defensive check — CONVERT or DELETE.** Restates an invariant a type (TypeScript non-nullable), a just-constructed literal, or single-ownership already guarantees — e.g. null-checking a value you assigned two lines up, re-validating a prop the type already narrows. It reads as diligence but adds dead branches that can never fire. Encode the intent as a `console.assert` / invariant that fails loud in dev, or delete it.
+
+The test: *"Can this condition actually be false given the types and who mutates this state?"* If no, it's padding — and padding conflicts with the "do not remove guards to simplify" rule below only in appearance: a real guard survives the test, padding never had a failure mode to protect.
+
+Ties to the thermo-nuclear `/simplify` rule 1 — "delete complexity, don't move it." An AI-padded guard is complexity with no reachable failure mode.
+
+Source: Laurence Tratt, "Local Reasoning for Global Properties" (from the 2026-07-14 /articles triage).
+
 ## Guardrails
 
 - These patterns apply to any JavaScript UI with async operations, modals, or multi-step flows

@@ -128,6 +128,19 @@ Before finishing backend code, verify your code against the catalog. The Quick R
 - A loader that silently no-ops when its input has unrecognized keys (makes every miswritten fixture/overlay/config invisible — throw instead, listing both found and expected keys)
 - A human-in-the-loop confirmation UI that renders the model's natural-language summary of an action (`"Confirm: {model_summary}"`) instead of reconstructing the confirmation text from the underlying tool call's typed arguments — a malicious model can phrase a state-mutating call as a benign read
 
+## Boundary Check vs. AI-Padded Check
+
+Not every defensive check earns its keep. Before adding (or keeping) a guard, classify it:
+
+- **Boundary defensive check — KEEP.** Guards genuinely-reachable external input or mutable state: request payloads, DB rows written by other code paths, third-party API responses, filesystem/network results. The invariant is *not* already guaranteed by the type system or ownership, so the runtime check is real defense.
+- **AI-padded defensive check — CONVERT or DELETE.** Restates an invariant the type system, a `@dataclass`, an enum, or single-ownership already guarantees (e.g. re-checking a non-`Optional` field for `None`, re-validating a value the constructor already validated). It reads as diligence but adds dead branches that can never fire. Either encode the programmer's intent as an `assert` (documents the invariant, fails loud in dev, compiles out under `-O`) or delete it.
+
+The test: *"Can this condition actually be false given the types and who writes this state?"* If no, it's padding.
+
+Ties to the thermo-nuclear `/simplify` rule 1 — "delete complexity, don't move it." An AI-padded guard is complexity with no reachable failure mode; converting it to an assertion moves the intent to where it belongs instead of leaving a dead runtime branch.
+
+Source: Laurence Tratt, "Local Reasoning for Global Properties" (from the 2026-07-14 /articles triage).
+
 ## Pre-flight Construction Smoke (Third-Party SDK Migration)
 
 Before committing to a third-party SDK migration, in a scratch script

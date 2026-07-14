@@ -131,6 +131,24 @@ hand-rolled harness.
   `references/error-analysis-and-test-sets.md`.
 - **For any evals-infra COST reduction PR, run a cost-audit subagent BEFORE writing code — produces per-suite $ attribution (`suite × N_calls × model × tokens × $/MTok`) and identifies the dominant driver.** Pin Anthropic pricing in the subagent prompt to avoid web-fetch drift. Without the audit, the natural failure mode is to optimize the visible cost (judge calls) when the real driver is the silent one (uncached SUT prefix resends). Validated 2026-05-30 on [courierflow_beta PR #147](https://github.com/sumrae412/courierflow_beta/pull/147): audit surfaced ~$7.6/run from uncached `SYSTEM_INSTRUCTIONS + tools` resent on ~175 Charlie calls; judge cost was <1% of total. Composes with the existing `/debate-team --harden` rule for evals-infra PRs — Tier 0 surfaces 5+ hardening repairs (wiring + telemetry + preflight + CI gate + decision record) that ALL belong in one PR.
 
+## Benchmark / eval self-audit (before trusting a failing score)
+
+A low score can be the *eval's* fault, not the model's. Before treating a failing score as a real regression, audit your own eval set for four flaw categories:
+
+1. **Overly-strict tests** — assert an exact string/format when several correct answers exist; penalize a valid path the spec allowed.
+2. **Underspecified prompts** — the question is ambiguous, so a "wrong" answer is actually a reasonable read of an unclear ask.
+3. **Low-coverage tests** — the assertion checks a narrow slice and misses the behavior that actually matters.
+4. **Misleading prompts** — the prompt implies a wrong answer, contains a false premise, or steers the model off.
+
+**Method:** automated screen (flag suspect cases programmatically) → investigator pass (walk each flagged trace to where the failure *originates*) → **N human reviewers per flagged item** (multiple labelers, not one, to catch labeler disagreement).
+
+Two adjacent traps this audit surfaces:
+
+- **Criteria drift.** Grading criteria are often not fully known up front — they surface *during* review as you see real outputs. Expect the rubric to evolve; version it, and re-grade earlier cases against the final criteria rather than trusting scores from a since-changed rubric.
+- **Soft failures automated graders miss.** Code-based and even LLM graders routinely pass outputs that fail on formatting, objection-handling, tone, or partial-answer completeness — the model "got the answer" but the response is unusable. Add explicit graders (or human review) for these soft dimensions; a green automated score is not proof the output is good.
+
+Sources: OpenAI, "Separating signal from noise in coding evaluations" + Parlance Labs, "Do Automated Evals Work?" (both from the 2026-07-14 /articles triage).
+
 ## Deliverables
 
 Produce only what the user needs:

@@ -311,6 +311,17 @@ Return JSON only:
 
 Ready to ship, or want to refine any section?
 
+## Reasoning-style variant: Chain of Draft (low-cost CoT)
+
+When the prompt asks the model to reason step-by-step (`<thinking_guidance>`, extended thinking, or an explicit "think step by step" instruction) AND the task is token-sensitive / high-volume — batch classification, extraction, arithmetic-style scoring — offer **Chain of Draft** as the cheaper variant of Chain-of-Thought.
+
+- **Chain-of-Thought:** intermediate reasoning in full prose. Accurate, verbose, expensive.
+- **Chain of Draft:** constrain each reasoning step to a **~5-word budget** — terse shorthand, one draft line per step, answer last. Reported to roughly match CoT accuracy on arithmetic / GSM8k-style tasks at a fraction of the reasoning tokens.
+
+Instruction to drop into `<thinking_guidance>`: *"Think step by step, but keep each step to a minimal draft of about five words. Return the final answer after the drafts."* Skip it for open-ended generative tasks where the reasoning trace is itself the product, or where auditing full traces is the point.
+
+Source: arXiv, "Chain of Draft: Thinking Faster by Writing Less" (from the 2026-07-14 /articles triage).
+
 ## Edge cases & gotchas
 
 - **Data vs. rules:** `<background>` holds reference data only. Decision logic goes in `<instructions>`. Mixing them breaks caching when rules change.
