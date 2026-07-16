@@ -81,10 +81,19 @@ in the henry repo). An LLM-judged "better" draft that fabricates is a regression
   forbidden to introduce any employer, title, date, degree, metric, number, tool, or
   skill not present in it.
 - Anything a model is not certain traces to the inventory is tagged inline `[verify]`.
-- A **post-loop guard** diffs the consensus artifact's proper nouns / numbers against the
-  inventory and prints any additions as `⚠️ TRUTH-GUARD REVIEW` on stderr. These are
-  review candidates (JD keywords legitimately appear too) — **surface every flagged item
-  to the user before finalizing**; never ship a flagged number or employer unresolved.
+- **Three post-loop mechanical guards** print `⚠️` blocks on stderr — **surface every
+  flagged item to the user before finalizing**:
+  - **Truth guard** — proper nouns / numbers in the output that trace to neither the
+    inventory nor the JD (JD language is legitimate by design; numbers are checked
+    against the inventory only, since a JD number pasted into a candidate claim is
+    still a fabrication).
+  - **Section-retention guard** (`draft-polish` only) — roles/sections present in the
+    input draft but missing from the output. Models are also prompt-forbidden to
+    silently drop a role: a cut recommendation goes in `remaining_concerns`, the role
+    stays in the artifact. Role deletion is a human decision.
+  - **Bullet-ban guard** — lines violating `references/resume-bullet-bans.md` §1
+    banned openers or §2 filler that survived the polish (mechanical tripwire on top
+    of the prompt injection; the doc stays authoritative).
 
 ## How to run
 
@@ -121,9 +130,26 @@ python3 $SKILLS/tools/resume-collab/collab_polish.py \
     --output out/cover-letter.md
 ```
 
-The consensus artifact is written to `--output`; the turn-by-turn transcript, convergence
-markers, and truth-guard warnings print to stderr. Read the transcript — if the final turn
-reports `remaining_concerns`, resolve them with the user rather than shipping silently.
+The consensus artifact is written to `--output`; the turn-by-turn transcript (with
+per-turn `$` spend), convergence markers, outcome label, total OpenRouter spend, and all
+guard warnings print to stderr. Read the transcript — if the final turn reports
+`remaining_concerns`, resolve them with the user rather than shipping silently. The
+summary's `outcome:` line distinguishes true `consensus (early stop)` from
+`round-cap reached (no formal consensus)` — don't call a cap-reached run "consensus".
+
+Operational notes:
+
+- **Full-length runs exceed 2 minutes** (5 flagship calls on a real resume + principle
+  files ran ~4-5 min). Run in the background or with an extended timeout; a foreground
+  2-minute default will kill the run mid-loop (validated 2026-07-16).
+- `--max-cost-usd N` aborts the loop (keeping the best artifact so far) once cumulative
+  spend crosses N. A full 5-turn run costs well under $1 at current prices; set ~$2 as
+  a sane ceiling.
+- Keep `--rounds` **even** — odd values end the loop on GPT instead of Claude, and the
+  script warns when you do it.
+- `OPENROUTER_API_KEY` lives in `~/.claude/.local.env`, which does **not** `export` its
+  vars — load with `set -a; source ~/.claude/.local.env; set +a` or child processes see
+  it empty (see agent-vault `shell-portability.md`).
 
 ## Failure handling (script already does this — know what to expect)
 
