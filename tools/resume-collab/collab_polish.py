@@ -82,7 +82,12 @@ TRUTH_GUARD = (
     "metric, number, tool, or skill that is not present in the inventory. If a "
     "stronger-sounding claim would require information not in the inventory, do NOT "
     "make it. Any reframe you are not fully certain traces to the inventory must be "
-    "tagged inline as `[verify]`. Fabrication is a failure, not a polish."
+    "tagged inline as `[verify]`. Fabrication is a failure, not a polish.\n\n"
+    "HARD RULE — NO SILENT ROLE DROPS. Never remove an entire role, job, project, or "
+    "section that is present in the draft you received. Trimming bullets within a role "
+    "is polishing; deleting the role is a scope decision that belongs to the human. If "
+    "you believe a role should be cut (space, YOE cutoff, relevance), KEEP it in the "
+    "artifact and put the recommendation in `remaining_concerns` instead."
 )
 
 STAGE_BRIEF = {
@@ -186,6 +191,14 @@ class TurnResult:
     remaining_concerns: str
     changes_made: str
     raw_ok: bool  # False if we had to fall back to raw text (JSON contract broken)
+    usage: dict = field(default_factory=dict)  # OpenRouter accounting for this turn
+
+    @property
+    def cost(self) -> float:
+        try:
+            return float(self.usage.get("cost") or 0.0)
+        except (TypeError, ValueError):
+            return 0.0
 
 
 def _extract_json_object(text: str) -> dict | None:
@@ -236,12 +249,18 @@ def _extract_json_object(text: str) -> dict | None:
     return None
 
 
-def call_openrouter(api_key: str, model: str, system: str, user: str) -> str:
-    """Return the assistant message content, or raise RuntimeError after retries."""
+def call_openrouter(api_key: str, model: str, system: str, user: str) -> tuple[str, dict]:
+    """Return (assistant content, usage dict), or raise RuntimeError after retries.
+
+    usage is OpenRouter's accounting block ({prompt_tokens, completion_tokens, cost, ...});
+    empty dict if the provider omitted it. `usage.include` asks OpenRouter to attach the
+    credit cost so callers can report spend per turn (post-$230 cost discipline).
+    """
     payload = json.dumps(
         {
             "model": model,
             "temperature": 0.4,
+            "usage": {"include": True},
             "messages": [
                 {"role": "system", "content": system},
                 {"role": "user", "content": user},
@@ -269,7 +288,8 @@ def call_openrouter(api_key: str, model: str, system: str, user: str) -> str:
             if not content:
                 last_err = "empty content in response"
                 raise RuntimeError(last_err)
-            return content
+            usage = body.get("usage") or {}
+            return content, usage if isinstance(usage, dict) else {}
         except urllib.error.HTTPError as e:
             detail = e.read().decode("utf-8", "replace")[:300]
             last_err = f"HTTP {e.code}: {detail}"
@@ -294,7 +314,7 @@ def run_turn(
 ) -> TurnResult:
     system = system_prompt(label, stage, principles_text)
     user = turn_user_message(stage, jd_text, fact_inventory, current_artifact, turn_no)
-    content = call_openrouter(api_key, model, system, user)
+    content, usage = call_openrouter(api_key, model, system, user)
     obj = _extract_json_object(content)
     if obj is None:
         # JSON contract broken — fall back to using the raw text as the artifact,
@@ -302,7 +322,7 @@ def run_turn(
         return TurnResult(
             turn_no=turn_no, model=model, label=label, artifact=content.strip(),
             converged=False, remaining_concerns="(response was not valid JSON; used raw text)",
-            changes_made="(unparseable response)", raw_ok=False,
+            changes_made="(unparseable response)", raw_ok=False, usage=usage,
         )
     return TurnResult(
         turn_no=turn_no, model=model, label=label,
@@ -310,7 +330,7 @@ def run_turn(
         converged=bool(obj.get("converged", False)),
         remaining_concerns=str(obj.get("remaining_concerns", "")).strip(),
         changes_made=str(obj.get("changes_made", "")).strip(),
-        raw_ok=True,
+        raw_ok=True, usage=usage,
     )
 
 
@@ -335,20 +355,57 @@ _STOPWORDS = {
 }
 
 
-def truth_guard(artifact: str, fact_inventory: str) -> tuple[list[str], list[str]]:
-    """Heuristic: surface capitalized tokens / numbers in the artifact that do NOT
-    appear in the fact inventory. These are review candidates, not hard failures —
-    JD keywords legitimately appear in the artifact too, so this is advisory."""
-    inv_lower = fact_inventory.lower()
+def _appears_mid_sentence(token: str, text: str) -> bool:
+    """True if any occurrence of token is NOT at a sentence/line/bullet start.
+
+    Proper nouns stay capitalized mid-sentence; ordinary words are only capitalized
+    at sentence starts. Kills 'Dear'/'Reliable'/'Owning' cover-letter noise while
+    keeping 'at DataCorp' flagged."""
+    for m in re.finditer(re.escape(token), text):
+        raw = text[: m.start()]
+        if not raw.strip():
+            continue  # start of document
+        # Whitespace containing a newline = new line/paragraph start.
+        tail_ws = raw[len(raw.rstrip()):]
+        if "\n" in tail_ws:
+            continue
+        prefix = raw.rstrip()
+        if prefix[-1] in ".!?:•-*#\"'":
+            continue  # sentence/bullet start
+        return True
+    return False
+
+
+# Letter boilerplate — greeting/closing words, capitalized by convention.
+_LETTER_STOPWORDS = {"dear", "hiring", "manager", "regards", "sincerely", "best"}
+
+
+def truth_guard(
+    artifact: str, fact_inventory: str, jd_text: str = ""
+) -> tuple[list[str], list[str]]:
+    """Heuristic: surface capitalized tokens / numbers in the artifact that trace to
+    NEITHER the fact inventory NOR the JD. JD language is legitimate by design (the
+    skill tells models to use it where truthful), so only tokens foreign to BOTH
+    sources are fabrication candidates. Numbers stay strict — inventory-only — since
+    a JD number pasted into a candidate claim is still a fabrication. Advisory."""
+    known_lower = (fact_inventory + "\n" + jd_text).lower()
     new_tokens: list[str] = []
     for tok in _TOKEN_RE.findall(artifact):
-        if tok.lower() in _STOPWORDS:
+        tok = tok.strip(".&-")  # token regex can capture trailing punctuation
+        low = tok.lower()
+        if len(low) < 3:
+            continue
+        if low in _STOPWORDS or low in _LETTER_STOPWORDS:
             continue
         # Only flag tokens that look like proper nouns / acronyms (has uppercase).
         if not any(c.isupper() for c in tok):
             continue
-        if tok.lower() not in inv_lower:
-            new_tokens.append(tok)
+        if low in known_lower:
+            continue
+        # Sentence-initial-only capitalization is casing, not a proper noun.
+        if not _appears_mid_sentence(tok, artifact):
+            continue
+        new_tokens.append(tok)
     new_numbers = [n for n in _NUM_RE.findall(artifact) if n.strip(".,%") and n not in fact_inventory]
     # Dedupe, preserve order.
     def _dedupe(xs):
@@ -359,6 +416,57 @@ def truth_guard(artifact: str, fact_inventory: str) -> tuple[list[str], list[str
                 seen.add(k); out.append(x)
         return out
     return _dedupe(new_tokens), _dedupe(new_numbers)
+
+
+def section_retention_guard(input_draft: str, output: str) -> list[str]:
+    """Headings (`# ` / `## `) present in the input draft but missing from the output.
+
+    Exists because a live rounds-4 run silently deleted an entire role (the
+    teaching position, 2026-07-16). Role/section deletion is a human scope
+    decision, not a polish. Comparison is case-insensitive and
+    whitespace-normalized; matching is exact-heading OR first-segment (the
+    text before the first '-'), so a retitled role ("Company - New Title")
+    does not false-positive as a drop."""
+    def headings(text: str) -> list[str]:
+        return [
+            re.sub(r"\s+", " ", m.group(1)).strip().lower()
+            for m in re.finditer(r"^#{1,2}\s+(.+?)\s*$", text, re.MULTILINE)
+        ]
+    out_heads = headings(output)
+    out_blob = "\n".join(out_heads)
+    dropped = []
+    for h in headings(input_draft):
+        if h in out_heads:
+            continue
+        first_seg = h.split(" - ")[0].strip()
+        if first_seg and first_seg in out_blob:
+            continue  # same role, retitled — not a drop
+        dropped.append(h)
+    return dropped
+
+
+# Mechanical mirror of references/resume-bullet-bans.md §1 (banned openers) and the
+# checkable subset of §2 (weak verbs/filler). The doc is authoritative; this list is a
+# post-loop tripwire for prompt-compliance slips, not a replacement for the doc.
+_BANNED_BULLET_RE = re.compile(
+    r"^\s*[-*]\s+(?:\*{0,2})(responsible for|helped with|assisted with|worked on|"
+    r"involved in|tasked with|participated in|supported)\b",
+    re.IGNORECASE | re.MULTILINE,
+)
+_FILLER_RE = re.compile(
+    r"\b(leveraged|utilized|drove strategy|synergiz\w+|world-class|best-in-class|"
+    r"results-driven|collaborated with cross-functional teams|owned various initiatives)\b",
+    re.IGNORECASE,
+)
+
+
+def banned_pattern_guard(output: str) -> list[str]:
+    """Lines in the output that violate the bullet bans. Advisory, like truth_guard."""
+    hits = []
+    for line in output.splitlines():
+        if _BANNED_BULLET_RE.match(line) or _FILLER_RE.search(line):
+            hits.append(line.strip()[:120])
+    return hits
 
 
 # --------------------------------------------------------------------------- #
@@ -378,9 +486,17 @@ def main() -> int:
     ap.add_argument("--output", required=True, help="Where to write the consensus artifact")
     ap.add_argument("--rounds", type=int, default=DEFAULT_ROUNDS,
                     help=f"Max polish handoffs after Claude's seed turn (default {DEFAULT_ROUNDS})")
+    ap.add_argument("--max-cost-usd", type=float, default=None,
+                    help="Abort the loop (keeping the best artifact so far) once cumulative "
+                         "OpenRouter spend crosses this ceiling. Advisory-off by default.")
     ap.add_argument("--claude-model", default=DEFAULT_CLAUDE_MODEL)
     ap.add_argument("--gpt-model", default=DEFAULT_GPT_MODEL)
     args = ap.parse_args()
+
+    if args.rounds % 2 == 1:
+        print(f"WARNING: --rounds {args.rounds} is odd — the final turn will be GPT, not "
+              "Claude. The design intent is ends-on-Claude; use an even count unless you "
+              "specifically want GPT last.", file=sys.stderr)
 
     api_key = os.environ.get("OPENROUTER_API_KEY", "").strip()
     if not api_key:
@@ -432,6 +548,8 @@ def main() -> int:
     transcript: list[TurnResult] = []
     last_good_artifact = current_artifact
     prev_converged = False
+    total_cost = 0.0
+    outcome = "round-cap reached (no formal consensus)"
 
     for turn_no, (model, label) in enumerate(roster, start=1):
         try:
@@ -443,13 +561,16 @@ def main() -> int:
             print(f"[turn {turn_no}] {label} ({model}) FAILED: {e}", file=sys.stderr)
             # Fallbacks[] semantics: keep the last good artifact and stop the loop
             # rather than shipping nothing. Consensus = best draft reached so far.
+            outcome = f"stopped after turn {turn_no - 1} failure (partial run)"
             break
 
         transcript.append(result)
+        total_cost += result.cost
         marker = "converged" if result.converged else "continue"
         json_note = "" if result.raw_ok else " [JSON-broken→raw]"
-        print(f"[turn {turn_no}] {label}: {marker}{json_note} — {result.changes_made or '(no summary)'}",
-              file=sys.stderr)
+        cost_note = f" (${result.cost:.4f})" if result.cost else ""
+        print(f"[turn {turn_no}] {label}: {marker}{json_note}{cost_note} — "
+              f"{result.changes_made or '(no summary)'}", file=sys.stderr)
 
         if result.artifact:
             last_good_artifact = result.artifact
@@ -458,15 +579,27 @@ def main() -> int:
         # Early consensus: two consecutive parseable turns both report converged.
         if result.raw_ok and result.converged and prev_converged:
             print(f"[stop] consensus reached after turn {turn_no}.", file=sys.stderr)
+            outcome = f"consensus (early stop, turn {turn_no})"
             break
         prev_converged = result.raw_ok and result.converged
+
+        if args.max_cost_usd is not None and total_cost >= args.max_cost_usd:
+            print(f"[stop] cost ceiling hit: ${total_cost:.4f} >= ${args.max_cost_usd:.2f}; "
+                  "keeping the best artifact so far.", file=sys.stderr)
+            outcome = f"cost-cap stop after turn {turn_no} (${total_cost:.4f})"
+            break
 
     if last_good_artifact is None:
         print("ERROR: no artifact was produced by any turn.", file=sys.stderr)
         return 3
 
-    # Post-loop truth guard.
-    new_tokens, new_numbers = truth_guard(last_good_artifact, fact_inventory)
+    # Post-loop guards.
+    new_tokens, new_numbers = truth_guard(last_good_artifact, fact_inventory, jd_text)
+    dropped_sections: list[str] = []
+    if args.stage == "draft-polish" and current_artifact is not None and args.artifact:
+        input_draft = Path(args.artifact).read_text(encoding="utf-8")
+        dropped_sections = section_retention_guard(input_draft, last_good_artifact)
+    banned_hits = banned_pattern_guard(last_good_artifact) if args.stage != "jd-analysis" else []
 
     out_path = Path(args.output)
     out_path.parent.mkdir(parents=True, exist_ok=True)
@@ -475,11 +608,25 @@ def main() -> int:
     # Structured summary to stderr so callers/humans can review provenance.
     print("\n===== COLLAB POLISH SUMMARY =====", file=sys.stderr)
     print(f"stage: {args.stage}  turns run: {len(transcript)}  rounds cap: {args.rounds}", file=sys.stderr)
-    print(f"consensus written to: {out_path}", file=sys.stderr)
+    print(f"outcome: {outcome}", file=sys.stderr)
+    if total_cost:
+        print(f"total OpenRouter spend: ${total_cost:.4f}", file=sys.stderr)
+    print(f"artifact written to: {out_path}", file=sys.stderr)
     if transcript:
         last = transcript[-1]
         print(f"final turn: {last.label}  converged={last.converged}  "
               f"remaining_concerns: {last.remaining_concerns or '(none)'}", file=sys.stderr)
+    if dropped_sections:
+        print("\n⚠️  SECTION-RETENTION GUARD — roles/sections present in the input draft but "
+              "MISSING from the output (role deletion is a human decision, not a polish):",
+              file=sys.stderr)
+        for h in dropped_sections[:20]:
+            print(f"    dropped: {h}", file=sys.stderr)
+    if banned_hits:
+        print("\n⚠️  BULLET-BAN GUARD — lines violating references/resume-bullet-bans.md "
+              "(banned openers / filler survived the polish):", file=sys.stderr)
+        for line in banned_hits[:20]:
+            print(f"    {line}", file=sys.stderr)
     if new_tokens or new_numbers:
         print("\n⚠️  TRUTH-GUARD REVIEW — tokens/numbers in the consensus not found verbatim in "
               "the fact inventory (may be legit JD keywords; verify each):", file=sys.stderr)
@@ -487,8 +634,9 @@ def main() -> int:
             print(f"    proper-noun/skill candidates: {', '.join(new_tokens[:40])}", file=sys.stderr)
         if new_numbers:
             print(f"    number candidates: {', '.join(new_numbers[:40])}", file=sys.stderr)
-    else:
-        print("truth-guard: no unrecognized proper nouns or numbers introduced. ✅", file=sys.stderr)
+    if not (dropped_sections or banned_hits or new_tokens or new_numbers):
+        print("guards: no dropped sections, banned patterns, or unrecognized facts. ✅",
+              file=sys.stderr)
     return 0
 
 
