@@ -1,6 +1,6 @@
 ---
 name: resume-tailor
-description: Tailor an existing resume to one or several job descriptions with visible confidence scoring, structured reframing, and positioning help. Triggers on "tailor my resume", "update my resume for this job", "resume to job", "match resume to JD", "resume multiplier", "three resume versions", "multiple job descriptions", "resume keywords", "ATS alignment", "position my experience", "reframe my resume", or pasting JDs alongside a resume.
+description: Tailor an existing resume to one or several job descriptions with visible confidence scoring, structured reframing, and positioning help. Triggers on "tailor my resume", "update my resume for this job", "resume to job", "match resume to JD", "resume multiplier", "three resume versions", "multiple job descriptions", "resume keywords", "ATS alignment", "position my experience", "reframe my resume", "collaborative polish", "two-model polish", "Claude and GPT loop", or pasting JDs alongside a resume.
 ---
 
 # Resume Tailor — JD-Driven Resume Tailoring + Positioning
@@ -69,6 +69,22 @@ Rules:
 
 ---
 
+## Collaborative Polish Mode — Claude ↔ GPT-5.6 Sol (opt-in)
+
+**Off by default.** Two top-tier models refine the work through a sequential, converge-to-consensus loop (not a debate): Claude reads the JD and writes the first version, hands to GPT-5.6 Sol, and they alternate polishing for up to 4 rounds until consensus — ending on Claude. Both models run through OpenRouter (`anthropic/claude-opus-4.8` + `openai/gpt-5.6-sol`).
+
+**Turn it on only when** the user explicitly asks (e.g. "run the two-model polish", "collaborative polish", "Claude and GPT loop", "polish this with GPT and Claude") or opts in for a single high-stakes role. It costs two flagship models per session — never default it on, and in Multi-JD Mode run it only on the one role the user tailors fully.
+
+**It runs at two points** ("multiple points"): Phase 1 (JD analysis) and Phase 2/4 (draft polish). Run Phase 1 first; its consensus profile informs the Phase 2 draft.
+
+**The models are bound by this skill's principles.** Both must follow all the resume and cover-letter rules the in-session Claude follows — the loop injects the governing docs verbatim into every turn (`--principles-file`): `shared/communication-principles.md`, `references/writing-quality.md`, `references/resume-bullet-bans.md` for drafts, and `references/cover-letter-review.md` for cover letters (plain-language voice, banned bullets, "I help" framing, cover-letter opener rules, no attacking other companies, and the §9 sameness generic-swap test). Collaborative Polish **augments, never bypasses** the phases — still run the human checkpoints and the §9 + bullet-ban + `resume-qa` passes on the consensus output.
+
+**Truth preservation is a hard constraint** — the resume analog of the SMS char-cap that collapsed the cross-provider polish pipeline (henry `docs/plans/2026-07-15-openrouter-streamlining-plan.md`). Both models get the canonical fact-inventory as immutable context and cannot introduce any employer, title, date, number, or skill not in it; a post-loop guard flags any additions for human review. **Surface every truth-guard warning to the user before finalizing.**
+
+Protocol, exact CLI, and failure handling live in `references/collaborative-polish.md` — load it when the mode is invoked. Requires `OPENROUTER_API_KEY` in the environment (present in `~/.claude/.local.env` but currently **empty** — populate before running).
+
+---
+
 ## Phase 1 — JD Analysis
 
 Produce a **structured job profile** before touching the resume. Output format, action codes, and extraction heuristics live in `references/jd-analysis.md` — load it now. Also load `references/role-archetypes.md` so the JD is classified into the right resume-story type before weights and bullet rewrites begin.
@@ -89,6 +105,8 @@ Output to user (checkpoint) — **in this order**:
 **YOE cutoff check (honest-scoping):** if the JD specifies a years-of-experience requirement (e.g. "8+ years", "12+ years required"), compute the earliest plausible role start year for the resume: `current_year - (YOE + ~3 grace)`. Any role on the resume starting more than that window back becomes a *truncate-or-summarize* candidate in Phase 2. Hiring managers reading a 25-year tenure for an 8-YOE role read it as overqualified, not as bonus. See `references/jd-analysis.md` §"YOE Cutoff".
 
 Ask: *"Does this profile match how you read the role? Anything I over- or under-weighted?"* Wait for confirmation before Phase 2.
+
+**If Collaborative Polish Mode is on:** generate this job profile via the `jd-analysis` loop (`references/collaborative-polish.md`) instead of a single pass, then present the consensus profile at this checkpoint.
 
 ---
 
@@ -138,6 +156,8 @@ Output to user (checkpoint):
 - Gap handling plan — per visible gap: resume / cover letter / interview
 
 Ask: *"Which headline angle? Does the narrative match how you want to be perceived?"*
+
+**If Collaborative Polish Mode is on:** after the matching + positioning passes produce a draft, run the `draft-polish` loop (`references/collaborative-polish.md`, `--stage draft-polish --artifact <draft>`) to converge the tailored bullets/summary, then bring the consensus draft — plus any truth-guard warnings — into Phase 5.
 
 ---
 
