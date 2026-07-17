@@ -27,8 +27,8 @@ round 4 (turn 5): Claude polishes  ← ends on Claude (best writer, last word)
 | Claude (writing lead) | `anthropic/claude-opus-4.8` | `--claude-model` |
 | ChatGPT | `openai/gpt-5.6-sol` | `--gpt-model` |
 
-Requires `OPENROUTER_API_KEY` in the environment (present in `~/.claude/.local.env`;
-**populate it — it is currently empty**). Keys are read only from the environment.
+Requires `OPENROUTER_API_KEY` in the environment (lives in `~/.claude/.local.env`;
+verified populated 2026-07-17). Keys are read only from the environment.
 
 ## Where it runs (both points — "multiple points")
 
@@ -40,6 +40,16 @@ Requires `OPENROUTER_API_KEY` in the environment (present in `~/.claude/.local.e
    passes. Feed the result into the Phase 4 output.
 3. **Cover letter** (`--stage cover-letter`, plus `--artifact <draft>`): opt-in, only when
    a cover letter is in scope — polishes an existing cover-letter draft.
+4. **Phase 4 → 5 — headline micro-polish (STANDING step, not opt-in; Summer 2026-07-17):**
+   once the user picks a headline, run `--stage draft-polish` with ONLY the headline+summary
+   block as `--artifact`, `--rounds 2`, `--max-cost-usd 2`, in the background. Pass the
+   draft-polish principles files PLUS `resume-tailor/references/headline-library.md` and
+   `resume-tailor/references/summary-patterns.md` — without them the loop drifts to
+   pipe-separated keyword headlines (observed 2026-07-17: GPT produced "Enterprise AI
+   adoption leader | Intake and prioritization, governance, AI literacy", a headline-library
+   §3 anti-pattern). Surface the consensus + guard warnings at the Phase 5 header/summary
+   checkpoint. The user's chosen headline direction governs — the loop advises; it never
+   silently overrides a picked headline.
 
 Run Phase 1 first; its consensus profile informs the draft the loop polishes in Phase 2.
 
