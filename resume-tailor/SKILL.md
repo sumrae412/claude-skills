@@ -77,11 +77,13 @@ Rules:
 
 **It runs at two points** ("multiple points"): Phase 1 (JD analysis) and Phase 2/4 (draft polish). Run Phase 1 first; its consensus profile informs the Phase 2 draft.
 
+**Headline micro-polish is a standing step (Summer, 2026-07-17) — exception to opt-in.** Once the user picks a headline in Phase 4, ALWAYS run the loop on the headline+summary block alone (`--stage draft-polish`, `--rounds 2`, `--max-cost-usd 2` — a cents-scale artifact, run in the background) and surface the consensus text plus any guard warnings at the Phase 5 header/summary checkpoint for the user's pick. The standing grant covers ONLY this micro-artifact; full-draft and cover-letter loops remain opt-in per the paragraph above.
+
 **The models are bound by this skill's principles.** Both must follow all the resume and cover-letter rules the in-session Claude follows — the loop injects the governing docs verbatim into every turn (`--principles-file`): `shared/communication-principles.md`, `references/writing-quality.md`, `references/resume-bullet-bans.md` for drafts, and `references/cover-letter-review.md` for cover letters (plain-language voice, banned bullets, "I help" framing, cover-letter opener rules, no attacking other companies, and the §9 sameness generic-swap test). Collaborative Polish **augments, never bypasses** the phases — still run the human checkpoints and the §9 + bullet-ban + `resume-qa` passes on the consensus output.
 
 **Truth preservation is a hard constraint** — the resume analog of the SMS char-cap that collapsed the cross-provider polish pipeline (henry `docs/plans/2026-07-15-openrouter-streamlining-plan.md`). Both models get the canonical fact-inventory as immutable context and cannot introduce any employer, title, date, number, or skill not in it; three post-loop mechanical guards flag fabrication candidates, silently dropped roles/sections, and surviving banned bullet patterns. **Surface every guard warning to the user before finalizing.**
 
-Protocol, exact CLI, and failure handling live in `references/collaborative-polish.md` — load it when the mode is invoked. Requires `OPENROUTER_API_KEY` in the environment (present in `~/.claude/.local.env` but currently **empty** — populate before running).
+Protocol, exact CLI, and failure handling live in `references/collaborative-polish.md` — load it when the mode is invoked. Requires `OPENROUTER_API_KEY` in the environment (lives in `~/.claude/.local.env`; verified populated 2026-07-17).
 
 ---
 
