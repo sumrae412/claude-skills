@@ -41,7 +41,7 @@ Report in under 500 words. Be specific — file paths, line numbers, function na
 ### External Researcher
 
 **Subagent type:** `general-purpose`
-**Tools:** WebSearch, WebFetch, Skill (for `/fetch-api-docs` if available)
+**Tools:** WebSearch, WebFetch
 **Focus:** API docs, library references, best practices, prior art outside the codebase.
 
 **Prompt template:**
@@ -54,7 +54,7 @@ Your role: External Researcher — find relevant information OUTSIDE the codebas
 
 Research systematically:
 1. Search for official API documentation for any external services involved
-2. If a `/fetch-api-docs` skill is available, use it for curated API references
+2. Prefer official provider docs (WebFetch) for API references
 3. Search for best practices, common patterns, and known pitfalls
 4. Find prior art — how do other projects solve this?
 

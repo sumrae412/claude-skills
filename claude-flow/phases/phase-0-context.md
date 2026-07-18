@@ -106,7 +106,7 @@ Conditionally load:
 
 | Condition | Action |
 |-----------|--------|
-| External API work | Prefer MCP. If no MCP exists, invoke `/fetch-api-docs` before coding. |
+| External API work | Prefer MCP. If no MCP exists, WebFetch the provider's current official docs before coding. |
 | Codebase is large or unfamiliar | Use `generate_repo_outline.py` and `repomix --compress` only if they reduce exploration cost. |
 | Need symbol precision | Activate Serena and read only the relevant memories. |
 | MCP-heavy exploration | Raise `MAX_MCP_OUTPUT_TOKENS` only when needed. |

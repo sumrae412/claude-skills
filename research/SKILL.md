@@ -108,4 +108,4 @@ When called standalone:
 
 - **Ready to build from findings?** Use `/claude-flow` to run the full implementation pipeline (research feeds Phase 3 automatically).
 - **Need to capture a dead end?** Use `/session-handoff --abandon` to document what didn't work before moving on.
-- **Want to verify assumptions?** If `/fetch-api-docs` is available, use it to pull authoritative API docs for any external service referenced in findings.
+- **Want to verify assumptions?** Use WebFetch to pull authoritative official API docs for any external service referenced in findings.

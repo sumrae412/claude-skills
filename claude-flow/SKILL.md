@@ -179,7 +179,7 @@ When a phase reaches outside the workspace (API docs, deployment logs, PR operat
 2. **CLI** for local-first tools without an MCP equivalent (e.g., `ruff`, `pytest`, `semgrep`, project scripts)
 3. **Direct HTTP / web fetch** only as fallback when neither exists
 
-Examples: GitHub ops → `gh` CLI is fine locally; prefer GitHub MCP when dispatching subagents to remote clients. Railway → use `mcp__railway-mcp-server__*` (memory: `reference_config_repos`). Sentry → `sentry:seer` or `mcp__sentry-*`. Supabase → `mcp__30db93f5-*`. Before fetching public web docs, check whether the service has an MCP server that exposes introspection — avoids the staleness problem `/fetch-api-docs` exists to solve.
+Examples: GitHub ops → `gh` CLI is fine locally; prefer GitHub MCP when dispatching subagents to remote clients. Railway → use `mcp__railway-mcp-server__*` (memory: `reference_config_repos`). Sentry → `sentry:seer` or `mcp__sentry-*`. Supabase → `mcp__30db93f5-*`. Before fetching public web docs, check whether the service has an MCP server that exposes introspection — avoids doc staleness.
 
 **Programmatic tool calling for bulk/deterministic work:** If a tool returns a large JSON payload and you need to filter/aggregate/transform deterministically, do it in a Python script (see `scripts/select_reviewers.py`, `aggregate_reviewer_findings.py`) rather than piping raw output through the executor. Saves tokens and eliminates a class of LLM parsing errors.
 
@@ -263,7 +263,7 @@ frontend-design guidance.
 | Passing full conversation to subagents | Use named contracts ($plan, $requirements, etc.) |
 | Using full workflow for 1-2 file changes | Use Lite path |
 | Writing tests after code | TDD — test first |
-| Guessing external API patterns | Hard gate: `/fetch-api-docs` before any API code |
+| Guessing external API patterns | Hard gate: fetch current provider docs (MCP introspection or WebFetch) before any API code |
 | Not tagging workflow failures | Apply taxonomy tags (see `references/failure-taxonomy.md`) |
 | Letting context grow unbounded | Tool-result clearing at ~50K, compaction at ~80% |
 | Compacting a long-running phase instead of resetting | When a phase exceeds ~60% context, prefer `/next` handoff + fresh session over in-context compression. Empirical claim from Anthropic harness-design (2026): models exhibit "context anxiety" and wrap up prematurely as the window fills, so a clean reset with a written handoff outperforms summarization. Compaction is fine for cross-task drift; resets are for mid-phase rescue. |

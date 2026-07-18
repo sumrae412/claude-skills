@@ -35,7 +35,6 @@ All advisor calls use `subagent_type: "general-purpose"`. Phase 2 uses `model: "
 
 | Skill | Where Used |
 |-------|-----------|
-| fetch-api-docs | Phase 5 (pre-implementation gate for external APIs) |
 | coding-best-practices | Phase 0 (loaded), Phase 5 (applied) |
 | defensive-ui-flows | Phase 0 (loaded), Phase 5 (applied) |
 | defensive-backend-flows | Phase 0 (loaded), Phase 5 (applied) |
