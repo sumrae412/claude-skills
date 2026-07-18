@@ -241,6 +241,9 @@ Standards Report, Spec Report, unified severity roll-up, recommended action) and
 - Axis separation is intentional: a change can pass Standards (correct conventions, good types)
   and fail Spec (wrong business rule, unhandled edge case), or vice versa. Collapsing them into
   one severity list hides that signal.
+- **Scope discipline on findings** (pattern from [openclaw/agent-skills](https://github.com/openclaw/agent-skills)' autoreview "Scope Governor"): freeze the review baseline at dispatch, then classify every finding as *in-scope blocker*, *out-of-scope follow-up*, or *stop-and-escalate* — and route follow-ups to `spawn_task`/issues instead of letting the review balloon the PR. A review that keeps adding "while you're here" fixes past ~2× the original diff size has drifted; stop and escalate.
+- **Candidate upgrade — outer-loop self-improvement** (not yet implemented here; blueprint: [Zach Lloyd](https://x.com/zachlloydtweets/status/2077428025474355521)): run the reviewer on every PR, let humans correct its comments, then have a periodic outer agent synthesize those corrections into a proposed update PR against this SKILL.md (new conventions, gotchas, false-positive patterns). If adopted, keep the two loops separate: inner = review the PR, outer = review the reviewer.
+- **Injection posture for automated review runs** (same source): give the review agent read-only PR permissions and have CI post its structured `review.json` as comments, rather than granting the agent comment/write access — PR bodies and diffs are untrusted input, so the thing that reads them shouldn't also hold the pen.
 
 ## Related
 

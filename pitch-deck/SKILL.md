@@ -81,6 +81,18 @@ For every slide produce these fields:
   expensive?", "Why now?", "Why this team?"). A slide that answers no real
   question gets cut. For sales decks, substitute the buyer's question.
 
+**Entry conditions for optional/specialty slides.** Every slide beyond the core arc must earn its place with real input, not template momentum. Before including one, check its entry condition — if the input doesn't exist, cut the slide rather than filling it with generic content:
+
+| Slide | Entry condition |
+|---|---|
+| Traction | At least one sourced, dated figure (revenue, users, retention — not "growing fast") |
+| Demo / product tour | A live product or real screenshots exist (never mock UI as if shipped) |
+| Team | Named people with claims the fact inventory supports |
+| Testimonial / logo wall | Real quotes/customers with permission to name |
+| Competition matrix | You can name actual competitors — a matrix with invented axes and no rivals is filler |
+
+(Pattern adapted from [Bolt Slides](https://github.com/stackblitz/bolt-slides)' agent skill, which gates each specialty layout on an explicit entry condition — e.g. a chat layout only for genuinely conversational products, a big-number slide only with one sourced figure.)
+
 ### Step 3 — Quality check
 
 Run the checklist below. Fix anything failing before showing the user.
@@ -141,6 +153,7 @@ Before delivering:
 - [ ] Logical flow — story arc, not a feature dump
 - [ ] No information overload (move detail to appendix)
 - [ ] Audience-tuned register (see `references/audiences.md`)
+- [ ] Every optional/specialty slide met its entry condition (Step 2 table) — no filler sections
 - [ ] Send-ahead decks: a partner could follow it alone at 11pm on their iPad, no presenter
 
 Common pitfalls and fixes: `references/pitfalls.md`.
