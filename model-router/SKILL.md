@@ -143,6 +143,11 @@ benchmark scores as one signal, not the verdict. (Surfaced 2026-07-04 via
 
 **Quality floor rule:** never go below the floor for that role. Red-team and critique roles fail silently on Haiku — the agent produces grammatical, plausible-looking output that doesn't actually catch the issues you dispatched it to find (Daniel Miessler's PAI observation, validated across multiple agent frameworks). If budget can't cover the floor, the right move is fewer subagents at the right tier, not more subagents at a too-low tier.
 
+**Evidence notes (2026-07):**
+
+- **A pricier high-judgment orchestrator can be net-cheaper when it delegates.** [Joon Lee's Fable-vs-Opus benchmark](https://x.com/joon_h_lee/status/2076714221837173097) (sidekick-enabled runs): Fable 5 + sidekick $1.86/run vs Opus 4.8 + sidekick $2.04 despite ~2× per-token price — 11.5 vs 26.5 lead-model turns, ~1/3 the input tokens (545k vs 1,679k), and the lead made zero code edits in 81% of Fable runs vs 24% of Opus runs. The cost driver is turns + dragged context + what the lead declines to do itself, not the per-token rate. Reported third-party numbers, not internally reproduced — treat as directional support for orchestrator-delegates / executors-write, which this table already encodes.
+- **A small fixed tier set is the right shape.** [arXiv:2607.09197](https://arxiv.org/abs/2607.09197) ("When is Routing Meaningful?", abstract verified 2026-07-18): a curated subset of fewer than ten models recovers most available diversity of a large pool, and learned (KNN) routers gain accuracy but collapse in robustness under query perturbation while prompted routing stays stable. This skill's fixed Haiku/Sonnet/Opus/Fable set with prompted, rule-based routing is the robust end of that trade — don't replace it with a learned router.
+
 ---
 
 ## Advisor Tool (executor+advisor pairing)
@@ -195,6 +200,8 @@ Print the card BEFORE the model switch is suggested or applied. The user sees th
 ## Adjacent Levers
 
 Model choice is one knob — these are siblings worth pointing at when the model recommendation alone isn't the full answer.
+
+**Model vs. effort are different axes — set both deliberately.** Model selects capability/knowledge (which brain); effort selects thoroughness (how many actions/how much thinking that brain spends). A stronger model at low effort often beats a weaker model at high effort for judgment-bound tasks, while mechanical tasks want a cheaper model with effort matched to the work — cranking effort on the wrong-tier model buys motion, not insight. When a recommendation card fires, name the effort level alongside the model whenever the task is clearly reasoning-heavy (`high`) or clearly mechanical (`low`).
 
 | Lever | What it does | When |
 |---|---|---|

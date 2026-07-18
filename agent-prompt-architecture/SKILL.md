@@ -160,6 +160,8 @@ Long-running agents need memory outside the context window. Use a memory tool (`
 </memory_protocol>
 ```
 
+**Inject selectively, don't dump the bank.** When wiring recall, gate injections on relevance to the current step rather than exposing the whole memory store or reminding on every turn. [arXiv:2607.08716](https://arxiv.org/abs/2607.08716) ("Remember When It Matters", abstract verified 2026-07-18) measured this directly: a memory agent that decides per-step whether to inject a reminder or stay silent beat passive bank exposure, always-on injection, advisor-only guidance, and general retrieval — +8.3pp pass@1 on Terminal-Bench 2.0, +6.8pp on τ²-Bench. The failure it targets, "behavioral state decay" (critical constraints buried as the trajectory grows), is the same one the state scratchpad (component 2) mitigates; for long-horizon agents use both: scratchpad for live state, selective memory injection for durable facts.
+
 ## Pre-flight debugger (5-case eval suite)
 
 **Mandatory** before shipping any agent prompt that drives coding work or other side-effecting action. Lightweight, in-conversation, no API spend. Operationalizes the shared "Pre-flight prompt debugger" in [`prompt-engineering`](../prompt-engineering/SKILL.md#pre-flight-prompt-debugger-mandatory-for-coding-work-prompts).
