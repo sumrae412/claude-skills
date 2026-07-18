@@ -52,9 +52,9 @@ Sum hits within a tier; assign to the lowest tier whose threshold is met. Signal
 | Tier | Model | Relative input cost |
 |---|---|---|
 | trivial | Haiku 4.5 | 1× |
-| simple | Sonnet 4.6 | 3× |
-| complex | Sonnet 4.6 | 3× |
-| architectural | Opus 4.7 | ~15× Haiku input / ~5× Sonnet input AND output |
+| simple | Sonnet 5 | 3× |
+| complex | Sonnet 5 | 3× |
+| architectural | Opus 4.8 | 5× Haiku / ~1.7× Sonnet |
 
 ---
 
@@ -73,7 +73,7 @@ This biases toward cheaper models when signals are mixed — escalation after th
 - Signals: `fix bug` (+2 simple), `single file mention` (+1 trivial)
 - Trivial sum = 1 (below threshold of 3) — does not fire
 - Simple sum = 2 (meets threshold) — fires
-- **Result:** simple → Sonnet 4.6
+- **Result:** simple → Sonnet 5
 - Note: the "one-line change" framing tempts trivial, but `fix bug` is the dominant signal. Bugs require reasoning even when the diff is small.
 
 **Case B: "Add a new feature to handle Stripe webhooks across the payment service and the audit log"**
@@ -81,14 +81,14 @@ This biases toward cheaper models when signals are mixed — escalation after th
 - Signals: `new feature` (+2 complex), `multiple files` (+2 complex), `integration` (+1 complex)
 - Complex sum = 5 (well above threshold of 2) — fires
 - Architectural sum = 0 — does not fire
-- **Result:** complex → Sonnet 4.6
+- **Result:** complex → Sonnet 5
 - Note: integrations *can* be architectural if they introduce a new auth or data model, but "handle Stripe webhooks" is pattern-execution, not system design. Apply Step 4 modifier "+1 complexity (down-shift)" if the codebase has well-established webhook patterns.
 
 **Case C: "Audit the auth flow for security issues and refactor anything risky"**
 
 - Signals: `security audit` (+3 architectural), `major refactor` (+2 architectural)
 - Architectural sum = 5 (above threshold) — fires
-- **Result:** architectural → Opus 4.7
+- **Result:** architectural → Opus 4.8
 - Override check: "security audit" matches Step 3 override "Security or vulnerability task" → forces Opus regardless of score. Same answer, but if scoring had landed on simple/complex, the override would still escalate.
 
 ---
