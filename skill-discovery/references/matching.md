@@ -6,7 +6,7 @@ Heuristics for routing user intent to the right local skill. Load this when the 
 
 Skills appear in the system-reminder in two forms:
 
-- **Bare name** (`research`, `fetch-api-docs`, `smart-exploration`) — top-level skills from `~/.claude/skills/`
+- **Bare name** (`research`, `zoom-out`, `smart-exploration`) — top-level skills from `~/.claude/skills/`
 - **Namespaced** (`plugin:skill-name`, e.g. `superpowers:brainstorming`, `common-room:account-research`) — skills provided by installed plugins
 
 When searching, match on the trailing segment (the skill name itself), but include the namespace in the final recommendation so the user/invocation knows which skill file.
@@ -15,16 +15,16 @@ When searching, match on the trailing segment (the skill name itself), but inclu
 
 | User intent | Likely skill | Not this |
 |-------------|--------------|----------|
-| "read official docs for library X" | `fetch-api-docs` | `research` (too broad) |
-| "open-ended exploration / synthesis" | `research`, `deep-research-synthesizer` | `fetch-api-docs` (single-source) |
+| "read official docs for library X" | WebFetch the official docs directly | `research` (too broad) |
+| "open-ended exploration / synthesis" | `research`, `deep-research-synthesizer` | a bare docs lookup (just WebFetch it) |
 | "navigate an unfamiliar codebase" | `smart-exploration`, `investigator` | `research` (external-facing) |
 | "build a feature / implement a plan" | `/claude-flow` (per CourierFlow CLAUDE.md) | raw `writing-plans` + `executing-plans` |
 | "fix a bug / reproduce an error" | `/bug-fix` | `/claude-flow` (explicitly excluded for bugs) |
 | "write tests first" | `test-driven-development`, `superpowers:test-driven-development` | `playwright-test` (E2E-specific) |
 | "E2E / browser automation tests" | `playwright-test` | generic TDD |
 | "design a UI / critique a design" | `frontend-design:frontend-design`, `design:design-critique` | `excalidraw-canvas` (mockup generation, not critique) |
-| "draw a diagram / architecture viz" | `excalidraw-canvas` | `image-generation` (photoreal) |
-| "generate an image / hero asset" | `image-generation`, `anthropic-skills:canvas-design` | `excalidraw-canvas` |
+| "draw a diagram / architecture viz" | `excalidraw-canvas` | `anthropic-skills:canvas-design` (asset generation) |
+| "generate an image / hero asset" | `anthropic-skills:canvas-design` | `excalidraw-canvas` |
 | "ship code / commit + PR + merge" | `/ship` / `shipping-workflow`, `commit-commands:commit-push-pr` | individual git commands |
 | "pre-ship audit" | `production-readiness-check` | `/ship` (runs after audit) |
 | "code review" | `code-review:code-review`, `pr-review-toolkit:review-pr`, `coderabbit:review` | `/ship` |
@@ -46,7 +46,7 @@ Before declaring a match:
 
 ## Common mis-matches (observed)
 
-- **`research` picked for "read these API docs"** — `fetch-api-docs` is the correct choice; `research` is for open-ended synthesis.
+- **`research` picked for "read these API docs"** — just WebFetch the official docs; `research` is for open-ended synthesis.
 - **`smart-exploration` picked for external research** — it's a codebase-navigation skill, not a web-research one.
 - **`writing-plans` picked mid-implementation** — once execution starts, `/claude-flow` or `executing-plans` applies; `writing-plans` is pre-plan only.
 - **`superpowers:*` duplicate of a top-level skill picked randomly** — when both exist (`test-driven-development` vs `superpowers:test-driven-development`), prefer the one explicitly referenced elsewhere in project memory/CLAUDE.md; otherwise note both and let the user choose.

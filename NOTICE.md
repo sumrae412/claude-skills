@@ -34,7 +34,6 @@ are preserved in this single document.
 
 | Local skill | Upstream path | Imported | Local modifications |
 |---|---|---|---|
-| `dependency-auditor/` | `engineering/dependency-auditor/` | 2026-04-17 | Description tightened (upstream was the title string, blocked routing). Body verbatim. |
 | `llm-cost-optimizer/` | `engineering/llm-cost-optimizer/` | 2026-04-17 | Dropped `.claude-plugin/plugin.json`. Replaced dangling cross-refs to non-local sibling skills (`senior-prompt-engineer`, `observability-designer`, `performance-profiler`, `api-design-reviewer`) with `prompt-governance` and `claude-api`. |
 | `prompt-governance/` | `engineering/prompt-governance/` | 2026-04-17 | Dropped `.claude-plugin/plugin.json`. Replaced dangling cross-refs (`senior-prompt-engineer`, `ci-cd-pipeline-builder`, `observability-designer`) with `prompt-optimization`. |
 | `rag-architect/` | `engineering/rag-architect/` | 2026-04-17 | None. Verbatim. |

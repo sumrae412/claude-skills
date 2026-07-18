@@ -22,7 +22,7 @@ Plan step touches external API?
            YES -> Prefer MCP introspection
                   Treat the tool surface as the current contract
                   Fall back to HTTP only if MCP does not cover the need
-           NO  -> Invoke /fetch-api-docs
+           NO  -> WebFetch the provider's official docs
                   Verify docs against current version
        -> Pass the verified contract into the implementation step or subagent
   NO  -> Skip this gate

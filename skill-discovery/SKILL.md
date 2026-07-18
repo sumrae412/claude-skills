@@ -35,7 +35,7 @@ With 150+ skills loaded per session, the flat system-reminder list is easy to sk
 3. **Registry pass** — if still nothing local, consult [references/registries.md](references/registries.md) for external sources and the command to search each.
 4. **Install guidance** — if an external skill fits, show provenance (install count / stars / last-commit recency) and propose the install command. **Do not install without user confirmation** — registry content is third-party.
 
-Use [references/matching.md](references/matching.md) for intent-→-skill heuristics and common mis-matches (picking `research` when `fetch-api-docs` fits, etc.).
+Use [references/matching.md](references/matching.md) for intent-→-skill heuristics and common mis-matches (picking `research` for a single-source docs lookup, etc.).
 
 ## Red Flags — Stop and Re-check
 

@@ -4,7 +4,7 @@
 
 Every framework-specific code decision must be backed by official documentation. Don't implement from memory — verify, cite, and let the user see your sources. Training data goes stale, APIs get deprecated, best practices evolve. This reference ensures code traces back to an authoritative source the user can check.
 
-**Relationship to `fetch-api-docs`:** That skill handles Context Hub tooling (`chub search/get`). This reference is the broader discipline — verify everything against official docs, whether via Context Hub, WebFetch, or WebSearch.
+**Scope:** This reference is the broader discipline — verify everything against official docs, whether via Context Hub, WebFetch, or WebSearch.
 
 ## When to Use
 
