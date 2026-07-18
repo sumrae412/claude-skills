@@ -1,6 +1,6 @@
 ---
 name: startup-positioning
-description: Market positioning strategy using the April Dunford 5+1 framework, enriched with JTBD discovery, Moore positioning statement, and Neumeier Onliness Test. Produces a positioning document, positioning statements, competitive alternatives map, and market category analysis. Triggers for "positioning", "market position", "differentiate from competitors", "positioning statement", "competitive positioning", "category strategy", "where do we fit", "how are we different", or any request to define, sharpen, or rethink product positioning. Works standalone — no prior session needed, but leverages startup-design or startup-competitors output when available.
+description: Market positioning strategy using the April Dunford 5+1 framework, enriched with JTBD discovery, Moore positioning statement, and Neumeier Onliness Test. Produces a positioning document, positioning statements, competitive alternatives map, and market category analysis. Triggers for "positioning", "market position", "differentiate from competitors", "positioning statement", "competitive positioning", "category strategy", "where do we fit", "how are we different", or any request to define, sharpen, or rethink product positioning. Works standalone — no prior session needed, but leverages prior discovery/competitive-analysis artifacts (e.g. from startup-analysis) when present in the workspace.
 user-invocable: true
 ---
 
@@ -44,13 +44,13 @@ Short and focused — 1-2 rounds of questions. The goal is enough context to res
 
 Before asking questions, check if prior sessions have been completed. Look for these files in the workspace directory or standard sibling directories:
 
-**From startup-design:**
+**Prior product-discovery artifacts (from an earlier design/planning session, if present):**
 - `00-intake/brief.md` — product description and context
 - `01-discovery/competitor-landscape.md` — competitor profiles
 - `01-discovery/target-audience.md` — customer personas, pain points
 - `02-strategy/positioning.md` — initial positioning work
 
-**From startup-competitors:**
+**Prior competitive-analysis artifacts (if present):**
 - `intake.md` — product and market context
 - `competitors-report.md` — strategic competitive analysis
 - `battle-cards/` — per-competitor profiles

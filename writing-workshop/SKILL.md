@@ -23,7 +23,7 @@ Before editing or rewriting, load [`../shared/communication-principles.md`](../s
 
 ## Mode Selection
 
-Use **Style Mimic** when the user provides writing samples and wants new copy in their voice.
+Use **Style Mimic** when the user provides writing samples and wants new copy in their voice — for a *reusable* voice profile of a specific person (build once, apply repeatedly), use [`sme-voice`](../sme-voice/SKILL.md) instead.
 
 Use **Brutal Editor** when the user wants a tough edit, teardown, ruthless cuts, or a publishable revision.
 

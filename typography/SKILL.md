@@ -1,10 +1,6 @@
 ---
 name: typography
 description: Typography rules — quote marks, dashes, spacing, hierarchy, HTML entities. Auto-apply when generating HTML/CSS/React/Jinja with visible text; audit on "fix the typography", "typography audit", "make this look professional".
-license: MIT
-metadata:
-  author: summerela
-  version: "1.0.0"
 ---
 
 # Typography Skill

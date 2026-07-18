@@ -128,4 +128,4 @@ If a design improvement requires a functional change, flag it:
 
 ## See also
 
-- [impeccable](../impeccable/SKILL.md) — full design-craft command suite (craft, shape, polish, bolder, colorize, animate, and more); pairs with design-audit for end-to-end UI quality work
+- [impeccable](../impeccable/SKILL.md) — full design-craft command suite (craft, shape, polish, bolder, colorize, animate, and more). Boundary: design-audit is the lightweight read-only entry point (findings + phased plan, no edits); route to impeccable when the ask is to build or fix the UI, not just assess it.

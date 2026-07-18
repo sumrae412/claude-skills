@@ -177,7 +177,7 @@ Valid `<command>` is any command from the table above. Report the script's resul
 `/impeccable impeccable hooks <on|off|status|ignore-rule|ignore-file|ignore-value|reset>` manages the design detector hook for this project. The hook auto-runs the detector after direct UI file edits and surfaces findings as system reminders. Full flow is in [references/hooks.md](references/hooks.md); load it when the user invokes `/impeccable impeccable hooks` with any argument.
 
 ## See also
-- [design-audit](../design-audit/SKILL.md) — structured UI/UX audit with scoring
+- [design-audit](../design-audit/SKILL.md) — structured UI/UX audit with scoring. Boundary: start there when the ask is assess-only (read-only findings + phased plan); impeccable owns the build/fix work.
 - [defensive-ui-flows](../defensive-ui-flows/SKILL.md) — error states and edge case handling
 - [fixing-motion-performance](../fixing-motion-performance/SKILL.md) — animation performance
 - [vercel-react-best-practices](../vercel-react-best-practices/SKILL.md) — React production patterns
