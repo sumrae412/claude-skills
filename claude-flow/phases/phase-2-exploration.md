@@ -40,6 +40,8 @@ Research-team fan-outs default to a **task-typed** Wave 1 — 2-4 researchers co
 
 > **Explicit parallel fan-out (Opus 4.7):** When dispatching N independent reviewers / researchers / implementers across M items, emit a single message with N tool-use blocks. Do **not** issue them sequentially — 4.7's default bias is under-parallelization.
 
+> **Explicit model on every wave dispatch:** each Wave 1/Wave 2 researcher is dispatched with `model: "sonnet"` (the shipping choice — see Step 2's dispatch spec). Never omit the `model` param: an unpinned dispatch inherits the session model, and under an Opus-tier orchestrator that multiplies the whole wave's cost by the fan-out width (SKILL.md → Model Assignments, explicit-model rule).
+
 ---
 
 ## Step 0: Prior Knowledge Check (Token Saver)
