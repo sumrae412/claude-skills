@@ -16,7 +16,6 @@ Apply `token-economy` whenever this skill would otherwise trigger broad explorat
 - Batch independent tool calls and keep narration/results tight.
 - If the task is tiny or the file set is already known, apply the relevant patterns inline instead of loading extra material.
 
-
 Two-stage code review. Stage 1 runs CodeRabbit externally (doesn't spend Claude tokens).
 Stage 2 runs Claude only on what CodeRabbit's blind spots are, conditional on what the diff
 actually contains. Final output is one merged report.
@@ -209,35 +208,9 @@ skill for pre-ship audits.
 
 ### Stage 2.5 — CodeRabbit thread operations (after applying fixes)
 
-When responding to existing CodeRabbit review threads — replying, dismissing with reasoning, or marking resolved — the gh-api shape matters. Pattern from [openhuman `.claude/commands/ship-and-babysit.md` Phase 4](https://github.com/tinyhumansai/openhuman/blob/main/.claude/commands/ship-and-babysit.md):
-
-**Reply inside an existing thread** (so the reply attaches to the same conversation, not a brand-new review):
-```bash
-gh api repos/<owner>/<repo>/pulls/comments/<comment_id>/replies \
-  -X POST \
-  -f body='**Dismissed:** <reason>'
-```
-`<comment_id>` is the top-level review-comment id from `gh api repos/<owner>/<repo>/pulls/<PR#>/comments`. **Do NOT use `POST /pulls/<PR#>/reviews`** for replies — that creates a *new* review thread, not a reply, and orphans the original conversation.
-
-**Resolve a thread after fixing or dismissing:**
-```bash
-gh api graphql -f query='mutation($id:ID!){resolveReviewThread(input:{threadId:$id}){thread{isResolved}}}' -f id=<threadId>
-```
-
-**List thread ids — paginated, cap of 100 per page.** `reviewThreads(first:100)` silently truncates past 100; threads on page 2+ slip past any "all resolved?" exit check. Loop on `pageInfo.hasNextPage` / `endCursor`:
-```bash
-gh api graphql -f query='query($owner:String!,$repo:String!,$num:Int!,$cursor:String){
-  repository(owner:$owner,name:$repo){
-    pullRequest(number:$num){
-      reviewThreads(first:100, after:$cursor){
-        pageInfo{hasNextPage endCursor}
-        nodes{id isResolved comments(first:1){nodes{author{login} body}}}
-      }
-    }
-  }
-}' -F owner=<owner> -F repo=<repo> -F num=<PR#> -F cursor=
-```
-Feed `endCursor` back as `$cursor` until `hasNextPage: false`.
+When responding to existing CodeRabbit review threads (reply, dismiss with reasoning, resolve),
+load `references/gh-api-recipes.md` at Stage 2.5 — it holds the exact gh-api / GraphQL recipes
+(reply-in-thread, resolve mutation, paginated thread listing) whose shapes matter.
 
 Never resolve a thread without actually addressing it or replying with a reasoned dismissal.
 
@@ -251,79 +224,8 @@ The Standards and Spec axes report separately before the unified severity roll-u
 intentional — a change that passes Standards can still fail Spec, and vice versa. Keeping
 the axes separate makes that visible instead of collapsing it into a single severity list.
 
-Output a single report with this structure:
-
-```markdown
-## PR Review Summary
-
-**Scope:** N files changed, M lines added, L lines removed.
-**CodeRabbit:** C critical · H high · M medium · L low findings
-**Standards axis:** X findings (A1 conventions · A2 over-engineering · A3 types · A4 silent-failures)
-**Spec axis:** Y findings | spec source: [linked doc / PR description / inferred-from-tests]
-**Agent dispatches run:** [security-reviewer / production-readiness-check / none]
-
----
-
-### Standards Report (Axis A)
-
-> Does this change follow our conventions and quality expectations?
-
-#### A1 — Project conventions
-- Rule from CLAUDE.md — violated in file:line
-
-#### A2 — Over-engineering
-- V2 · file.ts:42 — <what> · simpler: <alternative> · kill cost: <X hours>
-
-#### A3 — Type design
-- TypeName · Invariant Expression: 4/10 — <concern in one sentence>
-
-#### A4 — Silent failures
-- CRITICAL · file.ts:88 — empty catch hides <error-type>
-
----
-
-### Spec Report (Axis B)
-
-> Does this change implement the intended behavior?
-> Spec source: [linked doc at path/url | PR description | inferred from tests — no spec doc found]
-
-#### B1 — Intent coverage
-- MISS · "users can reset password via email" — no diff change corresponds to this stated intent
-
-#### B2 — Business-rule correctness
-- WRONG · file.ts:120 — refund guard uses `>` not `>=`; allows refund equal to original charge
-
-#### B3 — Edge cases
-- UNHANDLED · empty array input at file.ts:55 — spec requires "return empty state, not error"
-
-#### B4 — Test coverage of spec
-- NO TEST · "password reset email" behavior has no test
-- SNAPSHOT · auth.test.ts:33 — mocks return value and asserts same value; no invariant named
-
----
-
-### Unified severity roll-up (CodeRabbit + both axes + agent dispatches)
-
-#### Critical (X)
-- [source] file.ts:42 — description
-
-#### High (X)
-- ...
-
-#### Medium (X)
-- ...
-
-#### Project-convention violations (X)
-- Rule from CLAUDE.md — violated in file:line
-
----
-
-### Recommended action
-1. Fix critical first — address any Spec axis B2 business-rule failures before Standards issues
-2. Address high before merge
-3. Consider medium/low
-4. Re-run `/review-pr` after fixes
-```
+Load `references/report-template.md` at Stage 3 for the exact output structure (summary header,
+Standards Report, Spec Report, unified severity roll-up, recommended action) and emit the final report in it.
 
 ## Notes
 

@@ -3,7 +3,10 @@ name: inbox-triage
 description: >
   Triage Summer's Gmail inbox: score emails by importance, route action items
   to the correct Mem note as checkboxes, create draft replies for urgent emails,
-  track unsubscribe candidates, and log everything.
+  execute Summer-directive tasks from the Claude Tasks note (including
+  credential-gated logins via macOS Keychain), create calendar events for
+  confirmed appointments, auto-archive curated newsletters to Mem, post the
+  daily summary to Summer's Slack DM, and log everything.
   Use this skill whenever asked to "triage inbox", "check my email",
   "go through my email and add tasks", "run inbox triage", "process my inbox",
   or any request to sort, summarize, or act on email. Also runs automatically
@@ -249,74 +252,8 @@ whether a match constitutes a duplicate, default to NOT creating.
 
 ### G. Curated newsletters — auto-archive to Mem (The Code, a16z Speedrun)
 
-Trigger when the email's `From` matches one of:
-- `thecode@mail.joinsuperhuman.ai` (The Code)
-- `speedrun@substack.com` (a16z Speedrun)
-
-These are auto-archived; **do not score, do not propose a task, do not draft
-a reply.** They bypass Steps 3, 4.A–F, and 6.
-
-**Action:**
-
-1. **Extract article links** from the email body. Include only links that
-   point to substantive article/post pages.
-2. **Exclude advertisement and chrome links.** Skip:
-   - Anything inside a section labeled `Sponsor`, `Sponsored`,
-     `Advertisement`, `A Word From Our Sponsor`, `Together With`, or
-     `Brought to you by`.
-   - Unsubscribe / preferences / "manage subscription" links.
-   - Social-share links (`twitter.com/intent`, `facebook.com/sharer`,
-     `linkedin.com/sharing`, `mailto:`).
-   - Footer / legal links (privacy, terms, contact, view-in-browser).
-   - Substack chrome: `Subscribe`, `Recommend`, `Like`, `Comment`, `Share`,
-     `Restack`, profile links to `substack.com/@...`.
-   - Cross-promo blocks ("More from Superhuman", "More from a16z").
-   - Tracking-pixel / image-link beacons.
-3. **For each remaining link**, fetch the article via the
-   `web-scraping-efficient` skill (do **not** call `WebFetch` directly —
-   newsletter article pages are typically large and often JS-rendered,
-   exactly the case the skill exists to handle). Extract: title, author (if
-   present), publish date (if present), and main body text. Discard nav,
-   sidebar, comments, related-posts.
-4. **Idempotency check** — before creating a note, search Mem for an
-   existing note containing the article URL (`search_notes` with the URL as
-   query). If a match exists, skip that link.
-5. **Create one Mem note per article** via `create_note`:
-   - **Title** (first line of content): the article title.
-   - **Body**: blank line, then a metadata block:
-     ```
-     Source: [The Code | a16z Speedrun]
-     Author: <author or "unknown">
-     Published: <YYYY-MM-DD or "unknown">
-     URL: <article URL>
-     Archived: <today's YYYY-MM-DD>
-
-     ---
-
-     <main article body>
-     ```
-6. **Add each new note to the `Claude articles` collection** (id
-   `421a7805-5221-4117-8425-da2dc72a2aa1`) via `add_note_to_collection`. Do
-   NOT add to `Claude articles — reviewed` — that's the processed-side
-   collection.
-7. **Mark the email as auto-handled** — count toward `Articles archived` in
-   Step 8's log. No proposal, no draft, no Pending task.
-
-**Hard rules:**
-
-- **Never fetch a non-article URL.** If link extraction is ambiguous (e.g.
-  tracking-redirect domains like `link.mail.joinsuperhuman.ai/...`), follow
-  one redirect to resolve the destination, then apply the exclusion filter
-  against the destination URL — not the redirect host.
-- **Per-newsletter cap: 10 articles.** If a newsletter has more, archive the
-  first 10 in document order and surface the overflow count in Step 9.
-- **On fetch failure** (timeout, 404, paywall, blocked) — skip silently, do
-  not retry. Surface a count of failed fetches in Step 9 ("3 articles
-  couldn't be fetched").
-- **No PII / credentials in note bodies.** Strip query-string tracking
-  params (`utm_*`, `?ref=`, `?src=`) from the saved URL before saving.
-- **Don't auto-promote to `Claude articles — reviewed`** — that collection
-  is for notes Summer has actually read.
+Emails from `thecode@mail.joinsuperhuman.ai` or `speedrun@substack.com` bypass Steps 3, 4.A–F, and 6 entirely: extract article links (excluding ads/chrome), fetch each via the `web-scraping-efficient` skill, save one Mem note per article, and add it to the `Claude articles` collection — idempotent, 10-article cap, tracking params stripped.
+Load `references/newsletter-archiving.md` when an email's `From` matches a curated-newsletter sender (checked FIRST per Step 4 routing precedence) — it holds the full extraction, exclusion, note-format, and hard rules.
 
 ---
 
@@ -340,173 +277,15 @@ Skip for FYI emails, automated messages, or anything needing research first.
 
 ## Step 7 — Execute Summer-added tasks (Claude Tasks note)
 
-Read the Claude Tasks note (`f9d6413e-4d58-4c2c-a446-514f5a7fa148`) and scan
-`## Pending` for unchecked items. **Every item here is a directive** — Summer
-added it. There is no syntactic marker to check; the discrimination is
-structural (Claude-routed proposals live in a different note — see Step 7.4).
-
-For each `- [ ]` in `## Pending`:
-
-1. **Apply safety boundaries first** (see 7.2). If any rule blocks execution, leave
-   the checkbox alone and surface the reason in the Step 9 summary.
-2. **Classify the task:**
-   - **Claude can handle directly** (Gmail filter creation, calendar event,
-     research/lookup, scheduling via tool, Drive file fetch): proceed.
-   - **Login-gated, credential in macOS Keychain** (Step 7.5): retrieve credential,
-     complete task, annotate.
-   - **Cannot handle** (physical action, personal decision, ambiguous, requires
-     judgment, or required tool not available): leave as-is, surface in summary.
-3. **Execute** with the appropriate tool.
-4. **Move the checkbox to `## Done`** with a one-line completion annotation:
-   ```
-   - [x] **[Original task text]** — [what was done], [tool], [date]
-   ```
-5. **Append an entry to the Auto-Execution Log** Mem note
-   (`eac92dec-244d-4476-8743-8adaa44443ab`). See 7.3 for format.
-
-Call `update_note` once with the full updated Claude Tasks note after working all
-actionable tasks. Count completed tasks toward "Auto-handled" in Step 8's log.
-
-### 7.2 — Safety boundaries (apply before every execution)
-
-These are hard rules. If a task touches any of these, do NOT execute — leave
-unchecked, surface the reason in Step 9.
-
-- **No money / no purchases.** Never initiate transfers, payments, charges, or
-  buys, even if the credential is available. Includes "buy X on Amazon," "pay Y
-  invoice," "transfer $Z."
-- **No irrevocable sends to real humans.** For "send X to person Y" tasks, draft
-  only — never send. Drafts go in Gmail's Drafts folder for Summer to review.
-  Exception: Summer-authored Gmail filters that route to spam/label/archive, since
-  those don't reach a human.
-- **No external deletes without explicit "delete" verb.** "Filter to spam" and
-  "archive" and "label" are OK. "Delete" requires the word "delete" or
-  "permanently remove" in the task body.
-- **No PII outside Mem.** Don't paste account numbers, SSNs, or sensitive
-  personal data into chat output, drafts to third parties, or tool arguments
-  beyond what the task requires.
-- **No credential write-back.** Step 7.5's Keychain access is read-only.
-- **No work-account actions.** `summer@deeplearning.ai` is out of scope.
-
-If a task is ambiguous about which boundary applies, default to NOT executing
-and ask in the Step 9 summary.
-
-### 7.3 — Auto-Execution Log entry format
-
-After each successful execution, fetch the Auto-Execution Log note
-(`eac92dec-244d-4476-8743-8adaa44443ab`), prepend a new entry at the top (right
-after the `***` separator), and `update_note` with the new content + version.
-
-```
-## YYYY-MM-DD — [Short task name]
-
-- Source: Personal Mem note, Pending (Summer-added)
-- Tools used: [Gmail filter | Calendar event | Drive search | Keychain + Browser | ...]
-- Action: [one-sentence description of what Claude did]
-- Outcome: [filter ID / event ID / URL / "found X" / "drafted reply" / etc.]
-- Time: [seconds or "n/a"]
-
-***
-```
-
-The log is the corpus that future triage decisions will learn from. Be specific
-about the action and outcome — vague entries don't help calibration. Don't log
-PII, credentials, or full email bodies.
-
-### 7.4 — Stale-proposal scan (Claude Inbox Proposals)
-
-After executing Summer-added tasks, read the **Claude Inbox Proposals** note
-(`2623654a-822b-4f59-8a96-d08747730ddf`). For each `- [ ]` line in `## Pending`:
-
-- Parse the leading date (`YYYY-MM-DD` immediately after `- [ ]`).
-- If the proposal is **>14 days old** (today − date > 14) AND does NOT already
-  end with `[STALE — never acknowledged]`, append that marker to the line.
-- Do NOT delete, auto-purge, or move stale items. Summer decides.
-
-Examples:
-```
-- [ ] 2026-04-20 [BetterBurgh] **Reply to Townsgate** — closing date question (draft created) [STALE — never acknowledged]
-```
-
-Surface in the Step 9 chat summary: total proposals, # added this run, # stale.
-
-Call `update_note` once on the Proposals note after the scan, even if no items
-changed (idempotent). Use the version from the get_note that started this step.
+Scan `## Pending` in the Claude Tasks note (`f9d6413e-4d58-4c2c-a446-514f5a7fa148`) — every item there is a Summer directive (discrimination is structural). For each: apply the safety boundaries first (no money, no irrevocable sends to humans, no external deletes without an explicit "delete" verb, no PII outside Mem, no credential write-back, no work-account actions), classify (direct / login-gated via Step 7.5 / cannot handle), execute, move to `## Done` with an annotation, and append to the Auto-Execution Log. Then run the stale-proposal scan on Claude Inbox Proposals (>14 days old → append `[STALE — never acknowledged]`; never delete or auto-purge).
+Load `references/task-execution.md` before executing any Pending item — it holds the full flow, safety boundaries (7.2), Auto-Execution Log format (7.3), and stale-proposal scan (7.4).
 
 ---
 
 ## Step 7.5 — Login-gated tasks (macOS Keychain retrieval)
 
-Before declaring a task "cannot handle" because it requires a login, check whether
-the credential is stored in the macOS Keychain under the dedicated
-`claude-automation:` service-name namespace. Only entries with that prefix are in
-scope — never read other Keychain items (login, internet passwords, certificates,
-keys) even if they look relevant.
-
-### When to invoke
-
-A task qualifies for Keychain retrieval when ALL of:
-- Task body or linked email mentions a portal/login/sign-in (e.g. "log into
-  LetterStream", "check Townsgate closing portal", "download from LendingClub").
-- The portal is reachable via web browser (Claude in Chrome MCP or Playwright).
-- A `claude-automation:<service>` entry likely exists in the Keychain.
-
-### Retrieval flow
-
-1. **Resolve service name** — derive `<service>` from the task by lowercasing the
-   portal name with no spaces (e.g. "LetterStream" → `letterstream`, "Townsgate
-   Closing" → `townsgate`). The full service-name lookup key is
-   `claude-automation:<service>`.
-2. **Fetch username** — run via Bash:
-   ```
-   security find-generic-password -s "claude-automation:<service>" | awk -F'"' '/"acct"/ {print $4}'
-   ```
-   If the command exits non-zero, no entry exists — treat the task as "cannot
-   handle" and leave the checkbox unchecked.
-3. **Fetch password** — run via Bash:
-   ```
-   security find-generic-password -s "claude-automation:<service>" -w
-   ```
-   The output is the password on stdout, no trailing newline beyond what
-   `security` adds. If macOS prompts "Claude Code wants to use your confidential
-   information" with no "Always Allow" button visible, stop and surface the
-   prompt to Summer — do NOT click through blindly.
-4. **Use credential immediately, then drop it** — pass to the browser tool, then
-   discard from working memory. Never write the credential to a Mem note, log,
-   draft, file, chat output, or tool argument other than the browser-fill call.
-   Do not echo it back even partially.
-5. **Audit log** — under the daily triage log entry, record one line per
-   credential read:
-   ```
-   - Keychain read: claude-automation:<service> for task "<task name>"
-   ```
-   Do NOT log the username, password, URL query string, or any field value.
-6. **On failure** — if the login fails (wrong password, MFA prompt, captcha,
-   account locked), do NOT retry, do NOT try a second entry, and do NOT prompt
-   the user inline. Move the task to `## Pending` with an annotation:
-   ```
-   - [ ] **[Task]** — login attempt failed (<short reason>) on [date]; needs Summer
-   ```
-
-### Hard rules
-
-- **Namespace scope:** only service names matching `claude-automation:*`. If the
-  closest match is `login.<something>` or any other service prefix, treat as
-  "cannot handle." Do not enumerate the full Keychain.
-- **Read-only:** never call `security add-generic-password`,
-  `security delete-generic-password`, `security set-generic-password-partition-list`,
-  or any write/modify subcommand. This skill is read-only against the Keychain.
-- **MFA stop:** if the portal demands MFA / SMS / email-code / captcha, stop
-  immediately and route the task back to Summer (failure annotation above).
-  Never attempt to read MFA codes from email or SMS.
-- **Output discipline:** `security ... -w` prints the password to stdout. Pipe
-  it directly into the browser-fill call's stdin or capture it into a shell
-  variable that's used once and unset. Never let the value land in a tool
-  argument that gets logged, in a `bash` description string, or in chat output.
-- **Trust prompt:** if Claude Code is not pre-authorized for an entry, macOS
-  shows a popup. Surface that to Summer rather than driving a click — she'll
-  re-run the `add-generic-password` command with `-T "$CLAUDE_PATH"` to
-  authorize.
+Before declaring a login-gated task "cannot handle", check the macOS Keychain under the `claude-automation:<service>` namespace (read-only, via `security find-generic-password`; never other Keychain items). Use the credential once in the browser-fill call, then drop it — never log, echo, or write it anywhere; stop on MFA/captcha/trust prompts and route the task back to Summer; record one audit line per credential read.
+Load `references/credential-retrieval.md` whenever a Pending task requires a portal login — it holds the when-to-invoke test, retrieval flow, audit format, and hard rules.
 
 ---
 
