@@ -78,7 +78,9 @@ STRUCTURAL_STOP = set(
     """phase phases load loads loaded before after goal goals
 running run runs running step steps before-running output outputs input inputs
 contract contracts schema schemas requirement requirements skill skill.md
-reference references docs section sections subsection chapter""".split()
+reference references docs section sections subsection chapter
+title tags impact impactdescription description severity
+low low-medium medium medium-high high""".split()
 )
 STOP |= STRUCTURAL_STOP
 
