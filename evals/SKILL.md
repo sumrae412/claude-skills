@@ -1,6 +1,6 @@
 ---
 name: "evals"
-description: "Use when designing or running evals for an LLM feature — offline (golden datasets, LLM-as-judge and code-based evaluators, prompt/model/architecture experiments, regression gates) or online (production sampling, blocking guardrails for PII/jailbreak/toxicity, drift detection, shadow/canary rollout, eval-based alerting). Triggers on 'design evals', 'golden dataset', 'LLM-as-judge', 'eval harness', 'production evals'. NOT for prompt-registry mechanics or governance policy (use prompt-governance), variant promotion at scale (use prompt-optimization), tuning one judge prompt's wording (use prompt-optimizer — judge prompts are prompts), or RAG retrieval design (use rag-architect)."
+description: "Use when designing or running evals for an LLM feature — offline (golden datasets, LLM-as-judge and code-based evaluators, prompt/model/architecture experiments, regression gates) or online (production sampling, blocking guardrails for PII/jailbreak/toxicity, drift detection, shadow/canary rollout, eval-based alerting). Triggers on 'design evals', 'golden dataset', 'LLM-as-judge', 'eval harness', 'production evals'. NOT for prompt-registry mechanics or governance policy, variant promotion at scale, tuning one judge prompt's wording (use prompt-optimizer — judge prompts are prompts), or RAG retrieval design (use rag-architect)."
 ---
 
 # Evals
@@ -164,13 +164,6 @@ Produce only what the user needs:
 - `courierflow-copilot-evals` — concrete domain implementation:
   grader-selection decision tree, four-property LLM-judge contract,
   YAML eval case schemas. Read this when you want a worked example.
-- `prompt-governance` (`phases/phase-2-evals.md`) — registry and
-  approval / rollback policy framing. This skill produces the eval
-  signals that policy gates on; that skill handles the workflow,
-  ownership, and registry plumbing.
-- `prompt-optimization` — *different* skill from `prompt-optimizer`
-  below. Use when empirically promoting prompt variants across
-  reviewer agents (explorers, architects, reviewers).
 - `prompt-optimizer` — use when iterating the wording of a single
   judge prompt during calibration. Judge prompts are prompts.
 - `anthropic-skills:skill-creator` — automates the with/without-skill
