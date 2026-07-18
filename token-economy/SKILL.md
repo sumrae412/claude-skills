@@ -14,6 +14,8 @@ Tactical, per-tool-call discipline for keeping a coding session's token burn low
 - Before dispatching a subagent — inject the relevant rules into the subagent's prompt.
 - Handing off long-running tasks (debugging, refactors, audits) where small wastes compound.
 
+**Skip on trivial/tiny tasks.** The discipline has a fixed overhead that only amortizes over enough tool calls: in a 2026-07-18 SkillsBench A/B, the with-skill arm used ~70% MORE tokens than baseline on a small single-lookup task (recorded: henry ledger #160). Apply above a rough task-size floor — multi-step or long-session work — not universally.
+
 **Sibling skills — don't overlap:**
 - `context-engineering` — strategic decisions about *which* files/docs the agent sees, across sessions. Pattern 11 below is complementary: once you've decided a file is loaded every session, compress its prose densely.
 - `llm-cost-optimizer` — production LLM API spend (model routing, prompt caching infra, batching).
