@@ -92,7 +92,7 @@ Sort by: feature x model x token count. Usually 2-3 endpoints drive the majority
 |---|---|---|
 | Simple | Classification, extraction, yes/no, short output | Small (Haiku, GPT-5-mini, Gemini Flash) |
 | Medium | Summarization, structured output, moderate reasoning | Mid (Sonnet, GPT-5) |
-| Complex | Multi-step reasoning, code gen, long context | Large (Opus, GPT-5, o3) |
+| Complex | Multi-step reasoning, code gen, long context | Large (Opus, Fable, GPT-5, o3) |
 
 ---
 

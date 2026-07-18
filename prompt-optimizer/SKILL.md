@@ -67,7 +67,7 @@ Load `references/quality-framework.md` for full rubrics. Quick assessment dimens
 - Assumed prior knowledge the model doesn't have
 - Instructions that say "don't X" instead of "do Y" (prefer positive framing)
 - No success criteria
-- Adding CoT to reasoning-native models (O1, O3, etc.) — degrades output
+- Adding CoT to reasoning-native models (OpenAI o-series / GPT-5 thinking, Claude 4.6+ adaptive thinking) — degrades output
 - Contradictory instructions without priority rules
 
 ---
@@ -79,7 +79,7 @@ Load `references/prompt-techniques.md` for the full catalog of 58 techniques.
 | Weakness | Apply |
 |----------|-------|
 | Vague goal | Expert Persona + Task Decomposition |
-| Missing reasoning | Chain of Thought (not for O1/O3 models) |
+| Missing reasoning | Chain of Thought (not for reasoning-native models — o-series, Claude adaptive thinking) |
 | No examples | Few-shot Learning |
 | Too broad | Template structure (CO-STAR, RISEN, or RTF) |
 | Hallucination risk | Grounding anchors + Confidence signaling |

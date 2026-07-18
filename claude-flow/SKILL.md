@@ -255,7 +255,7 @@ frontend-design guidance.
 | Using Opus for Phase 2 exploration review | Sonnet handles gap-finding; Opus reserved for Phase 4 |
 | Running all Phase 6 tiers when Tier 1 is clean | Early exit: if CodeRabbit finds no HIGH+ issues, skip Tiers 2-4 |
 | Dispatching 4 separate haiku reviewers | Batch into single `lightweight-reviewer` with combined checklist |
-| Letting Opus 4.7 under-parallelize reviewer/researcher fan-outs | Explicitly name the fan-out in the dispatch prompt; emit all tool-use blocks in a single message |
+| Letting Opus-tier models (4.7+) under-parallelize reviewer/researcher fan-outs | Explicitly name the fan-out in the dispatch prompt; emit all tool-use blocks in a single message |
 | Initializing state machine for fast/lite paths | Skip — single-session linear flows don't need cross-session resume |
 | Re-running Phase 3 quality gate when Phase 2 scored it | Carry scores forward — skip redundant re-check |
 | Coding before clarification | Phase 3 is a hard gate |
