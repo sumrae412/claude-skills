@@ -5,7 +5,7 @@ user-invocable: true
 metadata:
   hermes:
     tags: [planning, requirements, product, prd, claude-flow]
-    related_skills: [claude-flow, brainstorming, writing-plans]
+    related_skills: [claude-flow, brainstorming]
 ---
 
 # PRD — Product Requirements Document

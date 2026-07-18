@@ -1,6 +1,8 @@
 # Excalidraw Schema (Compact Subset)
 
-Excalidraw's full JSON schema has dozens of element types and hundreds of optional properties. LLMs generating free-form `.excalidraw` JSON reliably hallucinate fields, misuse binding refs, and produce files that load but render wrong. This document defines the subset the `excalidraw-canvas` skill is allowed to emit — tight enough to generate correctly, broad enough to express UI mockups and architecture diagrams.
+<!-- Inlined 2026-07-17 from the retired excalidraw-canvas skill's references/; content preserved verbatim. -->
+
+Excalidraw's full JSON schema has dozens of element types and hundreds of optional properties. LLMs generating free-form `.excalidraw` JSON reliably hallucinate fields, misuse binding refs, and produce files that load but render wrong. This document defines the subset the Phase 4 mockup generator is allowed to emit — tight enough to generate correctly, broad enough to express UI mockups and architecture diagrams.
 
 Files written with this subset load in excalidraw.com and the VS Code Excalidraw extension without warnings.
 

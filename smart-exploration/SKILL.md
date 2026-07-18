@@ -16,7 +16,7 @@ Apply `token-economy` whenever this skill would otherwise trigger broad explorat
 - If the task is tiny or the file set is already known, apply the relevant patterns inline instead of loading extra material.
 
 
-**Used by:** claude-flow Phase 2 (direct), `/research` skill (task classification for researcher selection)
+**Used by:** claude-flow Phase 2 (direct)
 
 ## Overview
 
@@ -152,7 +152,7 @@ If the category is unclear after reviewing both signals, use the `general` promp
 
 ## Spec-References-as-Context Gate
 
-When invoked from a downstream phase that has a written plan or decision document available (claude-flow Phase 4 → Phase 5, or any executing-plans dispatch), check the plan for a `## References` section before injecting prior-art file paths into the subagent prompt.
+When invoked from a downstream phase that has a written plan or decision document available (claude-flow Phase 4 → Phase 5, or any plan-execution dispatch), check the plan for a `## References` section before injecting prior-art file paths into the subagent prompt.
 
 **Rule:** If the plan has a `## References` section, treat it as the **whitelist** of source files / external docs the implementer or follow-up explorer is allowed to read. Do NOT inject adjacent files that the explorer "happened to find" but that the plan author did not list.
 

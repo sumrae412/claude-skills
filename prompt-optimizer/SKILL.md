@@ -131,8 +131,8 @@ prompts), one-shot optimization is a guess — close the loop against failures:
    re-run. Keep the change only if the pass rate moves.
 
 Skip this step for one-off prompts — the corpus cost only pays back on prompts
-with recurring traffic. For variant analysis at scale, hand off to
-`prompt-optimization`; for judge-prompt integrity rules, see `evals`.
+with recurring traffic. For variant analysis at scale and judge-prompt
+integrity rules, hand off to `evals`.
 
 ---
 

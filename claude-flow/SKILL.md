@@ -6,7 +6,7 @@ user-invocable: true
 metadata:
   hermes:
     tags: [coding, workflow, planning, review, verification]
-    related_skills: [smart-exploration, executing-plans, verification-before-completion, coding-best-practices]
+    related_skills: [smart-exploration, verification-before-completion, coding-best-practices]
 ---
 
 # Code Creation Workflow
@@ -39,7 +39,7 @@ Triggers:
 - One design doc spawns 2+ workstreams (e.g. Layer 1 positioning + Layer 2 tests + Layer 3 product reframe) that each need their own session.
 - Ship needs a "review-in-PR-author session" + "execute-in-tester session" split.
 
-Pattern: produce handoff prompts as fenced markdown blocks in the originating session's final turn, ready to copy-paste into fresh sessions. Each prompt is self-contained — the receiving session has no memory of the originating one. Validated on courierflow_beta PR #7 (2026-05-22) which spawned three handoff prompts (`/writing-plans` execution, Layer 1 positioning, Layer 3 product vision) from one brainstorm.
+Pattern: produce handoff prompts as fenced markdown blocks in the originating session's final turn, ready to copy-paste into fresh sessions. Each prompt is self-contained — the receiving session has no memory of the originating one. Validated on courierflow_beta PR #7 (2026-05-22) which spawned three handoff prompts (plan execution per `references/plan-execution.md`, Layer 1 positioning, Layer 3 product vision) from one brainstorm.
 
 
 Agentic multi-phase workflow for building features. **Executor/Advisor strategy:** Sonnet executor runs the main loop (exploring, drafting, implementing). Opus advisor fires on-demand at 3-5 decision points. **Workflow is project-generic; the Phase 0 trigger matrix and Phase 5 forced-selection menu are project-specific** — see `references/project-skill-menu.md` for the default (CourierFlow) menu and replacement guidance.
@@ -82,7 +82,7 @@ Optional flags modify specific phases without changing the path decision.
 - **Path-scoped** flags pick the whole workflow path — e.g. `--fast`, `--lite`, `--clone`, `--explore`, `--full`. These interact with Phase 1 triage (see Path Decision below) and typically skip later phases entirely.
 - **Phase-scoped** flags modify one phase's behavior without changing the path — e.g. `--visual` / `--no-visual` below. Path selection is unaffected; only the named phase runs differently. New phase-scoped flags should name the phase in the `Phase` column of this table so the scope stays obvious.
 
-**Flag propagation:** When claude-flow runs on LITE PATH and dispatches a heavyweight orchestrator subagent (`debate-team`, `research`), propagate `--lite` into the dispatch prompt. Otherwise a nominally lite run fans out into full-tier debate / full-wave research and defeats the purpose.
+**Flag propagation:** When claude-flow runs on LITE PATH and dispatches a heavyweight orchestrator subagent (`debate-team`, the built-in `deep-research` skill), propagate `--lite` into the dispatch prompt. Otherwise a nominally lite run fans out into full-tier debate / full-fan-out research and defeats the purpose.
 
 | Flag | Phase | Effect |
 |------|-------|--------|
@@ -124,10 +124,6 @@ When `--goal` is set, the executor invokes the `/goal` slash command at Phase 5 
 ## Path Decision (Phase 1 Core Logic)
 
 ```
-DIRECT-ROUTE? ("synthetic beta test", "alpha test with personas",
-                "assess usability with simulated users", "run persona-based eval")
-  → Invoke /personas skill — EXIT workflow
-
 BUG? (error report, regression, stack trace, "fix this bug")
   → Invoke /bug-fix skill — EXIT workflow
 
@@ -224,8 +220,6 @@ frontend-design guidance.
 | 6 | Quality + Finish | sonnet/haiku | Risk-budgeted review cascade → verify → commit → retrospective | Verification |
 
 **Pattern vocabulary:** See `references/multi-agent-patterns.md` for which multi-agent pattern each phase implements. Load when designing a new phase or debating whether a phase's coordination approach is the right fit.
-
-**Phase 6 optional follow-up:** `/personas` — synthetic beta test (bugs, UI snags, usefulness ratings), offered non-gating when `$diff` touches user-facing flows. See `phases/phase-6-quality.md` §Optional follow-up.
 
 ---
 

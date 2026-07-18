@@ -1,6 +1,6 @@
 ---
 name: session-handoff
-description: Document a dead end so future sessions avoid re-exploring. Writes an abandon record to .claude/abandoned/<date>-<topic>.md capturing what was tried, why it failed, and what was learned. Invoked as `/session-handoff --abandon`, or when the user says "abandon this", "this didn't work", "scrap this approach", or "dead end". Also used by claude-flow Phase 1 (Explore/Archive path) and the research skill. Normal state-export handoffs are written by the `next` skill to docs/plans/<date>-session-handoff.md — not by this skill.
+description: Document a dead end so future sessions avoid re-exploring. Writes an abandon record to .claude/abandoned/<date>-<topic>.md capturing what was tried, why it failed, and what was learned. Invoked as `/session-handoff --abandon`, or when the user says "abandon this", "this didn't work", "scrap this approach", or "dead end". Also used by claude-flow Phase 1 (Explore/Archive path) and dead-ended research investigations. Normal state-export handoffs are written by the `next` skill to docs/plans/<date>-session-handoff.md — not by this skill.
 user-invocable: true
 ---
 
@@ -37,7 +37,7 @@ status, and any saved artifact details; normal resumable handoffs stay with the
 - User says "abandon this", "this didn't work", "scrap this approach", "dead end"
 - `/session-handoff --abandon` (explicit invocation)
 - `claude-flow` Phase 1 Explore → Archive path (invoked automatically)
-- `research` skill recommends this when a line of investigation hit a wall
+- research-type investigations (e.g. built-in `deep-research`) route here when a line of investigation hits a wall
 
 ## What this skill does NOT do
 

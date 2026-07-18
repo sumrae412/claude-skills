@@ -1,11 +1,11 @@
 ---
 name: html-spec
-description: "Use when authoring an implementation plan, PRD, design doc, or brainstorm artifact that beats its Markdown equivalent by inlining visual mockups, interactive elements, or component examples — specs where a flat text outline loses engagement. Triggers on 'HTML spec', 'PRD with mockups', 'interactive plan', 'living design system', 'micro-UI to edit my plan'. Composes with [`writing-plans`](../writing-plans/SKILL.md) and [`prd`](../prd/SKILL.md) (HTML output variants), [`claude-flow`](../claude-flow/SKILL.md) Phase 4 (visual design-doc mode), and [`excalidraw-canvas`](../excalidraw-canvas/SKILL.md) (whiteboard-style diagrams; html-spec for full single-page artifacts)."
+description: "Use when authoring an implementation plan, PRD, design doc, or brainstorm artifact that beats its Markdown equivalent by inlining visual mockups, interactive elements, or component examples — specs where a flat text outline loses engagement. Triggers on 'HTML spec', 'PRD with mockups', 'interactive plan', 'living design system', 'micro-UI to edit my plan'. Composes with [`prd`](../prd/SKILL.md) (HTML output variant) and [`claude-flow`](../claude-flow/SKILL.md) Phase 4 (visual design-doc mode; its mockup references live at claude-flow/references/mockups/)."
 user-invocable: true
 metadata:
   hermes:
     tags: [planning, specs, prd, html, visual, design-system, brainstorming]
-    related_skills: [writing-plans, prd, claude-flow, excalidraw-canvas]
+    related_skills: [prd, claude-flow]
 ---
 
 # HTML Spec
@@ -120,10 +120,10 @@ For CourierFlow specifically: `docs/plans/` and `docs/prds/` already exist; add 
 
 ## Composition with other skills
 
-- **[`writing-plans`](../writing-plans/SKILL.md):** Default to Markdown. Switch to html-spec when the plan exceeds ~1000 lines or has multiple UI screens. Cross-link from the Markdown plan to the HTML spec (e.g. `See docs/specs/<slug>.html for the visual layout`).
+- **Markdown implementation plans (claude-flow Phase 4):** Default to Markdown. Switch to html-spec when the plan exceeds ~1000 lines or has multiple UI screens. Cross-link from the Markdown plan to the HTML spec (e.g. `See docs/specs/<slug>.html for the visual layout`).
 - **[`prd`](../prd/SKILL.md):** PRDs default to Markdown for the `$requirements` contract mapping. Use html-spec for PRDs heavy in user-facing UI — write the contract in Markdown at the top of the file, embed mockups via `<iframe>` or inline below.
 - **[`claude-flow`](../claude-flow/SKILL.md) Phase 4 (Architecture):** The Step 2.5 "Offer Visual Mockup" gate is where html-spec triggers. If the executor would otherwise emit ASCII diagrams + bullets, offer to switch the design doc to HTML.
-- **[`excalidraw-canvas`](../excalidraw-canvas/SKILL.md):** Excalidraw for whiteboard-style architecture diagrams + free-form sketches. html-spec for full single-page specs (mockups + copy + risk + code in one artifact). They compose — embed Excalidraw exports as SVG inside an html-spec.
+- **Whiteboard-style diagrams:** use native mermaid or claude-flow's mockup references (`claude-flow/references/mockups/`) for architecture sketches. html-spec is for full single-page specs (mockups + copy + risk + code in one artifact) — embed diagram exports as SVG inside it.
 - **`superpowers:brainstorming`** (plugin skill — no local path): First brainstorm pass can be HTML if "show me eight different shapes of this feature with mockups" beats "list eight ideas as bullets."
 
 ## Anti-patterns

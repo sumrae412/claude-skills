@@ -1,6 +1,6 @@
 ---
 name: prompt-engineering
-description: "Router for all prompt-engineering work — dispatches to structured-prompt-builder (single-turn authoring), agent-prompt-architecture (tool-using agents), prompt-optimizer (improving), prompt-optimization (variant analysis at scale), or prompt-governance (production management); centralizes the shared Anthropic prompting principles each sub-skill enforces. Use when a prompt-related ask doesn't cleanly map to one sub-skill or needs the write → improve → govern pipeline; triggers on 'prompt engineering', 'how should I prompt Claude'. If the request clearly fits one sub-skill, invoke that directly."
+description: "Router for all prompt-engineering work — dispatches to structured-prompt-builder (single-turn authoring), agent-prompt-architecture (tool-using agents), or prompt-optimizer (improving an existing prompt); centralizes the shared Anthropic prompting principles each sub-skill enforces. Use when a prompt-related ask doesn't cleanly map to one sub-skill or needs the write → improve pipeline; triggers on 'prompt engineering', 'how should I prompt Claude'. If the request clearly fits one sub-skill, invoke that directly."
 ---
 
 # Prompt Engineering
@@ -86,8 +86,7 @@ Composes with `prompt-optimizer` (which is the reactive debugger — same framew
 | Write a new single-turn prompt (classification, extraction, summary) | [structured-prompt-builder](../structured-prompt-builder/SKILL.md) |
 | Write a prompt for a tool-using, multi-turn, or side-effecting agent | [agent-prompt-architecture](../agent-prompt-architecture/SKILL.md) |
 | Fix / improve / evaluate one prompt | [prompt-optimizer](../prompt-optimizer/SKILL.md) |
-| Compare variants, promote winners, draft challengers | [prompt-optimization](../prompt-optimization/SKILL.md) |
-| Registry, A/B tests, rollback, eval pipelines in CI | [prompt-governance](../prompt-governance/SKILL.md) |
+| Compare variants, regression-gate, or manage prompts in production | [evals](../evals/SKILL.md) |
 | Unclear or multi-stage | Stay here, ask one routing question |
 
 ## Routing flow

@@ -14,8 +14,8 @@ The **executor (Sonnet)** explores the codebase directly — reading files, trac
 When the task path is `full` (set in Phase 1 Discovery):
 
 1. **Run Step 0** (Prior Knowledge Check) — still runs; prior knowledge reduces redundant research
-2. **Invoke `/research` skill** with the task description as the research question (plus any prior knowledge found in Step 0)
-3. The research skill runs its full pipeline (classify → Wave 1 → gap detection → Wave 2 → synthesize)
+2. **Invoke the built-in `deep-research` skill** with the task description as the research question (plus any prior knowledge found in Step 0). Its loop discipline (≤3 queries per round, seen-URL dedup, gap-driven next rounds, hard round/URL bounds) lives in the user CLAUDE.md routing rule "Deep-research runs carry loop discipline" — apply it on every dispatch.
+3. `deep-research` runs its harness (fan-out searches → fetch sources → adversarial verification → cited synthesis)
 4. **Receive the research brief** — use it to widen coverage, compare approaches, and identify likely blind spots
 5. **Still run Steps 1-2 firsthand** — read at least one representative file per touched layer so the executor is not relying only on delegated output
 6. **Use Step 3** to review the combined artifact: firsthand findings plus the research brief
@@ -25,15 +25,15 @@ When the task path is `lite` or `fast`, the single-executor exploration (Steps 0
 
 > **Why branch here:** Research adds depth, breadth, and quality verification — but costs 3-6 agent round-trips. Lite/fast tasks don't need this overhead. On full-path work it supplements firsthand exploration instead of replacing it, which keeps later phases grounded in verified local evidence.
 
-### `/research` vs `/deep-research` — route by where the evidence lives
+### When to dispatch `deep-research` — route by where the evidence lives
 
-Step 2 above invokes `/research` (codebase-local + prior-art, task-typed waves). When the research question is **external and web-heavy** — comparing third-party libraries/APIs, surveying an unfamiliar domain, or fact-checking claims that resolve on the open web rather than in this repo — prefer the bundled **`/deep-research`** workflow instead. It fans out multi-angle web searches, adversarially verifies each claim, and returns a single cited report; only that report lands in context (not every subagent's raw output), which serves the token-economy posture directly.
+`deep-research` earns its cost when the research question is **external and web-heavy** — comparing third-party libraries/APIs, surveying an unfamiliar domain, or fact-checking claims that resolve on the open web rather than in this repo. It fans out multi-angle web searches, adversarially verifies each claim, and returns a single cited report; only that report lands in context (not every subagent's raw output), which serves the token-economy posture directly.
 
-**Gate it behind an explicit external-research signal** — the question names external products/standards/APIs, or $requirements asks "which third-party X should we use." Most Phase 2 exploration is codebase-local (Grep/Glob/Serena), where `/deep-research`'s web fan-out is the wrong tool and `/research`'s firsthand passes are correct. Keep `/deep-research` opt-in on full/explore paths only — never lite/fast (its multi-pass verification costs meaningfully more tokens). The Sonnet advisor checkpoint (Step 3) still runs on the returned report.
+**Gate it behind an explicit external-research signal** — the question names external products/standards/APIs, or $requirements asks "which third-party X should we use." Most Phase 2 exploration is codebase-local (Grep/Glob/Serena), where `deep-research`'s web fan-out is the wrong tool and the firsthand passes (Steps 0-2 below, plus subagent codebase researchers) are correct. Keep `deep-research` opt-in on full/explore paths only — never lite/fast (its multi-pass verification costs meaningfully more tokens). The Sonnet advisor checkpoint (Step 3) still runs on the returned report.
 
 ### Wave 1 dispatch shape: task-typed vs. N-per-entity
 
-The `/research` skill defaults to **task-typed** Wave 1 — 2-4 researchers covering different dimensions (backend, frontend, prior art, external API). When the research question is "compare these N alternatives" rather than "explore this feature area," switch to **N-per-entity fan-out**: dispatch one researcher per candidate library/approach, each running the same evaluation checklist. See `n_per_entity_fanout.md` (memory) for the full decision matrix. Triggers for the entity-typed shape:
+Research-team fan-outs default to a **task-typed** Wave 1 — 2-4 researchers covering different dimensions (backend, frontend, prior art, external API). When the research question is "compare these N alternatives" rather than "explore this feature area," switch to **N-per-entity fan-out**: dispatch one researcher per candidate library/approach, each running the same evaluation checklist. See `n_per_entity_fanout.md` (memory) for the full decision matrix. Triggers for the entity-typed shape:
 - Question explicitly compares ≥4 named alternatives ("OAuth providers: Auth0 vs Clerk vs Supabase Auth vs WorkOS")
 - $requirements lists multiple candidate technologies and asks for a recommendation
 - Prior exploration produced ≥4 viable approaches and the architect needs each evaluated independently
