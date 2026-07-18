@@ -57,6 +57,8 @@ Agentic multi-phase workflow for building features. **Executor/Advisor strategy:
 | **Lightweight reviewer** | **haiku** | Phase 6 — single batched dispatch (types, API docs, invariants, defensive) |
 | **Specialist reviewers** | **sonnet** | Phase 6 — safety (combined), test coverage |
 
+**Explicit-model rule (cheapest-capable-first).** Every subagent dispatch names `model:` per this table — an omitted `model` param inherits the SESSION model, so a claude-flow run driven by an Opus-tier orchestrator silently runs its whole fan-out at Opus prices (validated on the henry orchestrator, [sumrae412/henry#158](https://github.com/sumrae412/henry/pull/158)). Default down, not up: mechanical scans take haiku, standard research/build/review takes sonnet, opus only where this table already grants it. On a quality failure at a tier, re-dispatch ONE tier up with the failure named in the brief; never retry the same tier with an unchanged prompt. The Phase 5 judge downgrade (`decisions/2026-04-24-sonnet-vs-opus-phase-downgrade.md` in the claude_flow repo, 0.989 parity) is the template for challenging any opus grant in this table.
+
 **First-party adjacent levers:** `/model opusplan` mirrors this Executor/Advisor split at the main-loop level — use it for interactive plan-then-execute runs (Opus drafts the plan, Sonnet executes). Per-dispatch `model:` parameters still apply for subagent fan-out. Skill `model:`/`effort:` frontmatter, `/context` for size pre-checks, and `/plan` (Shift+Tab) for Plan Mode are all complementary to claude-flow's phase routing.
 
 ---

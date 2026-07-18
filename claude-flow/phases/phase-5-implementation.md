@@ -38,6 +38,8 @@ Never pass to subagents:
 - Phase 0 loading decisions
 - raw clarification Q&A
 
+Every implementer/judge dispatch in this phase names `model:` explicitly — `"sonnet"` for implementation and the mid-implementation judge (the eval-backed choice — see the 2026-04-24 Opus→Sonnet downgrade note later in this file), `"haiku"` only for mechanical collation. An omitted `model` inherits the session model, which is Opus-priced under an Opus orchestrator (SKILL.md → Model Assignments, explicit-model rule).
+
 ---
 
 ## Phase 5: Implementation
