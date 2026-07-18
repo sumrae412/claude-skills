@@ -82,6 +82,8 @@ For open-ended codebase questions ("how does X work?", "find everything that tou
 
 Haiku is ~10–20× cheaper than Opus for tool-driven exploration. Every explored file that never enters your main-thread context is pure savings.
 
+**Name the model explicitly on every dispatch.** Omitting `model` on an Agent-tool dispatch inherits the ORCHESTRATOR'S model, not a cheap default — the harness default inverts cheapest-capable routing, so an unpinned "cheap" explorer dispatched from an Opus session runs at Opus prices. Hook-enforced version: henry's `docs/henry-manual/delegation.md` (Model Tiering) + `.claude/hooks/model-tier-guard.sh` ([sumrae412/henry#158](https://github.com/sumrae412/henry/pull/158)).
+
 ### 7.5 Skip subagent dispatch when the controller already has the full spec
 
 `subagent-driven-development` defaults to dispatching even content-write tasks (markdown reference files, doc pages) to per-task subagents. When the orchestrator already holds the full spec for all N files in its current context — and the writes are sequential markdown with no independent exploration needed — the per-subagent briefing tokens exceed the savings, and there's no parallelism gain (each subagent re-pays the spec cost).
