@@ -18,7 +18,7 @@ Pull from this collection ONLY. The ID is authoritative — don't search by titl
 
 | Collection | ID | Notes |
 |---|---|---|
-| Claude articles | `089f8552-6db8-47e4-899a-f092873e467c` | The only inbox this skill triages |
+| Claude articles | `f4003b7e-0e22-4a3a-b6b3-4108f11c4b9d` | The only inbox this skill triages. (Corrected 2026-07-18 — the old ID `089f8552-6db8-47e4-899a-f092873e467c` pointed at a now-empty duplicate collection with the same title; verify with `get_collection` if a run ever finds 0 notes.) |
 
 **Do NOT pull from** "Claude Tasks", "Coding", or "Article Collection" — those are separate workflows. If the user wants to triage something in another collection, they will name it explicitly and you should still verify before pulling.
 
@@ -41,7 +41,7 @@ If the user names a narrower target ("just for claude-skills", "only CourierFlow
 
 ### 1. Pull the inbox
 
-Call `mcp__a5ce767d-48cc-4ac0-b83a-4a0e2432ee4a__list_notes` with `collection_id = 089f8552-6db8-47e4-899a-f092873e467c` (Claude articles). Subtract anything also in the reviewed collection — those are done.
+Call `mcp__a5ce767d-48cc-4ac0-b83a-4a0e2432ee4a__list_notes` with `collection_id = f4003b7e-0e22-4a3a-b6b3-4108f11c4b9d` (Claude articles). Subtract anything also in the reviewed collection — those are done.
 
 Do NOT pull from any other collection. If a note appears in both Claude articles and another collection (e.g. Article Collection), it is still in scope, but only because of its Claude-articles membership.
 
@@ -124,7 +124,7 @@ At the very end, move every note from step 3's running list into the reviewed ar
 
 **Batch A** — for every `note_id`, call `add_note_to_collection` → `collection_id = bf963978-f4fd-41a5-86b6-989418e3e194` ("Claude articles — reviewed"). All in one parallel block.
 
-**Batch B** — after Batch A returns successfully, for every `note_id`, call `remove_note_from_collection` with `collection_id = 089f8552-6db8-47e4-899a-f092873e467c` (Claude articles) ONLY. Do not remove from any other collection the note happens to be in. All in one parallel block.
+**Batch B** — after Batch A returns successfully, for every `note_id`, call `remove_note_from_collection` with `collection_id = f4003b7e-0e22-4a3a-b6b3-4108f11c4b9d` (Claude articles) ONLY. Do not remove from any other collection the note happens to be in. All in one parallel block.
 
 Every triaged note ends in the reviewed archive — including "skip" verdicts. The point of archiving is to keep the inbox small, not to reward high-value pulls. Confirm in the closing line: "Archived N notes to Claude articles — reviewed."
 
