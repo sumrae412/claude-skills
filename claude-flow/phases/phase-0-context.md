@@ -76,15 +76,17 @@ project's trigger matrix when running claude-flow elsewhere. See
 `../references/project-skill-menu.md` for menu authoring rules.
 
 ```text
-templates / CSS / HTML?       -> courierflow-ui
-routes / services?            -> courierflow-api
-models / migrations?          -> courierflow-data
-external APIs / providers?    -> courierflow-integrations
-auth / security / webhooks?   -> courierflow-security
-prod incident / missed job?   -> courierflow-troubleshooter
-skill drift / routing edits?  -> courierflow-skill-sync or reviewer
+frontend surface?             -> <project-ui skill>
+backend routes / services?    -> <project-api skill>
+models / migrations?          -> <project-data skill>
+external APIs / providers?    -> <project-integrations skill>
+auth / security / webhooks?   -> <project-security skill>
 git / deploy / PR?            -> git skill
 ```
+
+(The original worked example — the legacy CourierFlow Python repo's matrix —
+was retired with that repo's skills in the 2026-07-17 skills audit; see git
+history for the concrete version.)
 
 Do not bulk-load unrelated skills.
 

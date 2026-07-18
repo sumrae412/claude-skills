@@ -35,16 +35,10 @@ are preserved in this single document.
 | Local skill | Upstream path | Imported | Local modifications |
 |---|---|---|---|
 | `dependency-auditor/` | `engineering/dependency-auditor/` | 2026-04-17 | Description tightened (upstream was the title string, blocked routing). Body verbatim. |
-| `fda-consultant-specialist/` | `ra-qm-team/fda-consultant-specialist/` | 2026-04-17 | None. Verbatim. |
-| `gdpr-dsgvo-expert/` | `ra-qm-team/gdpr-dsgvo-expert/` | 2026-04-17 | None. Verbatim. |
-| `information-security-manager-iso27001/` | `ra-qm-team/information-security-manager-iso27001/` | 2026-04-17 | None. Verbatim. |
 | `llm-cost-optimizer/` | `engineering/llm-cost-optimizer/` | 2026-04-17 | Dropped `.claude-plugin/plugin.json`. Replaced dangling cross-refs to non-local sibling skills (`senior-prompt-engineer`, `observability-designer`, `performance-profiler`, `api-design-reviewer`) with `prompt-governance` and `claude-api`. |
-| `migration-architect/` | `engineering/migration-architect/` | 2026-04-17 | Description tightened (upstream was the title string, blocked routing). Body verbatim. |
 | `prompt-governance/` | `engineering/prompt-governance/` | 2026-04-17 | Dropped `.claude-plugin/plugin.json`. Replaced dangling cross-refs (`senior-prompt-engineer`, `ci-cd-pipeline-builder`, `observability-designer`) with `prompt-optimization`. |
 | `rag-architect/` | `engineering/rag-architect/` | 2026-04-17 | None. Verbatim. |
 | `skill-security-auditor/` | `engineering/skill-security-auditor/` | 2026-04-16 | `scripts/skill_security_auditor.py` patched: (1) `tempfile.mkdtemp(dir=...)` pinned to system tmpdir + path-prefix assert before any `shutil.rmtree` (defense against poisoned `$TMPDIR`), (2) `--` separator on `git clone` argv (defense against hostile URLs resembling git options). Both findings from a security review of the upstream script. |
-| `soc2-compliance/` | `ra-qm-team/soc2-compliance/` | 2026-04-17 | None. Verbatim. |
-
 All imports passed `skill-security-auditor` scan with 0 findings. Python scripts
 verified as self-contained local CLIs with no network calls, no API keys, and
 no hardcoded paths.

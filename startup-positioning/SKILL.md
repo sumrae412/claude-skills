@@ -314,6 +314,5 @@ Read only what you need for the current phase.
 
 ## See also
 
-- `pricing-strategy` — positioning determines what value you charge for; run positioning before pricing.
-- `fundraising` — investors buy into positioning before they buy into the business.
-- `measuring-pmf` — segment-level PMF informs where to position; run together when narrowing ICP.
+- `startup-analysis` — validate the idea and market before positioning work.
+- `pitch-deck` — positioning feeds the deck narrative; run positioning first.

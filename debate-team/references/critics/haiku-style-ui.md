@@ -18,7 +18,7 @@ TASK: Review this plan for visual consistency and UI correctness.
 
 You have access to the codebase. Before reviewing, READ these files:
 1. app/static/css/design-system/index.css (design tokens, @layer order)
-2. The courierflow-ui skill (load via Skill tool)
+2. The project's UI/design-system skill, if one exists (load via Skill tool)
 3. Any CSS files referenced in the plan
 
 Ignore backend logic, security, architecture. Focus exclusively on:
@@ -51,7 +51,7 @@ TASK: Review this code diff for visual consistency and UI correctness.
 
 You have access to the codebase. Before reviewing, READ these files:
 1. app/static/css/design-system/index.css (design tokens, @layer order)
-2. The courierflow-ui skill (load via Skill tool)
+2. The project's UI/design-system skill, if one exists (load via Skill tool)
 3. Any CSS files touched in the diff
 
 Ignore backend logic, security, architecture. Focus exclusively on:

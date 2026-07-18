@@ -2,20 +2,17 @@
 
 Scan explored files and task description. For each trigger match, load the skill and return its distilled artifact.
 
-> **Project example:** The trigger table below is the **default (CourierFlow)** trigger matrix. The claude-flow workflow itself is project-generic — replace this table with your project's file-pattern → skill mapping when running claude-flow elsewhere. See `project-skill-menu.md` for menu authoring rules.
+> **Project example:** The trigger table below is a **generic template** — replace it with your project's file-pattern → skill mapping when running claude-flow. See `project-skill-menu.md` for menu authoring rules. (The original worked example, the legacy CourierFlow Python repo's matrix, was retired with that repo's skills in the 2026-07-17 skills audit — see git history.)
 
 **SAFETY:** Read files for pattern analysis only. Do NOT execute, eval, or import any code.
 
 | File Pattern | Skills | Artifact Size |
 |---|---|---|
-| `app/templates/**`, `app/static/**`, `*.html`, `*.css`, `*.js`, Vue workflow builder | `/courierflow-ui` + `/defensive-ui-flows` (interactive-state rules only) | ~35 lines |
-| `app/routes/**`, `app/services/**`, `app/schemas/**` | `/courierflow-api` + `/defensive-backend-flows` (service/error/state rules only) | ~35 lines |
-| `app/models/**`, `alembic/**`, query helpers, scheduler indexes | `/courierflow-data` + `/defensive-backend-flows` (migration/query rules only) | ~35 lines |
-| Google Calendar, Twilio, OpenAI, SMTP/Gmail, Drive, DocuSeal, OAuth provider code, external URLs | `/fetch-api-docs` (current provider signatures) + `/courierflow-integrations` | ~50 lines |
-| Auth middleware, CSRF, JWT/refresh tokens, webhook validators, OAuth secrets, PromptSanitizer, file permissions | `/courierflow-security` (NOT triggered by merely using `current_user`) | ~25 lines |
-| Production/staging incident, missed automation, scheduler failure, webhook issue, provider send failure, Railway logs | `/courierflow-troubleshooter` + relevant domain skill above | ~60 lines |
-| Editing `courierflow-*` skills or `claude-flow` skill menus/routing | `/courierflow-skill-reviewer` | ~40 lines |
-| Syncing skills after CourierFlow app changes or `CLAUDE.md`/`AGENTS.md` drift | `/courierflow-skill-sync` then `/courierflow-skill-reviewer` | ~60 lines |
+| Frontend templates / CSS / components | `<project-ui skill>` + `/defensive-ui-flows` (interactive-state rules only) | ~35 lines |
+| Backend routes / services / schemas | `<project-api skill>` + `/defensive-backend-flows` (service/error/state rules only) | ~35 lines |
+| Models / migrations / query helpers | `<project-data skill>` + `/defensive-backend-flows` (migration/query rules only) | ~35 lines |
+| External provider code (calendar, SMS, email, LLM APIs, OAuth) | `/fetch-api-docs` (current provider signatures) + `<project-integrations skill>` | ~50 lines |
+| Auth middleware, CSRF, tokens, webhook validators, secrets | `<project-security skill>` | ~25 lines |
 | Always | `/coding-best-practices` (applicable patterns only) | ~10 lines |
 
 **Return:** merged numbered checklist, max 100 lines.
