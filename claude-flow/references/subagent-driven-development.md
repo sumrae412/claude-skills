@@ -12,7 +12,7 @@ digraph when_to_use {
     "Tasks mostly independent?" [shape=diamond];
     "Stay in this session?" [shape=diamond];
     "subagent-driven-development" [shape=box];
-    "executing-plans" [shape=box];
+    "parallel-session execution (plan-execution.md)" [shape=box];
     "Manual execution or brainstorm first" [shape=box];
 
     "Have implementation plan?" -> "Tasks mostly independent?" [label="yes"];
@@ -20,7 +20,7 @@ digraph when_to_use {
     "Tasks mostly independent?" -> "Stay in this session?" [label="yes"];
     "Tasks mostly independent?" -> "Manual execution or brainstorm first" [label="no - tightly coupled"];
     "Stay in this session?" -> "subagent-driven-development" [label="yes"];
-    "Stay in this session?" -> "executing-plans" [label="no - parallel session"];
+    "Stay in this session?" -> "parallel-session execution (plan-execution.md)" [label="no - parallel session"];
 }
 ```
 
@@ -435,7 +435,7 @@ Without inter-task verification, a subtle regression in Task 2 compounds silentl
 
 **Required workflow skills:**
 - **superpowers:using-git-worktrees** - REQUIRED: Set up isolated workspace before starting
-- **superpowers:writing-plans** - Creates the plan this skill executes
+- **`plan-execution.md` (this directory)** - Plan format the executed plan follows
 - **superpowers:requesting-code-review** - Code review template for reviewer subagents
 - **`/cleanup`** - Complete development after all tasks (branch teardown + session-learnings + repo sync)
 
@@ -443,4 +443,4 @@ Without inter-task verification, a subtle regression in Task 2 compounds silentl
 - `test-driven-development.md` (in this directory) — Subagents follow TDD for each task
 
 **Alternative workflow:**
-- **superpowers:executing-plans** - Use for parallel session instead of same-session execution
+- **Parallel-session plan execution** per `plan-execution.md` (this directory) - Use a fresh session instead of same-session execution

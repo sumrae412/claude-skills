@@ -1,8 +1,10 @@
 # Mockup Prompts
 
-Three prompts the `excalidraw-canvas` executor runs, in order: (1) generate initial mockups from the plan, (2) detect drift after user edits, (3) produce a `$plan` delta when drift is material. Each section below tells the executor what to do — treat these as instructions, not literal prompt strings to paste verbatim.
+<!-- Inlined 2026-07-17 from the retired excalidraw-canvas skill's references/; content preserved verbatim. -->
 
-All `.excalidraw` output must follow `references/excalidraw-schema.md` (supported elements, envelope, validation checklist).
+Three prompts the Phase 4 Visual Checkpoint executor runs, in order: (1) generate initial mockups from the plan, (2) detect drift after user edits, (3) produce a `$plan` delta when drift is material. Each section below tells the executor what to do — treat these as instructions, not literal prompt strings to paste verbatim.
+
+All `.excalidraw` output must follow `excalidraw-schema.md` (this directory — supported elements, envelope, validation checklist).
 
 ---
 

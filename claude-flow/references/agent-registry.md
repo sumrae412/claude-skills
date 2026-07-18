@@ -38,9 +38,8 @@ All advisor calls use `subagent_type: "general-purpose"`. Phase 2 uses `model: "
 | coding-best-practices | Phase 0 (loaded), Phase 5 (applied) |
 | defensive-ui-flows | Phase 0 (loaded), Phase 5 (applied) |
 | defensive-backend-flows | Phase 0 (loaded), Phase 5 (applied) |
-| writing-plans | Phase 4 (plan creation) |
 | investigator | Phase 5 (on unexpected TDD failures — evidence-first before retrying) |
-| executing-plans | Phase 5 (plan execution) |
+| `claude-flow/references/plan-execution.md` | Phase 4 (plan format), Phase 5 (execution gates) |
 | `claude-flow/references/test-driven-development.md` | Phase 5 (TDD per step) |
 | `claude-flow/references/subagent-driven-development.md` | Phase 5 (parallel independent steps) |
 | **coderabbit:review** | **Phase 6 Tier 1 (consolidated first-pass code review)** |

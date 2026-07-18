@@ -42,8 +42,6 @@ X, 2026-06; adopted 2026-07-04.)
 
 ## Path Criteria
 
-- **Direct-route (skip workflow):** Some requests match a dedicated skill better than any workflow path. Route without entering Phase 2+:
-  - "synthetic beta test &lt;app&gt;", "alpha test with personas", "assess usability with simulated users", "run persona-based eval" -> `/personas`
 - **Bug path:** error report, regression, stack trace, "fix this bug", GitHub issue tagged as bug
 - **Fast path:** typo fix, one-line change, config tweak, or contained single-file edit with no ripple effects
 - **Plan path:** an existing plan file or PRP already exists for this feature

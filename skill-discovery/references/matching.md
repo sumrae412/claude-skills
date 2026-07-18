@@ -6,7 +6,7 @@ Heuristics for routing user intent to the right local skill. Load this when the 
 
 Skills appear in the system-reminder in two forms:
 
-- **Bare name** (`research`, `zoom-out`, `smart-exploration`) — top-level skills from `~/.claude/skills/`
+- **Bare name** (`zoom-out`, `smart-exploration`, `token-economy`) — top-level skills from `~/.claude/skills/`
 - **Namespaced** (`plugin:skill-name`, e.g. `superpowers:brainstorming`, `common-room:account-research`) — skills provided by installed plugins
 
 When searching, match on the trailing segment (the skill name itself), but include the namespace in the final recommendation so the user/invocation knows which skill file.
@@ -15,21 +15,21 @@ When searching, match on the trailing segment (the skill name itself), but inclu
 
 | User intent | Likely skill | Not this |
 |-------------|--------------|----------|
-| "read official docs for library X" | WebFetch the official docs directly | `research` (too broad) |
-| "open-ended exploration / synthesis" | `research`, `deep-research-synthesizer` | a bare docs lookup (just WebFetch it) |
-| "navigate an unfamiliar codebase" | `smart-exploration`, `investigator` | `research` (external-facing) |
-| "build a feature / implement a plan" | `/claude-flow` (per CourierFlow CLAUDE.md) | raw `writing-plans` + `executing-plans` |
+| "read official docs for library X" | WebFetch the official docs directly | `deep-research` (too broad) |
+| "open-ended exploration / synthesis" | built-in `deep-research` | a bare docs lookup (just WebFetch it) |
+| "navigate an unfamiliar codebase" | `smart-exploration`, `investigator` | `deep-research` (external-facing) |
+| "build a feature / implement a plan" | `/claude-flow` (per CourierFlow CLAUDE.md) | hand-rolled plan/execute loops |
 | "fix a bug / reproduce an error" | `/bug-fix` | `/claude-flow` (explicitly excluded for bugs) |
 | "write tests first" | `test-driven-development`, `superpowers:test-driven-development` | `playwright-test` (E2E-specific) |
 | "E2E / browser automation tests" | `playwright-test` | generic TDD |
-| "design a UI / critique a design" | `frontend-design:frontend-design`, `design:design-critique` | `excalidraw-canvas` (mockup generation, not critique) |
-| "draw a diagram / architecture viz" | `excalidraw-canvas` | `anthropic-skills:canvas-design` (asset generation) |
-| "generate an image / hero asset" | `anthropic-skills:canvas-design` | `excalidraw-canvas` |
+| "design a UI / critique a design" | `frontend-design:frontend-design`, `design:design-critique` | mockup generators (generation, not critique) |
+| "draw a diagram / architecture viz" | native mermaid (chat + artifacts render it) | `anthropic-skills:canvas-design` (asset generation) |
+| "generate an image / hero asset" | `anthropic-skills:canvas-design` | mermaid (diagrams, not assets) |
 | "ship code / commit + PR + merge" | `/ship` / `shipping-workflow`, `commit-commands:commit-push-pr` | individual git commands |
 | "pre-ship audit" | `production-readiness-check` | `/ship` (runs after audit) |
 | "code review" | `code-review:code-review`, `pr-review-toolkit:review-pr`, `coderabbit:review` | `/ship` |
 | "debug a running system" | `superpowers:systematic-debugging`, `engineering:debug` | `investigator` (file-level) |
-| "search Slack / summarize channel" | `slack-by-salesforce:*` | generic `research` |
+| "search Slack / summarize channel" | `slack-by-salesforce:*` | generic `deep-research` |
 | "Gmail draft / search" | (no local skill — use `mcp__*gmail_*` tools directly) | — |
 | "write a new skill" | `superpowers:writing-skills` | `anthropic-skills:skill-creator` (simpler path) |
 | "configure a hook / settings.json" | `update-config`, `hookify:configure` | manual edits |
@@ -40,15 +40,14 @@ When searching, match on the trailing segment (the skill name itself), but inclu
 Before declaring a match:
 
 1. Read the skill's `description` field (not just its name) — names can be misleading.
-2. If two skills look similar, read both SKILL.md files. Common overlaps: `research` vs the built-in `deep-research`, `writing-plans` vs `superpowers:writing-plans`.
-3. Prefer the **most specific** skill for the task. `research` is a catch-all and is often wrong when a narrower skill exists.
+2. If two skills look similar, read both SKILL.md files. Common overlap: `superpowers:*` twins of top-level skills — prefer the one referenced in project memory/CLAUDE.md.
+3. Prefer the **most specific** skill for the task. `deep-research` is a catch-all and is often wrong when a narrower skill exists.
 4. Respect project overrides: this repo's CLAUDE.md routes feature work to `/claude-flow` and bugs to `/bug-fix` — honor those over generic matches.
 
 ## Common mis-matches (observed)
 
-- **`research` picked for "read these API docs"** — just WebFetch the official docs; `research` is for open-ended synthesis.
+- **`deep-research` picked for "read these API docs"** — just WebFetch the official docs; `deep-research` is for open-ended synthesis.
 - **`smart-exploration` picked for external research** — it's a codebase-navigation skill, not a web-research one.
-- **`writing-plans` picked mid-implementation** — once execution starts, `/claude-flow` or `executing-plans` applies; `writing-plans` is pre-plan only.
 - **`superpowers:*` duplicate of a top-level skill picked randomly** — when both exist (`test-driven-development` vs `superpowers:test-driven-development`), prefer the one explicitly referenced elsewhere in project memory/CLAUDE.md; otherwise note both and let the user choose.
 ## When no local skill fits
 

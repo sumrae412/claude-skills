@@ -54,7 +54,7 @@ After the plan approval gate clears and BEFORE invoking the External API Contrac
 /goal $plan.steps all have status=complete; uv run pytest <touched-dirs> exits 0;
 uv run ruff check <touched-dirs> exits 0; static analysis (semgrep --severity ERROR,
 ast-grep scan) reports 0 ERROR-level findings; phantom-completion audit (per
-executing-plans § "Step 4.5") shows 0 MUST-FIX; no new pytest.skip/xfail/skipif
+references/plan-execution.md § "Phantom-Completion Audit") shows 0 MUST-FIX; no new pytest.skip/xfail/skipif
 markers added in $diff; no test files deleted in $diff without replacement;
 $diff.context_facts captured for any task that surfaced new domain knowledge;
 or stop after <workflow-profiles.goal_turn_budgets[<path>][phase-5]> turns
@@ -266,7 +266,7 @@ Follow `claude-flow/references/subagent-driven-development.md`:
 
 > **Explicit parallel fan-out (Opus 4.7):** When dispatching N independent reviewers / researchers / implementers across M items, emit a single message with N tool-use blocks. Do **not** issue them sequentially — 4.7's default bias is under-parallelization.
 
-<!-- Task taxonomy (types + dependency types) defined in writing-plans/SKILL.md. Keep in sync. -->
+<!-- Task taxonomy (types + dependency types) defined in ../references/plan-execution.md § Task Taxonomy. Keep in sync. -->
 **Dependency-aware dispatch:**
 - `data` or `build` dependencies → strictly sequential (predecessor must complete first)
 - `knowledge` dependencies → parallelizable (dispatch concurrently, record assumptions in each subagent's context)
@@ -300,7 +300,7 @@ MEDIUM/LOW findings defer to Phase 6 review. Agents that ran in Phase 5 are **sk
 
 ### Phantom-Completion Audit (HARD GATE before Phase 5.5)
 
-After the final task in the plan is marked complete and tests+lint pass, run the phantom-completion audit from `executing-plans/SKILL.md` § "Step 4.5: Phantom-Completion Audit" before transitioning to Phase 5.5.
+After the final task in the plan is marked complete and tests+lint pass, run the phantom-completion audit from `../references/plan-execution.md` § "Phantom-Completion Audit" before transitioning to Phase 5.5.
 
 For each `[X]` task in the plan, verify the promised artifacts (files, symbols, migration revisions) actually exist on disk and the diff against `origin/main` is non-empty. Downgrade unverified `[X]` to `[~]` and either complete the work or amend the plan with justification — never silently ship a hollow checkmark.
 
@@ -315,7 +315,7 @@ it to the user.
 
 ## Multi-surface features — phased commits
 
-For features spanning multiple surfaces (backend + client + infra, >500 LoC), Phase 5 MAY land as N logical phase commits on one branch rather than a single commit. Each phase must leave full test suites green. See `executing-plans` § "Multi-Surface Features: Phased Commits with Green Between" for the DAG-documentation convention, labeling (A–F), and skip criteria.
+For features spanning multiple surfaces (backend + client + infra, >500 LoC), Phase 5 MAY land as N logical phase commits on one branch rather than a single commit. Each phase must leave full test suites green. See `../references/plan-execution.md` § "Multi-Surface Features: Phased Commits with Green Between" for the DAG-documentation convention, labeling (A–F), and skip criteria.
 
 ---
 

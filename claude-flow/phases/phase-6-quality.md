@@ -328,11 +328,6 @@ After the feature completes, record:
 If the retrospective suggests a workflow improvement, keep it to one targeted
 change.
 
-## Optional Follow-Up: `/personas`
-
-If the diff changed user-facing flows in a non-trivial way, optionally offer a
-synthetic beta pass before real-user testing.
-
 ## State Transition
 
 Write `artifacts.review_findings`.

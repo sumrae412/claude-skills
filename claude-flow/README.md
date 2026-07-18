@@ -1,6 +1,6 @@
 # Code Creation Workflow
 
-Unified orchestrator for all feature development. Supersedes brainstorming, writing-plans, executing-plans, test-driven-development, plancraft, and feature-dev.
+Unified orchestrator for all feature development. Supersedes brainstorming, test-driven-development, plancraft, feature-dev, and the retired plan-writing/plan-execution skills (their plan format and execution gates are inlined at `references/plan-execution.md`).
 
 ## Installation model
 

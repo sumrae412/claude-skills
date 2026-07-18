@@ -37,7 +37,7 @@ The script extracts file paths, function references, and pattern claims from the
 - Function/class refs: `symbol()` in `file.py` — grep confirms definition exists
 - Pattern claims: extracted for manual review (not auto-verifiable)
 
-<!-- Task taxonomy (types + dependency types) defined in writing-plans/SKILL.md. Keep in sync. -->
+<!-- Task taxonomy (types + dependency types) defined in ../references/plan-execution.md § Task Taxonomy. Keep in sync. -->
 
 ---
 
