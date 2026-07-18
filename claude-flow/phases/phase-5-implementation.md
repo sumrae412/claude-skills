@@ -225,18 +225,18 @@ For UI-affecting tasks, carry `$design_context` into implementation dispatches.
 Implementers must preserve centralized design-system patterns and satisfy the
 task design brief's required states before polishing visuals.
 
-- **Variant B (forced selection — DEFAULT):** Prepend the following block to the subagent prompt. The `Available skills` list below is the **default CourierFlow menu** — replace it with your project's menu (see `../references/project-skill-menu.md` for authoring rules).
+- **Variant B (forced selection — DEFAULT):** Prepend the following block to the subagent prompt, filling `Available skills` with **your project's menu** (see `../references/project-skill-menu.md` for authoring rules; the original CourierFlow example menu was retired 2026-07-17 — see git history).
 
   ```
   Before any tool calls, output exactly one line:
   SELECTED_SKILL: <name|none>
 
   Available skills (pick one):
-  - courierflow-ui — Frontend code: Jinja templates, CSS, Vue workflow builder pages, dashboards, calendar/sidebar layouts; preserve design-system alignment, task-specific design brief, complete UI states, and centralized patterns over one-off styles
-  - courierflow-api — Backend route and service code: FastAPI routes, service layer, business logic, request handlers
-  - courierflow-data — Database layer: SQLAlchemy ORM models, Alembic migrations, schema design, eager-loading, Household/HouseholdMember domain
-  - courierflow-integrations — External services: Google Calendar, Twilio SMS, OpenAI, DocuSeal, Gmail, onboarding wizard
-  - courierflow-security — Auth, registration, login, secrets, permissions, session handling, landlord/tenant access
+  - <project-ui skill> — one-line domain description
+  - <project-api skill> — one-line domain description
+  - <project-data skill> — one-line domain description
+  - <project-integrations skill> — one-line domain description
+  - <project-security skill> — one-line domain description
 
   Pick "none" only if the task is fully solvable with built-in tools.
   After your SELECTED_SKILL line, the orchestrator will inject that skill's
@@ -249,10 +249,9 @@ task design brief's required states before polishing visuals.
 
 Variant B's curated 5-skill menu is hand-selected to be domain-coherent. Per the [scale experiment](../docs/plans/2026-04-29-skill-selection-at-scale.md), retrieving from a broader corpus (BM25 / rerank) under-performed this curated menu. Do not replace the menu with retrieval without re-running the experiment.
 
-Keep `courierflow-troubleshooter`, `courierflow-skill-sync`, and
-`courierflow-skill-reviewer` out of the implementation forced-selection menu.
-Use them in Phase 0 or maintenance/diagnosis tasks; Phase 5 implementers should
-select one code-surface skill above.
+Keep maintenance/diagnosis skills out of the implementation forced-selection
+menu; Phase 5 implementers should select one code-surface skill from the
+project menu.
 
 ### Parallel Subagent Dispatch (For Independent Steps)
 

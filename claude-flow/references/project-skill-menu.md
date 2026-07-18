@@ -22,37 +22,13 @@ CourierFlow-flavored example.
 
 ---
 
-## Default Menu (CourierFlow)
+## Default Menu (CourierFlow — retired)
 
-**Phase 5 forced-selection (5 skills, domain-coherent):**
-
-- `courierflow-ui` — Frontend code: Jinja templates, CSS, Vue workflow builder
-  pages, dashboards, calendar/sidebar layouts.
-- `courierflow-api` — Backend route and service code: FastAPI routes, service
-  layer, business logic, request handlers.
-- `courierflow-data` — Database layer: SQLAlchemy ORM models, Alembic
-  migrations, schema design, eager-loading, Household/HouseholdMember domain.
-- `courierflow-integrations` — External services: Google Calendar, Twilio SMS,
-  OpenAI, DocuSeal, Gmail, onboarding wizard.
-- `courierflow-security` — Auth, registration, login, secrets, permissions,
-  session handling, landlord/tenant access.
-
-**Phase 0 trigger matrix (file-pattern → skill):**
-
-```text
-templates / CSS / HTML?       -> courierflow-ui
-routes / services?            -> courierflow-api
-models / migrations?          -> courierflow-data
-external APIs / providers?    -> courierflow-integrations
-auth / security / webhooks?   -> courierflow-security
-prod incident / missed job?   -> courierflow-troubleshooter
-skill drift / routing edits?  -> courierflow-skill-sync or reviewer
-git / deploy / PR?            -> git skill
-```
-
-**Excluded from Phase 5 forced-selection** (use in Phase 0 / maintenance only):
-`courierflow-troubleshooter`, `courierflow-skill-sync`,
-`courierflow-skill-reviewer`.
+The original worked example was the legacy CourierFlow Python repo's 5-skill
+forced-selection menu (`courierflow-ui` / `-api` / `-data` / `-integrations` /
+`-security`). Those skills were retired with the frozen Python repo in the
+2026-07-17 skills audit — recover them from git history if a reference example
+is needed. Author new menus per the section below.
 
 ---
 

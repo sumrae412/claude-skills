@@ -126,7 +126,6 @@ Before shipping any piece of writing produced under a skill that loads this refe
 
 - `resume-tailor` — Phase 2 matching, Phase 4 positioning, Principle 7.
 - `sc-marketing-scripts` — Core Principles and Review Checklist.
-- `elevator-pitch` — Communication Principles block; run §9 sameness pass on every pitch version before shipping.
 - `writing-voice`, `writing-workshop`, `prd`, `pitch-deck`, `synthesis-brief` — load before drafting; run §9 sameness-detector pass before shipping.
 - Upstream via CLAUDE.md rule: `design:ux-copy`, `product-management:stakeholder-update`, `operations:status-report`, `anthropic-skills:toneguard`.
 
