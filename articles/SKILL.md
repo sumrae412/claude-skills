@@ -123,6 +123,18 @@ After all notes are processed, emit a one-screen rollup:
 - Suggested next actions (ranked): ...
 ```
 
+### 4b. `--draft` mode (opt-in)
+
+Runs only when invoked as `/articles --draft`. After the step-4 rollup, walk the **high-value** pulls and, for each one, ask before drafting: "Draft the edit for `<title>` → `<target>`? y/n". On a yes, produce the concrete artifact inline in the reply — the actual reference-file text, SKILL.md edit block, or memory entry, not a description of one.
+
+Three rules keep this safe:
+
+- **Text only.** No file writes to any repo, no commits, no PRs. The "Never auto-edit skills or repos" rule still governs — a draft is a proposal the user applies in a follow-up session.
+- **Gate per article, never per batch.** A single "yes, draft them all" is not consent for the set; ask each time.
+- **Verify before authoring.** The body-less-capture rule applies at full force here: never draft an edit from a title-level verdict without first fetching the canonical source and gap-checking the target. Drafting is the step where an over-rated title becomes a real repo change, so this is where verification matters most.
+
+Skip an article's draft when the gap-check shows the target already covers it — say so in one line rather than drafting a no-op edit.
+
 ### 5. Archive everything processed
 
 At the very end, move every note from step 3's running list into the reviewed archive. **Do it as two sequential batches, not interleaved** — the auto-mode classifier will block a `remove` that runs in parallel with its matching `add` because, from the outside, the add hasn't confirmed yet.
