@@ -18,19 +18,24 @@ Apply `token-economy` whenever this skill would otherwise trigger broad explorat
 
 **Default to the cheapest model that can safely do the step.** Most of `/next` is mechanical — state collection, file writes, git plumbing — and does not need a frontier model. Delegate those steps to a pinned-cheap executor instead of running them in the orchestrator's context.
 
-| Step / work | Tier | Executor |
-|---|---|---|
-| Pre-flight state collection (`git status`, `git worktree list`, `gh pr list`, `ls docs/plans/`), inventories, greps | Haiku | `cheap-worker` |
-| Drafting the handoff doc body from a supplied outline + collected state; mechanical edits; grep-for-old-framing sweep (Guardrail at bottom) | Sonnet | `fast-worker` |
-| Deciding **what the next task is**, resolving contradictory state, judging "is this doc self-contained?", triaging a blocked merge | Orchestrator (current model) | — |
-| Genuinely hard root-cause or architecture judgment blocking the handoff | Opus | `deep-reasoner` |
+| Step / work | Tier |
+|---|---|
+| Pre-flight state collection (`git status`, `git worktree list`, `gh pr list`, `ls docs/plans/`), inventories, greps | Haiku-class executor |
+| Drafting the handoff doc body from a supplied outline + collected state; mechanical edits; grep-for-old-framing sweep (Guardrail at bottom) | Sonnet-class executor |
+| Deciding **what the next task is**, resolving contradictory state, judging "is this doc self-contained?", triaging a blocked merge | Orchestrator (current model) |
+| Genuinely hard root-cause or architecture judgment blocking the handoff | Opus-class executor |
+
+**Dispatching a tier.** Use whichever mechanism the current project offers, in this order:
+1. A project-defined pinned subagent, if one exists — check `ls .claude/agents/` first. In `~/claude_code/henry/` these are `cheap-worker` (Haiku), `fast-worker` (Sonnet), and `deep-reasoner` (Opus). Do NOT assume these names exist elsewhere; they are henry-only.
+2. Otherwise `Agent` with an explicit `model:` override (`model: "haiku"` / `"sonnet"` / `"opus"`) on a generic agent type.
+3. If neither is available, do the step inline — but keep the brief tight so the cost stays proportional.
 
 Rules:
-- **Never dispatch Opus for step-collection or file-writing.** If the brief is "run these commands and report" or "write this file from this outline", it is `cheap-worker` work.
+- **Never dispatch a frontier model for step-collection or file-writing.** If the brief is "run these commands and report" or "write this file from this outline", it is Haiku work.
 - **Escalate on ambiguity, not on importance.** A high-stakes step still runs cheap if the spec is exact; escalate the moment the executor would have to make a design call.
-- **One escalation hop at a time** — `cheap-worker` → `fast-worker` → orchestrator. Do not jump from Haiku to Opus.
+- **One escalation hop at a time** — Haiku → Sonnet → orchestrator. Do not jump from Haiku to Opus.
 - **Safety floor:** any step that decides what to ship, what to merge, or whether to STOP stays with the orchestrator. Cheap models collect evidence; they do not adjudicate it.
-- Batch cheap dispatches — one `cheap-worker` call collecting all pre-flight state beats five.
+- Batch cheap dispatches — one Haiku call collecting all pre-flight state beats five.
 
 **Announce at start:** "Using /next to write a handoff doc, then ship and clean up."
 
