@@ -141,7 +141,7 @@ At the very end, move every note from step 3's running list into the reviewed ar
 
 **Batch A** — for every `note_id`, call `add_note_to_collection` → `collection_id = bf963978-f4fd-41a5-86b6-989418e3e194` ("Claude articles — reviewed"). All in one parallel block.
 
-**Batch B** — after Batch A returns successfully, for every `note_id`, call `remove_note_from_collection` with `collection_id = f4003b7e-0e22-4a3a-b6b3-4108f11c4b9d` (Claude articles) ONLY. Do not remove from any other collection the note happens to be in. All in one parallel block.
+**Batch B** — after Batch A returns, check each add result **individually**. Call `remove_note_from_collection` (`collection_id = f4003b7e-0e22-4a3a-b6b3-4108f11c4b9d`, Claude articles ONLY) for ONLY the note_ids whose Batch A add confirmed success. A note whose add failed stays in the inbox — that is the safe outcome, since it simply re-surfaces next run; removing it would drop it out of both collections and lose it. Do not remove from any other collection the note happens to be in. All confirmed removes in one parallel block, and name any failures in the closing line: "Archived N notes; M failed to add and remain in the inbox: `<ids>`."
 
 **Batch C — write the ledger.** Append one line per triaged note to [`references/triage-ledger.md`](references/triage-ledger.md) (format in that file), including repeats and skips. Then, if this run showed a recurring class-level pattern — same class, same verdict, 3+ instances across 2+ runs, checked against the ledger — append one line to [`references/triage-patterns.md`](references/triage-patterns.md). Both files live in the claude-skills repo; always write them, and either commit with the session's other skill edits or leave them for the next repo-hygiene pass.
 
