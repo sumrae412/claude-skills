@@ -77,7 +77,7 @@ Before triaging anything, load [`references/triage-ledger.md`](references/triage
 For each remaining unread note:
 
 1. Fetch the note content (`get_note`).
-2. Run the `useful-for` mental model (see `useful-for/SKILL.md`) against the priority target list above. Five modes:
+2. Run the `useful-for` mental model (see `useful-for/SKILL.md`) against the priority target list above. Five modes, in precedence order — **a note that matches more than one takes the LOWEST bullet it matches**, because the source-reading modes exist precisely to rescue captures the shallower modes would mis-rate. A body-less capture linking a YouTube video is a video transcript-read, not a body-less title guess:
    - **Inline triage** (default for Mem notes): Mem already produces structured summaries (TL;DR, Key Points). For those, apply the useful-for rubric inline — no subagent dispatch needed. Faster, keeps context.
    - **Subagent dispatch**: only when the note is raw long-form content (full article body pasted, transcript, paper) with no Mem summary. Then invoke useful-for as a proper skill call so the heavy lifting happens out of the main thread.
    - **Body-less capture** (bare title + source + tracking-redirect URL, no Mem TL;DR/Key Points — currently the dominant shape): there is nothing to fetch (redirects are dead — see Rules) and nothing to summarize. Triage from the title at LOW confidence and route to the verify-before-author rule below for any item you'd otherwise call "high-value." If the first few notes in a run are all body-less, say so once at the top of the run ("most captures are title-only — verdicts are title-level guesses; I'll verify any high-value pulls against canonical sources before acting") so the user reads the rollup with correct confidence.
