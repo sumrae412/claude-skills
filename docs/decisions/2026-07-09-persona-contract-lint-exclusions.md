@@ -19,11 +19,6 @@ a hidden hardcoded allowlist.
 ## Temporary Exclusions
 
 - `codebase-design` - useful design vocabulary, but output contract is implicit.
-- `courierflow-api` - legacy reference skill, but output contract is implicit.
-- `courierflow-data` - legacy reference skill, but output contract is implicit.
-- `courierflow-security` - legacy reference skill, but output contract is implicit.
-- `courierflow-skill-reviewer` - reviewer scope is clear, but boundary contract is implicit.
-- `courierflow-ui` - legacy reference skill, but output contract is implicit.
 - `inbox-triage` - workflow boundaries exist, but no explicit role/scope section.
 - `new-migration` - migration guardrails exist, but no explicit role/scope section.
 - `user-stories` - workflow and output are clear, but no explicit role/scope section.
