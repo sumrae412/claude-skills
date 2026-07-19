@@ -14,6 +14,23 @@ Apply `token-economy` whenever this skill would otherwise trigger broad explorat
 - Batch independent tool calls and keep narration/results tight.
 - If the task is tiny or the file set is already known, apply the relevant patterns inline instead of loading extra material.
 
+## Model Economy
+
+**Default to the cheapest model that can safely do the step.** Most of `/next` is mechanical — state collection, file writes, git plumbing — and does not need a frontier model. Delegate those steps to a pinned-cheap executor instead of running them in the orchestrator's context.
+
+| Step / work | Tier | Executor |
+|---|---|---|
+| Pre-flight state collection (`git status`, `git worktree list`, `gh pr list`, `ls docs/plans/`), inventories, greps | Haiku | `cheap-worker` |
+| Drafting the handoff doc body from a supplied outline + collected state; mechanical edits; grep-for-old-framing sweep (Guardrail at bottom) | Sonnet | `fast-worker` |
+| Deciding **what the next task is**, resolving contradictory state, judging "is this doc self-contained?", triaging a blocked merge | Orchestrator (current model) | — |
+| Genuinely hard root-cause or architecture judgment blocking the handoff | Opus | `deep-reasoner` |
+
+Rules:
+- **Never dispatch Opus for step-collection or file-writing.** If the brief is "run these commands and report" or "write this file from this outline", it is `cheap-worker` work.
+- **Escalate on ambiguity, not on importance.** A high-stakes step still runs cheap if the spec is exact; escalate the moment the executor would have to make a design call.
+- **One escalation hop at a time** — `cheap-worker` → `fast-worker` → orchestrator. Do not jump from Haiku to Opus.
+- **Safety floor:** any step that decides what to ship, what to merge, or whether to STOP stays with the orchestrator. Cheap models collect evidence; they do not adjudicate it.
+- Batch cheap dispatches — one `cheap-worker` call collecting all pre-flight state beats five.
 
 **Announce at start:** "Using /next to write a handoff doc, then ship and clean up."
 
