@@ -1,6 +1,6 @@
 ---
 name: articles
-description: Use when the user says "/articles", "check my articles", "process Claude articles", "triage my reading queue", or asks whether anything in their Mem reading queue is worth pulling into their projects or skills. Pulls unread notes from Mem's "Claude articles" collection ONLY, runs each through `useful-for` against the user's claude-skills repo and active projects (CourierFlow, BetterBurgh, DeepLearning.ai work), and moves processed notes to "Claude articles — reviewed". Triggers on any phrasing about checking, processing, triaging, or reviewing the reading inbox in Mem.
+description: Use when the user says "/articles", "check my articles", "process Claude articles", "triage my reading queue", or asks whether anything in their Mem reading queue is worth pulling into their projects or skills. Pulls unread notes from Mem's "Claude articles" collection ONLY, runs each through `useful-for` against the user's claude-skills repo and active projects (CourierFlow, BetterBurgh, DeepLearning.ai work), and moves processed notes to "Claude articles — reviewed". Video captures (YouTube, Vimeo, Loom, TikTok, X) get automatic transcript analysis before the verdict. Triggers on any phrasing about checking, processing, triaging, or reviewing the reading inbox in Mem.
 user-invocable: true
 ---
 
@@ -58,7 +58,7 @@ For large queues, don't triage serially and don't dispatch one agent per note �
 1. **Group in the main thread, from titles alone.** `list_notes` already returned titles — cluster them into 3–6 thematic groups of ~4–8 notes each (e.g. "agent orchestration", "prompting/evals", "product/startup", "misc"). Do NOT fetch note bodies to group; titles are enough, and a "misc" group is a legitimate bucket for stragglers.
 2. **One agent per group, all dispatched in ONE parallel block.** Use a `general-purpose` executor with an explicit down-tier model override (sonnet) — never let a swarm agent inherit the orchestrator's model. Each brief is self-contained and MUST include:
    - The group's note ids + titles, the full Targets list, and the verdict rubric + per-article output format from steps 2–3 (agents fetch bodies themselves via `get_note` — they can load Mem tools through ToolSearch).
-   - The triage-mode rules that bite downstream, restated: body-less captures = LOW-confidence title-level verdicts; known-failure tracking links (Half Baked, Beehiiv) = never fetch; code-repo links = the agent does the source-read itself, inline in its own foreground; video links = the agent pulls the transcript itself (`watch` skill, `--detail transcript`, canonical URL only), inline in its own foreground.
+   - The triage-mode rules that bite downstream, restated: body-less captures = LOW-confidence title-level verdicts; known-failure tracking links (Half Baked, Beehiiv) = never fetch; code-repo links = the agent does the source-read itself, inline in its own foreground; video links = UNCONDITIONAL transcript pull by the agent itself (`watch` skill, `--detail transcript`, canonical URL resolved by title-search when the capture has only a redirect), inline in its own foreground — and a caption-less video gets a title-level LOW-confidence verdict, never a paid Whisper call (that offer belongs to the orchestrator).
    - `[read-only]` — read, fetch, and assess only. NO archiving, no collection writes, no repo edits, no PRs. Findings come back to the orchestrator.
    - *"Work in your own foreground; do NOT spawn background sub-agents."*
    - *"Return results immediately after the tool call that found them. Do NOT emit commentary between tool calls."* Plus a per-article report cap (~120 words).
@@ -69,14 +69,19 @@ Why grouping instead of per-note fan-out: each dispatch re-pays its briefing + t
 
 ### 2. Triage each note via `useful-for`
 
-For each unread note:
+Before triaging anything, load [`references/triage-ledger.md`](references/triage-ledger.md) and [`references/triage-patterns.md`](references/triage-patterns.md).
+
+- **Ledger check (dedup).** Any note whose title or canonical URL matches a ledger entry is a repeat capture: emit a one-line "already triaged YYYY-MM-DD as `<verdict>`" section, add it to the archive batch, and skip the fetch entirely. Exception in the ledger's matching rules: a capture that plainly supersedes a title-only predecessor gets re-triaged.
+- **Pattern pre-filter.** Apply `triage-patterns.md`'s rules — auto-skip titles in a proven skip class (no fetch), flag titles in a proven keep class so body-less captures aren't under-called. Patterns never suppress a video transcript-read or a code-repo source-read.
+
+For each remaining unread note:
 
 1. Fetch the note content (`get_note`).
-2. Run the `useful-for` mental model (see `useful-for/SKILL.md`) against the priority target list above. Five modes:
+2. Run the `useful-for` mental model (see `useful-for/SKILL.md`) against the priority target list above. Five modes, in precedence order — **a note that matches more than one takes the LOWEST bullet it matches**, because the source-reading modes exist precisely to rescue captures the shallower modes would mis-rate. A body-less capture linking a YouTube video is a video transcript-read, not a body-less title guess:
    - **Inline triage** (default for Mem notes): Mem already produces structured summaries (TL;DR, Key Points). For those, apply the useful-for rubric inline — no subagent dispatch needed. Faster, keeps context.
    - **Subagent dispatch**: only when the note is raw long-form content (full article body pasted, transcript, paper) with no Mem summary. Then invoke useful-for as a proper skill call so the heavy lifting happens out of the main thread.
    - **Body-less capture** (bare title + source + tracking-redirect URL, no Mem TL;DR/Key Points — currently the dominant shape): there is nothing to fetch (redirects are dead — see Rules) and nothing to summarize. Triage from the title at LOW confidence and route to the verify-before-author rule below for any item you'd otherwise call "high-value." If the first few notes in a run are all body-less, say so once at the top of the run ("most captures are title-only — verdicts are title-level guesses; I'll verify any high-value pulls against canonical sources before acting") so the user reads the rollup with correct confidence.
-   - **Video-link transcript-read** (YouTube, Vimeo, X/TikTok video, Loom, anything yt-dlp supports): when a note links a video AND it plausibly maps to one of the priority targets, the Mem capture is NOT sufficient — a video capture carries title + description only; the actual content lives in the audio. Pull the transcript before the verdict via the `watch` skill ([claude-video plugin](https://github.com/bradautomates/claude-video)) in transcript-only mode:
+   - **Video-link transcript-read** — UNCONDITIONAL for any video capture. A note is a video capture when its URL (or resolved canonical URL) matches `youtube.com`, `youtu.be`, `vimeo.com`, `loom.com`, `tiktok.com`, or an `x.com`/`twitter.com` video post — or when the note body carries a `Type: video` marker (Mem clip rules, 2026-07-19). Do NOT gate on whether the title "plausibly maps to a target": a Mem video capture holds title + description only, the content lives in the audio, and captions are a free fetch — so pull the transcript FIRST, then run the useful-for verdict against the transcript. Use the `watch` skill ([claude-video plugin](https://github.com/bradautomates/claude-video)) in transcript-only mode:
 
      ```bash
      SKILL_DIR=$(ls -d ~/.claude/plugins/cache/claude-video/watch/*/skills/watch | sort -V | tail -1)
@@ -84,9 +89,9 @@ For each unread note:
      ```
 
      `--detail transcript` fetches captions only — no video download, no frames, no API key needed (verified 2026-07-11 on a live run: 19s video → 6 timestamped segments via captions). Rules that bite:
-     - **Canonical URL only.** Never feed the Mem tracking redirect to yt-dlp (dead — see the known-failure-link rule). If the capture has only a dead redirect, find the video by title first (web search); if that fails, triage title-level at LOW confidence.
+     - **Canonical URL only — resolve it as a required step, not a fallback.** Never feed a Mem tracking redirect to yt-dlp (dead — see the known-failure-link rule). If the capture lacks a direct video URL: (1) web-search the video title + creator, (2) take the top exact-title match's direct URL. Only after that search fails may you downgrade to title-level LOW confidence — and say so in the article's section.
      - **Length routing:** ≤ ~20 min → read the transcript inline. Longer → dispatch a subagent (same *work in your own foreground; do NOT spawn background sub-agents* brief as the code-repo mode) to run the command, read the transcript, and return a concrete assessment — keep the full transcript out of the main thread. `--start`/`--end` scope a section when the note names one.
-     - **No captions:** keyless installs have no Whisper fallback, so a caption-less video returns an empty transcript. Don't fake it — fall back to title-level LOW confidence and say so in the article's section.
+     - **No captions — Whisper is a PAID fallback, so offer it, never auto-spend.** The plugin's only Whisper backends are Groq and OpenAI (`--whisper {groq,openai}`); there is no local mode, so dropping `--no-whisper` bills an API call. On a caption-less video: default to title-level LOW confidence, say so in the article's section, and — only if the item looks high-value and the video is ≤10 min — offer the paid pull in one line with its rough cost ("no captions; a Whisper transcript runs ~$0.06 via OpenAI — pull it?"). Run it only on a yes. Never fake a transcript. (Verified 2026-07-19: `watch.py --help` lists groq/openai only; `OPENAI_API_KEY` is configured in `~/.claude/.local.env`.)
      - **Plugin missing** (the `ls` above finds nothing): install it (`claude plugin marketplace add bradautomates/claude-video && claude plugin install watch@claude-video`, then run its `scripts/setup.py` once — it auto-installs `yt-dlp`/`ffmpeg` via brew), or triage title-level at LOW confidence and name the gap.
    - **Linked code-repo source-read** (GitHub repos, installable skills, code packages): when a note links a GitHub repo, an installable agent skill, or any source-code target AND it plausibly maps to one of the priority targets above, the Mem summary is NOT sufficient — dispatch a subagent to read the actual source. The dispatch brief MUST include: *work in your own foreground; do NOT spawn background sub-agents* (per Henry's Foreground-execution rule) — else the subagent returns phantom "I'll report back once my background child completes" placeholder text and nested children report late under new task-ids (validated 2026-07-03). The subagent should: (a) fetch the repo tree (`gh api repos/<owner>/<repo>/git/trees/HEAD?recursive=1 | jq '[.tree[].path]'`), (b) read README and key files via `gh api repos/<owner>/<repo>/contents/<path>` (pipe through `base64 -d`), or use `WebFetch` for non-GitHub skill sites; (c) gap-check against the mapped target repo (what's missing in our skills/CLAUDE.md that this repo has); (d) return only a concrete, file-cited assessment — keep raw source OUT of the main thread. Apply this mode only when: the link is a GitHub repo or installable skill AND it maps to one of our active targets. For borderline cases (a public repo that maps to nothing we own), an inline summary pass is fine — note the uncertainty, don't burn a source-read.
 3. Capture the verdict (high-value / some-value / skip + confidence) per relevant target.
@@ -118,13 +123,27 @@ After all notes are processed, emit a one-screen rollup:
 - Suggested next actions (ranked): ...
 ```
 
+### 4b. `--draft` mode (opt-in)
+
+Runs only when invoked as `/articles --draft`. After the step-4 rollup, walk the **high-value** pulls and, for each one, ask before drafting: "Draft the edit for `<title>` → `<target>`? y/n". On a yes, produce the concrete artifact inline in the reply — the actual reference-file text, SKILL.md edit block, or memory entry, not a description of one.
+
+Three rules keep this safe:
+
+- **Text only.** No file writes to any repo, no commits, no PRs. The "Never auto-edit skills or repos" rule still governs — a draft is a proposal the user applies in a follow-up session.
+- **Gate per article, never per batch.** A single "yes, draft them all" is not consent for the set; ask each time.
+- **Verify before authoring.** The body-less-capture rule applies at full force here: never draft an edit from a title-level verdict without first fetching the canonical source and gap-checking the target. Drafting is the step where an over-rated title becomes a real repo change, so this is where verification matters most.
+
+Skip an article's draft when the gap-check shows the target already covers it — say so in one line rather than drafting a no-op edit.
+
 ### 5. Archive everything processed
 
 At the very end, move every note from step 3's running list into the reviewed archive. **Do it as two sequential batches, not interleaved** — the auto-mode classifier will block a `remove` that runs in parallel with its matching `add` because, from the outside, the add hasn't confirmed yet.
 
 **Batch A** — for every `note_id`, call `add_note_to_collection` → `collection_id = bf963978-f4fd-41a5-86b6-989418e3e194` ("Claude articles — reviewed"). All in one parallel block.
 
-**Batch B** — after Batch A returns successfully, for every `note_id`, call `remove_note_from_collection` with `collection_id = f4003b7e-0e22-4a3a-b6b3-4108f11c4b9d` (Claude articles) ONLY. Do not remove from any other collection the note happens to be in. All in one parallel block.
+**Batch B** — after Batch A returns, check each add result **individually**. Call `remove_note_from_collection` (`collection_id = f4003b7e-0e22-4a3a-b6b3-4108f11c4b9d`, Claude articles ONLY) for ONLY the note_ids whose Batch A add confirmed success. A note whose add failed stays in the inbox — that is the safe outcome, since it simply re-surfaces next run; removing it would drop it out of both collections and lose it. Do not remove from any other collection the note happens to be in. All confirmed removes in one parallel block, and name any failures in the closing line: "Archived N notes; M failed to add and remain in the inbox: `<ids>`."
+
+**Batch C — write the ledger.** Append one line per triaged note to [`references/triage-ledger.md`](references/triage-ledger.md) (format in that file), including repeats and skips. Then, if this run showed a recurring class-level pattern — same class, same verdict, 3+ instances across 2+ runs, checked against the ledger — append one line to [`references/triage-patterns.md`](references/triage-patterns.md). Both files live in the claude-skills repo; always write them, and either commit with the session's other skill edits or leave them for the next repo-hygiene pass.
 
 Every triaged note ends in the reviewed archive — including "skip" verdicts. The point of archiving is to keep the inbox small, not to reward high-value pulls. Confirm in the closing line: "Archived N notes to Claude articles — reviewed."
 
@@ -153,4 +172,6 @@ Every triaged note ends in the reviewed archive — including "skip" verdicts. T
 
 ## References
 
-- [`references/maturity-progression.md`](references/maturity-progression.md) — where `/articles` sits on Jason Liu's Six Levels framework and what Level 5 (drafts actions) / Level 6 (memory-vault feedback) would look like here.
+- [`references/triage-ledger.md`](references/triage-ledger.md) — cross-run dedup ledger. Read at step 2, appended at step 5. A match means the item is already triaged: report the prior verdict, archive, skip the fetch.
+- [`references/triage-patterns.md`](references/triage-patterns.md) — learned class-level skip/keep patterns (Level 6 feedback loop). Read at step 2 as a pre-filter, appended at step 5 when a pattern clears the 3-instances/2-runs bar.
+- [`references/maturity-progression.md`](references/maturity-progression.md) — where `/articles` sits on Jason Liu's Six Levels framework, and what shipped when.
