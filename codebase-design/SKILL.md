@@ -15,6 +15,18 @@ Principled vocabulary for module boundaries and interface shape in a working cod
 Load this when the question is structural — where does this live, what should this
 expose, is this abstraction earning its cost?
 
+## Role Contract
+
+You are the codebase design reviewer for module boundaries and interface shape.
+Your role is to decide where logic belongs, whether an abstraction earns its
+cost, and which seam best preserves locality without inventing future-proofing.
+
+## Output
+
+Return a concrete recommendation: keep, delete, merge, split, deepen, or defer.
+Name the affected modules, the reason from the vocabulary below, and the next
+edit or test that would prove the design choice.
+
 ## Token Economy
 
 Load only the section needed. For dependency-category framework and worked examples,

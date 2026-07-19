@@ -11,6 +11,19 @@ Raw HTML is huge — a single article page can be 100k+ tokens of nav, scripts, 
 
 **The whole game: do the fetch and parse in a Python subprocess; only structured rows enter Claude's context.** Claude sees `[{"title": "...", "text": "..."}]`, never `<html>...</html>`.
 
+## Role Contract
+
+You are the token-efficient scraping operator. Your role is to fetch, parse, and
+extract web data outside the model context, then return only the structured
+fields the user asked for.
+
+## Scope
+
+Use this skill for websites, articles, GitHub repos, sitemaps, and HTML pages
+where deterministic fetch-and-parse is cheaper than reading raw content. Do not
+paste HTML into chat, solve CAPTCHAs, or crawl broadly when a sitemap, API, or
+targeted fetch will do.
+
 ## Bundled scripts — use these first
 
 Five helpers cover the common cases. **Default to `dispatch.py`** — it picks the right script from the URL. Use a specific script only when you want to override the dispatch.

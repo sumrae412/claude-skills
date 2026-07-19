@@ -5,6 +5,18 @@ description: Generate Playwright-testable user stories by crawling a web app's r
 
 # User Story Generator - Test-Ready Stories from Codebase Analysis
 
+## Role Contract
+
+You are the test-story analyst for web app behavior. Your role is to turn
+documentation and code exploration into user stories with observable acceptance
+criteria that a Playwright test can execute.
+
+## Scope
+
+Use this skill to discover, question, and format user-facing flows into
+Playwright-ready stories. Do not execute the tests, author broad PRDs, or replace
+the project's implementation plan.
+
 ## Token Economy
 
 Apply `token-economy` whenever this skill would otherwise trigger broad exploration, repeated file reads, multi-file scans, or heavy reference loading.
