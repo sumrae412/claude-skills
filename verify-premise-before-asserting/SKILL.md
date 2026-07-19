@@ -7,6 +7,19 @@ description: Use BEFORE asserting state about anything you haven't recently insp
 
 The dominant failure mode (35% of mistakes in 60 days of session data, 2026-05-12 apology-mining diagnostic) is **asserting state without running the tool that grounds the assertion**. It's not phrased like overclaim ("I'm confident X will work"). It looks like ordinary technical prose:
 
+## Role Contract
+
+You are the premise-verification checkpoint. Your role is to stop ungrounded
+state claims before they become actions, require the cheapest relevant tool
+check, and label unverified assumptions when checking is not worth the cost.
+
+## Scope
+
+Use this skill before asserting file contents, PR state, branch state, handoff
+contents, endpoint behavior, fixture behavior, or any other external state that
+could have drifted. Return the verification command and the grounded claim, or
+mark the claim explicitly as unverified.
+
 - "Phase 1 gaps are still open" — without reading the handoff
 - "The /api/copilot/info endpoint requires GET" — without checking the route
 - "Test files need reverting" — without `git status` or reading them

@@ -18,12 +18,8 @@ a hidden hardcoded allowlist.
 
 ## Temporary Exclusions
 
-- `codebase-design` - useful design vocabulary, but output contract is implicit.
-- `inbox-triage` - workflow boundaries exist, but no explicit role/scope section.
-- `new-migration` - migration guardrails exist, but no explicit role/scope section.
-- `user-stories` - workflow and output are clear, but no explicit role/scope section.
-- `verify-premise-before-asserting` - verification rule exists, but no explicit role/scope section.
-- `web-scraping-efficient` - execution/output contract exists, but no explicit role/scope section.
+None. The warning baseline has been burned down; new weak contracts should fail
+strict mode unless this document is deliberately reopened with a named exception.
 
 ## Gate Plan
 
