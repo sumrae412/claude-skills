@@ -11,7 +11,7 @@ The framework describes increasingly sophisticated AI-powered automation, from a
 | 3 | Recurrence + feedback improves it | ✅ — invoked on demand; user redirections inform next-batch triage (informally) |
 | 4 | Project-level threads with different "importance" definitions | ✅ — target list (claude-skills, CourierFlow, BetterBurgh, DLAI) gives each its own relevance lens |
 | 5 | Drafts obvious next actions, not just summaries | ⬜ — produces verdicts + "next action" prose, but does NOT draft the actual skill edit, PR, or memory file |
-| 6 | Feeds a memory vault that learns from prior triage | ⬜ — verdicts disappear into the archive; no feedback loop into MEMORY about recurring skip/keep patterns |
+| 6 | Feeds a memory vault that learns from prior triage | ✅ — `triage-ledger.md` (per-item dedup) + `triage-patterns.md` (class-level skip/keep pre-filter), read at step 2, appended at step 5 (2026-07-19) |
 
 ## Upgrade paths
 

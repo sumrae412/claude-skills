@@ -69,7 +69,12 @@ Why grouping instead of per-note fan-out: each dispatch re-pays its briefing + t
 
 ### 2. Triage each note via `useful-for`
 
-For each unread note:
+Before triaging anything, load [`references/triage-ledger.md`](references/triage-ledger.md) and [`references/triage-patterns.md`](references/triage-patterns.md).
+
+- **Ledger check (dedup).** Any note whose title or canonical URL matches a ledger entry is a repeat capture: emit a one-line "already triaged YYYY-MM-DD as `<verdict>`" section, add it to the archive batch, and skip the fetch entirely. Exception in the ledger's matching rules: a capture that plainly supersedes a title-only predecessor gets re-triaged.
+- **Pattern pre-filter.** Apply `triage-patterns.md`'s rules — auto-skip titles in a proven skip class (no fetch), flag titles in a proven keep class so body-less captures aren't under-called. Patterns never suppress a video transcript-read or a code-repo source-read.
+
+For each remaining unread note:
 
 1. Fetch the note content (`get_note`).
 2. Run the `useful-for` mental model (see `useful-for/SKILL.md`) against the priority target list above. Five modes:
@@ -126,6 +131,8 @@ At the very end, move every note from step 3's running list into the reviewed ar
 
 **Batch B** — after Batch A returns successfully, for every `note_id`, call `remove_note_from_collection` with `collection_id = f4003b7e-0e22-4a3a-b6b3-4108f11c4b9d` (Claude articles) ONLY. Do not remove from any other collection the note happens to be in. All in one parallel block.
 
+**Batch C — write the ledger.** Append one line per triaged note to [`references/triage-ledger.md`](references/triage-ledger.md) (format in that file), including repeats and skips. Then, if this run showed a recurring class-level pattern — same class, same verdict, 3+ instances across 2+ runs, checked against the ledger — append one line to [`references/triage-patterns.md`](references/triage-patterns.md). Both files live in the claude-skills repo; always write them, and either commit with the session's other skill edits or leave them for the next repo-hygiene pass.
+
 Every triaged note ends in the reviewed archive — including "skip" verdicts. The point of archiving is to keep the inbox small, not to reward high-value pulls. Confirm in the closing line: "Archived N notes to Claude articles — reviewed."
 
 ---
@@ -153,4 +160,6 @@ Every triaged note ends in the reviewed archive — including "skip" verdicts. T
 
 ## References
 
-- [`references/maturity-progression.md`](references/maturity-progression.md) — where `/articles` sits on Jason Liu's Six Levels framework and what Level 5 (drafts actions) / Level 6 (memory-vault feedback) would look like here.
+- [`references/triage-ledger.md`](references/triage-ledger.md) — cross-run dedup ledger. Read at step 2, appended at step 5. A match means the item is already triaged: report the prior verdict, archive, skip the fetch.
+- [`references/triage-patterns.md`](references/triage-patterns.md) — learned class-level skip/keep patterns (Level 6 feedback loop). Read at step 2 as a pre-filter, appended at step 5 when a pattern clears the 3-instances/2-runs bar.
+- [`references/maturity-progression.md`](references/maturity-progression.md) — where `/articles` sits on Jason Liu's Six Levels framework, and what shipped when.
