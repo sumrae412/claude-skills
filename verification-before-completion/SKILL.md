@@ -64,8 +64,11 @@ Skip any step = lying, not verifying
 | Count / quantity claim | Enumerate full result set | API `resultSizeEstimate` / `total` / `count` heuristic field |
 | LLM-judge grader "works" | Hand-labeled calibration set (≥6 neg + ≥4 amb) passes the gate THIS run | Spot-check of 3 positives, eyeballed evidence strings, "looks reasonable" |
 | Async UI action verified via logs | Settle/poll window before the verification query runs, AND confirmed record/card identity matches the one acted on | Log timestamps read immediately after the action, first matching row assumed correct |
+| Background job/sweep "ran clean, did nothing" | Direct state read confirming the negative (e.g. a count query returns 0) | Absence of a conditionally-gated log line, e.g. `if (count > 0) logger.warn(...)` |
 
 **Async-settle + identity-confirmation failure mode.** After an async UI action (approve/send/submit), a verification query fired before the effect lands reads stale state and looks like failure — and in a multi-card/multi-record UI, the first or top match may not be the record the user actually acted on. Both errors compound: a premature query plus a wrong-card read produces a confident, wrong root cause. Validated 2026-07-19 on courierflow_beta: an "approve→send is broken, GoDaddy redirect returns fake-success HTML" root-cause claim was wrong — a full-log-window re-check found two clean successful sends; the original verdict was a verification race (query ran before the tap's effect landed) compounded by reading the wrong card. Demoted from trust-critical incident to routine cosmetic issue on re-verification.
+
+**Log-silence-is-ambiguous failure mode.** A log line gated behind a conditional (`if (newItems > 0) logger.warn(...)`) proves nothing on its own when absent — "ran clean, 0 items" and "never ran at all" produce identical silence. Treat that silence as inconclusive until an orthogonal direct-state check (a DB count, an API response, a file diff) confirms which case it is. Validated 2026-07-19 on courierflow_beta: a production reconcile sweep's absent warning log was consistent with both "it ran and found nothing" and "the flag never took effect" — only a direct `SELECT count(*) ... WHERE processed_at IS NULL` (0, down from 16) closed the gap.
 
 ## Red Flags - STOP
 
