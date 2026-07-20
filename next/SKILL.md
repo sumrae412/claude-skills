@@ -37,13 +37,58 @@ Rules:
 - **Safety floor:** any step that decides what to ship, what to merge, or whether to STOP stays with the orchestrator. Cheap models collect evidence; they do not adjudicate it.
 - Batch cheap dispatches — one Haiku call collecting all pre-flight state beats five.
 
+### Model-economy checklist — create a TodoWrite item for each
+
+This is a checklist, not advice. The steps below are where it binds; skipping one is a deviation you must name.
+
+- [ ] **M1** — Step 0 pre-flight state collected by a Haiku dispatch, not inline.
+- [ ] **M2** — handoff doc body drafted by a Sonnet dispatch from your outline + M1's output.
+- [ ] **M3** — orchestrator did only these four things: decide the next task, adjudicate contradictory state, judge self-containment, triage blockers.
+- [ ] **M4** — if M1 or M2 ran inline anyway, say so in the close-out with the reason. Silent inlining is the failure mode this section exists to catch.
+
 **Announce at start:** "Using /next to write a handoff doc, then ship and clean up."
 
 Execute in this order. Do NOT interleave. Each step blocks the next.
 
+## Step 0 — Dispatch pre-flight collection (Haiku)
+
+Do NOT run these commands yourself. Your first action in `/next` is this dispatch:
+
+```
+Agent(
+  subagent_type: "<project Haiku agent, e.g. cheap-worker>" | "general-purpose",
+  model: "haiku",
+  run_in_background: false,
+  description: "Collect /next pre-flight state",
+  prompt: """
+  Read-only. Run each command, return raw output under a heading per command.
+  Do not interpret, recommend, or summarize — the orchestrator adjudicates.
+    git rev-parse --show-toplevel
+    git branch --show-current
+    git worktree list
+    git status --short
+    git log --oneline -10
+    ls docs/plans/*handoff*.md 2>/dev/null
+    gh pr list --state open --json number,title,headRefName
+  Then: for the 2 most recently merged PRs, `gh pr view <n> --json reviews,statusCheckRollup`.
+  Word cap: none on raw output, but add zero prose of your own.
+  """
+)
+```
+
+The orchestrator reads that output and decides. That division — cheap model collects, expensive model adjudicates — is the whole point.
+
+If no Haiku dispatch mechanism exists in this project (checked `ls .claude/agents/` and `model:` override unavailable), run inline and record it under **M4**.
+
 ## Step 1 — Write a continuation prompt
 
-Before anything destructive, capture the handoff so a fresh session can resume cleanly. Write (or append to) a doc under `docs/plans/` — check first with `ls docs/plans/*handoff*.md`. If an existing session-handoff doc covers this work stream, append a new dated execution-log entry. Otherwise create `docs/plans/<YYYY-MM-DD>-session-handoff.md`.
+Before anything destructive, capture the handoff so a fresh session can resume cleanly. Step 0 already returned the `docs/plans/*handoff*.md` listing — do not re-run it. If an existing session-handoff doc covers this work stream, append a new dated execution-log entry. Otherwise create `docs/plans/<YYYY-MM-DD>-session-handoff.md`.
+
+**Split this step (M2).** You decide the content; a Sonnet dispatch writes the file.
+
+- **Orchestrator decides** (do NOT delegate): the exact next task and why, which state is contradictory and which reading wins, what invariants to name, whether the doc is self-contained.
+- **Sonnet dispatch writes**: hand it your decisions as an outline plus Step 0's raw output, and have it produce the file against the 9-item structure below. Brief it with the literal file path and the section list; it should make zero judgment calls.
+- Then read the result yourself and apply the self-containment test at the end of this step. That read is orchestrator work — it is the acceptance gate, not a formality.
 
 The continuation prompt must be **self-contained** — the next session has zero memory of this conversation. Include:
 
