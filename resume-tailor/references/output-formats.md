@@ -19,6 +19,8 @@ All Phase 5 deliverables go to `~/Documents/resumes/<Company>/` — one folder p
 
 Ask once if the target folder already exists with content that wasn't written this session — otherwise overwrite freely (each session owns its company folder).
 
+**`Submitted/` subfolder:** once an application ships, the company folder may move to `~/Documents/resumes/Submitted/<Company>/`. The move signals the application is in flight, and it can happen mid-session — a `cd` into a path that was valid moments earlier will fail with "no such file or directory" (hit 2026-07-20 on Airtable). Recover with `find ~/Documents/resumes -iname "*<company>*"` rather than assuming the original path still holds.
+
 ## 0.1 `jd.md` — Save the JD Alongside Every Tailored Output (Required)
 
 Every company folder must contain `jd.md` with:
@@ -28,6 +30,12 @@ Every company folder must contain `jd.md` with:
 3. The full JD text as pasted by the user
 
 URL collection is a Phase 5 input-validation step that runs before any file write. `jd.md` is written as part of the Phase 5 output set once the URL is in hand — the same step that writes the resume and cover letter, not after.
+
+## 0.2 `application-questions.md` — Application Short-Answer Questions (Optional)
+
+When an application asks its own short-answer questions separate from the cover letter, save the answers to `application-questions.md` in the company folder. Standardize on that filename; a 2026-07-17 GiveDirectly session used `<Company>_Application_Answers.md` and the inconsistency makes prior answers hard to find.
+
+**Structural rule — §5b's resume-narration ban applies to this artifact too.** Answer the question in sentence one, then organize evidence by responsibility or capability, never by employer chronology. A draft that walks five employers in sequence is a resume in paragraph form: it lists projects instead of answering what was asked. Pick two or three employers as evidence and cut the rest. Validated 2026-07-20 (Airtable, "managed delivery experience... concurrent projects, P&L"): the chronological draft was rejected outright, and the accepted rewrite opened *"My delivery experience has ranged from leading concurrent AI programs inside large organizations to running my own software business,"* then used three employers and dropped two.
 
 **Format:**
 

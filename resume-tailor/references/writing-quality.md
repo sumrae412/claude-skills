@@ -26,6 +26,7 @@ Reject sentences with these patterns:
 - mirrored list cadence across paragraphs
 - thesisless paragraphing where each sentence is just another claim
 - identity inflation: "uniquely positioned", "rare blend", "exceptional ability"
+- **generic industry observation** — an insight framed as universal industry wisdom rather than the candidate's own earned experience. Test: remove the byline. If the sentence could appear in any conference keynote, it is decoration. Rejected 2026-07-20 (Airtable): *"organizations rarely struggle because they lack AI tools. They struggle because they need practical guidance on where to apply them."* The replacement passes because the experience is hers and specific: *"The hardest part of every AI project I've worked on hasn't been getting a model to work. It's helping people change the way they work once it does."*
 
 ## 3. Stronger Replacements
 
