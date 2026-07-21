@@ -40,28 +40,46 @@ Regards,
 
 ## Paragraph structure
 
-### P1 — Hook + Company-bet bridge
+### P1 — Career pattern
 
-**Job:** open on what makes the role hard, name the company's specific bet, and frame the candidate's track record as the kind of work that bet requires. P1 must answer *"why are you uniquely relevant to THIS role?"* — not *"here is my career arc."*
+**Job:** state the pattern in the candidate's career and prove it with three compressed examples. P1 answers *"who is this person, and what do they keep doing?"* The reader learns why the candidate is relevant to THIS role from P2 onward and from the close, not from P1 asserting it.
 
-**Choose ONE P1 shape based on the JD signal.** Both shapes end P1 on the company's bet, not on the candidate.
-
-**Shape A — Intersection-of-problems (preferred for complex / operational / regulated-domain roles):**
+**Default — Shape C (candidate pattern). Set 2026-07-20; Shapes A and B below are now variants.**
 
 ```
-I was excited to see you post the [ROLE TITLE] role at [COMPANY] because this position sits at the intersection of two problems I have spent my career working on: [PROBLEM 1 — named operationally, e.g. "building trustworthy AI systems in regulated healthcare environments"] and [PROBLEM 2 — named operationally, e.g. "translating emerging AI capabilities into production systems that improve real-world decision making"]. [COMPANY]'s [SPECIFIC BET — the dataset / product / customer / risk the role exists to handle] is exactly that problem at scale.
+My career has centered on [THE UNDERLYING DIFFERENTIATOR — the rare combination
+of capabilities, not the domain]. Whether that meant [EVIDENCE 1 — one clause],
+[EVIDENCE 2], or [EVIDENCE 3], the work has always required the same
+[BALANCE / THROUGH-LINE — 2-3 named elements].
+```
+
+**Rules for Shape C:**
+
+- **No company mention in P1.** Do not name the company, its market, its scale, or its strategy. "We keep trying to create a hook by interpreting the JD instead of starting with you" (Summer, 2026-07-20).
+- Each of the three evidence clauses must be traceable to a resume line. Compressed is fine; invented sequencing is not.
+- The differentiator is the *combination*, not the domain. Run the generic-swap test: substitute "cloud" or "data" for "AI" — if the sentence still works, it names a domain rather than a differentiator, and it is not specific to the candidate yet.
+- The hiring-risk anchor moves to the close (see §P4 and `references/cover-letter-review.md` §6.1 Check 4).
+
+**Why the default changed:** the company-bet shapes below produced openers that explained the company's own business back to it, and the "I was excited to see you post" hook was rejected outright. Ten rounds of revision on the 2026-07-20 OpenLoop letter converged on Shape C. The canonical baseline at `~/Documents/resumes/Summer_Rae_CoverLetter.md` is now a Shape C instance.
+
+---
+
+**Shape A — Intersection-of-problems (VARIANT — use only when the JD names an unusual problem the candidate has demonstrably solved before):**
+
+```
+[OPENER — never enthusiasm; see rules below] The [ROLE TITLE] role at [COMPANY] sits at the intersection of two problems I have spent my career working on: [PROBLEM 1 — named operationally, e.g. "building trustworthy AI systems in regulated healthcare environments"] and [PROBLEM 2 — named operationally, e.g. "translating emerging AI capabilities into production systems that improve real-world decision making"]. [COMPANY]'s [SPECIFIC BET — the dataset / product / customer / risk the role exists to handle] is exactly that problem at scale.
 ```
 
 **Shape B — Decade-arc (use only when the candidate's progression itself is the strongest fit signal):**
 
 ```
-I was excited to see you post the [ROLE TITLE] role because [ARC-FIT REASON — why the candidate's career has been heading toward exactly this kind of work]. After [DECADE-ARC SUMMARY — one sentence naming up to 2 prior employers and what was done at each, demonstrating deliberate progression], I [CURRENT POSITIONING — what the candidate went to their current role to do]. [COMPANY]'s [SPECIFIC NEED, BET, or PROBLEM] is exactly the next layer of that arc.
+[OPENER — never enthusiasm; see rules below] [ARC-FIT REASON — why the candidate's career has been heading toward exactly this kind of work]. After [DECADE-ARC SUMMARY — one sentence naming up to 2 prior employers and what was done at each, demonstrating deliberate progression], I [CURRENT POSITIONING — what the candidate went to their current role to do]. [COMPANY]'s [SPECIFIC NEED, BET, or PROBLEM] is exactly the next layer of that arc.
 ```
 
-**Rules (both shapes):**
+**Rules (Shapes A and B only — Shape C has its own rules above):**
 
-- P1 may open with candidate hook ("I was excited to see..."), per §1 of cover-letter-review.md.
-- End P1 on the company's bet, not the candidate. The final clause names the company's specific bet and frames it as the work the candidate is already doing.
+- **Never open with an enthusiasm hook** ("I was excited to see you post...", "I was thrilled to come across..."). Banned 2026-07-15, re-confirmed 2026-07-20. The `[OPENER]` slot in the templates above takes a substantive first clause, not a reaction to the posting.
+- End P1 on the company's bet, not the candidate. The final clause names the company's specific bet and frames it as the work the candidate is already doing. Connect by recognition ("the work described in this role mirrors..."), never by telling the company what its strategy is.
 - **No chronological employer montage.** Never list 3+ prior employers in P1 in a "At X… Before that, at Y… Earlier, at Z…" cadence — that is resume narration, not positioning. Shape A names no employers in P1. Shape B names up to 2 with a deliberate-progression frame.
 - The "specific bet" / "specific need" clause must be grounded in the hiring-risk sentence from Phase 1 (see `references/jd-analysis.md` §"Hiring Risk"). If no hiring-risk sentence exists, do not draft P1 yet — go back to Phase 1.
 
@@ -167,4 +185,4 @@ Apply §1a Seniority Alignment from `cover-letter-review.md`. Add one sentence i
 
 - Specific company names, recipient names, recent moments. Those are per-application research and must come from the JD, the company site, or user input.
 - Specific numbers (team size, system scale, publication names). Those come from the resume.
-- Hook variant choice (canonical "I was excited to see..." vs. one of the 3 brainstorm angles in §2). The template defaults to canonical; switch per JD if the canonical hook reads flat.
+- Hook variant choice (default Shape C candidate-pattern vs. one of the 3 brainstorm angles in §2). The template defaults to canonical; switch per JD if the canonical hook reads flat.
