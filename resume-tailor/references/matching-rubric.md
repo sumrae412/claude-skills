@@ -129,6 +129,28 @@ Strong bullets answer "so what?" — they name the context, the action, and the 
 
 When reframing, check each bullet for all three slots. If a slot is missing, either (a) ask the user a discovery question to fill it, or (b) cut the bullet.
 
+## Promotion-Ready Bullet Pass (STANDING — Summer's directive, 2026-07-20)
+
+Run this over every bullet before the Phase 2 checkpoint, on top of the bands and strategies above. The governing instruction:
+
+> Rewrite bullets using strong action verbs and measurable business outcomes. Focus on strategic leadership, cross-functional influence, process improvements, financial impact, and organizational results. Remove weak language and make each bullet promotion-ready.
+
+**The five dimensions.** Each bullet should carry at least one; the set across a role should cover several. Name the dimension when presenting a reframe.
+
+| Dimension | What it looks like in a bullet |
+|---|---|
+| Strategic leadership | A direction set, a standard instituted, an investment decided, authority held (go/no-go, sign-off) |
+| Cross-functional influence | Alignment driven across named functions or external stakeholders without formal authority over them |
+| Process improvement | A recurring manual or broken process replaced, standardized, or automated |
+| Financial impact | P&L, revenue, cost, budget, capacity concentrated on higher-return work, sale outcome |
+| Organizational results | Team grown or restructured, a practice adopted org-wide, a capability that outlived the project |
+
+**The promotion-ready test.** Read the bullet and ask: *does this read like the person doing the job, or the person the job reports to?* If it describes execution only, raise it one altitude by naming the decision, the standard, or the leverage. Never past the truth — see the seniority-register rules above and `references/executive-bullets.md` for shapes.
+
+**Weak language to remove on sight** (composes with `references/resume-bullet-bans.md`): "helped", "supported", "worked on", "responsible for", "participated in", "assisted", "various", "successfully", "utilized", "leveraged", and any verb that could describe attendance rather than contribution.
+
+**Truth boundary — this pass never manufactures numbers.** When the fact inventory has no figure for a bullet, the promotion-ready version uses scope or durability instead (team size, stakeholder seniority, org-wide adoption, a standard that persisted). A fabricated metric fails the pass; an honest qualitative outcome passes it. Grep `~/Documents/resumes/_fact-inventory.md` before adding any number.
+
 ## Action Verbs by Contribution Type
 
 Match the verb to the actual contribution. Mixing registers ("helped drive strategy") is a seniority tell.
