@@ -163,6 +163,13 @@ If verification is unavailable:
 
 Generic praise without evidence is filler and should be cut.
 
+## 4a. Candidate Fact Precision
+
+§4 governs claims about the company; this governs claims about the candidate, and the two failure modes need different handling.
+
+- **Accuracy correction (mandatory, no permission needed).** A detail is factually wrong: wrong program name, wrong number, wrong scope. Fix it. If the correct specific value is not known, GENERALIZE the claim rather than guessing again — never replace one invented specific with another. Validated 2026-07-20: a university program name was stated wrongly while adding specificity, and the fix was to name both institutions without naming either program.
+- **Register correction (surface it, do not silently apply).** A more clinically precise phrasing swapped in for how the candidate actually talks — e.g. "secure-cloud production" for "a highly regulated production environment." Precision is not automatically an improvement. Summer reverted exactly this one: "that's how real people talk." Name the swap and let her choose.
+
 ## 5. Anti-Patterns
 
 Reject the draft if it contains any of these:
@@ -177,6 +184,7 @@ Reject the draft if it contains any of these:
 - Puffery framings like "I am confident I would be an asset to your team" — these tell the reader what to conclude instead of letting the evidence do the work
 - Unsupported superlatives ("master of X", "expert in Y", "superior leadership skills") — claims without a credential, publication, named user, or measurable outcome behind them read as bragging, not confidence
 - Bulleted achievement lists inside body paragraphs (cover-letter bodies are prose; bullets belong in the resume)
+- **Pre-arguing an objection nobody raised** — hedging a credential before anyone questions it ("my direct P&L experience is older but real"). State the qualifying fact flatly and let it stand; do not contrast it against later roles unless the question specifically asks about recency. Generalizes §1a's seniority-apology ban to any credential. Summer, 2026-07-20: "That sounds defensive. The facts speak for themselves."
 - Resume-cadence stacking — 3+ consecutive sentences starting with "I" inside one paragraph (see §A Sentence subjects)
 - Passive closing lines: "I look forward to hearing from you", "Please feel free to contact me at your convenience", "Thank you for considering my application" as the standalone final sentence. The close must be active and specific — name what you'd talk about, not what you hope happens.
 - **Side-project-as-day-job blur.** A personal or side project written in the same voice and tense as current-employer work implies employer ownership it does not have, which is a reference-check risk. Summer flagged exactly this 2026-07-21 ("too much of a stretch for my current role"). Check every paragraph's subject clause: is it clear which work was employer-scoped and which was personal? If ambiguous, name it ("outside of work, I...").
