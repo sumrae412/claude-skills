@@ -154,9 +154,11 @@ My experience covers [SYNTHESIS — the stack of things the candidate brings: e.
 
 ## Shape pairing — pick the same shape across P1/P2/P4
 
-The two shapes (A and B) work as a pair. Shape A is the *operational-fit* arc: lead with the role's operational challenge, deepen into the company's situation, frame evidence as operational answer, close by pivoting back to a named company product. Shape B is the *career-arc* arc: lead with the candidate's deliberate progression, show the current edge, evidence the prior leadership tour, synthesize the stack.
+**Shape C (the default) does not pair.** Its P1 carries no company reference, so any P2 follows cleanly: the letter moves from the candidate's pattern into evidence, and the company connection arrives once, in the close. When drafting Shape C, use the P2 shape that fits the evidence (Shape B "current edge" if the current role is the strongest signal, Shape A "company situation" if the role's difficulty needs naming before the evidence lands) and close with P4 Shape A's pivot-back move — that is where Shape C's hiring-risk anchor lives. The OpenLoop baseline is the worked example: pattern P1, evidence P2-P4, single closing paragraph carrying fit, company connection, and the ask.
 
-Pick the shape based on the JD signal, not stylistic preference. Use the table:
+Shapes A and B still work as a pair with each other. Shape A is the *operational-fit* arc: lead with the role's operational challenge, deepen into the company's situation, frame evidence as operational answer, close by pivoting back to a named company product. Shape B is the *career-arc* arc: lead with the candidate's deliberate progression, show the current edge, evidence the prior leadership tour, synthesize the stack.
+
+Pick the variant shape based on the JD signal, not stylistic preference — and only after deciding Shape C is wrong for this JD. Use the table:
 
 | JD signal | Use shape |
 |---|---|
@@ -167,7 +169,7 @@ Pick the shape based on the JD signal, not stylistic preference. Use the table:
 | Director / VP roles where career progression itself is the credibility signal | B |
 | Thin JD with only generic AI-leadership signals | B |
 
-**Never mix shapes** — Shape A P1 followed by Shape B P2 produces the "career-history-in-P1, candidate-current-edge-in-P2" antipattern (the exact failure mode of the Medbridge 2026-05-16 draft). The shape pair is selected once at draft-start and carried through P1 → P2 → P4.
+**Never mix Shapes A and B** — Shape A P1 followed by Shape B P2 produces the "career-history-in-P1, candidate-current-edge-in-P2" antipattern (the exact failure mode of the Medbridge 2026-05-16 draft). The shape pair is selected once at draft-start and carried through P1 → P2 → P4. This constraint does not apply to Shape C, whose P1 makes no company claim for a later paragraph to contradict.
 
 ### Anti-pattern: chronological prestige montage in P1
 
