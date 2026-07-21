@@ -116,6 +116,8 @@ Ask: *"Does this profile match how you read the role? Anything I over- or under-
 
 For each bullet and role in the resume, assign a confidence band vs. the JD profile and propose a reframe if appropriate. Rubric + four reframing strategies are in `references/matching-rubric.md` — load it. Also load `shared/communication-principles.md` — reframed bullets must lead with the conclusion, stay in plain language, and serve the reader (hiring manager / ATS), not the author. If the target role is Head/VP/executive level, also load `references/executive-bullets.md` so bullet rewrites surface decisions, tradeoffs, governance, and leverage rather than just implementation.
 
+**Promotion-ready bullet pass is standing (Summer, 2026-07-20).** Every bullet goes through `references/matching-rubric.md` §"Promotion-Ready Bullet Pass" before the Phase 2 checkpoint: strong action verbs, measurable business outcomes, and coverage across strategic leadership / cross-functional influence / process improvement / financial impact / organizational results, with weak language removed. The pass never invents numbers.
+
 **Anti-fabrication mechanic — copy master, then diff.** The Phase 2 working baseline is a *literal copy* of the canonical resume, not a draft regenerated from memory of the user's experience. Reframes are diffs against that copy: each change names the strategy used (Keyword Alignment / Emphasis Shift / Abstraction Level / Scale Emphasis) and traces back to a specific bullet in the copied source. If a proposed reframe has no antecedent in the copied master, it is fabrication, not reframing — route to Phase 3 discovery instead.
 
 Output to user (checkpoint):
