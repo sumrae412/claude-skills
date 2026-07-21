@@ -105,6 +105,13 @@ in the henry repo). An LLM-judged "better" draft that fabricates is a regression
     banned openers or §2 filler that survived the polish (mechanical tripwire on top
     of the prompt injection; the doc stays authoritative).
 
+**The three guards do NOT catch format reversion.** The loop can silently undo a user-approved
+STRUCTURAL decision without tripping any guard, because all three check content truth, not shape.
+Observed 2026-07-21: it expanded a mandated 3-line summary back into paragraphs and reverted an
+endorsed years-of-experience framing. Fix: state binding format constraints (line counts, structural
+shape, banned vocabulary) INSIDE the `--artifact` file, and diff the loop's output against those
+constraints before adopting any of it. The guard set is not a substitute for that diff.
+
 ## How to run
 
 ```bash
