@@ -1,0 +1,4 @@
+interface:
+  display_name: "Job Search Operator"
+  short_description: "Run a focused, human-gated job search campaign"
+  default_prompt: "Use $job-search-operator to organize my active opportunities and tell me the single best next action."
