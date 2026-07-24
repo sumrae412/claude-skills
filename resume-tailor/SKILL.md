@@ -23,9 +23,11 @@ A person's ability to get a job should be based on their actual experience, not 
 
 ## Before Starting
 
-Ask the user for:
+Use the user's canonical resume automatically when it exists. The default source is `~/Documents/resumes/Summer_Rae_Resume_Director.md`. Do not ask the user to identify their resume if that file is present; ask only if it is missing or the user requests a different source.
 
-1. **Resume source** — path to their canonical resume (markdown preferred; DOCX/PDF fine, converted in-memory) OR pasted text.
+Ask the user for any remaining missing inputs:
+
+1. **Resume source** — only when the default canonical file is missing or the user requests a different source. Markdown is preferred; DOCX/PDF are fine, converted in-memory, or accept pasted text.
 2. **Job description** — URL, file path, or pasted text. If it is a LinkedIn URL, prefer `tools/jd-prep/jd_prep.py` to capture `jd.md`. If it is another URL, fetch it with the host's available web tool. If fetch fails, ask the user to paste the JD text and keep the URL for `jd.md`.
 3. **Target outcome** — "drop-in replacement bullets", "full rewrite", or "just show me gaps". Default: tailored resume + keyword coverage report. Cover letters are opt-in only — see Phase 5 §4 and Principle 8. Do not offer one unless the user has explicitly asked.
 
