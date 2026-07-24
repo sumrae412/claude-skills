@@ -306,11 +306,13 @@ Why this matters: the Phase 2 and Phase 4 checkpoints validate individual bullet
 3. Show education, speaking, and any tail sections. Ask: *"Tail sections good, or edits?"*
 4. After every section is approved, show the full assembled resume once more and ask: *"Final read — anything to change before I write the file?"*
 
-Only after the final confirmation: write the markdown, generate DOCX, and produce the cover letter. The cover letter gets its own review pass (paragraph-by-paragraph) before file export.
+Only after the final confirmation: write the markdown, generate and verify the PDF beside it, generate DOCX only if requested, and produce the cover letter. The cover letter gets its own review pass (paragraph-by-paragraph) before file export.
 
 Before the final confirmation, load `references/resume-qa.md` and run its section-level, role-level, and document-level checks. If the summary is weaker than the first bullet, cut it. If the skills section is more specific than the experience section, strengthen the experience section before exporting.
 
-## 4. Format Conversion (Optional)
+## 4. Format Conversion
+
+PDF is required for every tailored resume. Save it beside the Markdown source in `~/Documents/resumes/<Company>/`; PDF generation is not optional. Use the PDF skill workflow, render the result when possible, and verify the file exists and contains the assembled resume text. If generation or visual verification is unavailable, mark the PDF blocked or unverified in the handoff rather than delivering Markdown alone.
 
 - **DOCX:** use pandoc with `--reference-doc=` pointing at the appropriate template in `templates/` — this inherits the user's fonts, margins, and heading styles on every render. See `templates/README.md` for the exact command. If `pandoc` is unavailable, deliver reviewed markdown and stop there unless the user requests a different conversion path you can actually verify.
 - **DOCX via `/tmp/` script:** if generating with a standalone node script that imports `docx-js`, the module is often installed globally. Wrap the call: `NODE_PATH="$(npm root -g)" node /tmp/generate_resume_docx.js`. Without `NODE_PATH`, node can't resolve global packages from scripts outside an npm project and fails with `Cannot find module 'docx'`.
@@ -359,6 +361,7 @@ These waste line real-estate on a modern resume. Cut them unless a specific JD o
 Before wrapping up:
 
 - [ ] Tailored resume (markdown)
+- [ ] Tailored resume (PDF), saved beside the Markdown source and verified or explicitly marked unverified
 - [ ] Keyword coverage report
 - [ ] DOCX version (if requested)
 - [ ] Cover letter draft (if requested)
