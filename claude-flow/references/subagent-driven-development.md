@@ -90,6 +90,32 @@ Siblings in this directory:
 - `./spec-reviewer-prompt.md` — Dispatch spec compliance reviewer subagent
 - `./code-quality-reviewer-prompt.md` — Dispatch code quality reviewer subagent
 
+## Subagent Memory Persistence (Claude Code)
+
+Subagents in Claude Code do not inherit the main session's auto-memory. Each subagent starts fresh and forgets everything between runs. To give a subagent persistent memory across sessions, use the `memory` field in its agent configuration:
+
+```json
+{
+  "agentType": "explore",
+  "description": "...",
+  "memory": "project"   // user | project | local
+}
+```
+
+**Memory scopes:**
+
+| Scope | Storage | Best for |
+|-------|---------|----------|
+| `user` | Global, across all projects | Learnings applicable to all repos (coding style preferences, common mistakes) |
+| `project` | Repo-local, committable to git | Team-wide agent conventions, repo-specific gotchas |
+| `local` | Repo-local, gitignored | Private notes, per-developer preferences |
+
+The `memory` field assigns the subagent its own directory that loads before each run and writes back after. You cannot combine scopes in one field, but you can use `project` scope and add manual instructions for the subagent to read user preferences from a specific path.
+
+**Source:** [Lydia Hallie on X](https://x.com/lydiahallie/status/2079255826355892464) (July 2026).
+
+Complements the memory-injection pattern below — memory-injection supplies per-project gotchas at dispatch time; the `memory` field provides persistent cross-session context that survives across dispatches without re-injection.
+
 ## Pre-Dispatch: Memory Injection
 
 Before dispatching the FIRST implementer subagent in this plan, apply the memory-injection pattern (see `memory-injection.md` in this directory) to pull project-specific gotchas from MEMORY.md into every subsequent dispatch prompt:
