@@ -107,6 +107,7 @@ For skills with `requirements.txt`, `package.json`, or inline `pip install`:
 | **Binary files** | Unexpected executables, `.so`, `.dll`, `.exe` | 🔴 CRITICAL |
 | **Large files** | Files >1MB that could hide payloads | ⚪ INFO |
 | **Symlinks** | Symbolic links pointing outside skill directory | 🔴 CRITICAL |
+| **Config-as-Code** | Writes to `.vscode/`, `.cursor/`, `venv/bin/`, `.git/hooks/`, `.claude/hooks/` — workspace config files the host IDE auto-discovers and executes unsandboxed | 🟡 HIGH |
 
 ## Audit Workflow
 
