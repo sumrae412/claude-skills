@@ -11,7 +11,10 @@ Before finalizing any script:
 - [ ] First 15 seconds: course name stated + what learners will gain
 - [ ] Andrew's opener uses "I'm excited to introduce..." pattern
 - [ ] No "Whether you..." openers
-- [ ] All technical terms explained inline on first use
+- [ ] All technical terms explained inline on first use, and each term actually earns its place (a term never used again is jargon — cut it)
+- [ ] Any hard idea is anchored to something the learner already knows, and the analogy's break-point is named where it matters
+- [ ] Every simplification is true-not-just-simple; where the simple version bends the truth, it's flagged in one line (or deliberately deferred)
+- [ ] The one or two most likely points of confusion are pre-empted with a spoken clearing line
 - [ ] No banned words: "should," "understand," "simple," "simply," superlatives
 - [ ] Instructor self-intro kept brief or omitted in marketing scripts
 - [ ] Active voice throughout

@@ -25,7 +25,7 @@ Internal guide for writing introductory lessons (Lesson Zero / L0) and marketing
 This skill uses progressive disclosure. Load the reference file for the task you're doing; skip the others to keep context lean.
 
 1. **Before writing OR reviewing any script → load [`references/core-principles.md`](references/core-principles.md).**
-   Voice & tone (Andrew Ng's voice), hook immediately, inverted pyramid, clarity over buzzwords, concrete over categorical, purpose framing, TH intro length, cut vague endings, what we write scripts for, iteration protocol, writing like a human, speakability, Lesson 1 preview guidance, don't condescend, teleprompter note. Foundational — always applies.
+   Voice & tone (Andrew Ng's voice), hook immediately, inverted pyramid, clarity over buzzwords, concrete over categorical, anchor to what they already know, honest limit (name where the simple version bends the truth), pre-empt where they'll get lost, purpose framing, TH intro length, cut vague endings, what we write scripts for, iteration protocol, writing like a human, speakability, Lesson 1 preview guidance, don't condescend, teleprompter note. Foundational — always applies.
 
 2. **When writing a specific script type → load [`references/script-formats.md`](references/script-formats.md).**
    Format-specific templates for Course Map / Overview Slides, Marketing Teaser (≤3 min), Lesson Zero / L0 (5–6 min), Diagram Walkthroughs, Lesson Talking Heads (THs). Load when you know which script type you're writing.

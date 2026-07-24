@@ -22,6 +22,7 @@ Load `shared/communication-principles.md` before drafting any script. The princi
 - A brief concrete example early is better than a long list of topics they'll "learn about later"
 
 ### Clarity Over Buzzwords
+- Introduce a technical term only when it earns its place in this script — then teach it in the same breath. A term the learner never needs again is jargon; cut it.
 - When naming a technical concept, follow it immediately with a plain-language explanation
   - ❌ "You'll use prefix caching and tool use"
   - ✅ "You'll use techniques like prefix caching — which reduces costs by reusing repeated context — and tool use, which lets the model take real-world actions"
@@ -35,6 +36,24 @@ Name the specific things, not the abstract category they belong to.
 - ✅ "from text to images"
 - ❌ "a new optimization technique"
 - ✅ "a radix tree cache"
+
+### Anchor to What They Already Know
+Explain the new idea by mapping it onto something the learner already understands, then say where the comparison stops.
+- Build the explanation on prior knowledge, not on what you wish the learner already knew. "An embedding is like giving each word an address in a city, where similar words live on the same street."
+- Name the break-point. Every analogy leaks; say where. "That address picture holds until you remember the city has hundreds of dimensions, not two — so 'nearby' means something math does, not something you can point at."
+- A good anchor does more work than three careful sentences of abstraction. Reach for it before you reach for precision.
+
+### Honest Limit — Name Where the Simple Version Bends the Truth
+Simplify without falsifying. When a simplification drops something real, say so in one line and decide whether it matters for this lesson.
+- Never say something false to make it land. "A token is roughly a word" is fine; "a token is a word" is wrong, and learners carry the wrong version into the next lesson.
+- Flag, then judge. "For now, think of it as one word per token — we'll see it's actually word-pieces when we hit tokenization." If the caveat doesn't matter yet, drop it; if it will trip them later, plant the one-line flag now.
+- This is the teaching version of not overselling: the credibility you keep is the learner's trust that what you told them is true.
+
+### Pre-empt Where They'll Get Lost
+Before finalizing, find the one or two places this specific learner most likely misunderstands, and write the exact line that clears each.
+- Predict the stumble, don't discover it in the edit. The usual culprits: a term used a beat before it's defined, an analogy pushed past its break-point, a step that's obvious to you but skips a rung for them.
+- Write the fix as a spoken line, not a note-to-self. "If you're wondering why we don't just use a bigger model — that's exactly the trade-off the next lesson measures."
+- Two clears, maximum. More than that means the explanation itself needs restructuring, not patching.
 
 ### Purpose Framing Over Output Framing
 Frame around what the tool *does* or *is used for*, not just what it *produces*.
@@ -97,6 +116,8 @@ The Lesson 1 preview at the end of L0 should tease the content of *both* Lesson 
 ✅ "In Lesson 1, we'll walk through how a model processes a single request — from input tokens to the final generated response. By the end, you'll understand exactly why inference gets expensive, and you'll be ready to tackle the optimization that makes large-scale LLM serving viable."
 
 ### Don't Condescend
+Aim at the real learner's level, not a stereotype of it — and miss in neither direction. Talking down insults them; talking over their head loses them. The curse of knowledge is the expert's blind spot: forgetting what it was like not to know. Set the floor (what you can safely assume they know) and the ceiling (what this script must not require) before you write, and pitch between them.
+
 Avoid framing that implies the learner doesn't know something obvious or that concepts "won't make sense" without the course.
 - ❌ "Once you see how much work goes into a single token, the optimizations will make a lot more sense."
 - ✅ "Once you see what's happening at the token level, every optimization we build from there will click into place."
