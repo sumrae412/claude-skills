@@ -160,7 +160,23 @@ silently overridden by the marketing/automated-notification classifier.
 Apply only AFTER the Floors and overrides above. If a Floor rule fires, do
 not run this list.
 
-- Marketing, newsletters, promotions
+- **Newsletter domains (skip all)** — any email whose `From` address matches
+  one of:
+  - `theneurondaily.com` · `towardsdatascience.com` · `joinhorizon.ai` ·
+    `aibusinessweekly.net` · `whatplugin.ai` · `getcontrast.io` ·
+    `theresanaiforthat.com` · `mindstream.news` · `every.to` ·
+    `gethalfbaked.com` · `aiweekly.co` · `7min.ai` · `joinsuperhuman.ai` ·
+    `codenewsletter.ai` · `hungryminds.dev` · `therundown.ai`
+  - `beehiiv.com` (catches mail.beehiiv.com, tx2.beehiiv.com, aitoast,
+    brainbuzz, and all other @beehiiv.com senders)
+  - `substack.com` (catches all @substack.com senders — excludes archived
+    newsletters in §4.G which are checked first per routing precedence)
+  - `humanitix.com` (catches west@marketing.humanitix.com and any
+    @humanitix.com marketing)
+  - `f6s.com` · `wandb.ai` · `learn.stayingahead.ai`
+  - Specific addresses where the parent domain carries legitimate mail:
+    `noreply@email.openai.com` · `news@nvidia.com`
+- Marketing, promotions, other newsletters (generic)
 - FYI / receipts / confirmations / automated notifications
 - GitHub individual commit/push/branch notifications
 - **Redfin** — any email from `@redfin.com` or `@e.redfin.com` (listing
