@@ -105,6 +105,24 @@ Before shipping, run a pass that hunts for **predictability** — places the dra
 
 **Generic-swap test.** Pick any paragraph. Swap the audience name, company name, or topic for a competitor's. Does the paragraph still work unchanged? If yes, it is too generic — add specifics or cut it.
 
+## 10. Named AI-slop patterns
+
+The sameness detector catches predictability at the draft level. These are the sentence-level *tells* — each named so you can point at it instead of vaguely sensing "this sounds like AI." Scan for them before shipping; fix the pattern rather than reshaping it into a fancier version of the same move.
+
+- **Binary contrast** — "It's not X, it's Y." State Y directly.
+- **Faux-insight setup** — "the part everyone misses," "what nobody tells you." Cut the setup; let the claim stand.
+- **Colon reveal** — noun phrase, colon, lowercase dramatic reveal ("The best part: it learns"). Rewrite as a plain sentence.
+- **Superficial `-ing` analysis** — "highlighting the team's commitment," "underscoring." Replace with the concrete consequence.
+- **Importance puffery** — "marks a pivotal moment," "stands as a testament." State the fact; let the reader judge.
+- **Weasel attribution** — "experts agree," "studies show." Name the source or cut it.
+- **Fake-strong verb** — "serves as a centralized hub for." Prefer plain "is"/"has" plus specifics.
+- **Synonym cycling** — rotating the agent / the assistant / the tool for style. Repeat the clear word.
+- **Negative listing** — "Not a X. Not a Y. A Z." Just say Z.
+- **Fake-profound kicker** — a final aphorism or mic-drop line. Delete it; end on the clearest concrete sentence.
+- **Summary-recap ending** — "In conclusion," a last paragraph that restates the piece. End on the last concrete point.
+
+Full catalog with before→after fixes and a Detect-only mode: [`ai-writing`](../ai-writing/SKILL.md) §3b. Source: Peter Yang's [no-ai-slop](https://github.com/petergyang/no-ai-slop).
+
 ---
 
 ## Quick checklist
@@ -119,6 +137,7 @@ Before shipping any piece of writing produced under a skill that loads this refe
 - [ ] Audience could state the one key takeaway in their own words after reading.
 - [ ] No ego residue, no completeness-anxiety filler, no hedges that blur the claim.
 - [ ] Ran the sameness-detector pass (§9): named concrete instances on the eight axes, made the cut/combine/sharpen/surprise/specify/restructure calls, passed the generic-swap test.
+- [ ] Scanned for the §10 named AI-slop patterns and fixed each one found.
 
 ---
 
