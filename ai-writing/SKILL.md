@@ -1,6 +1,6 @@
 ---
 name: ai-writing
-description: "Best practices for AI-authored writing — consolidated rules for when Claude (or any LLM) drafts prose a human will put their name on: emails, posts, newsletters, docs, scripts, bios, marketing copy. Use whenever AI-drafted output must not read as generic AI sludge; triggers on '/ai-writing', 'de-slop this draft', 'make this not sound like AI'. Pulls the AI-relevant rules from the writing and communication skills into one pre-ship gate. NOT a voice profile (use writing-voice for Summer's voice, sme-voice for someone else's) and NOT a conflict/timing layer (use communication-safeguards for heated messages)."
+description: "Best practices for AI-authored writing — consolidated rules for when Claude (or any LLM) drafts prose a human will put their name on: emails, posts, newsletters, docs, scripts, bios, marketing copy. Use whenever AI-drafted output must not read as generic AI sludge; triggers on '/ai-writing', 'de-slop this draft', 'make this not sound like AI', or 'does this read as AI / audit this for AI tells' (Detect mode names the patterns without rewriting). Pulls the AI-relevant rules from the writing and communication skills into one pre-ship gate. NOT a voice profile (use writing-voice for Summer's voice, sme-voice for someone else's) and NOT a conflict/timing layer (use communication-safeguards for heated messages)."
 user-invocable: true
 ---
 
@@ -23,6 +23,12 @@ specific evidence.
 Use this skill for emails, posts, newsletters, docs, scripts, bios, marketing
 copy, or any prose a human will put their name on. Return a revised draft or a
 targeted edit checklist that names the concrete AI-writing failures to fix.
+
+## Two modes
+
+**Edit (default).** The user shares a draft to sharpen. Make the *minimum effective edit* — fix the patterns below, leave strong human sentences alone — and return the revised draft plus a short **What changed** section. A rough draft with a real voice should sound like the same person after editing, not like polished AI.
+
+**Detect.** The user asks whether a piece reads as AI, or asks to audit / scan / flag a draft *without* rewriting. Name each pattern from §3b that appears, quote the line, give the fix in a few words, and stop. Do not rewrite, score the draft, or guess whether an AI wrote it. AI detectors guess; named patterns are evidence the reader can check. Offer to edit afterward.
 
 ---
 
@@ -57,8 +63,29 @@ These are the literal patterns that mark text as machine-written. Blocklist them
 **Punctuation/diction:**
 - **No em dashes (—) or en dashes (–).** Single hyphen only. The em dash is the loudest AI tell in prose.
 - Plain verbs over Latinate nouns: "use" not "utilization," "help" not "facilitation."
-- Kill hedges and intensifiers that add nothing: "really," "very," "just," "basically," "actually."
+- Kill hedges and intensifiers that add nothing: "really," "very," "just," "basically," "actually." Keep "I think," "maybe," "honestly," or "to be honest" when they carry real uncertainty, self-awareness, or the writer's spoken rhythm — cutting those flattens voice into AI polish.
 - **And-test:** when ideas are paired ("clear, concise, and compelling," "elevate and enhance"), pick the strongest one. Coordinated qualifiers subtract power.
+
+## 3b. Named slop patterns (fix, don't just flag)
+
+§3 blocks the literal words. These are the *structural* tells — the sentence shapes that read as machine-written. Each has a name so you can point at it, and a fix, not just a flag. Fix the pattern; don't rewrite the fix into a fancier version of the same shape.
+
+| Pattern | Smells like | Fix |
+|---|---|---|
+| **Binary contrast** | "It's not X, it's Y." / "The question isn't X, it's Y." | State Y directly. "The question isn't the model, it's the eval" → "The eval matters more than the model." |
+| **Faux-insight setup** | "What most people get wrong," "the part everyone misses," "nobody tells you." | Cut the setup; let the claim stand. "The part everyone misses: distribution is the moat" → "Distribution is the moat." |
+| **Colon reveal** | Noun phrase, colon, lowercase dramatic reveal. "The best part: it learns." | Rewrite as a plain sentence. Reserve colons for lists, labels, quotes. |
+| **Superficial `-ing` analysis** | Trailing clause that fakes meaning: "highlighting the team's commitment," "underscoring," "reflecting." | Replace with the concrete consequence. "…adds file search, highlighting their focus on workflow" → "…adds file search, so users find old drafts without leaving the editor." |
+| **Importance puffery** | "Marks a pivotal moment," "stands as a testament," "solidifies its position." | State the fact; let the reader judge. "Marks a pivotal moment for the company" → "Is the company's first paid product." |
+| **Weasel attribution** | "Experts agree," "studies show," "widely regarded as." | Name the source or cut the claim. No source → ask, don't invent. |
+| **Fake-strong verb** | "Serves as a centralized hub for," "acts as a bridge between." | Prefer plain "is"/"has" plus the specifics. "Serves as a hub for sponsor management" → "Tracks sponsors, drafts, and due dates in one place." |
+| **Synonym cycling** | The agent, then the assistant, then the tool — rotating terms for style. | If the clear word is right, repeat it. |
+| **Negative listing** | "Not a X. Not a Y. A Z." | Just say Z. |
+| **Dramatic fragmentation** | "That's it. That's the whole thing." / "X. And Y. And Z." | Use complete sentences. |
+| **Rhetorical setup** | "What if I told you…", "Think about it:", "Plot twist:", self-answered "Question? Answer." | Drop it; make the point. |
+| **Fake-profound kicker** | A final "deep" line that turns the point into an aphorism or mic-drop. | Delete it — don't rewrite into a better metaphor. End on the clearest concrete sentence already in the draft. |
+| **Summary-recap ending** | "In conclusion," "Ultimately," a last paragraph that restates the piece. | The reader was just there. End on the last concrete point, takeaway, or next action. |
+| **Robotic rhythm** | Repeated sentence shapes, equal-length paragraphs, stacked punchy fragments. | Vary the shape only where it helps the point. |
 
 ## 4. Strip the padding
 
@@ -96,11 +123,26 @@ When applying a voice profile, three tendencies used naturally beat ten forced i
 
 ---
 
+## Detect mode (audit without rewriting)
+
+When the user wants a scan, not a rewrite:
+
+1. Read the full draft.
+2. Name each pattern from §3 or §3b that appears. For each: **pattern name**, the quoted line, and the fix in a few words.
+3. Do not rewrite the draft, assign a score, or claim an AI wrote it. Named patterns are checkable evidence; a detector verdict is a guess.
+4. Offer to run Edit mode afterward.
+
+Report shape per finding: `**Colon reveal** — "The best part: it learns." → plain sentence, or reserve colons for lists.`
+
+---
+
 ## Pre-ship checklist
 
 - [ ] Can complete "I believe that ___" with the core claim; it survives the so-what + why tests (§1).
 - [ ] Opens with the conclusion / hook, not setup (§2).
 - [ ] Zero AI tells: no em dashes, no hollow openers/closers, no connective sludge, ran the and-test (§3).
+- [ ] Scanned for the §3b named patterns; fixed each rather than reshaping it into a fancier version of the same tell.
+- [ ] Edit mode kept the writer's voice: minimum effective edit, strong human sentences left alone, real-cadence hedges preserved.
 - [ ] No padding — every sentence earns its place; cut until cuts hurt the meaning (§4).
 - [ ] Ran the sameness detector: named concrete instances on the eight axes, made the cut/combine/sharpen/surprise/specify/restructure calls (§5).
 - [ ] Passed the generic-swap test (§6).
@@ -117,3 +159,5 @@ When applying a voice profile, three tendencies used naturally beat ten forced i
 - [`sc-marketing-scripts`](../sc-marketing-scripts/SKILL.md) — DLAI course-script authoring; apply this skill's de-slop gate to AI-drafted scripts.
 - [`shared/communication-principles.md`](../shared/communication-principles.md) — the canonical principle set these rules draw from.
 - [`communication-safeguards`](../communication-safeguards/SKILL.md) — state/timing/intent layer for heated messages, upstream of drafting.
+
+The §3b named-pattern catalog and Detect mode draw on Peter Yang's [no-ai-slop](https://github.com/petergyang/no-ai-slop) skill (2026-07).
