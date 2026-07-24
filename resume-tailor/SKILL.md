@@ -171,7 +171,7 @@ Final deliverables. Format details, ATS tips, and optional DOCX export are in `r
 
 **Template-compliant markdown is mandatory.** Resume markdown must use pandoc `custom-style` divs for the name (`::: {custom-style="Title"} ... :::`) and headline (`::: {custom-style="Subtitle"} ... :::`), ALL-CAPS H1 section headers (`# SKILLS`, `# EXPERIENCE`, `# EDUCATION`), plain-text H2 role headings (`## Company, Location - Title`, no italics), and `MONTH YYYY - PRESENT` date lines. Do NOT write the name as `# Name` or add a `## Summary` heading — both break the template's style mapping. Cover letters use the top-block format in `references/templates/README.md` (bold name, city/phone/email, ordinal date, recipient block, `Dear ...`, body, `Regards,`, bold signature name).
 
-**Output path:** all files go to `~/Documents/resumes/<Company>/` (one folder per target company). See `references/output-formats.md` §0.
+**Output path:** all files go to `~/Documents/resumes/<Company>/` (one folder per target company). Every tailored resume must be saved in both formats in that same folder: `Firstname_Lastname_Resume_<Company>.md` and `Firstname_Lastname_Resume_<Company>.pdf`. The PDF is required, not an optional conversion. See `references/output-formats.md` §0.
 
 **Required step before any file write:** walk the user through the assembled resume **section by section** (header/summary, each role, tail sections) for approval. See `references/output-formats.md` §3.5. Cover letters get the same treatment paragraph-by-paragraph, and must also clear both review tiers:
 
@@ -190,7 +190,7 @@ Both tiers live in `references/cover-letter-review.md` §6. Surface the §6.1 ev
 
 Defaults:
 
-1. **Tailored resume** (markdown, ready to copy-paste or convert)
+1. **Tailored resume** in both Markdown and PDF, saved side by side in `~/Documents/resumes/<Company>/`
 2. **Keyword coverage report** — must-haves + nice-to-haves hit/missed
 3. **`jd.md`** — source URL + captured date + full JD text. Required in every company folder so the tailored outputs remain legible months later. See `references/output-formats.md` §0.1.
 4. **Cover letter draft — opt-in only.** Do NOT offer, pre-announce, or auto-draft a cover letter at the end of Phase 5. Produce resume + keyword coverage + jd.md only. Draft a cover letter exclusively when the user explicitly requests one ("draft a cover letter", "write me a letter for this", etc.). The default closing prompt does NOT mention cover letters — its absence is what prevents an unwanted draft from being produced unprompted.
@@ -198,7 +198,7 @@ Defaults:
 
 No change log. What was reframed and why is a conversation artifact, not a deliverable — if the skill itself should behave differently next time, that's a session-learnings update to the skill, not a file for the user.
 
-Offer: *"Want me to convert to DOCX or iterate on any section?"*
+Before closing, verify that both the `.md` and `.pdf` resume files exist in the company folder. If PDF generation or visual verification is unavailable, say so explicitly and mark the PDF as blocked or unverified; never silently ship Markdown alone. Offer DOCX only if requested.
 
 ---
 
@@ -247,7 +247,7 @@ When the user asks for targeted refinement after the initial review, use these n
 2. **Visible scoring.** Every recommendation shows its confidence band and strategy. No black-box rewrites.
 3. **Collaborative, not autopilot.** Every phase ends with a checkpoint. The user edits, vetoes, and corrects before the next phase runs.
 4. **Solo-user scope.** One person and one canonical resume. Default to one JD at a time. Multi-JD Mode is allowed only for explicit 2-5 JD resume-multiplier requests and produces comparative drafts, not final file-writing or DOCX export.
-5. **Minimum viable dependencies.** Pure markdown by default. Optional DOCX via `pandoc` with the template reference docs in `references/templates/`. If `pandoc` is unavailable, stop at reviewed markdown instead of inventing another render path. No bun/node/React required.
+5. **Minimum viable dependencies.** Markdown is the source of truth, and PDF is always required. Use the PDF skill's verified rendering path and keep the `.md` source beside the `.pdf`. DOCX is optional and user-requested. If PDF generation or verification is unavailable, surface that as a blocked or unverified deliverable rather than silently omitting it. No bun/node/React required.
 6. **Gap handling is disclosure, not manufacturing.** Visible gaps go to cover letters or discovery prompts — never filled with invented content.
 7. **Communication principles apply.** Resumes are author-to-audience writing. Audience-centered focus, lead with the strongest evidence, simple plain-language bullets, no ego residue. Load `shared/communication-principles.md` before Phase 2 matching and Phase 4 positioning — the bullet-level and headline-level decisions are where these principles bite hardest. **Run the §9 sameness-detector pass before shipping any resume or cover-letter draft** — tailored resumes are a prime sameness offender (generic verbs, interchangeable bullets, cover-letter openers swappable across candidates). Apply the generic-swap test bullet-by-bullet and paragraph-by-paragraph: if swapping the company name leaves the line still working, it's too generic.
 8. **Cover letters are opt-in only.** The default Phase 5 deliverable set is resume + keyword coverage + jd.md. Cover letters are produced only on explicit user request — never offered proactively, never pre-announced, never drafted as a "while I'm at it" addition. The closing prompt deliberately omits cover-letter language so the user has to raise it.
