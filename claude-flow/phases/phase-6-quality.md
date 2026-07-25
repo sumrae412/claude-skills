@@ -92,6 +92,8 @@ PY
      --redactions-output /tmp/review-redactions.json \
      --json
    ```
+3b. **Always-run deterministic security gate — runs regardless of the Tier-1 cascade.**
+   Run the `production-readiness-check` core against the RAW diff (`/tmp/claude-flow-review.raw.diff`, pre-scrub — the secret grep needs unmasked content): C1 hardcoded secrets, C3 new-endpoint-without-logging, C5 unsafe `eval`/`exec`. Grep is authoritative; any match is a HIGH finding fed straight into Findings Resolution below, independent of what Tier 1 returns. This is a deterministic complement to the LLM `safety-reviewer`, not a duplicate: an LLM pass can miss a grep-catchable secret, and step 7 skips the LLM reviewers entirely on a clean Tier 1 — so without this gate a secret or an unlogged endpoint on an otherwise-clean diff ships unchecked.
 4. Run the selector script:
    ```bash
    git diff --name-only "$REVIEW_BASE_SHA"..HEAD | \
@@ -106,7 +108,7 @@ PY
    - `registry_sources`
 6. Run Tier 1 (`coderabbit`) first.
 7. If Tier 1 returns no HIGH+ findings:
-   - skip Tiers 2-4
+   - skip Tiers 2-4 (the always-run deterministic gate at step 3b still applies — its FAILs gate independently of this skip)
    - run the design-review pass only if UI files changed
    - proceed to verification
 8. If Tier 1 returns HIGH+ findings:
