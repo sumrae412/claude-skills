@@ -67,6 +67,18 @@ Compute each dimension independently, then combine. Round all scores to the near
 | JD title is one level down from current | 75–85 (fine for non-growth pivots) |
 | JD title is two+ levels down | 40–60 (flag: compensation/status misalignment) |
 
+**Forward Deployed / Applied AI family exception.** Titles containing *forward deployed*,
+*applied AI engineer*, *solutions engineer*, or *deployment engineer* are one job family
+that is ~91% individual-contributor and only ~11% management (source: [AI Engineering
+Field Guide FDE data](https://github.com/alexeygrigorev/ai-engineering-field-guide/blob/main/role/06-fde.md)).
+Do **not** auto-penalize the absence of a leadership marker as a level-down. A Senior /
+Staff / Principal / Lead / Founding FDE carries leadership-adjacent authority (customer
+ownership, technical direction) and should score as a lateral leadership target, not a
+demotion. Score explicit-management framings (Head of FDE, FDE Manager, Director/Forward
+Deployed Researcher) on the normal table. This is the FDE-family member of the two-leads-
+by-family split — the resume lead and keyword targets for it live in
+`../../resume-tailor/references/fde-role-profile.md`.
+
 ### 2. YOE Fit
 
 Compare JD required YOE range (e.g., "12–15+") against `candidate_profile.tenure.leadership_years` or the most relevant sub-metric.
