@@ -1,0 +1,33 @@
+name: PR CI
+
+# Blocking gate for every PR: skill frontmatter integrity + repo-wide
+# relative-link resolution (scripts/validate_skills.py, pure stdlib).
+# Informational (never blocks): persona-contract lint and the doc-graph
+# orphan report, to surface prune candidates at review time.
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Validate skills (frontmatter + relative links)
+        run: python3 scripts/validate_skills.py
+
+      - name: Persona-contract lint (informational)
+        run: python3 scripts/lint_persona_contracts.py || true
+
+      - name: Doc-graph orphan report (informational)
+        run: |
+          python3 scripts/build_doc_graph.py --root . --out /tmp/doc-graph.md || true
+          if [ -f /tmp/doc-graph.md ]; then
+            { echo '## Doc-graph report (informational)'; echo; cat /tmp/doc-graph.md; } >> "$GITHUB_STEP_SUMMARY"
+          fi
