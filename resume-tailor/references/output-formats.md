@@ -65,7 +65,7 @@ The outcome trail makes the per-company folder a forensic record — what was th
 
 **Promotion-only fields (do not pre-populate):** the `Outcome:` field stays absent until something happens. Pre-populating with `submitted` on every save adds noise without signal.
 
-**Recommended fetcher for LinkedIn URLs:** prefer the repo-local `jd-prep` CLI (`tools/jd-prep/jd_prep.py <url>`). It hits LinkedIn's unauthenticated guest endpoint, extracts structured metadata + deduplicated body, and writes `~/Documents/resumes/<Company>/jd.md` directly — satisfying this section's URL-retention rule in one step. Generic web fetch on LinkedIn job pages typically returns auth-walled content. For invocation details, read [tools/jd-prep/README.md](/Users/summerrae/claude_code/claude-skills/tools/jd-prep/README.md).
+**Recommended fetcher for LinkedIn URLs:** prefer the repo-local `jd-prep` CLI (`tools/jd-prep/jd_prep.py <url>`). It hits LinkedIn's unauthenticated guest endpoint, extracts structured metadata + deduplicated body, and writes `~/Documents/resumes/<Company>/jd.md` directly — satisfying this section's URL-retention rule in one step. Generic web fetch on LinkedIn job pages typically returns auth-walled content. For invocation details, read [tools/jd-prep/README.md](../../tools/jd-prep/README.md).
 
 **Input-handling rules (Phase 5 input validation, before any file write):**
 

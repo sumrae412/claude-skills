@@ -71,6 +71,10 @@ def check_links(files: list[Path]) -> list[str]:
             path_part = target.split("#", 1)[0]
             if not path_part:
                 continue
+            if path_part.startswith(("/", "~")):
+                errors.append(
+                    f"{md.relative_to(REPO_ROOT)}: machine-absolute link (use repo-relative) -> {target}")
+                continue
             resolved = (md.parent / path_part).resolve()
             if not resolved.exists():
                 errors.append(f"{md.relative_to(REPO_ROOT)}: broken link -> {target}")
