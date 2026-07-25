@@ -93,7 +93,12 @@ PY
      --json
    ```
 3b. **Always-run deterministic security gate — runs regardless of the Tier-1 cascade.**
-   Run the `production-readiness-check` core against the RAW diff (`/tmp/claude-flow-review.raw.diff`, pre-scrub — the secret grep needs unmasked content): C1 hardcoded secrets, C3 new-endpoint-without-logging, C5 unsafe `eval`/`exec`. Grep is authoritative; any match is a HIGH finding fed straight into Findings Resolution below, independent of what Tier 1 returns. This is a deterministic complement to the LLM `safety-reviewer`, not a duplicate: an LLM pass can miss a grep-catchable secret, and step 7 skips the LLM reviewers entirely on a clean Tier 1 — so without this gate a secret or an unlogged endpoint on an otherwise-clean diff ships unchecked.
+   Run the canonical `core_gate.sh` script against the RAW diff (`/tmp/claude-flow-review.raw.diff`, pre-scrub — the secret grep needs unmasked content). This REPLACES the earlier prose-only instruction to "run the production-readiness-check core" — that had no runnable script behind it; `core_gate.sh` is the deterministic implementation of checks.md's C1/C3/C5 and is also the exact script Henry's `prc-merge-gate.sh` merge-time hook calls, so there is exactly one place these grep patterns live.
+   ```bash
+   <claude-flow-root>/../production-readiness-check/scripts/core_gate.sh \
+     --diff-file /tmp/claude-flow-review.raw.diff
+   ```
+   Exit 1 means the script printed one or more `[FAIL]` lines (C1 secrets or C5 unsafe `eval`/`exec` on interpolated input) — feed each `[FAIL]` line straight into Findings Resolution below as a HIGH finding, independent of what Tier 1 returns. `[WARN]` lines (C3 new-endpoint-without-logging, or a C5 literal-only nit) do not gate — surface them as low-severity notes only. This is a deterministic complement to the LLM `safety-reviewer`, not a duplicate: an LLM pass can miss a grep-catchable secret, and step 7 skips the LLM reviewers entirely on a clean Tier 1 — so without this gate a secret or an unlogged endpoint on an otherwise-clean diff ships unchecked.
 4. Run the selector script:
    ```bash
    git diff --name-only "$REVIEW_BASE_SHA"..HEAD | \
