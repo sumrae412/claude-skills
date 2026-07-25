@@ -16,18 +16,37 @@
 # CHECKS (against added lines, `^+`, only):
 #   C1 — hardcoded secrets (generic credential assignments + known-format
 #        tokens). BLOCKING. Secret VALUES are never printed — pattern name
-#        and file:line only.
+#        and file:line only. Scans ALL files, including tests (a real leaked
+#        credential in a test IS a leak). A matched value containing a known
+#        placeholder token (EXAMPLE, DUMMY, FAKE, PLACEHOLDER, CHANGEME,
+#        YOUR_, XXXX, TEST_KEY, SAMPLE, NOTREAL — case-insensitive) is
+#        downgraded to a WARN nit, non-blocking.
 #   C5 — unsafe dynamic execution (eval/exec/new Function/os.system/
 #        subprocess shell=True/child_process). BLOCKING when the call's
 #        argument is not a pure string literal (i.e. it's interpolated).
 #        A literal-only argument is downgraded to a nit (WARN, non-blocking).
+#        Skipped entirely for added lines in files whose PATH marks them as
+#        tests (basename test_*/test-*/*_test.*/*-test.*/*.test.*/*.spec.*/
+#        conftest.py, or any path segment equal to tests/test/__tests__/
+#        fixtures — both snake_case and kebab-case naming conventions) — a test
+#        FOR an exec/secret detector inherently contains the patterns it
+#        detects. Matched on path segments/basename, not substring, so a
+#        prod file like `latest_config.py` is never accidentally exempted.
 #   C3 — new endpoint added in a file with no added logging call in the
 #        same file. WARN only — never affects exit code.
 #
+# SUPPRESSION MARKER: any added line containing the token `core-gate-allow`
+# (case-insensitive, anywhere in the line) is exempt from C1 and C5 checks —
+# the auditable per-line escape hatch for a legitimate occurrence in
+# production code. Emits an informational [SKIP] note; does not affect exit
+# code.
+#
 # OUTPUT: findings to stdout, one per line:
 #   [FAIL] C1 <pattern-name> — <file>:<line>
+#   [WARN] C1-nit <pattern-name> (placeholder) — <file>:<line>
 #   [WARN] C5-nit <pattern-name> (literal-only) — <file>:<line>
 #   [WARN] C3 endpoint-without-logging — <file>:<line>
+#   [SKIP] suppressed by core-gate-allow — <file>:<line>
 #
 # EXIT CODES:
 #   0 — no blocking (C1/C5) findings
@@ -135,6 +154,42 @@ C5_PATTERNS = [
 # Argument is a pure string literal -> nit, not a FAIL.
 LITERAL_ONLY = re.compile(r'''^['"][^'"]*['"]\s*\)?\s*[;,]?\s*$''')
 
+# Known dummy/placeholder tokens -> C1 match downgraded to WARN, not FAIL.
+PLACEHOLDER_RE = re.compile(
+    r"(?i)(EXAMPLE|DUMMY|FAKE|PLACEHOLDER|CHANGEME|YOUR_|XXXX|TEST_KEY|SAMPLE|NOTREAL)"
+)
+
+# Inline suppression marker: any added line containing this token (anywhere,
+# case-insensitive) is exempt from C1 and C5 for that line.
+SUPPRESS_MARKER_RE = re.compile(r"(?i)core-gate-allow")
+
+# --- C5 path scoping: skip test files ------------------------------------
+TEST_BASENAME_RES = [
+    re.compile(r"(?i)^test[_-]"),           # test_foo.sh, test-foo.sh (kebab-case hook naming)
+    re.compile(r"(?i)[_-]test\.[^./]+$"),   # foo_test.py, foo-test.sh
+    re.compile(r"(?i)\.test\.[^./]+$"),     # foo.test.js
+    re.compile(r"(?i)\.spec\.[^./]+$"),     # foo.spec.ts
+    re.compile(r"(?i)^conftest\.py$"),
+]
+TEST_DIR_SEGMENTS = set(["tests", "test", "__tests__", "fixtures"])
+
+
+def is_test_path(fname):
+    # Match on path SEGMENTS / basename only — never a bare substring, so a
+    # production file named e.g. `latest_config.py` is not exempted.
+    parts = [p for p in fname.split("/") if p]
+    if not parts:
+        return False
+    basename = parts[-1]
+    dirs = parts[:-1]
+    for seg in dirs:
+        if seg in TEST_DIR_SEGMENTS:
+            return True
+    for pat in TEST_BASENAME_RES:
+        if pat.search(basename):
+            return True
+    return False
+
 # --- C3: endpoint-without-logging (WARN only) -----------------------------
 ENDPOINT_PATTERN = re.compile(
     r"^\+.*(\.route|\.get|\.post|\.put|\.patch|\.delete|@app\.|@router\.|app\.(use|all))\b"
@@ -192,28 +247,42 @@ for raw in lines:
 
         fname = current_file or "<unknown>"
 
-        # C1
-        for pname, pat in C1_PATTERNS:
-            if pat.search(content):
-                findings.append("[FAIL] C1 %s — %s:%d" % (pname, fname, lineno))
-                blocking = True
+        # Inline suppression marker — exempt this line from C1 and C5.
+        if SUPPRESS_MARKER_RE.search(content):
+            findings.append(
+                "[SKIP] suppressed by core-gate-allow — %s:%d" % (fname, lineno)
+            )
+        else:
+            # C1 — scans ALL files (including tests); placeholder values downgrade.
+            for pname, pat in C1_PATTERNS:
+                match = pat.search(content)
+                if not match:
+                    continue
+                if PLACEHOLDER_RE.search(content):
+                    findings.append(
+                        "[WARN] C1-nit %s (placeholder) — %s:%d" % (pname, fname, lineno)
+                    )
+                else:
+                    findings.append("[FAIL] C1 %s — %s:%d" % (pname, fname, lineno))
+                    blocking = True
 
-        # C5
-        for pname, pat in C5_PATTERNS:
-            match = pat.search(content)
-            if not match:
-                continue
-            arg_text = content[match.end():].strip()
-            # Trim a single trailing ')' set / statement terminator for the
-            # literal check — best-effort on a single grep line.
-            is_literal = bool(LITERAL_ONLY.match(arg_text)) if arg_text else False
-            if is_literal:
-                findings.append(
-                    "[WARN] C5-nit %s (literal-only) — %s:%d" % (pname, fname, lineno)
-                )
-            else:
-                findings.append("[FAIL] C5 %s — %s:%d" % (pname, fname, lineno))
-                blocking = True
+            # C5 — skipped entirely for test-path files.
+            if not is_test_path(fname):
+                for pname, pat in C5_PATTERNS:
+                    match = pat.search(content)
+                    if not match:
+                        continue
+                    arg_text = content[match.end():].strip()
+                    # Trim a single trailing ')' set / statement terminator for
+                    # the literal check — best-effort on a single grep line.
+                    is_literal = bool(LITERAL_ONLY.match(arg_text)) if arg_text else False
+                    if is_literal:
+                        findings.append(
+                            "[WARN] C5-nit %s (literal-only) — %s:%d" % (pname, fname, lineno)
+                        )
+                    else:
+                        findings.append("[FAIL] C5 %s — %s:%d" % (pname, fname, lineno))
+                        blocking = True
 
         # C3 bookkeeping
         if LOGGING_PATTERN.search(content):
