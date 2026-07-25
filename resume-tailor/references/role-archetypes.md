@@ -181,6 +181,42 @@ Pick one primary archetype even if the JD spans multiple modes. Secondary traits
 
 - kadence `Head of Machine Learning`
 
+### G. Forward Deployed / Applied AI Engineer
+
+**What they are really hiring for**
+
+- an engineer who owns a build end to end inside a *customer's* environment
+- discovery → integration → production system → eval/monitoring, on the hook when it breaks
+- direct customer/stakeholder work done *as a builder*, not as a PM or advisor
+- broad deploy-side range: any cloud, containers, CI/CD, API/data integration
+- comfort making technical decisions under ambiguity before requirements are clear
+
+**Foreground**
+
+- production ownership carried from ambiguous problem to running system, with outcomes
+- the applied LLM stack: Python, RAG, agents, prompt engineering
+- deploy fluency matched to the JD's stack (AWS/GCP/Azure + Docker/K8s + CI/CD)
+- feeding field lessons back into the product (bridges FDE + product sense)
+
+**Downplay**
+
+- curriculum/education framing
+- thought-leadership / workshops as the headline (that is archetype D)
+- governance-first or strategy narration not tied to a shipped system
+
+**Note on seniority + leadership.** FDE is ~91% individual-contributor (only 11%
+management). For a leadership search, target either the senior IC slice (Senior / Staff /
+Principal / Lead / Founding — leadership-adjacent authority without a "Manager" title) or
+the explicit-management framings (Head of Forward Deployed Engineering, FDE Manager,
+Director/Forward Deployed Researcher). Either way the story is builder-who-owns-customer-
+outcomes. Full empirical profile, adjacent titles, and title-field lead:
+`references/fde-role-profile.md` — load it when this archetype is selected.
+
+**Seed examples from this batch**
+
+- TELUS `Forward Deployed Researcher, Director` (also touches archetype D, but the
+  production-ownership + customer-deployment center of gravity is FDE)
+
 ## 4. Selection Heuristics
 
 Use the JD's center of gravity, not just the most impressive phrases.
@@ -191,6 +227,7 @@ Use the JD's center of gravity, not just the most impressive phrases.
 - If the JD emphasizes customers, offerings, workshops, regional practice development, or client trust: choose `Consulting / Practice / Client-Facing AI Leader`.
 - If the JD emphasizes product ownership, roadmap, engagement, coaching, adoption, or power-user workflows: choose `AI Product / Adoption / Workforce Enablement`.
 - If the JD emphasizes model development in one domain, hands-on data science leadership, and real-time production models: choose `Domain ML Leader`.
+- If the title contains *forward deployed / applied AI engineer / solutions engineer / deployment engineer*, or the JD centers deploying production AI **inside a customer's environment** with the engineer owning discovery, integration, and outcomes: choose `Forward Deployed / Applied AI Engineer`. Distinguish from D — D leads with advisory/workshops/repeatable offerings; G leads with production ownership and hands-on customer deployment.
 
 ## 5. Resume Story Templates
 
@@ -202,6 +239,7 @@ Use these to fill the `Resume story to foreground` line in Phase 1.
 - `Consulting / Practice / Client-Facing AI Leader`: "Frame the candidate as the advisor-builder who turns ambiguous client needs into repeatable AI offerings and measurable outcomes."
 - `AI Product / Adoption / Workforce Enablement`: "Frame the candidate as the product owner of AI behavior change, adoption, and workflow value, not just feature delivery."
 - `Domain ML Leader`: "Frame the candidate as the applied ML leader who combines domain intuition, model judgment, and hands-on delivery in production."
+- `Forward Deployed / Applied AI Engineer`: "Frame the candidate as the builder who owns a customer's hardest AI deployment end to end — scoping under ambiguity, integrating their stack, shipping a production system, and staying accountable for whether it works."
 
 ## 6. Warning
 
