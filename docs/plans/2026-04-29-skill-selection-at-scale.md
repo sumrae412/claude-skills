@@ -88,7 +88,7 @@ Decide variant per the predecessor plan's tree, with thresholds applied **vs. th
 
 ## Pre-experiment: BM25 retrieval ceiling
 
-Before running any model trials, we measured BM25's standalone recall against the 12 gold-labeled dispatches over the 205-skill corpus. Script: [eval_bm25_on_dispatches.py](../../claude-flow/scripts/eval_bm25_on_dispatches.py). Corpus: [skill_corpus.jsonl](../../.claude/experiments/skill_corpus.jsonl) (205 skills, parsed from a session-loaded skills listing).
+Before running any model trials, we measured BM25's standalone recall against the 12 gold-labeled dispatches over the 205-skill corpus. Script: [eval_bm25_on_dispatches.py](../../claude-flow/scripts/eval_bm25_on_dispatches.py). Corpus: `.claude/experiments/skill_corpus.jsonl` (local artifact, gitignored — not in the repo; 205 skills, parsed from a session-loaded skills listing).
 
 | metric | value |
 |---|---|
