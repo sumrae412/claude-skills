@@ -176,6 +176,87 @@ else
     FAIL=$((FAIL+1))
 fi
 
+# --- Case 12: eval(userInput) in a test-path file -> C5 skipped, exit 0 ----
+DIFF_12='diff --git a/scripts/test_foo.sh b/scripts/test_foo.sh
+--- a/scripts/test_foo.sh
++++ b/scripts/test_foo.sh
+@@ -1,0 +2,1 @@
++eval(userInput)
+'
+run_case "eval(userInput) in test_foo.sh (test path) -> exit 0 (C5 skipped)" "$DIFF_12" 0
+
+# --- Case 13: eval(userInput) in a prod path, no marker -> still exit 1 ----
+DIFF_13='diff --git a/src/app.py b/src/app.py
+--- a/src/app.py
++++ b/src/app.py
+@@ -1,0 +2,1 @@
++eval(userInput)
+'
+run_case "eval(userInput) in src/app.py (prod path), no marker -> exit 1 (regression guard)" "$DIFF_13" 1
+
+# --- Case 14: eval(userInput) with core-gate-allow marker in prod file -> exit 0
+DIFF_14='diff --git a/src/app.py b/src/app.py
+--- a/src/app.py
++++ b/src/app.py
+@@ -1,0 +2,1 @@
++eval(userInput)  # core-gate-allow
+'
+output_14="$(printf '%s' "$DIFF_14" | bash "$GATE" 2>&1)"
+code_14=$?
+if [ "$code_14" -eq 0 ] && printf '%s' "$output_14" | grep -q '\[SKIP\] suppressed by core-gate-allow'; then
+    echo "PASS: eval(userInput) # core-gate-allow in prod file -> exit 0 (marker exempts)"
+    PASS=$((PASS+1))
+else
+    echo "FAIL: eval(userInput) # core-gate-allow in prod file -> exit 0 (marker exempts) (exit=$code_14)"
+    echo "  output: $output_14"
+    FAIL=$((FAIL+1))
+fi
+
+# --- Case 15: C1 placeholder value (AWS docs example key) -> exit 0 + WARN --
+DIFF_15='diff --git a/config.py b/config.py
+--- a/config.py
++++ b/config.py
+@@ -1,0 +2,1 @@
++aws_key = "AKIAIOSFODNN7EXAMPLE"
+'
+output_15="$(printf '%s' "$DIFF_15" | bash "$GATE" 2>&1)"
+code_15=$?
+if [ "$code_15" -eq 0 ] && printf '%s' "$output_15" | grep -q '\[WARN\] C1-nit'; then
+    echo "PASS: AKIAIOSFODNN7EXAMPLE placeholder -> exit 0 + C1-nit WARN"
+    PASS=$((PASS+1))
+else
+    echo "FAIL: AKIAIOSFODNN7EXAMPLE placeholder -> exit 0 + C1-nit WARN (exit=$code_15)"
+    echo "  output: $output_15"
+    FAIL=$((FAIL+1))
+fi
+
+# --- Case 16: C1 real-format token (no placeholder) in a test_* file -> exit 1
+DIFF_16='diff --git a/test_config.py b/test_config.py
+--- a/test_config.py
++++ b/test_config.py
+@@ -1,0 +2,1 @@
++token = "ghp_bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+'
+run_case "real-format token (no placeholder) in test_config.py -> exit 1 (C1 still scans tests)" "$DIFF_16" 1
+
+# --- Case 17: prod file with "test" as a plain substring is NOT exempted ---
+DIFF_17='diff --git a/src/latest.py b/src/latest.py
+--- a/src/latest.py
++++ b/src/latest.py
+@@ -1,0 +2,1 @@
++eval(userInput)
+'
+run_case "eval(userInput) in src/latest.py (substring trap, not a test path) -> exit 1" "$DIFF_17" 1
+
+# --- Case 18: eval() literal-inside-string in a kebab-case test hook file --
+DIFF_18='diff --git a/.claude/hooks/test-prc-merge-gate.sh b/.claude/hooks/test-prc-merge-gate.sh
+--- a/.claude/hooks/test-prc-merge-gate.sh
++++ b/.claude/hooks/test-prc-merge-gate.sh
+@@ -1,0 +2,1 @@
++printf '"'"'diff --git a/x.js b/x.js\n+eval(userInput)\n'"'"' > "$DIFF_FILE"
+'
+run_case "eval(userInput) literal inside test-prc-merge-gate.sh (kebab-case test path) -> exit 0" "$DIFF_18" 0
+
 echo ""
 echo "=== RESULTS: $PASS passed, $FAIL failed ==="
 [ "$FAIL" -eq 0 ]
