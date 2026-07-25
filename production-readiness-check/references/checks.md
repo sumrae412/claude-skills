@@ -10,7 +10,7 @@ Capture the list of changed files. This drives both the minimal core checks and 
 
 ### Step 2: Run Minimal Core (Always)
 
-These three checks run on every invocation regardless of which files changed.
+These core checks run on every invocation regardless of which files changed.
 
 #### C1: Secrets in Code
 
@@ -94,6 +94,18 @@ done
 - Remediation: generate the lockfile (`npm install --package-lock-only --no-audit`, `poetry lock`, etc.), verify the workflow's install command passes in `--dry-run`, commit both together.
 
 This is Core (not a deep-dive) because the trigger is narrow (`.github/workflows/*.yml` or lockfile-producing `package.json` / `pyproject.toml` in the diff) but very high-signal — every missed instance causes chronic PR failure until manually traced.
+
+#### C5: Unsafe Dynamic Execution
+
+Grep the diff for newly-introduced dynamic code execution: `eval`, `exec`, `Function()` constructors, or a shell invoked on interpolated input (`os.system`, `subprocess(... shell=True)`, `child_process` with a built string).
+
+```bash
+git diff origin/main...HEAD -U0 | grep -E '^\+' | grep -nE '\beval\(|\bexec\(|new Function\(|os\.system\(|subprocess\.[A-Za-z]+\([^)]*shell\s*=\s*True|child_process'
+```
+
+- **Score: 90** — a new `eval` / `exec` / `Function()` / `shell=True` call on non-constant input is a critical injection surface. A literal-only argument with no interpolation is a nit: flag it, don't FAIL.
+
+This is Core (not a deep-dive) because dynamic execution is a top-tier injection vector and the grep is cheap and high-signal on any diff.
 
 ### Step 3: Match Deep-Dive Triggers
 
