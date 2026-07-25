@@ -162,6 +162,50 @@ Long-running agents need memory outside the context window. Use a memory tool (`
 
 **Inject selectively, don't dump the bank.** When wiring recall, gate injections on relevance to the current step rather than exposing the whole memory store or reminding on every turn. [arXiv:2607.08716](https://arxiv.org/abs/2607.08716) ("Remember When It Matters", abstract verified 2026-07-18) measured this directly: a memory agent that decides per-step whether to inject a reminder or stay silent beat passive bank exposure, always-on injection, advisor-only guidance, and general retrieval — +8.3pp pass@1 on Terminal-Bench 2.0, +6.8pp on τ²-Bench. The failure it targets, "behavioral state decay" (critical constraints buried as the trajectory grows), is the same one the state scratchpad (component 2) mitigates; for long-horizon agents use both: scratchpad for live state, selective memory injection for durable facts.
 
+### 8. Agent identity and credential isolation (multi-agent, multi-tenant)
+
+For agents that operate in multi-user, multi-tenant, or multi-channel environments — support bots serving many customers, copilots handling different workspaces, or any agent that should not cross memory/tool boundaries. From the Claude Tag agent-identity access model (Anthropic, June 2026):
+
+```xml
+<agent_identity>
+  <principle>
+    Every agent instance has its own identity — not a shared API key, not the
+    requesting user's permissions. Identity is scoped to the compartment
+    (tenant, channel, workspace), not the person asking.
+  </principle>
+  <design_decisions>
+    - Service accounts in every connected system (Slack app, GitHub App,
+      provisioned DB user) — actions appear under the agent's identity in
+      each tool's audit log, not under any human user.
+    - Credential proxy pattern: the agent runtime (sandbox) never holds
+      credentials. A proxy layer injects them at the network boundary
+      on each request, matching against admin-configured rules per identity.
+      Even a compromised sandbox can't exfiltrate credentials.
+    - Memory compartmentalized per identity: what the agent learns in one
+      compartment never appears in another. The identity key (tenant_id,
+      channel_id, workspace_id) is the memory isolation key.
+    - Three-layer egress control: connection-level allow list → domain
+      allow list → environment-level network access setting. All three
+      must match or the request is blocked. Only HTTP/HTTPS can cross
+      the proxy — SSH and native DB wire protocols are excluded.
+  </design_decisions>
+  <implementation_notes>
+    - The agent prompt should include an IDENTITY block stating which
+      compartment it serves, not as a conversational persona but as a
+      load-bearing scoping boundary: "IDENTITY: onboarding-agent for
+      tenant_id=abc. You can read properties in this tenant only."
+    - When the same agent binary serves multiple tenants, the identity
+      is injected per-request by the orchestrator/routing layer, not
+      baked into the prompt file.
+    - Junction design: the routing layer maps incoming request →
+      agent identity → credential bundle before the agent's first tool
+      call. The agent never selects its own identity.
+  </implementation_notes>
+</agent_identity>
+```
+
+This component is optional — add only when the agent operates across compartments that must not leak. Single-user, single-tenant agents don't need it.
+
 ## Pre-flight debugger (5-case eval suite)
 
 **Mandatory** before shipping any agent prompt that drives coding work or other side-effecting action. Lightweight, in-conversation, no API spend. Operationalizes the shared "Pre-flight prompt debugger" in [`prompt-engineering`](../prompt-engineering/SKILL.md#pre-flight-prompt-debugger-mandatory-for-coding-work-prompts).
