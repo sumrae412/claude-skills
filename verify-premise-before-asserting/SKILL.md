@@ -62,6 +62,7 @@ You're about to write a sentence that asserts state about something external to 
 | Memory file index | `Read MEMORY.md` (don't trust prior session's claim of contents) |
 | GitHub Actions / CI state | `gh run list` or `gh pr checks <n>` |
 | "No macOS built-in exists for X" | `~/claude_code/agent-vault/agent/macos-native-features.md` catalog OR screenshot of System Settings → Accessibility / Keyboard / Shortcuts |
+| Product/UI copy claiming a system guarantee (consent, security, delivery, compliance) | Trace the enforcing code path the copy describes — not the spec/PR that requested the copy |
 
 ## Anti-patterns to catch yourself
 
@@ -75,7 +76,7 @@ The premise — "two test files were rewritten and need reverting" — is assert
 
 > "Going with option 1 — close Phase 1 gaps. Loading context first."
 
-Premise: "Phase 1 gaps need closing." Verification: read the handoff log to confirm gap state.
+Premise: "Phase 1 gaps need closing." Verification: read the handoff log to confirm gap state. Costly variant: collecting user decisions (e.g. AskUserQuestion) on a spec/roadmap item *before* verifying it isn't already shipped — henry 2026-07-25/26, four §8 decisions on an Operator Mode spec were mostly moot because the work had already shipped (#814/#821); a code re-anchor caught it before the decisions were acted on.
 
 ### Pattern 3: Confident state assertion in passing
 
@@ -94,6 +95,12 @@ Premise: "Layout is X, not Y." Verification: `ls` or `tree` BEFORE writing the a
 > "useRenderTool exposes `args` not `parameters`."
 
 Premise: claim about library's API surface. Verification: `Read node_modules/<pkg>/dist/*.d.ts` or grep the type definitions directly.
+
+### Pattern 6: Copy asserts a guarantee the enforcement layer doesn't make
+
+> "Tenants agreed to receive texts" — landlord-facing UI copy asserting affirmative consent.
+
+Premise: the send path implements what the copy claims. Verification: trace the actual send logic — courierflow_beta's real gate is implied-consent + STOP opt-out (matches its A2P filing), not opt-in attestation. Nearly shipped before tracing the send path caught it ([cfb #929](https://github.com/sumrae412/courierflow_beta/pull/929)). Corollary: "no X gate exists" claims must distinguish the *enforced* protection (opt-out was live) from a *cosmetic* UI layer (the attestation copy was decorative) — don't conflate them.
 
 ## Carveouts — when verification ISN'T needed
 
