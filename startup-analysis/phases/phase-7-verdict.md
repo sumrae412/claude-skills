@@ -3,8 +3,11 @@
 ## Goal
 
 Close with a hard recommendation, a 6-axis scorecard, and explicit
-validation gates. Consumes Phase 6 debate-team output as required
-evidence — do not issue a verdict without it.
+validation gates. Consumes:
+- Phase 5.5 stress-test scorecard (six-pillar breakdown, green/red flags,
+  top recommendations) as structured decision support
+- Phase 6 debate-team output as required evidence — do not issue a
+  verdict without Phase 6's Pass/Hold calls
 
 ## Halting Rules (override the scorecard)
 
@@ -53,6 +56,8 @@ it wasn't run.
 
 - halting-rule check (any trips? → No-Go)
 - 6-axis scorecard with evidence column citing Phase 1-6
+- Phase 5.5 pillar scores noted alongside the 6-axis table (cross-reference
+  agreement or tension between the two scorecards)
 - Go / Conditional Go / No-Go
 - validation gates
 - kill criteria
