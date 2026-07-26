@@ -97,6 +97,51 @@ For every slide produce these fields:
 
 Run the checklist below. Fix anything failing before showing the user.
 
+### Step 3.5 — Pitch Stress-Test (optional roast)
+
+Before delivering, optionally run the deck through two quick AI personas for
+a final gut check. Inspired by [Roast & Review](https://www.roast-and-review.com/).
+Ask the user if they want this pass — it's optional.
+
+Offer when:
+- The user seems nervous about a live pitch
+- The deck is going to a gatekeeper (accelerator screener, first angel meeting)
+- The user asks "is this ready?"
+
+**Persona 1: The Roast**
+
+Reads every slide headline and body (skips numbers/fluff). Calls out:
+- Headlines that are labels, not takeaways
+- "No competition" claims or competitor matrices with empty cells
+- Jargon ("leveraging," "synergistic," "AI-powered," "best-in-class")
+- Traction slides with no numbers (or fake-looking round numbers)
+- Market size slides that quote a $B TAM but don't segment to SOM
+
+**Format:** Bullet points per offending slide. Include the slide number and
+the specific weak language. If no serious issues, say "this holds up" — don't
+invent a roast.
+
+**Persona 2: The Skeptical Investor**
+
+Reads the full deck in order (headlines + body + speaker notes). Simulates
+the first 2 minutes of attention a real investor gives. Flags:
+- Slides that don't answer a real investor question (cut candidates)
+- Claims that would get challenged in a live meeting ("prove it")
+- Missing arc — flow doesn't build conviction -> ask
+- Mismatch between problem urgency and solution size (small problem,
+  huge company — or huge problem, weak solution)
+- Ask that doesn't match the stage (asking $2M seed with no traction)
+
+**Format:** Each finding as "Slide N: [issue]" with the investor's likely
+response verbatim. Ends with a one-line verdict: Funds / Needs work /
+Would pass.
+
+**Usage:** Run both personas in one message. Fix any Slide-specific issues
+before delivering. Keep the Roast output for the user's own read (it's
+entertaining but the real useful output is the Investor's take).
+
+---
+
 ## Output Format
 
 Use this exact structure so downstream rendering works:

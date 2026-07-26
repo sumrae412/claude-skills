@@ -55,6 +55,7 @@ Skip for free-form brainstorming or lightweight gut checks.
 ## Phase Map
 
 0. `phases/phase-0-clearframe.md`
+0.5 `phases/phase-05-roast.md` — optional multi-persona quick roast (Roast + Skeptical Investor + Potential Customer); skip for serious analysis, run when the user wants a fast gut check
 1. `phases/phase-1-market-reality.md`
 2. `phases/phase-2-icp.md`
 3. `phases/phase-3-value-props.md`
