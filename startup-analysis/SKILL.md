@@ -1,6 +1,6 @@
 ---
 name: startup-analysis
-description: Brutally honest startup idea validation — 8-step CLEARFRAME stack (TAM, ICP, wedge, GTM, five-role debate team, Go/NoGo). Use for "validate this idea", "is this worth building", competitive analysis, or cold strategic feedback on a business concept.
+description: Brutally honest startup idea validation — 9-step CLEARFRAME stack (TAM, ICP, wedge, GTM, stress-test scorecard, five-role debate team, Go/NoGo). Use for "validate this idea", "is this worth building", competitive analysis, or cold strategic feedback on a business concept.
 ---
 
 # Startup Analysis
@@ -19,7 +19,7 @@ loading.
 
 ## Overview
 
-Eight-step startup pressure test using CLEARFRAME mode for direct,
+Nine-step startup pressure test using CLEARFRAME mode for direct,
 anti-sycophancy analysis. The five-role debate team (Researcher →
 Strategist → Copywriter → Builder → Marketer) runs as Phase 6 and feeds
 the Go/No-Go decision in Phase 7. The verdict cannot be issued without
@@ -60,8 +60,9 @@ Skip for free-form brainstorming or lightweight gut checks.
 3. `phases/phase-3-value-props.md`
 4. `phases/phase-4-competitive-wedge.md`
 5. `phases/phase-5-gtm-mode.md`
+5.5 `phases/phase-55-scorecard.md` — six-pillar stress-test scorecard (Phase 7 consumes this alongside Phase 6)
 6. `phases/phase-6-debate-team.md` — invokes the five-role chain in `startup-debate-team/`
-7. `phases/phase-7-verdict.md` — consumes Phase 6 output as required evidence
+7. `phases/phase-7-verdict.md` — consumes Phase 5.5 + Phase 6 output as required evidence
 
 ## Session Rules
 
