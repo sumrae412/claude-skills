@@ -288,6 +288,7 @@ He writes like he's writing a screenplay. Speaks words out loud with no polish, 
 - One draft and done
 - Explaining the meaning of the story instead of trusting the reader
 - Making the shock the point (the Palahniuk trap)
+- Dramatized openers that build to a reveal ("the problem beat me") in application prose, scripts, or business writing — flatten to a factual cold open and let the facts land first (rejected twice, 2026-07-26)
 - Positioning yourself above the learner instead of alongside them
 - Write something you don't believe under your own name
 
