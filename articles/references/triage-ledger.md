@@ -55,3 +55,22 @@ Verdict is one of `high-value`, `some-value`, `skip`. Append repeats and skips t
 - 2026-07-29 | skip | 40 personal/meeting/non-technical notes (speech therapy, meetings, personal docs) | batch
 - 2026-07-29 | skip | 7 notes not found in Mem API (evals/security titles may be deleted) | batch
 - 2026-07-29 | skip | 14 low-relevance article notes (Flue, OS model, agent-run companies, etc.) | batch
+- 2026-07-29 | high-value | Geoffrey Litt — Understanding Agent-Written Code | bc1860f2
+- 2026-07-29 | high-value | The Dirty Secret Behind Loop Engineering | 401e2cd9
+- 2026-07-29 | high-value | How to turn boring app into $10M with mascot (Nancy/GMT) | 3ce897bf
+- 2026-07-29 | high-value | Opportunity Solution Tree — Product Agent Skill | 41bde9b2
+- 2026-07-29 | high-value | AI Coding Tip 025 — Pair Every Skill With a Pitfalls File | c1f01bb9
+- 2026-07-29 | high-value | Frontend Performance Optimization Checklist | 1f321111
+- 2026-07-29 | high-value | Stop Programming in Markdown | 28c38db3
+- 2026-07-29 | some-value | Reducing Doom Loops with FTPO | f854ce69
+- 2026-07-29 | some-value | Antidoom (FTPO implementation repo) | 309edb33
+- 2026-07-29 | some-value | AI Agent RL (RLVR/GRPO) | 24a36de1
+- 2026-07-29 | some-value | Build AI Agent in Telegram (Composio) | e0641572
+- 2026-07-29 | some-value | Self-Harness paper (2606.09498) | fa956990
+- 2026-07-29 | some-value | Caveman token compression guide | b31915eb
+- 2026-07-29 | some-value | AI Coding Tip 022 — Give AI a Harness | f72776ef
+- 2026-07-29 | some-value | 10 Questions for AI Leaders: Angie O'Dowd | 22a1e182
+- 2026-07-29 | some-value | Billion-dollar Misfire (CAIO/CEO alignment) | 58bb1fa9
+- 2026-07-29 | some-value | How I marketed Screen-Time app ($0 budget) | 658400f9
+- 2026-07-29 | some-value | Post by Connor Rose on X | a76de8e7
+- 2026-07-29 | skip | 23 personal/marketing/generic notes (situationship, O'Leary, AirKaren, fear-setting, etc.) | batch
