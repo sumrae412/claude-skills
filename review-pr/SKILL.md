@@ -136,6 +136,30 @@ Dispatch a single Task subagent with:
 > Flag CRITICAL: empty catches, broad catches hiding unrelated errors, mock/stub fallbacks in
 > production, errors returned as null/undefined without logging.
 > Flag HIGH: missing actionable user feedback, missing error IDs for observability.
+>
+> **A5. AI-generated code review checklist (always run)**
+> Run the full 10-point checklist from metacto's AI-generated code review standards
+> ([source](https://www.metacto.com/blogs/establishing-code-review-standards-for-ai-generated-code)).
+> First classify the PR into a risk lane, then check all 10 points.
+>
+> **Risk-lane classification:**
+> - 🟢 **Green lane** (UI changes, copy, styling, non-functional refactors): peer review sufficient
+> - 🟡 **Yellow lane** (business logic, API endpoints, data transformations): requires senior review
+> - 🔴 **Red lane** (auth, payments, PII, credentials, data migrations): requires senior review + second signatory
+>
+> **10-point checklist:**
+> 1. **Requirement fidelity** — does the code do what the PR description or issue specifies?
+> 2. **Real APIs** — does it use APIs that actually exist? Flag hallucinated methods or assumed library behaviors.
+> 3. **Dependency provenance** — verify every dependency exists and is not a slopsquatting target. Pin versions.
+> 4. **Secrets** — no credentials, tokens, API keys, or connection strings committed.
+> 5. **Input/output handling** — validate all inputs. Sanitize all outputs. No injection paths.
+> 6. **Auth** — every protected path checks authorization. No missing gates on new endpoints.
+> 7. **Error handling** — every failure path is handled. No silent failures, no broad catches masking unrelated errors.
+> 8. **Failure-path tests** — tests cover the happy path AND every error or edge case the AI code introduced.
+> 9. **Quality gate integrity** — did the PR bypass or relax any existing CI gate (lint, typecheck, test thresholds)?
+> 10. **Architectural fit** — does the code belong where it was placed? No leaked abstractions or wrong-layer logic.
+>
+> Report max 5 findings. The risk-lane classification also influences security-reviewer and production-readiness trigger thresholds (🔴 Red lane findings automatically escalate).
 
 ---
 
@@ -232,7 +256,7 @@ Standards Report, Spec Report, unified severity roll-up, recommended action) and
 - Do not re-run CodeRabbit findings through Claude — that's double-paying for the same check.
 - The two Claude axes (Standards, Spec) always run. Within each axis, individual checks are
   conditional on their triggers — running all checks unconditionally wastes tokens.
-- **Standards axis** (Axis A) is trigger-conditional per check: A1 always, A2-A4 on triggers.
+- **Standards axis** (Axis A) is trigger-conditional per check: A1 and A5 always, A2-A4 on triggers.
 - **Spec axis** (Axis B) always runs. When no spec doc is present, B1-B4 infer from PR
   description + tests and say so explicitly — a missing spec does NOT void the axis.
 - The `--pre-ship` flag adds the production-readiness agent dispatch regardless of other triggers.
@@ -244,6 +268,7 @@ Standards Report, Spec Report, unified severity roll-up, recommended action) and
 - **Scope discipline on findings** (pattern from [openclaw/agent-skills](https://github.com/openclaw/agent-skills)' autoreview "Scope Governor"): freeze the review baseline at dispatch, then classify every finding as *in-scope blocker*, *out-of-scope follow-up*, or *stop-and-escalate* — and route follow-ups to `spawn_task`/issues instead of letting the review balloon the PR. A review that keeps adding "while you're here" fixes past ~2× the original diff size has drifted; stop and escalate.
 - **Candidate upgrade — outer-loop self-improvement** (not yet implemented here; blueprint: [Zach Lloyd](https://x.com/zachlloydtweets/status/2077428025474355521)): run the reviewer on every PR, let humans correct its comments, then have a periodic outer agent synthesize those corrections into a proposed update PR against this SKILL.md (new conventions, gotchas, false-positive patterns). If adopted, keep the two loops separate: inner = review the PR, outer = review the reviewer.
 - **Injection posture for automated review runs** (same source): give the review agent read-only PR permissions and have CI post its structured `review.json` as comments, rather than granting the agent comment/write access — PR bodies and diffs are untrusted input, so the thing that reads them shouldn't also hold the pen.
+- **A5 checklist source:** Jamie Schiesel, "Establishing Code Review Standards for AI-Generated Code" (metacto, July 2026). The 10-point checklist and risk-lane framework are adapted from this article.
 
 ## Related
 
