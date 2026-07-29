@@ -67,7 +67,10 @@ Load `references/quality-framework.md` for full rubrics. Quick assessment dimens
 - Assumed prior knowledge the model doesn't have
 - Instructions that say "don't X" instead of "do Y" (prefer positive framing)
 - No success criteria
-- Adding CoT to reasoning-native models (OpenAI o-series / GPT-5 thinking, Claude 4.6+ adaptive thinking) — degrades output
+- Adding CoT to reasoning-native models (OpenAI o-series / GPT-5 thinking, Claude 4.6+ adaptive thinking, **Opus 5 built-in thinking**) — degrades output
+- **Explicit verification / self-correction instructions on Opus 5** — Opus 5 verifies its own work and corrects its own mistakes without prompting. "Double-check your answer," "re-verify before responding," and "include a final verification step" cause over-verification: the model runs its internal check AND the prompted check, wasting tokens with no quality gain. Strip these from prompts targeting Opus 5.
+- **Unconstrained task scope on Opus 5** — Opus 5 may expand scope beyond what was asked. Add explicit boundaries like "Deliver what was asked, at the scope intended" for narrow tasks.
+- **No subagent delegation guidance for Opus 5 agents** — Opus 5 delegates eagerly. Agent prompts should cap delegation: "delegate only for genuinely independent large tasks" instead of leaving spawning unbounded.
 - Contradictory instructions without priority rules
 
 ---

@@ -28,6 +28,16 @@ All sub-skills implement these. Cite them by name when audit-flagging a prompt.
 11. **Prompt chaining** — split heterogeneous subtasks into separate calls, don't mega-prompt
 12. **Test-driven iteration** — eval against real inputs after every change
 
+### Opus 5-specific overrides
+
+Opus 5 differs from prior models in three behavioral areas that override or narrow the universal principles above. Apply these when the target model is Opus 5:
+
+1. **Universal #6 (Chain-of-thought) — skip for Opus 5.** Opus 5 has built-in thinking. Adding explicit "think step by step" or `<thinking>...</thinking>` instructions causes over-reasoning. Let the model's native thinking handle reasoning; reserve prompt space for domain-specific instructions. This is the same principle as "don't add CoT to reasoning-native models" in `prompt-optimizer`, extended to Opus 5's always-on thinking.
+
+2. **Universal #10 (Prefill assistant message) — keep, but don't prefill a thinking tag.** Prefilling format (`{"`, `<answer>`) is still effective. Prefilling `<thinking>` or `<scratchpad>` is not — Opus 5 manages thinking internally. Reserve prefills for output structure, not reasoning scaffolding.
+
+3. **Remove explicit verification from any prompt targeting Opus 5.** Universal #12 (test-driven iteration) stays as an eval methodology. But "double-check your answer," "re-verify before responding," or "include a final verification step" in the prompt itself should be removed — Opus 5 verifies its own work, and these instructions cause over-verification. Applies to Agent principles #18 (reflection) and #21 (adversarial test triad is eval methodology, remains; in-prompt verification instructions should be removed).
+
 ### Single-turn only (numbered procedures fit)
 
 13. **Numbered task decomposition** — explicit ordered procedure. **Do not** apply this to agent prompts — see Agent principle 14.

@@ -137,7 +137,7 @@ CoT in single-turn prompts is **pre-action** reasoning. Agents need **post-actio
   After EVERY tool call, open a <reflection> tag and answer:
   1. Did the tool return what I needed for CORE_NEED?
   2. Are there contradictions with prior MEMORY_LOG entries?
-  3. Does the output change USER_STATE? (e.g., refund denial → frustrated)
+  3. Does the output change USER_STATE? (e.g., refund denial -> frustrated)
   4. Next action: respond to user, call another tool, or escalate?
 
   Only after <reflection> closes may you produce the user-facing reply.
@@ -145,6 +145,8 @@ CoT in single-turn prompts is **pre-action** reasoning. Agents need **post-actio
 ```
 
 This catches the classic agent failure: tool returns an error or empty result, agent confidently summarizes as success.
+
+**Opus 5 caveat — skip the reflection protocol for Opus 5 agents.** Claude Opus 5 verifies its own work without being told to. Adding an explicit `<reflection_protocol>` instruction causes over-verification: the model runs its internal check AND the prompted check, wasting tokens with no quality gain. Remove the component entirely when targeting Opus 5 as the agent model. Same for any explicit "double-check" or "re-verify" phrasing in the prompt — Opus 5 already does this internally, and compounding instructions adds cost without improving results. The state scratchpad (Component 2) should remain — tracking USER_STATE, CORE_NEED, etc. is structured state management, not verification, and does not conflict with Opus 5's self-verification.
 
 ### 7. Memory persistence (across the session, sometimes across sessions)
 
@@ -290,3 +292,77 @@ One targeted change per iteration; re-run the 5-case suite. Resist rewriting the
 - **Negation-block antipattern in persona.** Stacking "You are NOT a tutor / NOT a therapist / NOT a strategist" produces inverse behaviors — the model thinks about pink elephants and drifts toward the negated roles. Replace with one affirmative declarative: "Charlie answers operational questions and takes the next action the landlord names. Charlie does not coach, counsel, or strategize." One positive scope line + one minimal negative scope line beats N stacked negations. Validated on courierflow_beta [PR #100](https://github.com/sumrae412/courierflow_beta/pull/100) Charlie redesign.
 - **Runtime-dive before finalizing capability-dependent components.** When designing against an existing runtime (CopilotKit, LangGraph, custom orchestrator), Components 2 (scratchpad-via-prefill), 6 (reflection-via-prefill or extended-thinking), and progressive tool disclosure all depend on capabilities the runtime may or may not expose. Dispatch a focused code-explorer subagent to verify specific capability questions (assistant-message prefill? extended thinking budget? tool-set scoping?) BEFORE finalizing those components. Example from courierflow_beta [PR #100](https://github.com/sumrae412/courierflow_beta/pull/100): CopilotKit's Anthropic adapter exposes no assistant-message prefill (`node_modules/@copilotkit/runtime/dist/service-adapters/anthropic/anthropic-adapter.d.mts:17-37`), so Component 2's scratchpad design shifted from "prefill `<scratchpad>` opening tag" to "scratchpad-in-response-stream + frontend strip via middleware."
 - **The audit is structural, not behavioral.** Passing all 7 components means the prompt is architecturally sound — it does NOT guarantee good behavior. Run the adversarial triad on real inputs before shipping.
+
+## Opus 5 prompting patterns
+
+Claude Opus 5 differs from prior Opus models in several ways that affect agent prompt design. These notes supplement the model-agnostic components above — apply them when the target model is Opus 5.
+
+### Remove verification and self-correction instructions
+
+Opus 5 verifies its own work and catches its own mistakes without prompting. Explicit instructions produce over-verification and wasted tokens:
+
+- **Remove `<reflection_protocol>`** (Component 6) — Opus 5 already checks tool outputs internally. The state scratchpad (Component 2) still provides structured state tracking.
+- **Remove "double-check your answer" / "re-verify before responding"** from instructions or guardrails — these compound with Opus 5's built-in verification.
+- **Remove separate "verification step"** instructions or subagent-based verification passes. Opus 5 handles correctness verification inline.
+
+Measurement: Anthropic reports "removing them reduces wasted tokens with no loss in quality."
+
+### Constrain task scope explicitly
+
+Opus 5 can expand scope beyond what was asked — adding steps or applying its own judgment about what the task should be. For narrow agent tasks, add a scope constraint:
+
+```xml
+<task_scope>
+  Deliver what was asked, at the scope intended. Make routine judgment
+  calls yourself, and check in only when different readings of the request
+  would lead to materially different work. If the request seems mistaken
+  or a better approach exists, say so in a sentence and continue with the
+  task as asked rather than quietly narrowing, widening, or transforming
+  it. Finish the whole task, and stop short of actions that are clearly
+  beyond what was asked.
+</task_scope>
+```
+
+### Cap subagent spawning
+
+Opus 5 delegates to subagents more readily than prior models. Delegation pays off on genuinely independent, sizeable tracks, but multiplies cost and time on small tasks. Add explicit subagent guidance to Opus 5 agent prompts:
+
+```xml
+<subagent_discipline>
+  Delegate to a subagent only for large tasks that are genuinely independent
+  and parallelizable, such as a wide multi-file investigation. Do not delegate
+  work you can finish yourself in a handful of tool calls, and do not use
+  subagents to verify or double-check your own work. If one subagent can
+  complete the task, use one rather than several, and keep spawn counts low.
+</subagent_discipline>
+```
+
+### Control output length for written deliverables
+
+Files Opus 5 writes to disk (reports, documentation, summaries) tend to run longer than on prior models. When the agent generates written output, add length calibration:
+
+```xml
+<output_length>
+  Match the length of written documents to what the task needs: cover the
+  substance, but do not pad with filler sections, redundant summaries, or
+  boilerplate.
+</output_length>
+```
+
+### Limit narration in agentic work
+
+Opus 5 narrates its actions more than prior models — announcing what it's about to do, giving running commentary. For agent sessions where the user wants concise communication:
+
+```xml
+<communication_style>
+  Before your first tool call, say in one sentence what you're about to do.
+  While working, give a brief update only when you find something important
+  or change direction. When you finish, lead with the outcome: your first
+  sentence should answer what happened or what you found, with supporting
+  detail after it for readers who want it.
+</communication_style>
+```
+
+### Effort-level pairing
+
+Opus 5 produces strong quality at `low` and `medium` effort settings — use these liberally as the primary control for token cost and latency, especially for agent tasks that don't need extended reasoning depth. Reserve `high` and `xhigh` for demanding agentic coding and multi-step coordination. If you carried effort defaults forward from Opus 4.8, re-run an effort sweep — `low` and `medium` will likely hold quality at lower cost.
