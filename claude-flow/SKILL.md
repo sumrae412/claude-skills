@@ -195,6 +195,32 @@ Examples: GitHub ops → `gh` CLI is fine locally; prefer GitHub MCP when dispat
 | `$plan` | `contracts/plan.schema.md` | Phase 4b | Phases 4c, 4d, 5, 6 |
 | `$diff` | `contracts/diff.schema.md` | Phase 5 | Phase 6 |
 
+## Spec-first implementation plans
+
+Any path that **creates** an implementation plan must create a Spec Kit-inspired
+specification first. This is a workflow gate, not a requirement to install the
+Spec Kit CLI. Follow the sequence from [github/spec-kit](https://github.com/github/spec-kit):
+
+1. **Constitution** - record the project principles and constraints that govern
+   the work, using the repo's `AGENTS.md`, `CLAUDE.md`, ADRs, and design docs as
+   sources. If no durable constitution exists, record the applicable principles
+   and mark them as session-derived rather than inventing policy.
+2. **Specify** - write the user problem, actors, user scenarios, functional and
+   non-functional requirements, scope in/out, edge cases, and acceptance
+   criteria. Use stable IDs (`FR-1`, `AC-1`, etc.).
+3. **Clarify** - resolve material ambiguities from the codebase and the user;
+   record remaining assumptions and explicit open questions.
+4. **Plan** - write the technical implementation plan only after the spec
+   exists. Every plan task must trace to one or more requirement or acceptance
+   criterion IDs, and the plan must list the spec path in `References`.
+
+Use `references/spec-template.md` as the minimum shape. Save the spec as
+`<project-convention>/<feature>-spec.md`; when the project has
+no convention, use `docs/specs/<feature>-spec.md`. Populate the `spec` block in
+`$plan` with the path, constitution source, requirement IDs, and acceptance
+criterion IDs. Existing plans are inputs to the plan/clone paths and do not need
+to be rewritten; a newly authored plan never skips this gate.
+
 Contracts are the interface between phases. When dispatching subagents, pass the named contract — not raw conversation. See each schema file for field definitions and notes. If success depends on a specific skill, docs source, MCP server, CLI, or browser/testing tool, name it explicitly in the dispatch prompt instead of assuming the subagent will discover or choose it.
 
 For UI-affecting work, `$design_context` carries the project design system and

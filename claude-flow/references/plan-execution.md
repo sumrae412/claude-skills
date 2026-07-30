@@ -20,6 +20,17 @@
 **Ruled Out:** [Approaches considered and rejected during design — prevents re-exploration]
 - <approach> — <why rejected>
 
+## Specification
+
+[REQUIRED. This plan was created from a separate Spec Kit-inspired
+constitution → specify → clarify artifact.]
+
+- **Spec:** `docs/specs/<feature>-spec.md`
+- **Constitution:** <source path(s), or session-derived principles explicitly marked>
+- **Requirements:** `FR-1`, `NFR-1`, ...
+- **Acceptance criteria:** `AC-1`, `AC-2`, ...
+- **Task traceability:** every task names the requirement or acceptance IDs it implements.
+
 ## References
 
 [REQUIRED. List the exact file paths and external docs an implementer needs to consult. This section gates Phase 5 context loading — implementers and exploration subagents are instructed to read ONLY what's listed here, not adjacent docs they happen to find. Be deliberate: if a file is critical, list it; if it isn't, leaving it off keeps subagent context tight.]

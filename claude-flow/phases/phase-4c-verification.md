@@ -32,6 +32,23 @@ The script extracts file paths, function references, and pattern claims from the
 - Exit 1 (missing refs): read the JSON output, fix plan references for material mismatches, re-present to user for minor ones
 - Pattern claims (listed but not auto-verified): spot-check the top 2-3 manually
 
+## Specification Artifact Verification
+
+Before coverage mapping, verify the plan's top-level `spec.path`:
+
+- The spec file exists at the exact path named by the plan.
+- It contains the constitution, user problem/scenarios, requirements, scope,
+  edge cases, clarification assumptions/open questions, and acceptance criteria.
+- Every listed requirement and acceptance ID maps to at least one plan task;
+  report any unmapped ID as `UNCOVERED SPEC ITEM`.
+- Every plan task names at least one requirement or acceptance ID; report an
+  untraced task as `UNTRACED PLAN TASK`.
+
+If the artifact is missing or traceability fails, stop and revise the plan
+before implementation. This is the Spec Kit-inspired equivalent of checking
+that `/speckit.plan` was not authored before `/speckit.specify` and
+`/speckit.clarify`.
+
 **What the script checks:**
 - File paths: exist for Modify/Test/Read, don't already exist for Create
 - Function/class refs: `symbol()` in `file.py` — grep confirms definition exists

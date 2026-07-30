@@ -190,10 +190,39 @@ Present both options (post-advisor-refinement) to the user with the advisor's an
 
 ---
 
+## Step 3.5: Create the Spec Kit-inspired specification (mandatory)
+
+Before writing an implementation plan, create or update the specification
+artifact required by the router's **Spec-first implementation plans** gate. Do
+not treat `$requirements` as the spec itself: it is the structured input used
+to produce the durable artifact.
+
+Use the Spec Kit sequence:
+
+1. **Constitution** - cite governing project principles and constraints from
+   `AGENTS.md`, `CLAUDE.md`, ADRs, and design docs; mark session-derived
+   principles when no durable source exists.
+2. **Specify** - record the problem, actors, user scenarios, functional and
+   non-functional requirements, scope in/out, edge cases, and stable
+   requirement/acceptance IDs (`FR-*`, `AC-*`).
+3. **Clarify** - resolve material ambiguities and record assumptions or open
+   questions rather than silently choosing.
+4. **Plan handoff** - add the spec path to the plan's `References` and map every
+   plan task to at least one requirement or acceptance ID.
+
+Save at the project convention or `docs/specs/<feature>-spec.md` by default.
+The spec is a separate artifact from `$plan`, and its path plus ID inventory
+must be included in the top-level `spec` block of the plan contract. Present
+the spec alongside the architecture options and plan for the existing user
+approval gate. A plan without a spec artifact is not ready for Phase 4c.
+
 ## Step 4: Write Implementation Plan
 
 After user chooses, write a structured plan per `../references/plan-execution.md` (plan header, task structure, task taxonomy):
 - Numbered steps with specific files and changes
+- A top-level `spec` block naming the spec artifact, constitution source,
+  requirement IDs, and acceptance criterion IDs; every task references the IDs
+  it implements
 - Test requirements per step (freeform prose — the *why*)
 - **`success_contract` populated on every step** per [plan.schema.md](../contracts/plan.schema.md). This is the machine-checkable *what proves it* — a `command`, `expected` truth-line, and optional `artifact`. Phase 5.5 executes every contract before declaring the phase done; vague contracts (`expected: "tests pass"`) get caught and rejected there. Maps to CLAUDE.md Guardrail 2 (evidence on completion claims) and Pipeline Discipline Rule 4 (define success, loop until verified). If a step is doc-only or pure-refactor with no executable check, set `command: N/A` and put the equivalent one-line check in `expected` — don't omit the field.
 - If `$requirements.risk_class.level == high`, include explicit rollback,
