@@ -3,6 +3,12 @@
 
 ## Schema
 
+spec:
+  path: string              # durable Spec Kit-inspired specification artifact
+  constitution: string      # source path(s) or session-derived principles
+  requirements: string[]    # IDs such as FR-1, NFR-1
+  acceptance_criteria: string[]  # IDs such as AC-1
+
 steps:
   - id: N
     description: string
@@ -30,6 +36,14 @@ Rules:
 - For pure-refactor or doc-only steps where no command applies, set `command: N/A` and put the equivalent check in `expected` (e.g. `expected: "git diff --stat shows only docs/ changes"` and a one-liner the user can run).
 
 Phase 4 advisor authors this. Phase 5.5 reflection executes every contract before declaring Phase 5 done. Phase 6 reviewers receive contracts (not test_requirements prose) to slim payload.
+
+## Specification contract
+
+The `spec` block is required for every newly authored implementation plan. It
+proves that the Spec Kit-inspired constitution -> specify -> clarify sequence
+completed before technical planning. The artifact at `spec.path` must exist,
+and each step description or task record must trace to at least one listed
+requirement or acceptance criterion ID.
 
 ## Notes
 
