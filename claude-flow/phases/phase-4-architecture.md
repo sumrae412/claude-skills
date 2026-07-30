@@ -240,6 +240,38 @@ After user chooses, write a structured plan per `../references/plan-execution.md
 
 ## Step 5: Advisor — Plan Stress-Test
 
+### Optional high-risk Red/Blue/Green review protocol
+
+Run this protocol only when `$requirements.risk_class.level == high`, the plan
+touches `auth`, `privacy`, `money`, `data_loss`, `external_side_effects`, or
+`public_api`, or the user explicitly requests a Red/Blue/Green review. It is a
+structured variant of the existing plan stress-test, not a new generic review
+skill and not a substitute for an independent verifier.
+
+Use the protocol in [`../references/red-blue-green-review.md`](../references/red-blue-green-review.md):
+
+1. **Red Team - discover:** a fresh reviewer identifies realistic failure,
+   confusion, misuse, and risk cases against `$spec`, `$requirements`, and
+   `$plan`. Each finding requires evidence and an affected requirement or
+   acceptance criterion.
+2. **Blue Team - adjudicate:** a separate reviewer ranks Red findings by
+   severity and explains which ones materially affect safety, scope, or the
+   acceptance contract. Blue does not rewrite the plan.
+3. **Green Team - revise:** the plan author revises only the affected plan
+   sections, preserving the goal and tone. Each revision names the changed
+   section, the finding it closes, and its verification command.
+4. **Re-check:** a fresh verifier reruns the relevant acceptance checks against
+   the revised plan. A finding is not closed because Green says it is fixed.
+
+Required output for every finding:
+
+`finding → evidence → severity → acceptance impact → scoped revision → re-check`
+
+If Red finds no material issue, record `no material finding` plus the evidence
+and checks that support that conclusion. If Green cannot fix a P0/P1 finding
+without changing scope or requirements, stop and return it to the user approval
+gate.
+
 ### Advisor: Plan Stress-Test
 
 Dispatch Opus (`model: "opus"`, `subagent_type: "general-purpose"`) with:
