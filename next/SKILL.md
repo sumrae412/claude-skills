@@ -20,28 +20,29 @@ Apply `token-economy` whenever this skill would otherwise trigger broad explorat
 
 | Step / work | Tier |
 |---|---|
-| Pre-flight state collection (`git status`, `git worktree list`, `gh pr list`, `ls docs/plans/`), inventories, greps | Haiku-class executor |
+| Pre-flight state collection (`git status`, `git worktree list`, `gh pr list`, `ls docs/plans/`), inventories, greps | Sonnet-class executor |
 | Drafting the handoff doc body from a supplied outline + collected state; mechanical edits; grep-for-old-framing sweep (Guardrail at bottom) | Sonnet-class executor |
 | Deciding **what the next task is**, resolving contradictory state, judging "is this doc self-contained?", triaging a blocked merge | Orchestrator (current model) |
 | Genuinely hard root-cause or architecture judgment blocking the handoff | Opus-class executor |
 
 **Dispatching a tier.** Use whichever mechanism the current project offers, in this order:
-1. A project-defined pinned subagent, if one exists — check `ls .claude/agents/` first. In `~/claude_code/henry/` these are `cheap-worker` (Haiku), `fast-worker` (Sonnet), and `deep-reasoner` (Opus). Do NOT assume these names exist elsewhere; they are henry-only.
-2. Otherwise `Agent` with an explicit `model:` override (`model: "haiku"` / `"sonnet"` / `"opus"`) on a generic agent type.
+1. A project-defined pinned subagent that is **read-only**, if one exists — check `ls .claude/agents/` first. In `~/claude_code/henry/` the read-only types are `recon-scout`, `ci-watcher`, `pr-reviewer`, and `memory-curator`; `cheap-worker`, `fast-worker`, and `deep-reasoner` are write-capable and will be blocked by `autonomy-guard` for read-only work. Do NOT assume these names exist elsewhere; they are henry-only.
+2. Otherwise `Agent` with an explicit `model:` override (`model: "sonnet"` / `"opus"`) on a read-only agent type — `Explore` for search and state collection, `Plan` when the step needs reasoning over what it reads.
 3. If neither is available, do the step inline — but keep the brief tight so the cost stays proportional.
 
 Rules:
-- **Never dispatch a frontier model for step-collection or file-writing.** If the brief is "run these commands and report" or "write this file from this outline", it is Haiku work.
+- **Never dispatch a frontier model for step-collection or file-writing.** If the brief is "run these commands and report" or "write this file from this outline", it is Sonnet work.
 - **Escalate on ambiguity, not on importance.** A high-stakes step still runs cheap if the spec is exact; escalate the moment the executor would have to make a design call.
-- **One escalation hop at a time** — Haiku → Sonnet → orchestrator. Do not jump from Haiku to Opus.
+- **One escalation hop at a time** — Sonnet → orchestrator. Do not jump from Sonnet to Opus.
 - **Safety floor:** any step that decides what to ship, what to merge, or whether to STOP stays with the orchestrator. Cheap models collect evidence; they do not adjudicate it.
-- Batch cheap dispatches — one Haiku call collecting all pre-flight state beats five.
+- Batch cheap dispatches — one Sonnet call collecting all pre-flight state beats five.
+- **The executor must be a read-only agent type.** Henry's `autonomy-guard` hook blocks write-capable spawns (`cheap-worker`, `fast-worker`, `general-purpose`, and any type whose `.claude/agents/` frontmatter declares no `tools:` line) as the red-lane `spawn-unauthorized-agent` class. State collection is read-only, so dispatch a read-only type — `Explore` is the right default, with `model: "sonnet"` — rather than stamping `[write-ok]` on a dispatch that never needed write authority. Validated 2026-07-30: a `/next` run was blocked twice before switching to a read-only type.
 
 ### Model-economy checklist — create a TodoWrite item for each
 
 This is a checklist, not advice. The steps below are where it binds; skipping one is a deviation you must name.
 
-- [ ] **M1** — Step 0 pre-flight state collected by a Haiku dispatch, not inline.
+- [ ] **M1** — Step 0 pre-flight state collected by a Sonnet dispatch, not inline.
 - [ ] **M2** — handoff doc body drafted by a Sonnet dispatch from your outline + M1's output.
 - [ ] **M3** — orchestrator did only these four things: decide the next task, adjudicate contradictory state, judge self-containment, triage blockers.
 - [ ] **M4** — if M1 or M2 ran inline anyway, say so in the close-out with the reason. Silent inlining is the failure mode this section exists to catch.
@@ -50,14 +51,14 @@ This is a checklist, not advice. The steps below are where it binds; skipping on
 
 Execute in this order. Do NOT interleave. Each step blocks the next.
 
-## Step 0 — Dispatch pre-flight collection (Haiku)
+## Step 0 — Dispatch pre-flight collection (Sonnet)
 
 Do NOT run these commands yourself. Your first action in `/next` is this dispatch:
 
 ```
 Agent(
-  subagent_type: "<project Haiku agent, e.g. cheap-worker>" | "general-purpose",
-  model: "haiku",
+  subagent_type: "Explore",
+  model: "sonnet",
   run_in_background: false,
   description: "Collect /next pre-flight state",
   prompt: """
@@ -78,7 +79,7 @@ Agent(
 
 The orchestrator reads that output and decides. That division — cheap model collects, expensive model adjudicates — is the whole point.
 
-If no Haiku dispatch mechanism exists in this project (checked `ls .claude/agents/` and `model:` override unavailable), run inline and record it under **M4**.
+If no Sonnet dispatch mechanism exists in this project (checked `ls .claude/agents/` and `model:` override unavailable), run inline and record it under **M4**.
 
 ## Step 1 — Write a continuation prompt
 
