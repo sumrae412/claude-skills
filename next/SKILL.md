@@ -36,16 +36,17 @@ Rules:
 - **One escalation hop at a time** — Sonnet → orchestrator. Do not jump from Sonnet to Opus.
 - **Safety floor:** any step that decides what to ship, what to merge, or whether to STOP stays with the orchestrator. Cheap models collect evidence; they do not adjudicate it.
 - Batch cheap dispatches — one Sonnet call collecting all pre-flight state beats five.
-- **The executor must be a read-only agent type.** Henry's `autonomy-guard` hook blocks write-capable spawns (`cheap-worker`, `fast-worker`, `general-purpose`, and any type whose `.claude/agents/` frontmatter declares no `tools:` line) as the red-lane `spawn-unauthorized-agent` class. State collection is read-only, so dispatch a read-only type — `Explore` is the right default, with `model: "sonnet"` — rather than stamping `[write-ok]` on a dispatch that never needed write authority. Validated 2026-07-30: a `/next` run was blocked twice before switching to a read-only type.
+- **Every dispatched step here is read-only, so the executor must be a read-only agent type.** Henry's `autonomy-guard` hook blocks write-capable spawns (`cheap-worker`, `fast-worker`, `general-purpose`, and any type whose `.claude/agents/` frontmatter declares no `tools:` line) as the red-lane `spawn-unauthorized-agent` class. State collection is read-only, so dispatch a read-only type — `Explore` is the right default, with `model: "sonnet"` — rather than stamping `[write-ok]` on a dispatch that never needed write authority. Validated 2026-07-30: a `/next` run was blocked twice before switching to a read-only type.
+- **Writing the handoff doc is the one step that is NOT dispatched.** A read-only executor has no Write tool, so handing it the file to write fails outright; the alternative — spawning a write-capable type and stamping `[write-ok]` — buys nothing, because the orchestrator has to read the result back as the acceptance gate anyway and the doc is dense with exact SHAs, PR numbers, and session ids that a re-drafting pass can silently garble. The orchestrator writes it. Validated 2026-07-30: an `Explore` dispatch refused the write ("I don't have a Write tool available"), and the doc was written inline.
 
 ### Model-economy checklist — create a TodoWrite item for each
 
 This is a checklist, not advice. The steps below are where it binds; skipping one is a deviation you must name.
 
 - [ ] **M1** — Step 0 pre-flight state collected by a Sonnet dispatch, not inline.
-- [ ] **M2** — handoff doc body drafted by a Sonnet dispatch from your outline + M1's output.
+- [ ] **M2** — handoff doc written by the orchestrator, from your own decisions + M1's output. Not dispatched: read-only executors cannot write, and this doc's exact identifiers must survive verbatim.
 - [ ] **M3** — orchestrator did only these four things: decide the next task, adjudicate contradictory state, judge self-containment, triage blockers.
-- [ ] **M4** — if M1 or M2 ran inline anyway, say so in the close-out with the reason. Silent inlining is the failure mode this section exists to catch.
+- [ ] **M4** — if M1 ran inline anyway, say so in the close-out with the reason. Silent inlining is the failure mode this section exists to catch. (M2 is inline by design and needs no such note.)
 
 **Announce at start:** "Using /next to write a handoff doc, then ship and clean up."
 
@@ -85,11 +86,11 @@ If no Sonnet dispatch mechanism exists in this project (checked `ls .claude/agen
 
 Before anything destructive, capture the handoff so a fresh session can resume cleanly. Step 0 already returned the `docs/plans/*handoff*.md` listing — do not re-run it. If an existing session-handoff doc covers this work stream, append a new dated execution-log entry. Otherwise create `docs/plans/<YYYY-MM-DD>-session-handoff.md`.
 
-**Split this step (M2).** You decide the content; a Sonnet dispatch writes the file.
+**Write this step yourself (M2).** Both the decisions and the file are orchestrator work — this is the exception to the dispatch-by-default rule above.
 
-- **Orchestrator decides** (do NOT delegate): the exact next task and why, which state is contradictory and which reading wins, what invariants to name, whether the doc is self-contained.
-- **Sonnet dispatch writes**: hand it your decisions as an outline plus Step 0's raw output, and have it produce the file against the 9-item structure below. Brief it with the literal file path and the section list; it should make zero judgment calls.
-- Then read the result yourself and apply the self-containment test at the end of this step. That read is orchestrator work — it is the acceptance gate, not a formality.
+- **Orchestrator decides**: the exact next task and why, which state is contradictory and which reading wins, what invariants to name, whether the doc is self-contained.
+- **Orchestrator writes** the file against the 9-item structure below, using Step 0's raw output for the state section. Do not dispatch it: a read-only executor has no Write tool, and a write-capable one would be re-typing SHAs, PR numbers, worktree paths, and session ids that must survive verbatim.
+- Then apply the self-containment test at the end of this step. That is the acceptance gate, not a formality.
 
 The continuation prompt must be **self-contained** — the next session has zero memory of this conversation. Include:
 
