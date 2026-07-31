@@ -118,7 +118,9 @@ The report distinguishes "true orphans" from files that look orphaned but should
 - **Command files** — top-level repo-root `.md` files (slash commands, workflow docs, project registries).
 - **Archive files** — anything under `archive/` at any depth.
 - **Reference dirs** — `audits/`, `perf/`, `runbooks/`, `setup/`, `deployment/`, `templates/`, `prompts/`, `marketing/`, `mockups/`, `evidence/`, `compliance/`, `routines/`, `dev/`, `implementation-notes/`, `superpowers/`, `copilot-canary-*`, `copilot-baseline-*`.
-- **Handoff docs** — `plans/*-handoff.md` / `plans/*-session-handoff.md`.
+- **Handoff docs** — `*-handoff.md` / `*-session-handoff.md` in any `plans/` dir. Position-independent, so repos that nest plans under `docs/plans/` are covered too.
+- **Daily logs** — files whose stem is a bare ISO date (`ledger/2026-07-03.md`, `journal/2026-07-03.md`). Append-only entries indexed by filename date, never cross-linked by design. Also excluded from the keyword-overlap pass: two entries in the same log share vocabulary by construction (same actors, same repos, same status fields), and "link Tuesday's entry to Thursday's" is never an action.
+- **README-indexed files** — numeric-prefix stems (`plans/004-view-render-hardening.md`) whose ID is cited in a sibling `README.md`, typically as a status-table row rather than a markdown link.
 
 If your corpus has another asset class that's legitimately uncited (e.g. test fixtures), extend `_REFERENCE_DIRS` or add a new `_is_*` predicate in `scripts/build_doc_graph.py`.
 

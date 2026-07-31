@@ -57,6 +57,8 @@ from pathlib import Path
 SKIP_DIRS = {
     ".git",
     ".claude",
+    ".codex",
+    ".opencode",
     "node_modules",
     "htmlcov",
     ".venv",
@@ -87,7 +89,9 @@ running run runs running step steps before-running output outputs input inputs
 contract contracts schema schemas requirement requirements skill skill.md
 reference references docs section sections subsection chapter
 title tags impact impactdescription description severity
-low low-medium medium medium-high high""".split()
+low low-medium medium medium-high high
+delegated done effort follow-up followup outcome handled inherited
+verdict findings confidence notes status pending""".split()
 )
 STOP |= STRUCTURAL_STOP
 
@@ -527,15 +531,66 @@ def _is_archive_file(p: Path, root: Path) -> bool:
 
 
 def _is_handoff_file(p: Path, root: Path) -> bool:
-    """True if file is a session handoff doc in `plans/` — filename ends in
-    `-handoff.md` or `-session-handoff.md`. Handoffs are one-off transitional
-    docs; they're not expected to be cross-linked from the doc graph.
+    """True if file is a session handoff doc in a `plans/` dir — filename ends
+    in `-handoff.md` or `-session-handoff.md`. Handoffs are one-off
+    transitional docs; they're not expected to be cross-linked from the doc
+    graph.
+
+    Detection is position-independent: repos that nest plans under `docs/`
+    (`docs/plans/2026-07-29-session-handoff.md`) are covered, not just
+    top-level `plans/`.
     """
     parts = p.relative_to(root).parts if p.is_relative_to(root) else p.parts
-    if len(parts) < 2 or parts[0] != "plans":
+    if "plans" not in parts[:-1]:
         return False
     name = p.name
     return name.endswith("-handoff.md") or name.endswith("-session-handoff.md")
+
+
+_DATE_STEM_RE = re.compile(r"^\d{4}-\d{2}-\d{2}$")
+
+
+def _is_daily_log_file(p: Path, root: Path) -> bool:
+    """True if file is a dated append-only log entry — a bare ISO-date stem
+    like `ledger/2026-07-03.md` or `journal/2026-07-03.md`.
+
+    Daily logs are written once and never cross-linked by design: the index is
+    the filename's date, not a markdown link. Without this class they dominate
+    both the orphan list and the keyword-overlap suggestions, since every entry
+    shares the same template field names.
+    """
+    parts = p.relative_to(root).parts if p.is_relative_to(root) else p.parts
+    if len(parts) < 2:
+        return False
+    return bool(_DATE_STEM_RE.match(p.stem))
+
+
+_NUMBERED_STEM_RE = re.compile(r"^(\d{2,4})[-_]")
+
+
+def _is_readme_indexed_file(p: Path, root: Path) -> bool:
+    """True if file has a numeric-prefix stem (`004-view-render-hardening.md`)
+    and a sibling `README.md` cites that number in a table row.
+
+    Numbered plan/ADR collections are commonly indexed by ID in a status table
+    (`| 004 | Make the view survive malformed cards | P2 | ... |`) rather than
+    by markdown link, so the graph sees no edge even though the file is fully
+    tracked. Treat those as indexed, not orphaned.
+    """
+    m = _NUMBERED_STEM_RE.match(p.stem)
+    if not m:
+        return False
+    readme = p.parent / "README.md"
+    if not readme.is_file():
+        return False
+    ident = m.group(1)
+    try:
+        text = readme.read_text(encoding="utf-8", errors="ignore")
+    except OSError:
+        return False
+    # Match the ID as a standalone table cell or list item, not as a substring
+    # of a longer number (so `004` does not match `1004`).
+    return bool(re.search(rf"(?<!\d){re.escape(ident)}(?!\d)", text))
 
 
 def _is_reference_dir_file(p: Path, root: Path) -> bool:
@@ -557,14 +612,22 @@ def _is_reference_dir_file(p: Path, root: Path) -> bool:
 # ---- Missing-link inference (unchanged logic) ----
 
 
-def find_missing_links(paths, forward, keywords, threshold: int = 6, max_pairs: int = 25):
+def find_missing_links(paths, forward, keywords, root: Path, threshold: int = 6, max_pairs: int = 25):
     """Pairs that share many keywords but don't link either direction.
 
     Skips boilerplate-heavy filenames (SOURCE.md, LICENSE.md, README.md) that
     share template text rather than semantic content.
+
+    Also skips dated daily logs. Two entries in an append-only log share
+    vocabulary by construction (same actors, same repos, same status fields),
+    and "cross-link Tuesday's entry to Thursday's" is never an action — so the
+    pairs are pure noise that crowds out real suggestions. Stopwords can't fix
+    this: the shared terms are genuinely semantic in that corpus.
     """
     BOILERPLATE = {"SOURCE.md", "LICENSE.md"}
-    candidates = [p for p in paths if p.name not in BOILERPLATE]
+    candidates = [
+        p for p in paths if p.name not in BOILERPLATE and not _is_daily_log_file(p, root)
+    ]
     suggestions = []
     seen = set()
 
@@ -643,6 +706,8 @@ def render_report(root: Path, paths, forward, reverse, missing, dead) -> str:
         and not _is_archive_file(p, root)
         and not _is_reference_dir_file(p, root)
         and not _is_handoff_file(p, root)
+        and not _is_daily_log_file(p, root)
+        and not _is_readme_indexed_file(p, root)
     )
     pd_orphans = sorted(p for p in raw_orphans if _is_progressive_disclosure(p, root))
     cmd_orphans = sorted(p for p in raw_orphans if _is_command_file(p, root))
@@ -652,6 +717,16 @@ def render_report(root: Path, paths, forward, reverse, missing, dead) -> str:
     )
     handoff_orphans = sorted(
         p for p in raw_orphans if _is_handoff_file(p, root) and not _is_archive_file(p, root)
+    )
+    log_orphans = sorted(
+        p for p in raw_orphans if _is_daily_log_file(p, root) and not _is_archive_file(p, root)
+    )
+    indexed_orphans = sorted(
+        p
+        for p in raw_orphans
+        if _is_readme_indexed_file(p, root)
+        and not _is_archive_file(p, root)
+        and not _is_daily_log_file(p, root)
     )
     sinks = sorted(
         (p for p in paths if reverse[p] and not forward[p]), key=lambda p: len(reverse[p]), reverse=True
@@ -673,7 +748,9 @@ def render_report(root: Path, paths, forward, reverse, missing, dead) -> str:
         f"- **Command files (repo-root .md, slash commands or workflow docs — not orphans):** {len(cmd_orphans)}",
         f"- **Archive files (under `archive/`, intentional history — not orphans):** {len(archive_orphans)}",
         f"- **Reference-dir files (audits/, perf/, runbooks/, etc. — standalone, not orphans):** {len(ref_orphans)}",
-        f"- **Handoff docs (`plans/*-handoff.md` — one-off transitional docs, not orphans):** {len(handoff_orphans)}",
+        f"- **Handoff docs (`*/plans/*-handoff.md` — one-off transitional docs, not orphans):** {len(handoff_orphans)}",
+        f"- **Daily logs (dated stems like `ledger/YYYY-MM-DD.md` — append-only, not orphans):** {len(log_orphans)}",
+        f"- **README-indexed files (numeric-prefix stems cited by ID in a sibling README table):** {len(indexed_orphans)}",
         "- **Confidence:** EXTRACTED (explicit markdown links only) — "
         "INFERRED keyword-cluster suggestions in the missing-links section. "
         "Files under `<skill>/references/`, `<skill>/phases/`, `<skill>/contracts/`, "
@@ -841,7 +918,7 @@ def main():
     out.parent.mkdir(parents=True, exist_ok=True)
 
     paths, forward, reverse, keywords = build_graph(root)
-    missing = find_missing_links(paths, forward, keywords, threshold=args.missing_threshold)
+    missing = find_missing_links(paths, forward, keywords, root, threshold=args.missing_threshold)
     dead = {p: extract_dead_links(p, root) for p in paths}
     out.write_text(render_report(root, paths, forward, reverse, missing, dead))
     total_edges = sum(len(v) for v in forward.values())
