@@ -26,6 +26,19 @@ Score each pillar 0-100. Use the full range — don't cluster scores in
   TAM too small or untestable
 - Kill condition: WTP signals weaker than "I'd consider paying" from fewer
   than 3 independent sources
+- **Score problem intensity and willingness-to-pay separately.** They
+  diverge routinely — high stated fear with low WTP is a real and common
+  result, and averaging them into one "demand" number hides it. Fear is
+  not a budget line. When they diverge, that is a channel and
+  business-model finding (someone else is expected to pay), not
+  automatically a Fail.
+- **WTP counts only as a number, segmented by behaviour.** "Would you pay"
+  yes/no does not clear this pillar — a majority "yes" routinely sits on
+  top of a median price most of the market rejects. Cross-tab against what
+  the buyer already purchases, never against age or income. See
+  [`../references/primary-research-playbook.md`](../references/primary-research-playbook.md).
+- Treat stated WTP as a **ceiling**, not an estimate. Never score this
+  pillar off a figure modelled at the stated conversion rate.
 
 ### 2. Status Quo — What do people do today, how painful is their solution?
 

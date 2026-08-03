@@ -21,6 +21,23 @@ tripped any halting rule:
 
 These are structural failures, not scoring nuances.
 
+## Check the verdict against the pre-registered kill number
+
+Phase 0 recorded the result that would make this a No-Go. Restate it, put
+the observed result beside it, and say plainly whether it was crossed.
+
+| Pre-registered kill number | Observed | Crossed? |
+|---|---|---|
+| e.g. median WTP under $15/mo | $12/mo median | **Yes → No-Go** |
+
+A crossed threshold overrides the point total the same way a Halting Rule
+does. Do not renegotiate the number now that the data is in — that is the
+failure mode pre-registration exists to prevent.
+
+If Phase 0 recorded no kill number, label the verdict
+`confirmatory — not falsified` in the Output and discount it: the analysis
+tested nothing it could have failed.
+
 ## Scorecard
 
 Required. Score each 1-5. Every score must cite evidence from earlier
