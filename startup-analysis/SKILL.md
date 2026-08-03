@@ -26,6 +26,12 @@ the Go/No-Go decision in Phase 7. The verdict cannot be issued without
 debate-team output — a chain Hold from any role is a structural No-Go
 signal.
 
+**Know what this instrument measures.** Phases 1-5 and the 5.5 pillars are
+demand-weighted — they answer "will someone pay." Phase 0 first diagnoses
+which risk actually binds (demand, epistemic, feasibility, regulatory,
+distribution, or unit cost); when it isn't demand, the run adds a gate for
+it and Phase 7 refuses a clean Go on an untested primary constraint.
+
 This file is a router. Keep the step details in phases.
 
 ## When to Use
@@ -106,6 +112,7 @@ The first two are non-CLEARFRAME paths to surface during Phase 4–5 when the fo
 - [`references/brand-first-counterexamples.md`](references/brand-first-counterexamples.md) — founder expertise + audience as the moat (creator-economy solopreneurship, owned-media distribution, sustained solo revenue).
 - [`references/competitor-teardown-prompt.md`](references/competitor-teardown-prompt.md) — Phase 4 reusable prompt for single-competitor or analogue-company teardowns using the Harvard case-study spine.
 - [`references/idea-fit-scorecard.md`](references/idea-fit-scorecard.md) — Founder-fit / Economic-fit / Execution-fit scorecard (weighted 40/40/20), complementary to Phase 7's market-fit 6-axis scorecard. Run after Phase 4 once wedge sizing exists; feeds Phase 7 as an additional evidence column.
+- [`references/binding-constraint-diagnosis.md`](references/binding-constraint-diagnosis.md) — **Phase 0, run before the kill number.** Which risk actually decides this idea (Demand / Epistemic / Feasibility / Regulatory / Distribution / Unit cost), and whether this demand-weighted stack is the right instrument for it. Also carries the expected-information-per-dollar gate ordering and the No-Go path test.
 - [`references/primary-research-playbook.md`](references/primary-research-playbook.md) — Phase 1 cheap primary research: screened-survey design, willingness-to-pay elicited as a number and segmented by buying behaviour, the survey question built to overturn the plan, and the small-sample reporting guardrails. Load when the gating risk is "will a person pay recurring money for this"; its Fit section says where it misleads (B2B, regulated, pre-product technical bets).
 
 ## Guardrails
@@ -113,6 +120,8 @@ The first two are non-CLEARFRAME paths to surface during Phase 4–5 when the fo
 - no hedging without logical need
 - no invented numbers presented as facts
 - every figure carries a source or the inline label `unverified`
+- diagnose the binding constraint before setting the kill number — this stack is demand-weighted, and a demand answer to a feasibility, regulatory, or epistemic question is a confident verdict about the wrong risk
 - state the kill number before the evidence, never after
+- never issue a clean Go on an untested primary constraint
 - stated willingness-to-pay is a ceiling, not an estimate
 - no flattering validation when the analysis points to no-go

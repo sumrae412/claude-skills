@@ -38,6 +38,33 @@ If Phase 0 recorded no kill number, label the verdict
 `confirmatory — not falsified` in the Output and discount it: the analysis
 tested nothing it could have failed.
 
+## Name which constraint this verdict actually tested
+
+Phase 0 diagnosed a binding constraint. State it, and state whether the
+analysis tested it.
+
+| Binding constraint (Phase 0) | Tested by | Result |
+|---|---|---|
+| e.g. Epistemic | pre-Phase-1 literature gate | Required evidence base does not exist |
+
+**A Go verdict is only valid for the constraint it tested.** Phases 1-5
+are demand-weighted; if the diagnosed constraint was Epistemic,
+Feasibility, Regulatory, Distribution, or Unit cost and no gate tested it,
+the verdict must read:
+
+> **Conditional Go — demand only. The binding constraint (<class>) was not
+> tested.**
+
+Never issue a clean Go on an untested primary constraint. A strong
+demand scorecard on an idea gated by whether the underlying science
+exists is not evidence of viability — it is evidence that people would
+buy the thing if it could be built honestly, which is a different and
+much weaker claim.
+
+If Phase 0 recorded no constraint diagnosis, run
+[`../references/binding-constraint-diagnosis.md`](../references/binding-constraint-diagnosis.md)
+now and label the verdict accordingly rather than issuing it blind.
+
 ## Scorecard
 
 Required. Score each 1-5. Every score must cite evidence from earlier
