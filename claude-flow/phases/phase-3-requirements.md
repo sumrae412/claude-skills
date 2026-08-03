@@ -145,6 +145,26 @@ If `risk_class.level == high`, the change may not proceed on a fast or lite
 implementation path unless the user explicitly narrows scope to planning-only
 or documentation-only work.
 
+### Reference exemplar (optional)
+
+Acceptance criteria answer "is it correct." They do not answer "is it good."
+For deliverables whose quality is judged comparatively — a UI surface, a landing
+page, a README, a generated document, a CLI's output format — ask one question
+before closing this step:
+
+> Is there a specific, openable artifact that represents the bar we want to clear?
+
+If yes, populate `reference_exemplar` with its name, an inspectable locator, and
+the 2-5 dimensions "better" is judged on. If no such artifact exists, or the work
+is internal logic with no comparable surface (a bug fix, a migration, a service
+refactor), omit the field and move on. Do not invent an exemplar to fill the
+slot — a vague one produces a reviewer grading against taste, which is the exact
+failure the field exists to prevent.
+
+Naming the dimensions is what keeps the downstream comparison bounded. "Better
+than Linear's issue view" is unfalsifiable; "better on empty-state clarity,
+keyboard affordance, and scan density" is checkable.
+
 This contract flows downstream to Phase 4 (architecture references it), Phase 4c (validates plan coverage against it), and Phase 6 (reviewers check adherence).
 
 **Present to user for approval.** The structured requirements are the contract for everything downstream. If the user provides feedback, revise and re-present.

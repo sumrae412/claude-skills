@@ -71,6 +71,14 @@ Report the total as `Design Audit Score: N/20`. A low score is not itself a
 blocker; Blocker and High-Priority findings are based on user impact,
 accessibility, responsiveness, and project hard-rule violations.
 
+This rubric measures the UI against the project's own system. It will score a
+surface 20/20 for being perfectly consistent with conventions that are themselves
+behind the state of the art. When `$requirements.reference_exemplar` is present,
+also run the Exemplar Benchmark in `references/phase-6-review-operations.md` —
+blind-labeled comparison against a named external artifact, scored on the
+dimensions the requirements named, capped at 3 rounds. The two are complementary:
+this rubric catches drift, the benchmark catches a well-executed low bar.
+
 ## Drift Classification
 
 For each finding, classify the root cause:
