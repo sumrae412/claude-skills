@@ -98,15 +98,21 @@ Produce only what the current phase needs:
 
 ## References
 
-Two non-CLEARFRAME paths to surface during Phase 4–5 when the founder (not the product) is the intended moat. Load only the one that matches the idea's shape; both files describe when to fall back to CLEARFRAME.
+Load only what the current phase needs.
+
+The first two are non-CLEARFRAME paths to surface during Phase 4–5 when the founder (not the product) is the intended moat. Load only the one that matches the idea's shape; both files describe when to fall back to CLEARFRAME.
 
 - [`references/distribution-first-counterexamples.md`](references/distribution-first-counterexamples.md) — viral format as the moat (consumer B2C, short-form social distribution, quick-exit profile).
 - [`references/brand-first-counterexamples.md`](references/brand-first-counterexamples.md) — founder expertise + audience as the moat (creator-economy solopreneurship, owned-media distribution, sustained solo revenue).
 - [`references/competitor-teardown-prompt.md`](references/competitor-teardown-prompt.md) — Phase 4 reusable prompt for single-competitor or analogue-company teardowns using the Harvard case-study spine.
 - [`references/idea-fit-scorecard.md`](references/idea-fit-scorecard.md) — Founder-fit / Economic-fit / Execution-fit scorecard (weighted 40/40/20), complementary to Phase 7's market-fit 6-axis scorecard. Run after Phase 4 once wedge sizing exists; feeds Phase 7 as an additional evidence column.
+- [`references/primary-research-playbook.md`](references/primary-research-playbook.md) — Phase 1 cheap primary research: screened-survey design, willingness-to-pay elicited as a number and segmented by buying behaviour, the survey question built to overturn the plan, and the small-sample reporting guardrails. Load when the gating risk is "will a person pay recurring money for this"; its Fit section says where it misleads (B2B, regulated, pre-product technical bets).
 
 ## Guardrails
 
 - no hedging without logical need
 - no invented numbers presented as facts
+- every figure carries a source or the inline label `unverified`
+- state the kill number before the evidence, never after
+- stated willingness-to-pay is a ceiling, not an estimate
 - no flattering validation when the analysis points to no-go
