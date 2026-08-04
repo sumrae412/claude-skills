@@ -148,6 +148,21 @@ self-improvement loop.
    - no unsafe claim was made,
    - no raw exception or internal stack trace was shown.
 
+6. **Persist and verify the result**
+   Keep the existing Phoenix-shaped artifact, but also emit one normalized
+   record per case:
+   - `schema_version`, `run_id`, `suite`, `case_id`
+   - provenance: dataset path, eval tier, grader, configured SUT model
+   - `outcome`: `pass`, `fail`, or `error`
+   - score, reason, expected evidence, observed evidence, and cost
+   - `served_model`: the model returned by `/api/eval/chat`, separate from
+     configured model; use `served_models` if one run mixes models
+
+   Treat runner/infrastructure failures as `error`, not model failures.
+   Add pure adapter tests for pass, fail, and error, then run one bounded
+   smoke and inspect the emitted JSON. A green unit test is not enough if the
+   artifact drops dataset, grader, or served-model provenance.
+
 ## Eval Case Shape
 
 Use YAML for human-reviewable eval cases:
@@ -209,6 +224,23 @@ Required spans for real Copilot activity:
 
 Smoke spans like `courierflow.phoenix_smoke_test` do not prove the chatbot path
 works.
+
+For the Layer B runner, use a hard cost ceiling and inspect provenance after
+the run:
+
+```bash
+set -a; source .env.local; set +a
+EVAL_SONNET_APPROVED=1 \
+  bash scripts/run-evals-local.sh \
+  --suite tool-selection --limit 1 --max-cost 0.25
+
+jq '.servedModels, .normalizedPerItem[].provenance' \
+  test-results/local/phoenix-tool-selection.json
+```
+
+The expected distinction is `sut_model` (configured) versus `served_model`
+(returned by the API). Never report a model comparison from configuration
+alone.
 
 ## Safety Assertions
 
