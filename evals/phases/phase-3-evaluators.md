@@ -16,9 +16,18 @@ Always try these first.
 | Numeric tolerance          | Math, prices, dates                            |
 | Embedding cosine similarity| Paraphrase / semantic match against reference (pin embedding model + version — see Reproducibility below) |
 | Span-attribute assertion   | Tool calls, retry counts, latency, cost        |
+| External source-of-truth lookup | Any factual claim about YOUR data — product/price/availability, account state, record existence. Query the catalog/DB/API and compare the agent's claim against it |
 
 Code evaluators are cheap, deterministic, debuggable. If you can
 express the check in code, do.
+
+The source-of-truth row is the routinely under-used one: it is
+groundedness checking with no judge involved. Recipe — find the
+objective question, find the source of truth, write a function that
+compares the claim against it. See
+`references/evaluator-selection-and-rubrics.md` § 2 (and § 1 for
+choosing between code / pre-built judge / custom rubric before you write
+anything).
 
 **Embedding-based evaluators are only deterministic if you pin the
 embedding model and version.** A vendor update to the embedding API
@@ -27,7 +36,15 @@ part of the evaluator version (see Phase 4 § Reporting).
 
 ## LLM-as-judge evaluators
 
-For open-ended outputs. Three rules:
+For open-ended outputs. **Try a pre-built evaluator first** —
+correctness, groundedness, relevance, and refusal ship with most
+platforms and work unmodified for most agents. Write a custom rubric
+only when the pre-built set doesn't encode your application's specific
+criterion; a custom rubric you didn't need is one more artifact to
+calibrate, version, and maintain. Rubric anatomy for when you do need
+one: `references/evaluator-selection-and-rubrics.md` § 4.
+
+Three rules:
 
 ### 1. One criterion per judge call
 
@@ -159,6 +176,15 @@ any other prompt — it is one.
 
 Report calibration alongside every eval result so a reader can
 tell what the score is measuring against.
+
+**Split the labeled set before you tune anything.** Stratify the split
+so the failure class appears in both halves, hold the final test set
+back for one measurement at the end, and iterate against a separate
+validation set. Read precision and recall on the *failure* class, not
+overall accuracy. When a judge label and a human label disagree, the
+cause is judge error, a rubric gap, **or a bad reference label** — apply
+the rubric to the trace yourself before assuming the judge was wrong.
+Full procedure: `references/judge-calibration.md` § Meta-evaluation.
 
 ### Calibration regime: measurement vs guardrail
 

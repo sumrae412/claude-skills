@@ -71,11 +71,30 @@ hand-rolled harness.
   a metric.
 - Code-based evaluators beat LLM-judge evaluators whenever ground
   truth exists. Reach for LLM-judge only when the output is open-ended.
+- **Name the decision before picking the evaluator.** Objectively
+  correct answer → code evaluator (including a lookup against your
+  catalog / DB / API — code can check factual claims, not just format).
+  Requires judgment → LLM judge, starting from a **pre-built** evaluator
+  (correctness / groundedness / relevance / refusal). Judgment specific
+  to your policies or domain → custom rubric. An LLM judge on an
+  objective question buys variance and cost for nothing; a code
+  evaluator on a judgment question misses the real failures. See
+  `references/evaluator-selection-and-rubrics.md`.
+- **Label every evaluator guardrail or north-star.** Guardrails block
+  unacceptable behavior (fabricated product, invented refund process) —
+  the floor. North-star metrics measure how good the agent is at its job
+  — the ceiling. A stack with only one of the two can't tell you either
+  that it's safe to ship or that it's getting better.
 - Calibrate every LLM-judge against ≥ 30 human-labeled examples
   for an initial smoke check; production-gating judges need larger
   balanced sets with reported CIs. Report agreement.
 - One judge, one criterion. Don't ask a judge to score "helpfulness
-  and accuracy and tone" in one call.
+  and accuracy and tone" in one call. The multi-dimension rubric is the
+  **God Evaluator** anti-pattern: when it fails you can't tell which
+  dimension caused the verdict. Build one evaluator per dimension and
+  combine the verdicts **programmatically** (`correctness AND
+  policy_compliance`), specifying the combining rule as part of the eval
+  definition.
 - **When scoring on two decoupled axes (e.g. spec-fidelity vs
   ground-truth-fidelity), tell each grader explicitly NOT to do the
   other's job.** The ground-truth grader must not penalize the build
@@ -219,9 +238,21 @@ Produce only what the user needs:
   traces *and* actions, with system-prompt ablation to isolate drivers;
   plus the **eval-awareness** validity threat (models behave differently
   when they detect a test — real-world runs mitigate). Source: Andon Labs.
+- `references/evaluator-selection-and-rubrics.md` — picking the
+  evaluator from the decision it makes (code / pre-built judge / custom
+  rubric), what code evaluators can check beyond format (external
+  source-of-truth lookup), the judge as three swappable parts
+  (model / rubric / data), the five-part rubric anatomy (role, explicit
+  criteria, XML-tagged inputs, labeled examples, constrained output),
+  the God Evaluator anti-pattern, and guardrail vs north-star framing.
+  Source: DeepLearning.ai evals course Module 3.
 - `references/judge-calibration.md` — ADOPT/REJECT cadence,
   noisiness detection, gold-like-bias check (generalized from
-  debate-team critic calibration).
+  debate-team critic calibration), plus **meta-evaluation**: stratified
+  train/validation/test benchmark splits, precision-and-recall-on-the-
+  failure-class reading, the three-source disagreement diagnosis (judge
+  error / rubric gap / bad reference label), and **confidence bias** —
+  a fluent, calm, detailed wrong answer reads as correct to a judge.
 - `references/outcome-grader.md` — separate-model grader pattern
   for managed-agent / production workflows where self-verification
   is insufficient.
@@ -248,6 +279,19 @@ Produce only what the user needs:
 ## Guardrails
 
 - Do not ship an LLM-judge evaluator without a calibration report.
+- **Never tune against the held-out test set.** Split the labeled
+  benchmark — stratified, so the failure class lands in both halves —
+  *before* making any change, iterate against a validation set, and
+  spend the final test set on one measurement. Re-running the blind set
+  to check whether a fix worked is test-set leakage; the resulting
+  agreement number is optimistic and untrustworthy. See
+  `references/judge-calibration.md` § Meta-evaluation.
+- **Read agreement on the failure class, not overall accuracy**, and
+  never on κ alone. Report precision and recall for the failure label
+  next to κ — accuracy on an imbalanced set is satisfied by a judge that
+  predicts the majority class and catches nothing, and κ measures
+  agreement, not correctness (judge and reviewer can agree and both be
+  wrong).
 - Do not compare two prompt versions with N<30 examples and call it a
   result.
 - Default to a *different* model family than the task model when
