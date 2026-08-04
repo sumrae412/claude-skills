@@ -38,6 +38,11 @@ Before finalizing any script:
 - [ ] "In this course" used no more than once per speaker turn
 - [ ] Andrew does NOT read a numbered list on camera in L0
 - [ ] Instructor delivers the Lesson 1 preview and energetic closer in L0; Andrew delivers the final CTA
+- [ ] If a video "feels too long," measure page/word counts per section before reading through it — duplicate draft stages and orphaned stub title cards hide inside decks and don't show up on a read-through
+- [ ] After any condensing pass, verify transition slides are still present — condensing silently deletes them more often than it should
+- [ ] Any deliberately-flawed teaching example is diffed against the real lab/production code, not assumed to be a clean fabrication
+- [ ] PDF page numbers are checked against deck slide numbers directly — don't assume 1:1; speaker-note overflow drifts them apart
+- [ ] A read-aloud pass specifically hunts for banned rhetorical structures (e.g. three-beat parallel cadence) — these don't show up in a grep-based check
 
 ---
 

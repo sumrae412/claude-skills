@@ -24,3 +24,9 @@
 | Vague sentence endings ("...to get high quality output") | Adds no information | Cut it — let the specific example do the work |
 | Lesson TH intro longer than ~20 seconds | Over-explains; learner already has context | One sentence of prior context + one sentence of what's new |
 | Re-suggesting a phrasing the user already declined | Ignores user's judgment | Accept the user's version; move on |
+| Reusing a word already reserved for a different concept later in the course | Collides two meanings in the learner's head | Check the term ledger; pick a different verb/noun even if it's the natural one |
+| Reintroducing a label already retired by an earlier decision | Reopens a settled question, confuses continuity | Grep the module's decision log before naming something |
+| Three-beat parallel cadence (same verb three times) | Banned by voice profile; reads as a rhetorical tic, not natural speech | Vary the verb or restructure to two beats |
+| Title promises more scope than the slide delivers | Sets an expectation the content doesn't pay off | Match title scope to actual slide content, or expand the slide |
+| Deliberately-weak teaching example matches real lab/production code verbatim | The "teaching device" is a live defect, not a demo | Diff the example against the real lab code before treating it as illustrative |
+| Condensing pass removes inter-video transition slides | Transitions read as filler to a condensing pass but aren't | Flag transition slides as protected before any condensing edit |

@@ -46,10 +46,12 @@ Note the *category* the SME reaches for — math, real-world (which domain?), hi
 Where do they soften ("you might think of it as...", "one way to see this is..."), where do they commit ("this is wrong", "this is the right way to think about it"). Pattern, not exhaustive list.
 
 ### §8 What they never do
-Hard rules the voice-fidelity pass will grep against. Each line must be greppable — concrete tokens or short phrases, not vague style notes. Examples:
-- `Never uses emoji`
-- `Never opens a section with a question mark`
-- `Never says "obviously" / "clearly" / "trivially"`
+Hard rules the voice-fidelity pass will check against. Not every never-does rule is greppable — split into two kinds when writing the profile:
+
+- **Grep rules** (literal tokens, concrete phrases): `Never uses emoji`, `Never opens a section with a question mark`, `Never says "obviously" / "clearly" / "trivially"`
+- **Structural rules** (rhythm/cadence patterns that can't be grepped): `Never repeats the same verb three times in parallel`
+
+Tag each so Phase B's voice-fidelity pass knows which need a manual read instead of a grep.
 
 If you're inferring an anti-pattern from absence rather than seeing it explicitly violated, flag the inference to Summer.
 
