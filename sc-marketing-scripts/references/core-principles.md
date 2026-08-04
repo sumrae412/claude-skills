@@ -36,6 +36,10 @@ Name the specific things, not the abstract category they belong to.
 - ✅ "from text to images"
 - ❌ "a new optimization technique"
 - ✅ "a radix tree cache"
+- Applies to bullets too, not just script lines: abstract placeholders ("the agent's capabilities") must be spelled out in the bullet AND the script line. Fixing only the narration and leaving the bullet abstract ships an inconsistency the learner sees on screen.
+
+### Term & Label Reservation
+A word or label decided earlier in the course arc (retired example, reserved for a later video's distinct concept) is off-limits elsewhere even if it's the most natural word in the moment. Before finalizing a slide, check new terminology against decisions already made upstream — e.g. "disagree" reserved for judge-vs-human means evaluator-vs-evaluator needs a different verb. Track these as a running ledger per module, not from memory.
 
 ### Anchor to What They Already Know
 Explain the new idea by mapping it onto something the learner already understands, then say where the comparison stops.

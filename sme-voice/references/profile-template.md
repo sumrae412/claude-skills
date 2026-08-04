@@ -40,12 +40,15 @@
 
 ## 8. What they never do
 
-[Explicit anti-patterns. Each line is a hard rule for the voice-fidelity pass to grep against.]
+[Explicit anti-patterns. Each line is a hard rule for the voice-fidelity pass to check against — split into grep rules and structural rules (see extraction-guide.md § 8).]
 
+**Grep rules** (literal — check with grep):
 - Never uses emoji
 - Never opens a section with a question
 - Never says "obviously" / "clearly" / "trivially"
-- [etc.]
+
+**Structural rules** (pattern — check by reading aloud):
+- Never repeats the same verb three times in parallel
 
 ## 9. Exemplar passages
 

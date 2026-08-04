@@ -35,6 +35,8 @@ This is the key behavioral difference from the sibling `writing-voice` skill.
 
 - **Never override the SME voice to enforce a shared principle.** The whole point of the skill is preserving the SME's voice; the shared principles are downstream of that.
 
+**Exception to the inversion rule:** course-pedagogy rules from `sc-marketing-scripts` (e.g. "the learner is always addressed as 'you,' never 'we'") are not "shared communication principles" subject to SME-wins — they're audience-contract rules. Apply them regardless of the SME's natural pronoun habit, and don't let the inversion rule launder a "we" back in because it matches the SME's voice.
+
 ## Writing the draft
 
 Standard authoring with the SME profile as source of truth. Two reminders:
@@ -63,6 +65,8 @@ List signature phrases (from §5 of the profile) that appear in the draft.
 
 ### 4. Never-does check (grep — BLOCKING)
 For each item in the profile's §8 "What they never do" list, grep the draft. **Any hit = BLOCK.** Fix before returning the draft. Do not ship a draft that violates an explicit never-does rule.
+
+**Blind spot:** the grep only catches literal-token rules ("never says 'obviously'"). Structural/cadence rules (e.g. "no three-beat parallel repetition of the same verb") can't be grepped — they need a manual read-aloud rhythm pass as a *separate* step, not folded into the grep and marked PASS by default.
 
 ### Output format
 
