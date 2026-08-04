@@ -125,7 +125,8 @@ skills/claude-flow/
     ├── run-manifest.md               # Replayable per-run workflow metadata
     ├── workflow-profiles.md          # Human summary of path metadata
     ├── workflow-state-lifecycle.md   # Lazy-loaded state machine details
-    └── project-bootstrap.md          # Lazy-loaded memory + hook bootstrap
+    ├── project-bootstrap.md          # Lazy-loaded memory + hook bootstrap
+    └── container-use-execution.md    # Optional isolated Phase 5 backend
 
 scripts/hooks/
 ├── cleanup-worktrees.sh              # Prune orphaned worktrees on session start

@@ -268,6 +268,24 @@ Follow `claude-flow/references/subagent-driven-development.md`:
 
 > **Explicit parallel fan-out (Opus 4.7):** When dispatching N independent reviewers / researchers / implementers across M items, emit a single message with N tool-use blocks. Do **not** issue them sequentially — 4.7's default bias is under-parallelization.
 
+#### Optional Container Use backend
+
+For independent implementation agents that need stronger filesystem isolation,
+Phase 5 may use Container Use. Read
+`../references/container-use-execution.md` before enabling it. The backend is
+opt-in and prerequisite-gated: it requires a reachable Docker engine and a
+committed project base image suitable for the test command. Prefer a versioned
+image such as `python:3.12-slim` for Python projects; the default Ubuntu image
+may not contain the runtime.
+
+Each agent receives its own Container Use environment and must return the
+environment ID, exact test output, changed files, warnings, and handback state.
+The executor independently checks `container-use log <env>` and
+`container-use diff <env>` before accepting the result, then deletes disposable
+environments and verifies the list is empty. A code diff without a recorded
+passing test or a complete handback is a backend failure, not a successful
+implementation.
+
 <!-- Task taxonomy (types + dependency types) defined in ../references/plan-execution.md § Task Taxonomy. Keep in sync. -->
 **Dependency-aware dispatch:**
 - `data` or `build` dependencies → strictly sequential (predecessor must complete first)
