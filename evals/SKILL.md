@@ -185,6 +185,11 @@ Produce only what the user needs:
   YAML eval case schemas. Read this when you want a worked example.
 - `prompt-optimizer` — use when iterating the wording of a single
   judge prompt during calibration. Judge prompts are prompts.
+- `voice-agent-evals` — use when speech is the input, the output, or
+  both. Voice adds three things this skill does not model: cascade
+  error propagation (STT → LLM → TTS), latency as a correctness
+  property, and audio output that can differ from the text that
+  produced it. Transcript-level grading misses all three.
 - `anthropic-skills:skill-creator` — automates the with/without-skill
   baseline-delta loop for Claude Skills (runs both arms, grades
   assertions, aggregates benchmarks). Use it when the artifact under
