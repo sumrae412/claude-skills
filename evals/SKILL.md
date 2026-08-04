@@ -148,6 +148,21 @@ hand-rolled harness.
   synthetic batches, vary information quality AND phrasing (shorthand,
   typos, second-language), then curate for coverage, not volume. See
   `references/error-analysis-and-test-sets.md`.
+- **Persist a normalized per-case record alongside native runner output.**
+  Keep the runner's native artifact for compatibility, but add an immutable
+  record with `schema_version`, `run_id`, `suite`, `case_id`, provenance
+  (`dataset`, eval tier, grader, configured model), `outcome` (`pass`,
+  `fail`, or `error`), score, reason, expected evidence, observed evidence,
+  and cost when available. Preserve runner/infrastructure errors as
+  `error`, never as model failures. Record the model returned by the API as
+  `served_model` separately from the configured model, and retain a
+  suite-level list when a run serves multiple models.
+- **Verify the emitted artifact, not only the test.** A pure adapter test
+  must cover pass, fail, and error cases; a bounded live smoke must then
+  inspect the written JSON for dataset, grader, configured-model, and
+  response-confirmed served-model provenance. Re-grading may update grades
+  without re-running the SUT; provenance and raw run evidence must remain
+  immutable.
 - **For any evals-infra COST reduction PR, run a cost-audit subagent BEFORE writing code — produces per-suite $ attribution (`suite × N_calls × model × tokens × $/MTok`) and identifies the dominant driver.** Pin Anthropic pricing in the subagent prompt to avoid web-fetch drift. Without the audit, the natural failure mode is to optimize the visible cost (judge calls) when the real driver is the silent one (uncached SUT prefix resends). Validated 2026-05-30 on [courierflow_beta PR #147](https://github.com/sumrae412/courierflow_beta/pull/147): audit surfaced ~$7.6/run from uncached `SYSTEM_INSTRUCTIONS + tools` resent on ~175 Charlie calls; judge cost was <1% of total. Composes with the existing `/debate-team --harden` rule for evals-infra PRs — Tier 0 surfaces 5+ hardening repairs (wiring + telemetry + preflight + CI gate + decision record) that ALL belong in one PR.
 
 ## Benchmark / eval self-audit (before trusting a failing score)
