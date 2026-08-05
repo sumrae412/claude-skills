@@ -37,6 +37,54 @@ Before writing or modifying any eval's grader, classify the assertion:
 3. Error-rate ceiling (>5% fails the suite regardless of pass_rate).
 4. Multi-sample wiring (N=1 PR-gate, N=2 nightly, item passes only if all samples agree on all bits) — short-alias model pinning, logged in result JSON.
 
+## Tool-Call Failure Taxonomy (read + aggregate, eval-only)
+
+The correctness runner emits a typed, non-lossy tool-call failure
+taxonomy per graded item. A session running or reading correctness
+evals MUST read and aggregate `tool_call_outcomes[]` — a bare pass/fail
+bit hides which kind of tool-call failure is driving a score.
+
+The four labels (they may coexist; a clean call is `[]`):
+
+- `wrong_tool` — the agent called a tool no expectation allowed (raw
+  pre-allowlist name, so allowlist filtering cannot masquerade as
+  `no_tool`).
+- `no_tool` — the agent made no acceptable call where one was required.
+- `missing_arguments` — a matched call omitted a required parameter.
+  Derived from the canonical Charley tool schema
+  (`lib/charley-prompt/src/tool-schemas.ts`), not mock executor error
+  strings.
+- `invalid_arguments` — a matched call sent a value failing schema
+  constraints: type, enum, const, oneOf (discriminator-aware), nested
+  objects, and array items.
+
+Where it lives: `per_item[].tool_call_outcomes` in the correctness
+runner artifact, written by
+`courierflow_beta/tools/correctness/run_correctness.py` to
+`<run-id>/results.json` under `--output-dir` (default
+`/tmp/correctness-runs/`).
+
+Aggregate across accumulated runs when asked "what do tool-call
+failures look like" — count label frequency:
+
+```bash
+python3 - <<'PY'
+import json, glob, collections
+c = collections.Counter()
+for f in glob.glob("/tmp/correctness-runs/*/results.json"):
+    with open(f) as fh:
+        for item in json.load(fh)["per_item"]:
+            for label in item.get("tool_call_outcomes", []):
+                c[label] += 1
+print(dict(c))
+PY
+```
+
+Observation only. Do NOT turn these labels into an automatic retry or
+clarification loop — Summer's standing decision is to let the labels
+accumulate before considering any such loop. (Taxonomy shipped in
+[courierflow_beta#1142](https://github.com/sumrae412/courierflow_beta/pull/1142).)
+
 ## Self-Improving Loop
 
 Use this loop for each specific Copilot failure mode:

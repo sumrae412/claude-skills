@@ -118,6 +118,17 @@ hand-rolled harness.
 - For agents, grade the **outcome/end-state**, not a prescribed step
   sequence — agents find valid paths designers didn't anticipate.
   Assert on a step only when the step *is* the spec.
+- **For tool-call surfaces, use a typed, non-lossy failure taxonomy
+  instead of a bare pass/fail.** Distinguish `wrong_tool`, `no_tool`,
+  `missing_arguments`, `invalid_arguments`; a call may carry more than
+  one label and success is the empty set. Derive argument failures from
+  the canonical tool schema (never executor error strings) and compare
+  raw pre-allowlist call names so allowlist filtering cannot masquerade
+  as `no_tool`. Aggregate label frequencies across runs to name dominant
+  failure modes before deciding whether any automatic retry/clarification
+  loop is worth building. Worked wiring (vocabulary + artifact field +
+  aggregator snippet): `courierflow-copilot-evals` § Tool-Call Failure
+  Taxonomy.
 - **Session ≠ trace.** A session is the full multi-turn arc (many
   traces); session-level failures (lost context, unresolved issue across
   N turns) are invisible at trace level. Add session-arc graders for
@@ -197,7 +208,9 @@ Produce only what the user needs:
 
 - `courierflow-copilot-evals` — concrete domain implementation:
   grader-selection decision tree, four-property LLM-judge contract,
-  YAML eval case schemas. Read this when you want a worked example.
+  YAML eval case schemas, and the typed tool-call failure taxonomy with
+  its results-artifact aggregator. Read this when you want a worked
+  example.
 - `prompt-optimizer` — use when iterating the wording of a single
   judge prompt during calibration. Judge prompts are prompts.
 - `voice-agent-evals` — use when speech is the input, the output, or
