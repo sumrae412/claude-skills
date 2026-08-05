@@ -108,6 +108,17 @@ An exemplar benchmark supplies an external anchor.
    generated. A reviewer who knows it is grading the team's own work grades it
    differently, and this is a larger effect than the conciseness and familiarity
    biases the Judge Bias Guard already covers.
+2b. **Withhold the builder's history.** The critic gets the goal, the bar, the
+   named dimensions, and the two artifacts — and nothing else. Not the builder's
+   reasoning, not its self-review, not its notes on what it attempted or found
+   hard, not the prior round's exchange. Blinding step 2 hides *which artifact is
+   ours*; this hides *how ours came to be*, which is the other half and leaks
+   through any of those channels. A builder that explains it "chose a minimal
+   layout deliberately" has told the critic what to conclude about the layout.
+   Per the source method: *"Do not give it the builder's history."* Note this
+   cuts against Phase 5's implementer hand-back, which normally carries
+   self-review findings forward — for the exemplar reviewer specifically, strip
+   them.
 3. **Score both on the same rubric**, confined to `reference_exemplar.dimensions`.
    Report both totals. A comparison that ranges outside the named dimensions has
    escaped its bounds — the dimensions are the falsifiability constraint.
@@ -115,15 +126,35 @@ An exemplar benchmark supplies an external anchor.
    deficit, stated as an observable difference.
 5. **Unblind only after scoring** to interpret the result.
 
-### The pass bar, and its cap
+### The pass bar, and how the loop ends
 
 The bar is: the generated artifact scores at least as high as the exemplar on
 every named dimension, and strictly higher on at least one.
 
-**Cap the loop at 3 rounds.** Strict domination over a best-in-class reference is
-frequently unreachable, and an uncapped "keep going until the critic passes" loop
-has no stopping condition — the critic can always find one more gap. After the
-third round, stop and take one of:
+**Do not stop the loop on a round count.** An earlier version of this section
+capped it at 3 rounds. That was wrong, and the source method
+([somethingbig.ai/gauntlet-loop](https://somethingbig.ai/gauntlet-loop)) says so
+directly: *"Tell it to keep looping. Do not tell it to do three rounds and stop."*
+A round count is arbitrary — it stops a run that is still improving fast and
+permits three wasted rounds on a run that stalled after one.
+
+The underlying worry was real, though, and the source does not answer it: it
+offers no mechanism for a critic that never passes, and against a genuinely
+best-in-class reference that is the expected case, not the edge case. So bound
+the loop on **progress and budget**, which is what the source's own informal
+stopping conditions ("improvements become too small to matter", "as much compute
+as you are willing to spend") amount to when written down:
+
+- **Marginal improvement.** Stop when a round's gap closure stops being material
+  — no dimension score improved, or the critic's new largest gap is smaller than
+  the one it named last round on a dimension that already passes. Two
+  consecutive non-material rounds end the loop. This is what "keep looping"
+  should mean in an automated harness: keep going while it is working, not
+  forever.
+- **Budget.** Name a token or wall-clock ceiling for the benchmark before the
+  first round and stop at it, whatever the score.
+
+On exit by either bound, take one of:
 
 - **accept with debt** — record the remaining gap, its dimension, and the score
   delta as a typed known gap; ship
@@ -131,9 +162,11 @@ third round, stop and take one of:
   mis-chosen; fix the contract, do not keep grinding against it
 - **escalate to the user** — the gap is real, material, and needs a scope call
 
-Report the round count and the final delta either way. A benchmark that quietly
-ran three rounds and shipped anyway looks identical to one that passed on the
-first, unless the count is stated.
+Report the round count, the per-round deltas, and which bound ended the loop.
+A benchmark that ground several rounds and shipped anyway looks identical to one
+that passed on the first unless the count is stated — and "stopped on budget"
+and "stopped because it converged" are different results that must not read the
+same.
 
 ### Where it applies
 

@@ -219,6 +219,15 @@ also receives `$requirements.reference_exemplar` (name, locator, dimensions) and
 the rendered artifact, not just the diff. It cannot compare rendered quality from
 a patch. No other reviewer receives this field.
 
+It is also the one reviewer with an explicit **exclusion**: no builder history.
+Strip the implementer's self-review findings, its notes on what it attempted, and
+any prior round's exchange before assembling the payload. Every other reviewer
+benefits from that context; a comparative critic is prejudiced by it, because the
+builder's account of its own choices tells the critic what to conclude. Blinding
+hides which artifact is ours, this hides how ours came to be, and the payload is
+where both are actually enforced — a rule stated only in the procedure is a rule
+the payload builder can quietly skip.
+
 Default reviewers:
 
 | Cascade Tier | ID | `subagent_type` / runner | Model | Min Budget | Condition |
