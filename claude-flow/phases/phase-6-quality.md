@@ -124,9 +124,16 @@ PY
 10. If UI files changed, load `references/phase-6-design-review.md`.
 10b. If `$requirements.reference_exemplar` is present, run the Exemplar
    Benchmark from `references/phase-6-review-operations.md` — blind-labeled,
-   scored on the named dimensions only, capped at 3 rounds. Applies to any
-   deliverable with an openable best-in-class equivalent, not just UI. Skip
+   builder history withheld, scored on the named dimensions only, and bounded on
+   marginal improvement plus a named budget rather than a round count. Applies to
+   any deliverable with an openable best-in-class equivalent, not just UI. Skip
    silently when the field is absent (the default).
+10c. If more than one builder touched a single user-visible artifact, run
+   **check 5 (builder drift)** of Cross-Cutting Synthesis in
+   `references/phase-6-review-operations.md`. This one runs **independently of
+   the step 7 clean-path skip**: drift is precisely what a clean per-part review
+   produces, so gating it on findings would make it unreachable exactly when it
+   is needed. Skip for single-builder work.
 11. For CLI-backed reviewers, use `resolved_runner_script`, not the raw
    `runner_script`.
 12. For scored reviewers, run:

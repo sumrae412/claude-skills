@@ -207,8 +207,58 @@ Use it to check:
 2. fixes that create problems in another domain
 3. architectural concerns no single reviewer catches
 4. overall ship readiness
+5. **drift between independently-built parts of one artifact** (conditional — see
+   below)
 
-Skip if all tiers returned clean.
+Skip if all tiers returned clean, **except** for check 5, which has its own
+trigger: it fires whenever the artifact was built by multiple agents working on
+separate parts, including when every tier came back clean. That exception is the
+point of the check — drift is what happens when each part is individually fine.
+
+### Check 5: builder drift
+
+Checks 1-4 look for disagreement between *reviewers*. This one looks for
+disagreement between *builders*, which is a different failure and invisible to a
+per-part review: split an artifact into pieces, give each its own builder and
+critic, and every piece can pass its own bar while the assembled whole reads as
+though several people wrote it. The Gauntlet Loop source names this directly —
+*"the pieces can become individually good but slightly inconsistent"* — and the
+Exemplar Benchmark above makes it more likely, not less, because it rewards each
+part for beating its own reference independently.
+
+**Trigger:** more than one builder touched one user-visible artifact. Skip
+entirely for single-builder work; there is nothing to reconcile.
+
+**What to look for** — the seams, not the parts:
+
+- **Vocabulary.** The same concept named differently across parts ("tenant" here,
+  "resident" there), or the same word meaning different things.
+- **Interaction grammar.** Comparable actions behaving differently — one surface
+  confirms a destructive action, its sibling does not; one form validates on
+  blur, another on submit.
+- **Visual and structural rhythm.** Spacing, hierarchy, density, and error
+  presentation that shift between parts without a reason a user could infer.
+- **Tone.** Copy that changes register mid-artifact — terse in one section,
+  chatty in the next.
+- **Redundancy.** Two builders independently solving the same sub-problem in
+  different places, in different ways.
+
+**Report as a reconciliation list, not findings.** Each item names the parts that
+disagree and which one the rest should move toward, because "these three differ"
+is not actionable without saying which wins. Pick the version most consistent
+with the rest of the artifact, not the one that scored highest in isolation — a
+part can win its own benchmark and still be the odd one out.
+
+Severity is normally MEDIUM: drift is a coherence defect, not a correctness one.
+Raise to HIGH only where inconsistency changes what a user believes will happen —
+a destructive action that confirms in one place and not another is a safety
+issue wearing a consistency costume.
+
+**Honest scope note.** This is an extension of an existing reviewer pass, not a
+port of the source's distinct smoothing stage, and it has not yet run against a
+real multi-builder artifact. If drift turns up that this framing misses, that is
+evidence for splitting it into its own pass rather than for adding a sixth bullet
+here.
 
 ## Post-Review Simplifier
 
