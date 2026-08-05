@@ -30,3 +30,16 @@
 | Title promises more scope than the slide delivers | Sets an expectation the content doesn't pay off | Match title scope to actual slide content, or expand the slide |
 | Deliberately-weak teaching example matches real lab/production code verbatim | The "teaching device" is a live defect, not a demo | Diff the example against the real lab code before treating it as illustrative |
 | Condensing pass removes inter-video transition slides | Transitions read as filler to a condensing pass but aren't | Flag transition slides as protected before any condensing edit |
+| Spaced hyphen used as a dash (" - ") | Violates the no-dash rule; reintroduced constantly by voice-to-text | Colon, comma, or sentence split. Check every draft, including SME rewrites |
+| Summarizing the contrast before the examples land it | Breaks inductive order; states the principle first | Pose the question the examples answer, show the cases, state the principle last |
+| Bridge video framed by module navigation | Reads as course admin, not learning | Frame by learner objective |
+| Bridge that recaps rather than synthesizes | Adds no new understanding | Synthesis over recap |
+| Forcing symmetry between bridge videos | Each bridge's job differs | Let each bridge serve its own objective |
+| Bridge takeaways that recap the prior video | Broadens scope at the moment it should tighten | Scope takeaways to the segment's own objective |
+| Ending a bridge on course navigation | Closes on admin instead of understanding | End on the insight |
+| Naming a concept a later video defers (kappa mechanics, formal taxonomy) | Front-runs the teaching sequence | Reference it by what it does, not by its formal name |
+| Counting scaffolds in narration ("Case one... Case two...") | Mechanical; spends narration on bookkeeping | Inline the series |
+| Anthropomorphic failure verbs (forgets, realizes, overlooks, misses) | Attributes mental states to the agent | "invents" and "fabricates" are fine: they describe output, not cognition |
+| Region-specific examples (US place names, seasons, holidays, idioms) | Breaks for international learners | Neutral equivalents; "postal code," never "zip code" |
+| Narrating agent output with no real captured run | Presents deterministic fixtures as results | Know which prompts hit fixtures; only narrate runs you actually captured |
+| Video example tables that spoil a parallel hands-on lab | Collides with the discovery the lab is designed to deliver | Teach the reasoning the lab asserts but skips; frame tables hypothetically ("imagine your labeling uncovered...") |
