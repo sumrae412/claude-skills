@@ -1,6 +1,6 @@
 ---
 name: "repo-hygiene"
-description: "Conservative cross-repo worktree + branch pruning audit. Classifies every branch/worktree as safe-to-delete (proven dead via merged PR or zero unique commits) or keep-with-reason, then deletes what's proven dead. Use for 'clean up stale branches', 'prune dead worktrees', 'repo hygiene sweep', or any multi-repo branch-pruning ask."
+description: "Conservative cross-repo worktree + branch pruning audit. Classifies every branch/worktree as safe-to-delete (proven dead via merged PR or zero unique commits) or keep-with-reason, then deletes what's proven dead. Skips repos whose remote ref set is unchanged since the last run, so a re-run over a quiet fleet costs almost nothing. Use for 'clean up stale branches', 'prune dead worktrees', 'repo hygiene sweep', or any multi-repo branch-pruning ask."
 ---
 
 # Repo Hygiene Agent
@@ -65,6 +65,38 @@ for audit-only (report, no deletions) — respect that if stated.
    agent mid-run; API/auth fails outright; or fetch/prune errors.
 
 ## Procedure
+
+**Phase 0 — Load state and filter repos (orchestrator-level, before any
+parallel dispatch).** Most repos are unchanged between runs, and Phases 1–8
+are the expensive part: a fetch, a bulk PR join and a per-repo agent each.
+Hash the remote ref set first and skip the repos that cannot have new dead
+branches. This is read-only and runs before any fetch.
+
+```bash
+STATE_FILE="$HOME/claude_code/agent-vault/agent/repo-hygiene-state.json"
+python3 -c "
+import json, os
+f = os.path.expanduser('$STATE_FILE')
+print(json.dumps(json.load(open(f)) if os.path.exists(f) else {}))
+"
+
+# per repo, before fetching:
+CURRENT_HASH=$(git -C "$REPO" ls-remote --heads origin | sort | sha256sum | awk '{print $1}')
+```
+
+**SKIP** a repo only when *both* hold: the stored `remote_refs_hash` matches
+`$CURRENT_HASH`, and the stored `last_run_iso` is within 14 days. Log each as
+`SKIP <owner>/<repo> — refs unchanged since <last_run_iso>`.
+
+**NEEDS_HYGIENE** when any of: no stored state (first run); the hash differs
+(branches appeared or were deleted); or `last_run_iso` is older than 14 days.
+That last clause is a deliberate safety floor, not a cache expiry — a PR
+merged *without* its branch being deleted leaves the ref set unchanged while
+creating a new deletion candidate, so an unchanged hash is necessary evidence
+of "nothing to do" but never sufficient on its own.
+
+Dispatch Phases 1–8 only for NEEDS_HYGIENE repos. If every repo is SKIP,
+report the full skip list and exit — that is a successful run, not a no-op.
 
 **Phase 1 — Preflight (per repo).** `git fetch origin --prune`, `git
 reflog -15` (parallel-agent check), `git worktree list --porcelain`,
@@ -149,6 +181,45 @@ after). Report every deletion executed with its evidence (PR number or
 Phase 7 — either the Actions-dispatch run results or the blocked-deletion
 command list for anything that couldn't be executed directly. Never end
 with deletions unreported.
+
+**Phase 9 — Persist state (orchestrator-level, after every per-repo agent
+completes).** Record the *post-run* ref hash for each repo that actually ran,
+so the next run can skip it. Hash after the deletions, not before — hashing
+the pre-run ref set would store a value that no longer matches reality and
+force a full re-run next time.
+
+```bash
+python3 - <<'EOF'
+import json, os, subprocess, hashlib, datetime
+
+state_file = os.path.expanduser("~/claude_code/agent-vault/agent/repo-hygiene-state.json")
+state = json.load(open(state_file)) if os.path.exists(state_file) else {}
+
+# (owner/repo, local_path) for each NEEDS_HYGIENE repo from Phase 0
+repos_processed = []
+
+for repo_key, repo_path in repos_processed:
+    try:
+        raw = subprocess.check_output(
+            ["git", "-C", repo_path, "ls-remote", "--heads", "origin"], text=True
+        )
+        h = hashlib.sha256("".join(sorted(raw.splitlines())).encode()).hexdigest()
+        state[repo_key] = {
+            "last_run_iso": datetime.datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ"),
+            "remote_refs_hash": h,
+        }
+        print(f"Updated: {repo_key} -> {h[:12]}...")
+    except subprocess.CalledProcessError as e:
+        print(f"WARN: could not hash {repo_key}: {e}")
+
+json.dump(state, open(state_file, "w"), indent=2)
+EOF
+```
+
+Only repos that ran get written. A repo that was SKIPped keeps its existing
+`last_run_iso`, so the 14-day floor measures time since the last *real* run
+rather than being refreshed by a skip — otherwise a quiet repo would renew its
+own exemption forever and never re-run.
 
 ## Tooling gotchas
 
