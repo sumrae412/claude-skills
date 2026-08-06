@@ -42,3 +42,28 @@ Two rules from the 2026-04-29 scale experiment (see
 2. **Make each menu entry domain-coherent.** UI / API / data / integrations /
    security covers most feature work without overlap. Avoid generic skills
    (e.g. "coding-best-practices") in the menu — those load via Phase 0 Step 4.
+
+---
+
+## Verification-rule menu
+
+The builder menu above is *producing* skills — how to build in this project.
+The verification-rule menu is the *checking* complement — what this project
+must never ship, encoded as deterministic rules. It is optional; most projects
+start with zero rules and add one when a manual correction repeats for the
+third time.
+
+Authoring and placement are covered in `verification-rule-skills.md`; the menu
+rules here mirror the builder menu's discipline:
+
+1. **Keep it to 2–3 rules.** A gate that fires on every change must stay
+   above the noise floor. One strong invariant beats five plausible ones.
+2. **Deterministic only.** If the check needs judgement, it belongs in the
+   Phase 6 LLM cascade or the Exemplar Benchmark, not the gate. Rules are
+   gates, not gradients.
+3. **Conventions, not style.** The valuable rules are the ones no generic
+   linter knows: "no migration drops a column without backfill", "error logs
+   carry the request ID", "nothing user-supplied is logged". Those are the
+   manual corrections this project keeps making by hand.
+4. **Name `verify-<rule>`.** The predicate reads clearly in Phase 6 gate
+   output and boards cleanly next to `core_gate.sh`.

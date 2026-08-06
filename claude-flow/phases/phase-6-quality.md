@@ -99,6 +99,10 @@ PY
      --diff-file /tmp/claude-flow-review.raw.diff
    ```
    Exit 1 means the script printed one or more `[FAIL]` lines (C1 secrets or C5 unsafe `eval`/`exec` on interpolated input) — feed each `[FAIL]` line straight into Findings Resolution below as a HIGH finding, independent of what Tier 1 returns. `[WARN]` lines (C3 new-endpoint-without-logging, or a C5 literal-only nit) do not gate — surface them as low-severity notes only. This is a deterministic complement to the LLM `safety-reviewer`, not a duplicate: an LLM pass can miss a grep-catchable secret, and step 7 skips the LLM reviewers entirely on a clean Tier 1 — so without this gate a secret or an unlogged endpoint on an otherwise-clean diff ships unchecked.
+3c. **Always-run deterministic project-rule gate — runs regardless of the Tier-1 cascade.** `core_gate.sh` is the built-in security instance of the general class: a deterministic invariant checked against the raw diff. The same class covers *project-defined* rules no generic linter can know ("no migration drops a column without a backfill step", "error logs carry the request ID"), the way `project_skill_menu` holds project-defined *builder* skills. If the project has a verification-rule set (see `../references/verification-rule-skills.md` and `project-skill-menu.md` § Verification-rule menu), run it here:
+   - Script-encoded rules: run the project's `verify-<rule>` scripts against `/tmp/claude-flow-review.raw.diff` — each `[FAIL]`-style line is a HIGH finding in the cascade independent of the review pass.
+   - SKILL.md-encoded rules: dispatch the project's `verify-<rule>` skills over the raw diff with the same find-report-then-fix contract as the `verify-log-hygiene` pattern.
+   Keep the set small (~2–3 rules) and deterministic-only; a rule that needs human judgement belongs in the LLM cascade or the Exemplar Benchmark, not here.
 4. Run the selector script:
    ```bash
    git diff --name-only "$REVIEW_BASE_SHA"..HEAD | \
