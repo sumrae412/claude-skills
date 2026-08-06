@@ -1,9 +1,11 @@
 {
   "_meta": {
     "description": "Reviewed security baseline for sumrae412/claude-skills. Each suppressed finding has been manually classified. Do NOT add new entries without a reason field and PR review. 'self-match-false-positive' = the scanner's own pattern strings / documented threat examples. 'documented-pattern-example' = skill documents an attack for educational purposes. 'tooling-fp' = scanner or test tooling legitimately uses the flagged construct. 'bounded-tempfile-op' = file operation on a bounded tempfile within known scope.",
+    "warn_only_categories": ["T6-"],
+    "warn_only_rationale": "T6 landed 2026-08-06 in report-only mode (Summer's call). Adding T6 applies it to all 78 skills at once and surfaces findings in files its own PR never touched, most of them T6-LETHAL-TRIFECTA co-occurrence hits on documentation. Baselining those would ship a new detector pre-silenced. Promote to blocking by removing \"T6-\" from this list once the false-positive rate is known; check readiness with: python3 scripts/security_gate.py --strict",
     "seeded_at": "2026-08-06",
     "seeded_by": "charlie/skill-security-gate",
-    "total_suppressed": 54
+    "total_suppressed": 61
   },
   "claude-flow": {
     "suppressed_findings": [
@@ -364,65 +366,65 @@
         "reason": "self-match-false-positive: risk-message string for the JS Function-constructor pattern. 'eval()' appears as a comparison in the description, not as a call."
       },
       {
-        "key": "skill-security-auditor::FS-ABUSE::skill-security-auditor/scripts/skill_security_auditor.py::923",
+        "key": "skill-security-auditor::FS-ABUSE::skill-security-auditor/scripts/skill_security_auditor.py::1410",
         "severity": "HIGH",
         "category": "FS-ABUSE",
         "file": "skill-security-auditor/scripts/skill_security_auditor.py",
-        "line": 923,
+        "line": 1410,
         "pattern": "shutil.rmtree(tmp_dir, ignore_errors=True)",
         "reason": "bounded-tempfile-op: rmtree on a tempdir created by tempfile.mkdtemp() in the same function. The path is validated against the system temp dir before deletion (the preceding guard). This is standard clone-and-cleanup hygiene."
       },
       {
-        "key": "skill-security-auditor::FS-ABUSE::skill-security-auditor/scripts/skill_security_auditor.py::935",
+        "key": "skill-security-auditor::FS-ABUSE::skill-security-auditor/scripts/skill_security_auditor.py::1422",
         "severity": "HIGH",
         "category": "FS-ABUSE",
         "file": "skill-security-auditor/scripts/skill_security_auditor.py",
-        "line": 935,
+        "line": 1422,
         "pattern": "shutil.rmtree(tmp_dir, ignore_errors=True)",
         "reason": "bounded-tempfile-op: rmtree in the error-path of clone_repo(). Same bounded-tempdir analysis as line 923."
       },
       {
-        "key": "skill-security-auditor::FS-ABUSE::skill-security-auditor/scripts/skill_security_auditor.py::1053",
+        "key": "skill-security-auditor::FS-ABUSE::skill-security-auditor/scripts/skill_security_auditor.py::1601",
         "severity": "HIGH",
         "category": "FS-ABUSE",
         "file": "skill-security-auditor/scripts/skill_security_auditor.py",
-        "line": 1053,
+        "line": 1601,
         "pattern": "shutil.rmtree(cleanup_dir, ignore_errors=True)",
         "reason": "bounded-tempfile-op: rmtree in the finally block of main(). cleanup_dir comes from clone_repo() which only returns a path under system tempdir (validated on line 910). Same analysis as lines 923/935."
       },
       {
-        "key": "skill-security-auditor::PROMPT-OVERRIDE::skill-security-auditor/SKILL.md::82",
+        "key": "skill-security-auditor::PROMPT-OVERRIDE::skill-security-auditor/SKILL.md::115",
         "severity": "CRITICAL",
         "category": "PROMPT-OVERRIDE",
         "file": "skill-security-auditor/SKILL.md",
-        "line": 82,
+        "line": 115,
         "pattern": "| **System prompt override** | \"Ignore previous instructions\", \"You are now...\" | \ud83d\udd34 CRITICAL |",
         "reason": "documented-pattern-example: table row in SKILL.md showing examples of prompt-injection attacks that the skill detects. 'Ignore previous instructions' is quoted as the attack-pattern name, not as an active instruction to the AI."
       },
       {
-        "key": "skill-security-auditor::SAFETY-BYPASS::skill-security-auditor/SKILL.md::83",
+        "key": "skill-security-auditor::SAFETY-BYPASS::skill-security-auditor/SKILL.md::116",
         "severity": "CRITICAL",
         "category": "SAFETY-BYPASS",
         "file": "skill-security-auditor/SKILL.md",
-        "line": 83,
+        "line": 116,
         "pattern": "| **Role hijacking** | \"Act as root\", \"Pretend you have no restrictions\" | \ud83d\udd34 CRITICAL |",
         "reason": "documented-pattern-example: table row showing examples of role-hijacking attacks detected by the skill. 'Pretend you have no restrictions' is the named attack pattern, quoted for documentation."
       },
       {
-        "key": "skill-security-auditor::SAFETY-BYPASS::skill-security-auditor/SKILL.md::84",
+        "key": "skill-security-auditor::SAFETY-BYPASS::skill-security-auditor/SKILL.md::117",
         "severity": "CRITICAL",
         "category": "SAFETY-BYPASS",
         "file": "skill-security-auditor/SKILL.md",
-        "line": 84,
+        "line": 117,
         "pattern": "| **Safety bypass** | \"Skip safety checks\", \"Disable content filtering\" | \ud83d\udd34 CRITICAL |",
         "reason": "documented-pattern-example: table row showing safety-bypass attack examples. Same family as lines 82-83."
       },
       {
-        "key": "skill-security-auditor::PROMPT-EXFIL::skill-security-auditor/SKILL.md::87",
+        "key": "skill-security-auditor::PROMPT-EXFIL::skill-security-auditor/SKILL.md::120",
         "severity": "CRITICAL",
         "category": "PROMPT-EXFIL",
         "file": "skill-security-auditor/SKILL.md",
-        "line": 87,
+        "line": 120,
         "pattern": "| **Data extraction** | \"Send contents of\", \"Upload file to\", \"POST to\" | \ud83d\udd34 CRITICAL |",
         "reason": "documented-pattern-example: table row quoting data-exfiltration attack phrases as examples of what the scanner detects. These are attack-pattern names quoted in documentation, not active exfiltration instructions."
       },
@@ -472,11 +474,11 @@
         "reason": "documented-pattern-example: threat-model bullet listing what an attacker could instruct an agent to do — this is documentation of the threat, not an active instruction. The PROMPT-EXFIL regex matches 'access ... credentials' in the threat description."
       },
       {
-        "key": "skill-security-auditor::DEPS-RUNTIME::skill-security-auditor/scripts/skill_security_auditor.py::717",
+        "key": "skill-security-auditor::DEPS-RUNTIME::skill-security-auditor/scripts/skill_security_auditor.py::875",
         "severity": "HIGH",
         "category": "DEPS-RUNTIME",
         "file": "skill-security-auditor/scripts/skill_security_auditor.py",
-        "line": 717,
+        "line": 875,
         "pattern": "# Check for pip/npm install in code",
         "reason": "self-match-false-positive: Python comment in scan_dependencies() describing what the following loop checks for. 'npm install' substring appears in '# Check for pip/npm install in code'. The DEPS-RUNTIME scan_dependencies() function lacks comment-skipping, so it matches its own source comment."
       },
@@ -488,6 +490,69 @@
         "line": 341,
         "pattern": "- Access credential files or sensitive env vars",
         "reason": "self-match-false-positive: this line sits inside the threat model's '### Don't' list \u2014 it is the auditor telling skill authors NOT to access credentials. The scanner flags its own prohibition text as if it were an instruction to exfiltrate. Documentation of a threat, not an instance of one."
+      },
+      {
+        "key": "skill-security-auditor::T6-TRUST-BOUNDARY::skill-security-auditor/scripts/skill_security_auditor.py::691",
+        "severity": "CRITICAL",
+        "category": "T6-TRUST-BOUNDARY",
+        "file": "skill-security-auditor/scripts/skill_security_auditor.py",
+        "line": 691,
+        "pattern": "r\"\\b(?:python-)?dotenv\\b|\\bload_dotenv\\s*\\(|\\brequire\\s*\\(\\s*['\\\"]dotenv['\\\"]\",",
+        "reason": "self-match-false-positive: this is the T6 scanner's own detection regex for dotenv usage, defined as a string literal in its pattern table. The scanner is declaring what it looks for, not loading a .env file. It has no dotenv import and never reads one."
+      },
+      {
+        "key": "skill-security-auditor::T6-NO-HITL::skill-security-auditor/scripts/skill_security_auditor.py::725",
+        "severity": "HIGH",
+        "category": "T6-NO-HITL",
+        "file": "skill-security-auditor/scripts/skill_security_auditor.py",
+        "line": 725,
+        "pattern": "(r\"\\bgit\\s+push\\b\", \"git push\"),",
+        "reason": "self-match-false-positive: this is a (regex, label) tuple in the T6 sensitive-action pattern table \u2014 the scanner's definition of what 'git push' looks like so it can flag it elsewhere. The auditor never invokes git push; its only subprocess call is a shallow `git clone` into a temp dir."
+      },
+      {
+        "key": "skill-security-auditor::T6-NO-HITL::skill-security-auditor/scripts/skill_security_auditor.py::1410",
+        "severity": "HIGH",
+        "category": "T6-NO-HITL",
+        "file": "skill-security-auditor/scripts/skill_security_auditor.py",
+        "line": 1410,
+        "pattern": "shutil.rmtree(tmp_dir, ignore_errors=True)",
+        "reason": "bounded-tempfile-op: deletes only a directory created by tempfile.mkdtemp(prefix='skill-audit-', dir=system_tmp), and re-verifies containment with Path(tmp_dir).resolve().is_relative_to(system_tmp) immediately before deleting. Failure-path cleanup after a failed git clone."
+      },
+      {
+        "key": "skill-security-auditor::T6-NO-HITL::skill-security-auditor/scripts/skill_security_auditor.py::1422",
+        "severity": "HIGH",
+        "category": "T6-NO-HITL",
+        "file": "skill-security-auditor/scripts/skill_security_auditor.py",
+        "line": 1422,
+        "pattern": "shutil.rmtree(tmp_dir, ignore_errors=True)",
+        "reason": "bounded-tempfile-op: same guarded cleanup of the mkdtemp clone directory, on the second failure path. Containment re-checked against system_tmp before the delete."
+      },
+      {
+        "key": "skill-security-auditor::T6-NO-HITL::skill-security-auditor/scripts/skill_security_auditor.py::1601",
+        "severity": "HIGH",
+        "category": "T6-NO-HITL",
+        "file": "skill-security-auditor/scripts/skill_security_auditor.py",
+        "line": 1601,
+        "pattern": "shutil.rmtree(cleanup_dir, ignore_errors=True)",
+        "reason": "bounded-tempfile-op: finally-block cleanup of the same temp clone dir. Guarded by is_relative_to(system_tmp), and the else branch explicitly refuses and logs rather than deleting anything outside temp."
+      },
+      {
+        "key": "skill-security-auditor::PRIV-ESC::skill-security-auditor/scripts/skill_security_auditor.py::715",
+        "severity": "CRITICAL",
+        "category": "PRIV-ESC",
+        "file": "skill-security-auditor/scripts/skill_security_auditor.py",
+        "line": 715,
+        "pattern": "r'\"Bash\\(sudo[^\"]*\\)\"',",
+        "reason": "self-match-false-positive: the T6 scanner's own detection material \u2014 a regex string literal / help text naming privileged commands so the scanner can flag them elsewhere. The auditor invokes no privileged command."
+      },
+      {
+        "key": "skill-security-auditor::PRIV-ESC::skill-security-auditor/scripts/skill_security_auditor.py::1251",
+        "severity": "CRITICAL",
+        "category": "PRIV-ESC",
+        "file": "skill-security-auditor/scripts/skill_security_auditor.py",
+        "line": 1251,
+        "pattern": "\"permissions.allow entries (e.g. Bash(*), sudo, curl). Each \"",
+        "reason": "self-match-false-positive: the T6 scanner's own detection material \u2014 a regex string literal / help text naming privileged commands so the scanner can flag them elsewhere. The auditor invokes no privileged command."
       }
     ]
   },

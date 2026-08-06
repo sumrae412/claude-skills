@@ -27,12 +27,45 @@ python3 scripts/skill_security_auditor.py /path/to/skill-name/
 # Audit a skill from a git repo
 python3 scripts/skill_security_auditor.py https://github.com/user/repo --skill skill-name
 
-# Audit with strict mode (any WARN becomes FAIL)
+# Audit with strict mode (any WARN becomes FAIL; T6 findings honor strict mode too)
 python3 scripts/skill_security_auditor.py /path/to/skill-name/ --strict
 
 # Output JSON report
 python3 scripts/skill_security_auditor.py /path/to/skill-name/ --json
+
+# T6 (Agent Trust & Permission Patterns) — all 5 checks ON by default
+# Skip the whole T6 category (legacy fast scan):
+python3 scripts/skill_security_auditor.py /path/to/skill-name/ --skip-t6
+
+# Run a single T6 check in isolation (any --check-* overrides the default ON set):
+python3 scripts/skill_security_auditor.py /path/to/skill-name/ --check-lethal-trifecta
+python3 scripts/skill_security_auditor.py /path/to/skill-name/ --check-egress-scope
+python3 scripts/skill_security_auditor.py /path/to/skill-name/ --check-trust-boundary
+python3 scripts/skill_security_auditor.py /path/to/skill-name/ --check-scope-creep
+python3 scripts/skill_security_auditor.py /path/to/skill-name/ --check-hitl
+
+# Exempt the auditor itself from T6 (its broad file reads trip the heuristics):
+python3 scripts/skill_security_auditor.py skill-security-auditor/ --self-exempt
 ```
+
+### T6 known false-positive patterns
+
+T6 checks are conservative heuristics — most legitimate advisory skills score
+0 T6 findings, but a few patterns will reliably trip them. Document any
+recurring FP class here when you see it:
+
+- **Docs skills that show API examples** (e.g. `coding-best-practices`) may
+  trip `T6-LETHAL-TRIFECTA` when their reference markdown shows `fetch()`
+  POSTs + `process.env.API_KEY` examples + tool-name strings in the same
+  skill. The skill itself doesn't *do* anything — it's documentation. Inspect
+  the flagged lines; if all three buckets resolve to code-fence examples in
+  reference files, downgrade manually.
+- **The auditor itself** matches every pattern it scans for (it's a scanner —
+  its source contains all the dangerous-pattern regexes by design). Run with
+  `--self-exempt` when auditing `skill-security-auditor/`.
+- **Test fixture strings** containing payloads like `"rm -rf /\n"` for stress
+  testing trip `T6-NO-HITL`. Inspect — if the string is genuinely a fixture
+  (not an executable command), it's noise.
 
 ## Use as a pre-install gate
 

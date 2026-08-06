@@ -590,11 +590,169 @@ JS_PATTERNS = [
 
 
 # =============================================================================
+# T6: AGENT TRUST & PERMISSION PATTERNS
+# =============================================================================
+# Source: SKILL.md section 5 "Agent Trust & Permission Patterns" + references/threat-model.md T6.
+# Attribution: Anthropic — How we contain Claude across products (2026-05-25);
+#              ToxSec — Google I/O: Agentic Security and New Threats (2026-05-25).
+#
+# These checks are HEURISTIC. They look at capability composition and config-parsing
+# patterns rather than line-level dangerous APIs. Severity is calibrated CONSERVATIVELY
+# — when in doubt, INFO over HIGH, HIGH over CRITICAL. Better to under-flag than
+# trigger alarm fatigue, since these patterns appear in many legitimate skills.
+
+# T6.1 — Lethal Trifecta capability detectors (regex; matched across .py, .sh, .js, .ts, .md).
+# A skill is flagged ONLY when patterns from all three buckets appear in the same skill.
+LETHAL_TRIFECTA_UNTRUSTED_READ = [
+    r"\bWebFetch\b",
+    r"\bWebSearch\b",
+    r"\brequests\.get\s*\(",
+    r"\burllib\.request\.urlopen\s*\(",
+    r"\bfetch\s*\(",
+    r"\bhttpx\.(?:get|AsyncClient)\s*\(",
+    r"\baxios\.(?:get|request)\s*\(",
+    r"\bcurl\b",
+    r"\bwget\b",
+    r"(?i)\b(?:read|fetch|ingest|scrape|parse)\s+(?:web|page|url|article|email|message|inbox|slack|gmail|drive)\b",
+    r"\bsearch_threads\b|\bget_thread\b|\bsearch_public\b|\bread_channel\b|\bsearch_messages\b",
+    r"\bplaywright\b|\bbrowser_navigate\b",
+]
+
+LETHAL_TRIFECTA_SENSITIVE_ACCESS = [
+    r"\bos\.environ(?:\.get)?\s*\[",
+    r"\bos\.environ\.get\s*\(",
+    # Case-sensitive matches for credential-looking identifiers (avoids false
+    # positives like "Token Economy", "secret sauce" in prose).
+    r"\bAPI_KEY\b|\bSECRET_KEY\b|\bACCESS_TOKEN\b|\bREFRESH_TOKEN\b|\bPRIVATE_KEY\b",
+    r"\bGOOGLE_APPLICATION_CREDENTIALS\b",
+    r"\bGITHUB_TOKEN\b|\bANTHROPIC_API_KEY\b|\bOPENAI_API_KEY\b|\bAWS_(?:ACCESS|SECRET)_",
+    # Service / vault accessors (case-sensitive proper nouns).
+    r"\b(?:1Password|onepassword)\b|\bkeychain\b|\bkeyring\b",
+    r"\b\.ssh\b|\b\.aws\b|\b\.npmrc\b|\b\.pypirc\b",
+    # Gmail/Drive/vault — proper noun forms (avoid "drive" the verb).
+    r"\bGmail\b|\bGoogle Drive\b|\bMCP Gmail\b|\bgmail\.googleapis\.com\b",
+    # Actionable phrases ("read secrets", "list credentials") in prose.
+    r"(?i)\b(?:read|access|list|fetch)\s+(?:secret|credential|env\s+var|api\s+key)s?\b",
+]
+
+LETHAL_TRIFECTA_EXTERNAL_COMMS = [
+    r"\brequests\.(?:post|put|patch|delete)\s*\(",
+    r"\bhttpx\.(?:post|put|patch|delete)\s*\(",
+    r"\baiohttp\.ClientSession\s*\(",
+    r"\bfetch\s*\([^)]*\{[^}]*method\s*:\s*['\"](?:POST|PUT|PATCH|DELETE)",
+    r"\bsmtplib\b|\bsendmail\b",
+    r"\bgit\s+push\b",
+    r"\bgh\s+pr\s+(?:create|merge|comment)\b",
+    r"\bgh\s+issue\s+(?:create|comment)\b",
+    r"\bsocket\.(?:connect|create_connection)\s*\(",
+]
+
+# MCP-tool-named external-comms patterns — these are unambiguous markers that a
+# skill performs (not just describes) the action, so they're safe to match in MD too.
+LETHAL_TRIFECTA_EXTERNAL_COMMS_MCP = [
+    r"\bsend_message\b",
+    r"\bsend_email\b",
+    r"\bcreate_draft\b",
+    r"\bschedule_message\b",
+    r"\bslack[_-]?send\b|\bslack_post_message\b|\bslack_send_message\b",
+    r"\bcreate_issue\b|\bcreate_pull_request\b|\badd_issue_comment\b",
+    r"\bmcp__[\w-]+__(?:send|post|create|delete|update)_\w+",
+]
+
+# T6.2 — Egress-as-destination-filter heuristic. Look for hardcoded allowlists of
+# hosts/domains without nearby payload-scope or data-classification comments.
+EGRESS_ALLOWLIST_RE = re.compile(
+    r"\b(?:ALLOWED|TRUSTED|ALLOWLIST|WHITELIST|PERMITTED)_"
+    r"(?:DOMAINS?|HOSTS?|URLS?|ORIGINS?|ENDPOINTS?)\b"
+)
+PAYLOAD_SCOPE_HINT_RE = re.compile(
+    r"(?i)\b(?:payload|data[_-]?(?:scope|classification|category)|"
+    r"redact|sanitize|sensitive|PII|secret|capability|scope[_-]?check|"
+    r"egress[_-]?policy|outbound[_-]?filter)\b"
+)
+
+# T6.3 — Trust-boundary parsing. Patterns that load/parse project-local config
+# in agent-context code (i.e. same process as privileged tools).
+TRUST_BOUNDARY_PATTERNS = [
+    # postinstall / prestart references in package.json or shell scripts
+    (
+        r'"(?:post|pre)(?:install|start|publish)"\s*:',
+        "Lifecycle script (postinstall/prestart) executes on install — runs in agent process if loaded by agent.",
+    ),
+    # Loading .claude/hooks or repo-local hooks dynamically — require action verb
+    # (open, load, read, source, require, import) before the path to avoid matching
+    # docs that simply mention the path.
+    (
+        r"\b(?:open|load|read|source|require|import|exec)[\w(]*\s*[(\"']\s*[^\"')]*\.claude/hooks(?:\.json|\.yaml|\.yml|/)",
+        "Loading repo-local .claude/hooks config in agent process — crosses trust boundary.",
+    ),
+    # .env parsing in agent code
+    (
+        r"\b(?:python-)?dotenv\b|\bload_dotenv\s*\(|\brequire\s*\(\s*['\"]dotenv['\"]",
+        "Parsing .env from project root in agent context — repo-controlled secrets enter agent env.",
+    ),
+    # Sourcing arbitrary repo-local config without sandboxing
+    (
+        r"\bsource\s+\.\/\w+|\bsource\s+\$\{?(?:PWD|REPO_ROOT)",
+        "Sourcing repo-local shell config — executes repo-controlled commands in agent shell.",
+    ),
+]
+
+# T6.4 — Permission scope creep. OAuth-scope and permissions.allow detection.
+BROAD_OAUTH_SCOPES = [
+    r"https://www\.googleapis\.com/auth/gmail\.(?:readonly|modify|send|labels|compose)",
+    r"https://www\.googleapis\.com/auth/drive(?:\.(?:readonly|file|metadata))?\b",
+    r"https://www\.googleapis\.com/auth/cloud-platform",
+    r"https://www\.googleapis\.com/auth/calendar(?:\.events)?",
+    r"https://www\.googleapis\.com/auth/contacts(?:\.readonly)?",
+    r"\bchat:write\b|\bchannels:read\b|\bgroups:read\b|\bim:read\b",  # Slack
+    r"\brepo\b|\bworkflow\b|\badmin:org\b",  # GitHub
+]
+
+PERMISSIONS_ALLOW_BROAD = [
+    r'"Bash\(\*\)"',
+    r'"Bash\(rm[^"]*\)"',
+    r'"Bash\(sudo[^"]*\)"',
+    r'"Bash\(curl[^"]*\)"',
+    r'"WebFetch\(\*\)"',
+    r'"Write\(\*\)"',
+]
+
+# T6.5 — Sensitive actions requiring HITL. Patterns that perform irreversible /
+# externally-visible actions, paired with a proximity check for confirmation code.
+SENSITIVE_ACTION_PATTERNS = [
+    (r"\bgh\s+pr\s+merge\b", "PR merge"),
+    (r"\bgit\s+push\b", "git push"),
+    (r"\bstripe\.\w+\.create\s*\(", "Stripe charge/customer creation"),
+    (r"\brequests\.post\s*\([^)]*(?:slack|discord|telegram|teams|webhook)",
+     "Outbound message to chat API"),
+    (r"\bsend_email\s*\(|\bsendmail\s*\(", "Send email"),
+    (r"\bdelete_\w+\s*\(", "Delete operation"),
+    (r"\bos\.remove\s*\(|\bos\.unlink\s*\(", "File deletion"),
+    (r"\bshutil\.rmtree\s*\(", "Recursive directory deletion"),
+    (r"\brm\s+-rf\b", "Recursive shell delete"),
+]
+
+HITL_NEARBY_PATTERNS = [
+    r"\binput\s*\(",
+    r"\bconfirm\s*\(",
+    r"\bprompt_user\b|\bprompt_for_confirmation\b",
+    r"\bAskUserQuestion\b",
+    r"(?i)\b(?:are\s+you\s+sure|confirm|proceed\??|y/n|yes/no)\b",
+    r"\blog(?:ger)?\.(?:audit|warning|info)\s*\(",
+    r"\baudit_log\b",
+    r"\b--dry-run\b|\bdry_run\b",
+]
+
+
+# =============================================================================
 # SCANNER
 # =============================================================================
 
 CODE_EXTENSIONS = {".py", ".sh", ".bash", ".js", ".ts", ".mjs", ".cjs"}
 MD_EXTENSIONS = {".md", ".mdx", ".markdown"}
+JSON_EXTENSIONS = {".json"}
+YAML_EXTENSIONS = {".yaml", ".yml"}
 ALL_SCAN_EXTENSIONS = CODE_EXTENSIONS | MD_EXTENSIONS
 
 
@@ -856,8 +1014,324 @@ def scan_filesystem(skill_path: Path, report: AuditReport):
                 pass
 
 
-def scan_skill(skill_path: Path) -> AuditReport:
-    """Run full security audit on a skill directory."""
+def _iter_scannable_files(skill_path: Path, extensions: set):
+    """Yield (path, content) for every file under skill_path matching extensions."""
+    for f in skill_path.rglob("*"):
+        if ".git" in f.parts:
+            continue
+        if not f.is_file():
+            continue
+        if f.suffix.lower() not in extensions:
+            continue
+        try:
+            yield f, f.read_text(encoding="utf-8", errors="replace")
+        except Exception:
+            continue
+
+
+def _any_match(content: str, patterns):
+    """Return (True, first-matching-pattern) if any regex matches; (False, None) otherwise."""
+    for pat in patterns:
+        if re.search(pat, content):
+            return True, pat
+    return False, None
+
+
+def scan_lethal_trifecta(skill_path: Path, report: AuditReport, self_exempt: bool = False):
+    """T6.1 — Flag the lethal trifecta: untrusted-read + sensitive-access + external-comms.
+
+    Source: SKILL.md section 5 + threat-model.md T6 (Anthropic-containment + ToxSec).
+    The skill is flagged ONLY when all three buckets have at least one match across
+    the entire skill directory. Single-bucket and two-bucket combinations are
+    NOT flagged — most legitimate skills hit one or two.
+    """
+    if self_exempt:
+        return
+
+    # Per-bucket eligible extensions. We deliberately scope tightly to reduce
+    # docs-only false positives:
+    #   - untrusted_read:   MD + code (SKILL.md commonly names WebFetch/Slack/Gmail tools)
+    #   - sensitive_access: MD + code (SKILL.md describes Gmail/Drive/vault access)
+    #   - external_comms:   CODE for generic patterns + MD for MCP-tool-named patterns
+    #                       (the MCP-tool list is unambiguous "this skill performs X").
+    combined_external_comms = LETHAL_TRIFECTA_EXTERNAL_COMMS + LETHAL_TRIFECTA_EXTERNAL_COMMS_MCP
+    buckets = {
+        "untrusted_read": (LETHAL_TRIFECTA_UNTRUSTED_READ, CODE_EXTENSIONS | MD_EXTENSIONS),
+        "sensitive_access": (LETHAL_TRIFECTA_SENSITIVE_ACCESS, CODE_EXTENSIONS | MD_EXTENSIONS),
+        "external_comms": (combined_external_comms, CODE_EXTENSIONS | MD_EXTENSIONS),
+    }
+    # For MD files, only match the MCP-tool subset of external_comms (avoid
+    # docs-example false positives like "use requests.post() to send data").
+    md_only_external_comms = LETHAL_TRIFECTA_EXTERNAL_COMMS_MCP
+    # Mutable dict of bucket -> (file, line, snippet, matched-pattern) for first hit
+    hits = {k: None for k in buckets}
+
+    all_extensions = CODE_EXTENSIONS | MD_EXTENSIONS
+    for f, content in _iter_scannable_files(skill_path, all_extensions):
+        ext = f.suffix.lower()
+        for bucket_name, (patterns, eligible_exts) in buckets.items():
+            if hits[bucket_name] is not None:
+                continue
+            if ext not in eligible_exts:
+                continue
+            for i, line in enumerate(content.split("\n"), 1):
+                stripped = line.strip()
+                if not stripped:
+                    continue
+                # Skip pure-prose lines in MD that mention these words in a
+                # "this skill avoids X" defensive context.
+                if ext in MD_EXTENSIONS and re.search(
+                    r"(?i)\b(?:does not|doesn't|never|avoids?|forbids?|prohibit)\b", stripped
+                ):
+                    continue
+                # Narrow external_comms to MCP-tool-named patterns in MD files.
+                active_patterns = patterns
+                if bucket_name == "external_comms" and ext in MD_EXTENSIONS:
+                    active_patterns = md_only_external_comms
+                matched, pat = _any_match(stripped, active_patterns)
+                if matched:
+                    hits[bucket_name] = (str(f.relative_to(skill_path)), i, stripped[:120], pat)
+                    break
+
+    if all(v is not None for v in hits.values()):
+        snippets = "; ".join(f"{k}@{v[0]}:{v[1]}" for k, v in hits.items())
+        # Report at the SKILL.md anchor line if available, else line 0.
+        anchor = hits["untrusted_read"]
+        report.findings.append(
+            Finding(
+                severity=Severity.CRITICAL,
+                category="T6-LETHAL-TRIFECTA",
+                file=anchor[0],
+                line=anchor[1],
+                pattern=snippets[:120],
+                risk=(
+                    "Lethal Trifecta: skill combines untrusted-content read + "
+                    "sensitive-data access + external comms. Prompt injection in "
+                    "untrusted input can autonomously exfiltrate sensitive data."
+                ),
+                fix=(
+                    "Split into separate skills with disjoint capability sets, OR "
+                    "add explicit per-action HITL gate before external comms, OR "
+                    "remove one of the three capability classes."
+                ),
+            )
+        )
+
+
+def scan_egress_scope(skill_path: Path, report: AuditReport, self_exempt: bool = False):
+    """T6.2 — Allowlists by destination but not by payload scope.
+
+    Heuristic: file declares ALLOWED_DOMAINS / ALLOWED_HOSTS / similar without
+    nearby (±20 lines) mention of payload scope, redaction, data classification,
+    or capability checks.
+    """
+    if self_exempt:
+        return
+
+    for f, content in _iter_scannable_files(skill_path, CODE_EXTENSIONS):
+        lines = content.split("\n")
+        for i, line in enumerate(lines, 1):
+            if not EGRESS_ALLOWLIST_RE.search(line):
+                continue
+            # Window: ±20 lines around the allowlist declaration.
+            start = max(0, i - 21)
+            end = min(len(lines), i + 20)
+            window = "\n".join(lines[start:end])
+            if PAYLOAD_SCOPE_HINT_RE.search(window):
+                continue
+            report.findings.append(
+                Finding(
+                    severity=Severity.HIGH,
+                    category="T6-EGRESS-SCOPE",
+                    file=str(f.relative_to(skill_path)),
+                    line=i,
+                    pattern=line.strip()[:120],
+                    risk=(
+                        "Egress allowlist by destination only — no nearby payload "
+                        "scope / capability / redaction check. Model can be induced "
+                        "to send sensitive data to an allowed destination."
+                    ),
+                    fix=(
+                        "Add a payload-scope check before egress: classify data, "
+                        "redact secrets, or restrict by capability not destination. "
+                        "See threat-model.md T6 (Anthropic-containment)."
+                    ),
+                )
+            )
+
+
+def scan_trust_boundary(skill_path: Path, report: AuditReport, self_exempt: bool = False):
+    """T6.3 — Trust-boundary parsing: project-local config loaded in agent process.
+
+    Source: threat-model.md T6, Anthropic-containment "trust-boundary timing" lesson.
+    """
+    if self_exempt:
+        return
+
+    extensions = CODE_EXTENSIONS | JSON_EXTENSIONS | YAML_EXTENSIONS
+    for f, content in _iter_scannable_files(skill_path, extensions):
+        rel = str(f.relative_to(skill_path))
+        for i, line in enumerate(content.split("\n"), 1):
+            stripped = line.strip()
+            if not stripped or stripped.startswith(("#", "//")):
+                continue
+            for pat, explain in TRUST_BOUNDARY_PATTERNS:
+                if re.search(pat, line):
+                    report.findings.append(
+                        Finding(
+                            severity=Severity.CRITICAL,
+                            category="T6-TRUST-BOUNDARY",
+                            file=rel,
+                            line=i,
+                            pattern=stripped[:120],
+                            risk=(
+                                f"Trust-boundary parsing: {explain} Repo-controlled "
+                                "code runs in same process as agent's privileged tools."
+                            ),
+                            fix=(
+                                "Move config parsing outside the privileged process, "
+                                "OR sandbox the script (separate user / container), "
+                                "OR require user confirmation before loading."
+                            ),
+                        )
+                    )
+
+
+def scan_scope_creep(skill_path: Path, report: AuditReport, self_exempt: bool = False):
+    """T6.4 — Permission scope creep: broad OAuth scopes or permissions.allow.
+
+    Heuristic: count distinct broad scopes / permissive Bash patterns in the
+    skill's metadata. Flag when count ≥ 3 (single broad scope is common and
+    fine; ≥3 across distinct categories signals scope creep).
+    """
+    if self_exempt:
+        return
+
+    extensions = MD_EXTENSIONS | JSON_EXTENSIONS | YAML_EXTENSIONS
+    for f, content in _iter_scannable_files(skill_path, extensions):
+        rel = str(f.relative_to(skill_path))
+        broad_scopes_found = set()
+        for pat in BROAD_OAUTH_SCOPES:
+            for m in re.finditer(pat, content):
+                broad_scopes_found.add(m.group(0))
+        broad_perms_found = set()
+        for pat in PERMISSIONS_ALLOW_BROAD:
+            for m in re.finditer(pat, content):
+                broad_perms_found.add(m.group(0))
+
+        if len(broad_scopes_found) >= 3:
+            report.findings.append(
+                Finding(
+                    severity=Severity.HIGH,
+                    category="T6-SCOPE-CREEP",
+                    file=rel,
+                    line=0,
+                    pattern=", ".join(sorted(broad_scopes_found))[:120],
+                    risk=(
+                        f"Permission scope creep: {len(broad_scopes_found)} broad "
+                        "OAuth scopes in one skill. Compare against the skill's "
+                        "stated function — scopes beyond core purpose enable unrelated actions."
+                    ),
+                    fix=(
+                        "Reduce to the minimum scopes needed. Split multi-purpose "
+                        "skills into separate, narrower skills."
+                    ),
+                )
+            )
+        if len(broad_perms_found) >= 2:
+            report.findings.append(
+                Finding(
+                    severity=Severity.HIGH,
+                    category="T6-SCOPE-CREEP",
+                    file=rel,
+                    line=0,
+                    pattern=", ".join(sorted(broad_perms_found))[:120],
+                    risk=(
+                        f"Permission scope creep: {len(broad_perms_found)} overly-broad "
+                        "permissions.allow entries (e.g. Bash(*), sudo, curl). Each "
+                        "broad entry bypasses per-action review."
+                    ),
+                    fix=(
+                        "Replace wildcard entries with specific commands/paths. "
+                        "Prefer per-action ask-permission over standing allow."
+                    ),
+                )
+            )
+
+
+def scan_hitl(skill_path: Path, report: AuditReport, self_exempt: bool = False):
+    """T6.5 — Sensitive actions without nearby human-in-the-loop confirmation.
+
+    Heuristic: find sensitive-action pattern, then look for HITL pattern within
+    ±15 lines. No HITL within window → HIGH finding.
+    """
+    if self_exempt:
+        return
+
+    for f, content in _iter_scannable_files(skill_path, CODE_EXTENSIONS):
+        lines = content.split("\n")
+        rel = str(f.relative_to(skill_path))
+        for i, line in enumerate(lines, 1):
+            stripped = line.strip()
+            if not stripped or stripped.startswith(("#", "//")):
+                continue
+            for pat, action_name in SENSITIVE_ACTION_PATTERNS:
+                if not re.search(pat, line):
+                    continue
+                # Look for HITL within ±15 lines
+                start = max(0, i - 16)
+                end = min(len(lines), i + 15)
+                window = "\n".join(lines[start:end])
+                has_hitl = False
+                for hitl_pat in HITL_NEARBY_PATTERNS:
+                    if re.search(hitl_pat, window):
+                        has_hitl = True
+                        break
+                if has_hitl:
+                    continue
+                report.findings.append(
+                    Finding(
+                        severity=Severity.HIGH,
+                        category="T6-NO-HITL",
+                        file=rel,
+                        line=i,
+                        pattern=stripped[:120],
+                        risk=(
+                            f"Sensitive action ({action_name}) with no nearby "
+                            "confirmation prompt or audit log. Irreversible or "
+                            "externally-visible action runs without human gate."
+                        ),
+                        fix=(
+                            "Add an input()/AskUserQuestion confirmation, an "
+                            "audit_log call, or a --dry-run flag before the action."
+                        ),
+                    )
+                )
+
+
+def scan_skill(
+    skill_path: Path,
+    enabled_t6: Optional[dict] = None,
+    self_exempt: bool = False,
+) -> AuditReport:
+    """Run full security audit on a skill directory.
+
+    enabled_t6: dict of {check_name: bool} to enable/disable individual T6 checks.
+                Keys: 'lethal_trifecta', 'egress_scope', 'trust_boundary',
+                      'scope_creep', 'hitl'. If None, all T6 checks run.
+    self_exempt: when True, T6 checks are skipped (used when scanning the auditor
+                 itself — the auditor's broad file reads would trip scope-creep
+                 and trust-boundary heuristics by design).
+    """
+    if enabled_t6 is None:
+        enabled_t6 = {
+            "lethal_trifecta": True,
+            "egress_scope": True,
+            "trust_boundary": True,
+            "scope_creep": True,
+            "hitl": True,
+        }
+
     report = AuditReport(
         skill_name=skill_path.name,
         skill_path=str(skill_path),
@@ -899,6 +1373,19 @@ def scan_skill(skill_path: Path) -> AuditReport:
 
     # 4. Dependency scanning
     scan_dependencies(skill_path, report)
+
+    # 5. T6 — Agent Trust & Permission Patterns
+    # See SKILL.md section 5 + references/threat-model.md T6.
+    if enabled_t6.get("lethal_trifecta"):
+        scan_lethal_trifecta(skill_path, report, self_exempt=self_exempt)
+    if enabled_t6.get("egress_scope"):
+        scan_egress_scope(skill_path, report, self_exempt=self_exempt)
+    if enabled_t6.get("trust_boundary"):
+        scan_trust_boundary(skill_path, report, self_exempt=self_exempt)
+    if enabled_t6.get("scope_creep"):
+        scan_scope_creep(skill_path, report, self_exempt=self_exempt)
+    if enabled_t6.get("hitl"):
+        scan_hitl(skill_path, report, self_exempt=self_exempt)
 
     return report
 
@@ -1012,7 +1499,68 @@ def main():
         help="Remove cloned repo after audit (only for git URLs)",
     )
 
+    # T6 — Agent Trust & Permission Patterns flags.
+    # All T6 checks default ON; --skip-t6 disables the whole category. Individual
+    # --check-* flags force-enable specific checks even when --skip-t6 is set, so
+    # callers can run a single check in isolation.
+    # In --strict mode, T6 findings flip WARN to FAIL (same as other categories).
+    t6_group = parser.add_argument_group("T6 (Agent Trust & Permission Patterns)")
+    t6_group.add_argument(
+        "--skip-t6",
+        action="store_true",
+        help="Disable all T6 checks (backward-compat / fast scan).",
+    )
+    t6_group.add_argument(
+        "--check-lethal-trifecta",
+        action="store_true",
+        help="Run T6.1 only — untrusted-read + sensitive-access + external-comms.",
+    )
+    t6_group.add_argument(
+        "--check-egress-scope",
+        action="store_true",
+        help="Run T6.2 only — egress allowlist without payload-scope check.",
+    )
+    t6_group.add_argument(
+        "--check-trust-boundary",
+        action="store_true",
+        help="Run T6.3 only — project-local config parsed in agent context.",
+    )
+    t6_group.add_argument(
+        "--check-scope-creep",
+        action="store_true",
+        help="Run T6.4 only — broad OAuth scopes / permissions.allow.",
+    )
+    t6_group.add_argument(
+        "--check-hitl",
+        action="store_true",
+        help="Run T6.5 only — sensitive actions without confirmation/audit.",
+    )
+    t6_group.add_argument(
+        "--self-exempt",
+        action="store_true",
+        help=(
+            "Skip T6 checks (used when auditing the auditor itself — its broad "
+            "file reads trip scope-creep / trust-boundary heuristics by design)."
+        ),
+    )
+
     args = parser.parse_args()
+
+    # Resolve T6 enable flags. If any --check-* flag is set explicitly, run ONLY
+    # those checks. Otherwise, run all (or none if --skip-t6).
+    individual_t6 = {
+        "lethal_trifecta": args.check_lethal_trifecta,
+        "egress_scope": args.check_egress_scope,
+        "trust_boundary": args.check_trust_boundary,
+        "scope_creep": args.check_scope_creep,
+        "hitl": args.check_hitl,
+    }
+    if any(individual_t6.values()):
+        enabled_t6 = individual_t6
+    elif args.skip_t6:
+        enabled_t6 = {k: False for k in individual_t6}
+    else:
+        enabled_t6 = {k: True for k in individual_t6}
 
     cleanup_dir = None
 
@@ -1029,7 +1577,7 @@ def main():
             sys.exit(1)
 
     try:
-        report = scan_skill(skill_path)
+        report = scan_skill(skill_path, enabled_t6=enabled_t6, self_exempt=args.self_exempt)
 
         if args.json_output:
             print(json.dumps(report.to_dict(), indent=2))
