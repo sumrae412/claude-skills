@@ -18,3 +18,6 @@ __pycache__/
 
 # Doc-graph artifacts (computed locally per scripts/build_doc_graph.py)
 .knowledge/
+
+# Potpie eval artifacts (generated during research, not part of this repo)
+potpie-*/

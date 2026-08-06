@@ -1,6 +1,6 @@
 ---
 name: structured-prompt-builder
-description: Build a production-ready XML-structured prompt through an interactive critique loop. The skill drafts a prompt using Anthropic's 10-component framework from Prompting 101, then audits it against a multi-rule checklist and iterates with the user until the prompt is clean and efficient. Use this skill whenever the user asks to draft, design, or improve a prompt, system prompt, or LLM instruction set — especially for classification, extraction, document analysis, multi-step reasoning, or any task where output format matters. Trigger on phrases like "write a prompt for", "design a system prompt", "prompt template", "prompt structure", or "how should I prompt Claude to do X". Also trigger when the user describes a production LLM workflow without explicitly asking for a prompt — they probably need one. NOT for managing prompts in production at scale (use prompt-governance). NOT for analyzing performance across prompt versions (use prompt-optimization). NOT for optimizing session context for an active agent (use context-engineering).
+description: "Build a production-ready XML-structured prompt through an interactive critique loop — drafts with Anthropic's Prompting 101 component framework, audits against a checklist, and iterates until clean and efficient. Use whenever the user asks to draft or design a prompt, system prompt, or LLM instruction set — classification, extraction, document analysis, multi-step reasoning, or any output-format-sensitive task — or describes a production LLM workflow without asking for a prompt. NOT for managing prompts in production at scale or analyzing performance across prompt versions (use evals for regression gates and production sampling), or optimizing session context for an active agent (use context-engineering)."
 ---
 
 # Structured Prompt Builder
@@ -171,145 +171,22 @@ No if/then logic. Cacheable.]
 [10. Prefill to force format. Skip if you want reasoning preamble.]
 ```
 
-## Worked example: one full iteration
+## Worked example
 
-**User asks:** "Help me write a prompt to summarize Zoom transcripts for my team."
+A full v1 → audit → v2 iteration (Zoom-transcript summarizer: 6 flags, then all
+13 rules passing) lives in `references/worked-example.md`. Load it when you need
+a concrete model of audit strictness or of how a "fix all" revision should look.
 
-### v1 (initial draft)
+## Reasoning-style variant: Chain of Draft (low-cost CoT)
 
-```xml
-<role>You summarize meeting transcripts.</role>
+When the prompt asks the model to reason step-by-step (`<thinking_guidance>`, extended thinking, or an explicit "think step by step" instruction) AND the task is token-sensitive / high-volume — batch classification, extraction, arithmetic-style scoring — offer **Chain of Draft** as the cheaper variant of Chain-of-Thought.
 
-<instructions>
-1. Read the transcript.
-2. Extract key points.
-3. Write a summary.
-</instructions>
+- **Chain-of-Thought:** intermediate reasoning in full prose. Accurate, verbose, expensive.
+- **Chain of Draft:** constrain each reasoning step to a **~5-word budget** — terse shorthand, one draft line per step, answer last. Reported to roughly match CoT accuracy on arithmetic / GSM8k-style tasks at a fraction of the reasoning tokens.
 
-<input_data>{{transcript}}</input_data>
+Instruction to drop into `<thinking_guidance>`: *"Think step by step, but keep each step to a minimal draft of about five words. Return the final answer after the drafts."* Skip it for open-ended generative tasks where the reasoning trace is itself the product, or where auditing full traces is the point.
 
-<task>Summarize this meeting.</task>
-```
-
-### Audit results
-
-```
-✅ R1, R2, R5, R10, R11, R12, R13
-⚠️ R3 — "extract key points" is undefined; no procedure for what counts
-⚠️ R4 — no guardrails for empty/garbled transcripts
-⚠️ R6 — role missing domain and audience
-⚠️ R7 — no output format; will return free prose
-⚠️ R8 — no examples
-⚠️ R9 — no escape hatch
-```
-
-**6 flags.** Fix all, fix specific, or ship as-is?
-
-### v2 (after "fix all")
-
-```xml
-<role>
-You summarize Zoom transcripts of engineering team standups and design
-reviews. Your audience is a teammate who missed the meeting and wants
-to catch up in under two minutes.
-</role>
-
-<tone>
-Concise and factual. Do not infer intent or sentiment the speaker
-did not state.
-</tone>
-
-<background>
-<summary_sections>
-  <decisions>Things explicitly agreed to, with the decider named</decisions>
-  <action_items>Tasks assigned, with owner and (if stated) deadline</action_items>
-  <open_questions>Questions raised but not resolved during the meeting</open_questions>
-  <context>Key info shared: links, numbers, status updates</context>
-</summary_sections>
-</background>
-
-<instructions>
-1. Read the full transcript end-to-end.
-2. For each section in <summary_sections>, scan the transcript for matching content.
-3. For each item, attribute it to the speaker who stated it.
-4. Skip greetings, off-topic chat, and repeated points.
-</instructions>
-
-<guardrails>
-- Do not invent decisions or action items that were not explicitly stated.
-- If the transcript is under 200 words or appears garbled (high noise,
-  unintelligible spans), return summary_status "insufficient_input"
-  with all section arrays empty.
-- If speaker attribution is unclear for an item, set its speaker
-  field to "unknown" rather than guessing.
-</guardrails>
-
-<examples>
-  <example>
-    <input>
-      [Alice, 0:30] OK so we agreed Bob will own the migration script,
-      target end of next week.
-      [Bob, 0:45] Yep, I'll have a draft by Wednesday.
-      [Alice, 1:02] One open question — do we backfill or start fresh?
-      Let's table that for next standup.
-    </input>
-    <reasoning>One decision (Bob owns migration), one action item with
-      owner and deadline, one open question. No filler.</reasoning>
-    <o>
-{
-  "summary_status": "complete",
-  "decisions": [{"text": "Bob will own the migration script", "decider": "Alice"}],
-  "action_items": [{"task": "Draft migration script", "owner": "Bob", "deadline": "Wednesday"}],
-  "open_questions": ["Backfill existing data or start fresh?"],
-  "context": []
-}
-    </o>
-  </example>
-  <example>
-    <input>
-      [unknown, 0:02] *static* ...think we should... *cuts out*
-      [unknown, 0:08] yeah... *static*
-    </input>
-    <reasoning>Garbled, no intelligible content. Escape hatch fires.</reasoning>
-    <o>
-{
-  "summary_status": "insufficient_input",
-  "decisions": [],
-  "action_items": [],
-  "open_questions": [],
-  "context": []
-}
-    </o>
-  </example>
-</examples>
-
-<input_data>
-{{transcript}}
-</input_data>
-
-<task>
-Summarize per <instructions> and <guardrails>.
-</task>
-
-<output_format>
-Return JSON only:
-{
-  "summary_status": "complete" | "insufficient_input",
-  "decisions": [{"text": str, "decider": str}],
-  "action_items": [{"task": str, "owner": str, "deadline": str | null}],
-  "open_questions": [str],
-  "context": [str]
-}
-</output_format>
-```
-
-### Audit (v2)
-
-```
-✅ R1–R13 all pass
-```
-
-Ready to ship, or want to refine any section?
+Source: arXiv, "Chain of Draft: Thinking Faster by Writing Less" (from the 2026-07-14 /articles triage).
 
 ## Edge cases & gotchas
 
@@ -318,4 +195,6 @@ Ready to ship, or want to refine any section?
 - **Cacheability:** Anything in `<background>` should be stable across calls. If it changes per call, it's input data, not background.
 - **Aggregation belongs in code.** Rules like "drop low flags if 3+ mediums exist" or "deduplicate" are post-processing. The model can sort of do them, but unreliably. Move to a Python post-processor.
 - **Extended thinking is a crutch for prompt engineering.** With thinking enabled, you can skip `<thinking_guidance>` — but inspect the thinking traces to find prompt weaknesses.
+- **Opus 5: strip explicit verification instructions.** Opus 5 verifies its own work and corrects its own mistakes without prompting. Do NOT add "double-check your answer," "re-verify before responding," or separate "final verification step" to prompts targeting Opus 5 — these cause over-verification and waste tokens with no quality gain. Same applies to "think step-by-step" in `<thinking_guidation>`: Opus 5 reasoning is built-in, so explicit CoT instructions add cost without benefit.
+- **Opus 5: constrain scope for narrow tasks.** If the prompt asks for a specific, bounded task, add a scope line: "Deliver what was asked, at the scope intended." Opus 5 can expand scope beyond what was requested, adding steps that weren't asked for.
 - **The audit is not a quality guarantee.** Passing every rule means the prompt is *structurally clean*, not that it produces good outputs. Test with real inputs.

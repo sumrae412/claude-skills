@@ -1,6 +1,6 @@
 ---
 name: prompt-engineering
-description: Router for all prompt-engineering work — dispatches to structured-prompt-builder (single-turn authoring), agent-prompt-architecture (tool-using agents), prompt-optimizer (improving), prompt-optimization (variant analysis at scale), or prompt-governance (production management). Centralizes the shared Anthropic prompting principles each sub-skill enforces. Use when the user asks about prompts in general, isn't sure which sub-skill applies, or needs an end-to-end pipeline (write → improve → govern). Triggers on "prompt engineering", "help with a prompt", "Anthropic prompting best practices", "how should I prompt Claude", or any prompt-related ask that doesn't cleanly map to one sub-skill. If the request clearly fits one sub-skill, invoke that directly.
+description: "Router for all prompt-engineering work — dispatches to structured-prompt-builder (single-turn authoring), agent-prompt-architecture (tool-using agents), or prompt-optimizer (improving an existing prompt); centralizes the shared Anthropic prompting principles each sub-skill enforces. Use when a prompt-related ask doesn't cleanly map to one sub-skill or needs the write → improve pipeline; triggers on 'prompt engineering', 'how should I prompt Claude'. If the request clearly fits one sub-skill, invoke that directly."
 ---
 
 # Prompt Engineering
@@ -10,6 +10,8 @@ Thin router over four prompt sub-skills. The router itself stays small; each sub
 ## Shared principles (Anthropic + Vellum guidance)
 
 All sub-skills implement these. Cite them by name when audit-flagging a prompt.
+
+**External validation:** the skills-as-modular-prompts approach below is reinforced by guidance from Anthropic's "Code with Claude" event (San Francisco, May 2026): *if you repeat a prompt instruction twice, turn it into a skill; modularize 600-line monolithic prompts; use code for deterministic logic instead of asking the model to re-derive it.* The principle list below is the per-prompt mechanics; the skills-system shape is the deployment surface.
 
 ### Universal (apply to every prompt)
 
@@ -26,6 +28,16 @@ All sub-skills implement these. Cite them by name when audit-flagging a prompt.
 11. **Prompt chaining** — split heterogeneous subtasks into separate calls, don't mega-prompt
 12. **Test-driven iteration** — eval against real inputs after every change
 
+### Opus 5-specific overrides
+
+Opus 5 differs from prior models in three behavioral areas that override or narrow the universal principles above. Apply these when the target model is Opus 5:
+
+1. **Universal #6 (Chain-of-thought) — skip for Opus 5.** Opus 5 has built-in thinking. Adding explicit "think step by step" or `<thinking>...</thinking>` instructions causes over-reasoning. Let the model's native thinking handle reasoning; reserve prompt space for domain-specific instructions. This is the same principle as "don't add CoT to reasoning-native models" in `prompt-optimizer`, extended to Opus 5's always-on thinking.
+
+2. **Universal #10 (Prefill assistant message) — keep, but don't prefill a thinking tag.** Prefilling format (`{"`, `<answer>`) is still effective. Prefilling `<thinking>` or `<scratchpad>` is not — Opus 5 manages thinking internally. Reserve prefills for output structure, not reasoning scaffolding.
+
+3. **Remove explicit verification from any prompt targeting Opus 5.** Universal #12 (test-driven iteration) stays as an eval methodology. But "double-check your answer," "re-verify before responding," or "include a final verification step" in the prompt itself should be removed — Opus 5 verifies its own work, and these instructions cause over-verification. Applies to Agent principles #18 (reflection) and #21 (adversarial test triad is eval methodology, remains; in-prompt verification instructions should be removed).
+
 ### Single-turn only (numbered procedures fit)
 
 13. **Numbered task decomposition** — explicit ordered procedure. **Do not** apply this to agent prompts — see Agent principle 14.
@@ -41,6 +53,42 @@ All sub-skills implement these. Cite them by name when audit-flagging a prompt.
 20. **Memory persistence** — write durable facts (preferences, constraints) to memory tools; do not write transient state.
 21. **Adversarial test triad** — before shipping, run vague / multi-issue / distraction inputs. A prompt that fails any ships brittle.
 
+## Pre-flight prompt debugger (mandatory for coding-work prompts)
+
+Lightweight in-conversation debugger. Fires BEFORE the prompt is deployed, not after a failure. Mandatory for any prompt that will drive coding work (LLM generating, editing, refactoring, reviewing, or shipping code); recommended for single-turn classifiers. Operationalizes Universal #12 (test-driven iteration) and Agent #21 (adversarial triad) into a runnable 5-case checklist with a diagnosis grid.
+
+### Build the tiny eval suite
+
+For the prompt under test:
+
+1. **Control case (1)** — should always pass. The happy path. If this fails, the prompt is broken at baseline; do not proceed to edge cases.
+2. **Edge cases (3)** — plausible inputs where the prompt could fail. For agents, draw from the adversarial triad (vague / multi-issue / distraction). For single-turn, draw from domain failure modes (ambiguous category, missing field, conflicting signals).
+3. **Capability-boundary case (1)** — input where the agent SHOULD escalate, ask for help, or refuse. Tests the escape hatch (Universal #4) and side-effect guards (Agent #19). Distinct from edge cases: edge tests correctness; boundary tests honest deferral.
+
+Run each case mentally or against the model. State the expected behavior per case before running.
+
+### Diagnose each failure into ONE bucket
+
+| Bucket | Symptom | Fix surface |
+|---|---|---|
+| **Prompt issue** | Instructions unclear, missing escape hatch, format underspecified, conflicting heuristics, role/audience vague | Edit the prompt |
+| **Missing tool or capability** | Agent has the right intent but no way to act (no search tool, no file read, no escalation channel, no enum value for the case) | Add a tool, expand a tool schema, or add a capability |
+| **Harness / workflow issue** | Prompt and tools are correct but the runtime can't execute it (no assistant-message prefill, no extended thinking budget, wrong adapter, missing env var, upstream caller not passing field) | Fix the harness, switch adapter, or change deployment shape |
+
+### Suggest the smallest change to test next
+
+One targeted change per iteration, then re-run the 5-case suite. Resist rewriting the prompt blindly — most "prompt failures" on coding-work agents are actually tool gaps or harness limits, and rewriting the prompt against them just shuffles the failure.
+
+**Heuristic:** if ≥2 of 5 failures diagnose as `harness / workflow`, stop editing the prompt and fix the harness first.
+
+### When to fire (mandatory vs. recommended)
+
+- **Mandatory:** any prompt that will drive coding work; any ≥10-line change on a production agent prompt; any new tool added to an existing agent (the new tool needs its own capability-boundary case).
+- **Recommended:** single-turn classifiers, extractors, summaries.
+- **Skip:** trivial wording tweaks on a prompt with a passing suite from the last week.
+
+Composes with `prompt-optimizer` (which is the reactive debugger — same framework, applied after a failure) and `evals` (which scales this to golden datasets + LLM-as-judge for regression gating).
+
 ## Routing
 
 | User intent | Sub-skill |
@@ -48,8 +96,7 @@ All sub-skills implement these. Cite them by name when audit-flagging a prompt.
 | Write a new single-turn prompt (classification, extraction, summary) | [structured-prompt-builder](../structured-prompt-builder/SKILL.md) |
 | Write a prompt for a tool-using, multi-turn, or side-effecting agent | [agent-prompt-architecture](../agent-prompt-architecture/SKILL.md) |
 | Fix / improve / evaluate one prompt | [prompt-optimizer](../prompt-optimizer/SKILL.md) |
-| Compare variants, promote winners, draft challengers | [prompt-optimization](../prompt-optimization/SKILL.md) |
-| Registry, A/B tests, rollback, eval pipelines in CI | [prompt-governance](../prompt-governance/SKILL.md) |
+| Compare variants, regression-gate, or manage prompts in production | [evals](../evals/SKILL.md) |
 | Unclear or multi-stage | Stay here, ask one routing question |
 
 ## Routing flow

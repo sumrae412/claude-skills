@@ -38,6 +38,8 @@ Never pass to subagents:
 - Phase 0 loading decisions
 - raw clarification Q&A
 
+Every implementer/judge dispatch in this phase names `model:` explicitly — `"sonnet"` for implementation and the mid-implementation judge (the eval-backed choice — see the 2026-04-24 Opus→Sonnet downgrade note later in this file), `"haiku"` only for mechanical collation. An omitted `model` inherits the session model, which is Opus-priced under an Opus orchestrator (SKILL.md → Model Assignments, explicit-model rule).
+
 ---
 
 ## Phase 5: Implementation
@@ -76,7 +78,7 @@ After the plan approval gate clears and BEFORE invoking the External API Contrac
 /goal $plan.steps all have status=complete; uv run pytest <touched-dirs> exits 0;
 uv run ruff check <touched-dirs> exits 0; static analysis (semgrep --severity ERROR,
 ast-grep scan) reports 0 ERROR-level findings; phantom-completion audit (per
-executing-plans § "Step 4.5") shows 0 MUST-FIX; no new pytest.skip/xfail/skipif
+references/plan-execution.md § "Phantom-Completion Audit") shows 0 MUST-FIX; no new pytest.skip/xfail/skipif
 markers added in $diff; no test files deleted in $diff without replacement;
 $diff.context_facts captured for any task that surfaced new domain knowledge;
 or stop after <workflow-profiles.goal_turn_budgets[<path>][phase-5]> turns
@@ -172,6 +174,54 @@ For each plan step:
    If gate fails → fix regression → re-verify → then proceed.
 ```
 
+### Mid-Plan Coherence Check (every 3-5 steps)
+
+After every N completed plan steps (default: every 3 steps; for plans with ≥8 steps,
+every 5 steps), run a compact structured self-check BEFORE starting the next step.
+This is a prompt-level gate — no new subagent, no world-state model, no A*.
+
+**Trigger condition:** step index mod N == 0 AND at least one more plan step remains.
+
+**Coherence check prompt (inject inline, ~150 tokens):**
+
+```
+PLAN COHERENCE CHECK — pause before step [N+1] of [total].
+
+Answer three questions based only on what has been built and discovered so far:
+
+1. COMPLETED: Which steps are done with passing tests?
+   (List step numbers only.)
+
+2. INVALIDATED: Has anything discovered or built since the plan was written
+   changed the preconditions or approach for any REMAINING step?
+   (If yes, name the step and what changed. If no, say "none".)
+
+3. VERDICT:
+   - "continue" — remaining steps are still valid as written; proceed.
+   - "surface" — a discovery invalidates at least one remaining step;
+     describe it and stop for user input before proceeding.
+```
+
+**Routing on verdict:**
+- `continue` — proceed immediately to the next plan step; log the check result in the
+  run manifest.
+- `surface` — DO NOT proceed to the next step. Surface the invalidating discovery
+  to the user with: (a) which step is affected, (b) what changed, (c) a proposed
+  amendment or a request for direction. Wait for user input before resuming.
+  Log the escalation in the run manifest.
+
+**Scope guard:** the coherence check is bounded to three questions and returns one of
+two verdicts. It does not re-derive the plan, re-run Phase 4 analysis, or spawn
+additional agents. A "surface" verdict is not a restart — it is a targeted flag.
+Local fixes (a test fails on a type error) stay local and do not trigger "surface."
+Only plan-invalidating discoveries (the architecture doesn't fit, a discovered
+constraint blocks a remaining step) warrant "surface."
+
+**Skipped when:** plan has ≤2 remaining steps after the check trigger, or the task
+is Lite-mode with <3 total steps (the inter-task gate already covers those).
+
+---
+
 ### Long Loops and Fresh Context
 
 If the plan has 5+ steps or context pressure is noticeable, load
@@ -199,18 +249,18 @@ For UI-affecting tasks, carry `$design_context` into implementation dispatches.
 Implementers must preserve centralized design-system patterns and satisfy the
 task design brief's required states before polishing visuals.
 
-- **Variant B (forced selection — DEFAULT):** Prepend the following block to the subagent prompt. The `Available skills` list below is the **default CourierFlow menu** — replace it with your project's menu (see `../references/project-skill-menu.md` for authoring rules).
+- **Variant B (forced selection — DEFAULT):** Prepend the following block to the subagent prompt, filling `Available skills` with **your project's menu** (see `../references/project-skill-menu.md` for authoring rules; the original CourierFlow example menu was retired 2026-07-17 — see git history).
 
   ```
   Before any tool calls, output exactly one line:
   SELECTED_SKILL: <name|none>
 
   Available skills (pick one):
-  - courierflow-ui — Frontend code: Jinja templates, CSS, Vue workflow builder pages, dashboards, calendar/sidebar layouts; preserve design-system alignment, task-specific design brief, complete UI states, and centralized patterns over one-off styles
-  - courierflow-api — Backend route and service code: FastAPI routes, service layer, business logic, request handlers
-  - courierflow-data — Database layer: SQLAlchemy ORM models, Alembic migrations, schema design, eager-loading, Household/HouseholdMember domain
-  - courierflow-integrations — External services: Google Calendar, Twilio SMS, OpenAI, DocuSeal, Gmail, onboarding wizard
-  - courierflow-security — Auth, registration, login, secrets, permissions, session handling, landlord/tenant access
+  - <project-ui skill> — one-line domain description
+  - <project-api skill> — one-line domain description
+  - <project-data skill> — one-line domain description
+  - <project-integrations skill> — one-line domain description
+  - <project-security skill> — one-line domain description
 
   Pick "none" only if the task is fully solvable with built-in tools.
   After your SELECTED_SKILL line, the orchestrator will inject that skill's
@@ -223,10 +273,9 @@ task design brief's required states before polishing visuals.
 
 Variant B's curated 5-skill menu is hand-selected to be domain-coherent. Per the [scale experiment](../docs/plans/2026-04-29-skill-selection-at-scale.md), retrieving from a broader corpus (BM25 / rerank) under-performed this curated menu. Do not replace the menu with retrieval without re-running the experiment.
 
-Keep `courierflow-troubleshooter`, `courierflow-skill-sync`, and
-`courierflow-skill-reviewer` out of the implementation forced-selection menu.
-Use them in Phase 0 or maintenance/diagnosis tasks; Phase 5 implementers should
-select one code-surface skill above.
+Keep maintenance/diagnosis skills out of the implementation forced-selection
+menu; Phase 5 implementers should select one code-surface skill from the
+project menu.
 
 ### Parallel Subagent Dispatch (For Independent Steps)
 
@@ -241,7 +290,25 @@ Follow `claude-flow/references/subagent-driven-development.md`:
 
 > **Explicit parallel fan-out (Opus 4.7):** When dispatching N independent reviewers / researchers / implementers across M items, emit a single message with N tool-use blocks. Do **not** issue them sequentially — 4.7's default bias is under-parallelization.
 
-<!-- Task taxonomy (types + dependency types) defined in writing-plans/SKILL.md. Keep in sync. -->
+#### Optional Container Use backend
+
+For independent implementation agents that need stronger filesystem isolation,
+Phase 5 may use Container Use. Read
+`../references/container-use-execution.md` before enabling it. The backend is
+opt-in and prerequisite-gated: it requires a reachable Docker engine and a
+committed project base image suitable for the test command. Prefer a versioned
+image such as `python:3.12-slim` for Python projects; the default Ubuntu image
+may not contain the runtime.
+
+Each agent receives its own Container Use environment and must return the
+environment ID, exact test output, changed files, warnings, and handback state.
+The executor independently checks `container-use log <env>` and
+`container-use diff <env>` before accepting the result, then deletes disposable
+environments and verifies the list is empty. A code diff without a recorded
+passing test or a complete handback is a backend failure, not a successful
+implementation.
+
+<!-- Task taxonomy (types + dependency types) defined in ../references/plan-execution.md § Task Taxonomy. Keep in sync. -->
 **Dependency-aware dispatch:**
 - `data` or `build` dependencies → strictly sequential (predecessor must complete first)
 - `knowledge` dependencies → parallelizable (dispatch concurrently, record assumptions in each subagent's context)
@@ -275,7 +342,7 @@ MEDIUM/LOW findings defer to Phase 6 review. Agents that ran in Phase 5 are **sk
 
 ### Phantom-Completion Audit (HARD GATE before Phase 5.5)
 
-After the final task in the plan is marked complete and tests+lint pass, run the phantom-completion audit from `executing-plans/SKILL.md` § "Step 4.5: Phantom-Completion Audit" before transitioning to Phase 5.5.
+After the final task in the plan is marked complete and tests+lint pass, run the phantom-completion audit from `../references/plan-execution.md` § "Phantom-Completion Audit" before transitioning to Phase 5.5.
 
 For each `[X]` task in the plan, verify the promised artifacts (files, symbols, migration revisions) actually exist on disk and the diff against `origin/main` is non-empty. Downgrade unverified `[X]` to `[~]` and either complete the work or amend the plan with justification — never silently ship a hollow checkmark.
 
@@ -322,7 +389,7 @@ Source: [Learn Harness Engineering, lecture 10](https://walkinglabs.github.io/le
 
 ## Multi-surface features — phased commits
 
-For features spanning multiple surfaces (backend + client + infra, >500 LoC), Phase 5 MAY land as N logical phase commits on one branch rather than a single commit. Each phase must leave full test suites green. See `executing-plans` § "Multi-Surface Features: Phased Commits with Green Between" for the DAG-documentation convention, labeling (A–F), and skip criteria.
+For features spanning multiple surfaces (backend + client + infra, >500 LoC), Phase 5 MAY land as N logical phase commits on one branch rather than a single commit. Each phase must leave full test suites green. See `../references/plan-execution.md` § "Multi-Surface Features: Phased Commits with Green Between" for the DAG-documentation convention, labeling (A–F), and skip criteria.
 
 ---
 

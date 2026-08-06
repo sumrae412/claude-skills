@@ -1,6 +1,6 @@
 ---
 name: resume-tailor
-description: Tailor an existing resume to one or several job descriptions with visible confidence scoring, structured reframing, and positioning help. Triggers on "tailor my resume", "update my resume for this job", "resume to job", "match resume to JD", "resume multiplier", "three resume versions", "multiple job descriptions", "resume keywords", "ATS alignment", "position my experience", "reframe my resume", or pasting JDs alongside a resume.
+description: Tailor an existing resume to one or several job descriptions with visible confidence scoring, structured reframing, and positioning help. Triggers on "tailor my resume", "update my resume for this job", "resume to job", "match resume to JD", "resume multiplier", "three resume versions", "multiple job descriptions", "resume keywords", "ATS alignment", "position my experience", "reframe my resume", "collaborative polish", "two-model polish", "Claude and GPT loop", or pasting JDs alongside a resume.
 ---
 
 # Resume Tailor — JD-Driven Resume Tailoring + Positioning
@@ -23,9 +23,11 @@ A person's ability to get a job should be based on their actual experience, not 
 
 ## Before Starting
 
-Ask the user for:
+Use the user's canonical resume automatically when it exists. The default source is `~/Documents/resumes/Summer_Rae_Resume_Director.md`. Do not ask the user to identify their resume if that file is present; ask only if it is missing or the user requests a different source.
 
-1. **Resume source** — path to their canonical resume (markdown preferred; DOCX/PDF fine, converted in-memory) OR pasted text.
+Ask the user for any remaining missing inputs:
+
+1. **Resume source** — only when the default canonical file is missing or the user requests a different source. Markdown is preferred; DOCX/PDF are fine, converted in-memory, or accept pasted text.
 2. **Job description** — URL, file path, or pasted text. If it is a LinkedIn URL, prefer `tools/jd-prep/jd_prep.py` to capture `jd.md`. If it is another URL, fetch it with the host's available web tool. If fetch fails, ask the user to paste the JD text and keep the URL for `jd.md`.
 3. **Target outcome** — "drop-in replacement bullets", "full rewrite", or "just show me gaps". Default: tailored resume + keyword coverage report. Cover letters are opt-in only — see Phase 5 §4 and Principle 8. Do not offer one unless the user has explicitly asked.
 
@@ -69,6 +71,24 @@ Rules:
 
 ---
 
+## Collaborative Polish Mode — Claude ↔ GPT-5.6 Sol (opt-in)
+
+**Off by default.** Two top-tier models refine the work through a sequential, converge-to-consensus loop (not a debate): Claude reads the JD and writes the first version, hands to GPT-5.6 Sol, and they alternate polishing for up to 4 rounds until consensus — ending on Claude. Both models run through OpenRouter (`anthropic/claude-opus-4.8` + `openai/gpt-5.6-sol`).
+
+**Turn it on only when** the user explicitly asks (e.g. "run the two-model polish", "collaborative polish", "Claude and GPT loop", "polish this with GPT and Claude") or opts in for a single high-stakes role. It costs two flagship models per session — never default it on, and in Multi-JD Mode run it only on the one role the user tailors fully.
+
+**It runs at two points** ("multiple points"): Phase 1 (JD analysis) and Phase 2/4 (draft polish). Run Phase 1 first; its consensus profile informs the Phase 2 draft.
+
+**Headline micro-polish is a standing step (Summer, 2026-07-17) — exception to opt-in.** Once the user picks a headline in Phase 4, ALWAYS run the loop on the headline+summary block alone (`--stage draft-polish`, `--rounds 2`, `--max-cost-usd 2` — a cents-scale artifact, run in the background) and surface the consensus text plus any guard warnings at the Phase 5 header/summary checkpoint for the user's pick. The standing grant covers ONLY this micro-artifact; full-draft and cover-letter loops remain opt-in per the paragraph above.
+
+**The models are bound by this skill's principles.** Both must follow all the resume and cover-letter rules the in-session Claude follows — the loop injects the governing docs verbatim into every turn (`--principles-file`): `shared/communication-principles.md`, `references/writing-quality.md`, `references/resume-bullet-bans.md` for drafts, and `references/cover-letter-review.md` for cover letters (plain-language voice, banned bullets, "I help" framing, cover-letter opener rules, no attacking other companies, and the §9 sameness generic-swap test). Collaborative Polish **augments, never bypasses** the phases — still run the human checkpoints and the §9 + bullet-ban + `resume-qa` passes on the consensus output.
+
+**Truth preservation is a hard constraint** — the resume analog of the SMS char-cap that collapsed the cross-provider polish pipeline (henry `docs/plans/2026-07-15-openrouter-streamlining-plan.md`). Both models get the canonical fact-inventory as immutable context and cannot introduce any employer, title, date, number, or skill not in it; three post-loop mechanical guards flag fabrication candidates, silently dropped roles/sections, and surviving banned bullet patterns. **Surface every guard warning to the user before finalizing.**
+
+Protocol, exact CLI, and failure handling live in `references/collaborative-polish.md` — load it when the mode is invoked. Requires `OPENROUTER_API_KEY` in the environment (lives in `~/.claude/.local.env`; verified populated 2026-07-17).
+
+---
+
 ## Phase 1 — JD Analysis
 
 Produce a **structured job profile** before touching the resume. Output format, action codes, and extraction heuristics live in `references/jd-analysis.md` — load it now. Also load `references/role-archetypes.md` so the JD is classified into the right resume-story type before weights and bullet rewrites begin.
@@ -90,11 +110,15 @@ Output to user (checkpoint) — **in this order**:
 
 Ask: *"Does this profile match how you read the role? Anything I over- or under-weighted?"* Wait for confirmation before Phase 2.
 
+**If Collaborative Polish Mode is on:** generate this job profile via the `jd-analysis` loop (`references/collaborative-polish.md`) instead of a single pass, then present the consensus profile at this checkpoint.
+
 ---
 
 ## Phase 2 — Matching Pass
 
 For each bullet and role in the resume, assign a confidence band vs. the JD profile and propose a reframe if appropriate. Rubric + four reframing strategies are in `references/matching-rubric.md` — load it. Also load `shared/communication-principles.md` — reframed bullets must lead with the conclusion, stay in plain language, and serve the reader (hiring manager / ATS), not the author. If the target role is Head/VP/executive level, also load `references/executive-bullets.md` so bullet rewrites surface decisions, tradeoffs, governance, and leverage rather than just implementation.
+
+**Promotion-ready bullet pass is standing (Summer, 2026-07-20).** Every bullet goes through `references/matching-rubric.md` §"Promotion-Ready Bullet Pass" before the Phase 2 checkpoint: strong action verbs, measurable business outcomes, and coverage across strategic leadership / cross-functional influence / process improvement / financial impact / organizational results, with weak language removed. The pass never invents numbers.
 
 **Anti-fabrication mechanic — copy master, then diff.** The Phase 2 working baseline is a *literal copy* of the canonical resume, not a draft regenerated from memory of the user's experience. Reframes are diffs against that copy: each change names the strategy used (Keyword Alignment / Emphasis Shift / Abstraction Level / Scale Emphasis) and traces back to a specific bullet in the copied source. If a proposed reframe has no antecedent in the copied master, it is fabrication, not reframing — route to Phase 3 discovery instead.
 
@@ -139,6 +163,8 @@ Output to user (checkpoint):
 
 Ask: *"Which headline angle? Does the narrative match how you want to be perceived?"*
 
+**If Collaborative Polish Mode is on:** after the matching + positioning passes produce a draft, run the `draft-polish` loop (`references/collaborative-polish.md`, `--stage draft-polish --artifact <draft>`) to converge the tailored bullets/summary, then bring the consensus draft — plus any truth-guard warnings — into Phase 5.
+
 ---
 
 ## Phase 5 — Output
@@ -147,7 +173,7 @@ Final deliverables. Format details, ATS tips, and optional DOCX export are in `r
 
 **Template-compliant markdown is mandatory.** Resume markdown must use pandoc `custom-style` divs for the name (`::: {custom-style="Title"} ... :::`) and headline (`::: {custom-style="Subtitle"} ... :::`), ALL-CAPS H1 section headers (`# SKILLS`, `# EXPERIENCE`, `# EDUCATION`), plain-text H2 role headings (`## Company, Location - Title`, no italics), and `MONTH YYYY - PRESENT` date lines. Do NOT write the name as `# Name` or add a `## Summary` heading — both break the template's style mapping. Cover letters use the top-block format in `references/templates/README.md` (bold name, city/phone/email, ordinal date, recipient block, `Dear ...`, body, `Regards,`, bold signature name).
 
-**Output path:** all files go to `~/Documents/resumes/<Company>/` (one folder per target company). See `references/output-formats.md` §0.
+**Output path:** all files go to `~/Documents/resumes/<Company>/` (one folder per target company). Every tailored resume must be saved in both formats in that same folder: `Firstname_Lastname_Resume_<Company>.md` and `Firstname_Lastname_Resume_<Company>.pdf`. The PDF is required, not an optional conversion. See `references/output-formats.md` §0.
 
 **Required step before any file write:** walk the user through the assembled resume **section by section** (header/summary, each role, tail sections) for approval. See `references/output-formats.md` §3.5. Cover letters get the same treatment paragraph-by-paragraph, and must also clear both review tiers:
 
@@ -160,13 +186,13 @@ Both tiers live in `references/cover-letter-review.md` §6. Surface the §6.1 ev
 
 **Voice corpus + canonical baseline + structural template — when drafting a cover letter:** load `references/voice-corpus.md`, `references/cover-letter-review.md`, and `references/templates/cover-letter-structural-template.md` before drafting. The **canonical structural baseline** is `~/Documents/resumes/Summer_Rae_CoverLetter.md` — always load it as the voice example. The **annotated structural template** (`references/templates/cover-letter-structural-template.md`) captures the 4-paragraph shape with per-paragraph rules and variants — always load it as the skeleton. The voice corpus at `~/Documents/resumes/_voice-corpus/{originals,successful}/` supplements with proven-by-interview letters when available. NEVER pull voice from per-company folders even if endorsed in-session — that compounds AI cadence across drafts. If the corpus is empty, baseline + structural template alone are sufficient.
 
-**Drafting model — Sonnet (latest):** cover letters must be drafted with the latest Claude Sonnet. If the orchestrator is Opus or another model, dispatch the draft to a subagent via the Agent tool with `model: "sonnet"` and pass: (a) the JD, (b) `~/Documents/resumes/Summer_Rae_Resume.md` as the resume, (c) `~/Documents/resumes/Summer_Rae_CoverLetter.md` as the voice example, (d) `references/templates/cover-letter-structural-template.md` as the paragraph-shape skeleton, and (e) the philosophy + tone + hard rules from `references/cover-letter-review.md` §A. The cover-letter-review contract applies regardless of which model drafts.
+**Drafting model — Sonnet (latest):** cover letters must be drafted with the latest Claude Sonnet. If the orchestrator is Opus or another model, dispatch the draft to a subagent via the Agent tool with `model: "sonnet"` and pass: (a) the JD, (b) `~/Documents/resumes/Summer_Rae_Resume_Director.md` as the canonical resume, (c) `~/Documents/resumes/Summer_Rae_CoverLetter.md` as the voice example, (d) `references/templates/cover-letter-structural-template.md` as the paragraph-shape skeleton, and (e) the philosophy + tone + hard rules from `references/cover-letter-review.md` §A. The cover-letter-review contract applies regardless of which model drafts.
 
 **Post-interview promotion:** when the user reports an interview/screen/offer signal for an application that has a letter on disk ("I got an interview at X", "X invited me to a phone screen", "X moved me forward", "X made me an offer"), offer to promote `~/Documents/resumes/<X>/cover-letter.md` to `~/Documents/resumes/_voice-corpus/successful/<YYYY-MM-DD>-<X>-cover-letter.md`. Promotion is a **copy** (not symlink), frozen at success-time. Do not promote on application-submitted, auto-acks, or in-session endorsement. See `references/voice-corpus.md` §"Promotion Trigger".
 
 Defaults:
 
-1. **Tailored resume** (markdown, ready to copy-paste or convert)
+1. **Tailored resume** in both Markdown and PDF, saved side by side in `~/Documents/resumes/<Company>/`
 2. **Keyword coverage report** — must-haves + nice-to-haves hit/missed
 3. **`jd.md`** — source URL + captured date + full JD text. Required in every company folder so the tailored outputs remain legible months later. See `references/output-formats.md` §0.1.
 4. **Cover letter draft — opt-in only.** Do NOT offer, pre-announce, or auto-draft a cover letter at the end of Phase 5. Produce resume + keyword coverage + jd.md only. Draft a cover letter exclusively when the user explicitly requests one ("draft a cover letter", "write me a letter for this", etc.). The default closing prompt does NOT mention cover letters — its absence is what prevents an unwanted draft from being produced unprompted.
@@ -174,7 +200,7 @@ Defaults:
 
 No change log. What was reframed and why is a conversation artifact, not a deliverable — if the skill itself should behave differently next time, that's a session-learnings update to the skill, not a file for the user.
 
-Offer: *"Want me to convert to DOCX or iterate on any section?"*
+Before closing, verify that both the `.md` and `.pdf` resume files exist in the company folder. If PDF generation or visual verification is unavailable, say so explicitly and mark the PDF as blocked or unverified; never silently ship Markdown alone. Offer DOCX only if requested.
 
 ---
 
@@ -223,9 +249,9 @@ When the user asks for targeted refinement after the initial review, use these n
 2. **Visible scoring.** Every recommendation shows its confidence band and strategy. No black-box rewrites.
 3. **Collaborative, not autopilot.** Every phase ends with a checkpoint. The user edits, vetoes, and corrects before the next phase runs.
 4. **Solo-user scope.** One person and one canonical resume. Default to one JD at a time. Multi-JD Mode is allowed only for explicit 2-5 JD resume-multiplier requests and produces comparative drafts, not final file-writing or DOCX export.
-5. **Minimum viable dependencies.** Pure markdown by default. Optional DOCX via `pandoc` with the template reference docs in `references/templates/`. If `pandoc` is unavailable, stop at reviewed markdown instead of inventing another render path. No bun/node/React required.
+5. **Minimum viable dependencies.** Markdown is the source of truth, and PDF is always required. Use the PDF skill's verified rendering path and keep the `.md` source beside the `.pdf`. DOCX is optional and user-requested. If PDF generation or verification is unavailable, surface that as a blocked or unverified deliverable rather than silently omitting it. No bun/node/React required.
 6. **Gap handling is disclosure, not manufacturing.** Visible gaps go to cover letters or discovery prompts — never filled with invented content.
-7. **Communication principles apply.** Resumes are author-to-audience writing. Audience-centered focus, lead with the strongest evidence, simple plain-language bullets, no ego residue. Load `shared/communication-principles.md` before Phase 2 matching and Phase 4 positioning — the bullet-level and headline-level decisions are where these principles bite hardest. **Run the §9 sameness-detector pass before shipping any resume or cover-letter draft** — tailored resumes are a prime sameness offender (generic verbs, interchangeable bullets, cover-letter openers swappable across candidates). Apply the generic-swap test bullet-by-bullet and paragraph-by-paragraph: if swapping the company name leaves the line still working, it's too generic.
+7. **Communication principles apply.** Resumes are author-to-audience writing. Audience-centered focus, lead with the strongest evidence, simple plain-language bullets, no ego residue. Load `shared/communication-principles.md` before Phase 2 matching and Phase 4 positioning — the bullet-level and headline-level decisions are where these principles bite hardest. **Run the §9 sameness-detector pass before shipping any resume or cover-letter draft** — tailored resumes are a prime sameness offender (generic verbs, interchangeable bullets, cover-letter openers swappable across candidates). Apply the generic-swap test bullet-by-bullet and paragraph-by-paragraph: if swapping the company name leaves the line still working, it's too generic. **§11 spoken-voice register exempted for bullets and headlines:** these are scannable artifacts, so parallel bullet structure, the rule of three, and grouped qualifiers are allowed — the §11 bans on parallel structure and the rule of three serve spoken narration and do not apply to resume/cover-letter bullets or headlines. Everything else in §11 (no throat-clearing openers, no landing sentences, no filler intensifiers, no performed enthusiasm, plain spoken verbs) still applies to resume prose and cover letters.
 8. **Cover letters are opt-in only.** The default Phase 5 deliverable set is resume + keyword coverage + jd.md. Cover letters are produced only on explicit user request — never offered proactively, never pre-announced, never drafted as a "while I'm at it" addition. The closing prompt deliberately omits cover-letter language so the user has to raise it.
 9. **Final prose must not sound templated.** Lists and tables are for analysis checkpoints only. Headlines, summaries, and cover letters must read like authored prose with a governing idea, specific evidence, and no buzzword stacking. Load `references/writing-quality.md` before writing them.
 10. **Voice templates come from the corpus, not from per-company folders.** When drafting a cover letter, voice cues come ONLY from `~/Documents/resumes/_voice-corpus/{originals,successful}/`. Never read prior letters from `~/Documents/resumes/<other-companies>/cover-letter.md` as voice templates — those letters either failed, are in flight, or were endorsed in-session without an interview signal, and pulling voice from them compounds AI cadence. See `references/voice-corpus.md`.

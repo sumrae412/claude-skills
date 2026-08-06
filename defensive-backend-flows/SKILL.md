@@ -74,6 +74,9 @@ Before finishing backend code, verify your code against the catalog. The Quick R
 | Telemetry Fail-Open | Noisy telemetry bug breaks the critical path it measures | Emit guarded with try/except + env-var opt-out (`REVIEW_LEDGER=0`) + import availability check? Reference: `scripts/plancraft_review.py` `_emit_invocation_record()`. |
 | API Key Shape Diagnosis | "Invalid key" without telling user which kind of invalid | Before asserting an API key is invalid, run `echo "${KEY:0:8}… len=${#KEY}"` + one targeted curl against the provider's cheapest endpoint (e.g. `/v1/models`). Shapes: Anthropic user `sk-ant-…` ~108c, Anthropic admin `sk-ant-admin01-…`, OpenAI project `sk-proj-…` ~164c, OpenAI user `sk-…` ~51c, NVIDIA `nvapi-…`. Catches wrong-provider-key-in-wrong-slot vs revoked vs typo. Hit 2026-05-20: `sk-proj-` (OpenAI) pasted into `ANTHROPIC_API_KEY` returned 401 — shape check made the diagnosis 30 seconds instead of debugging round-trip. |
 | Loader Fail-Loud on Unrecognized Keys | Silent no-op on miswritten overlay/fixture/config | Loader enumerates supported keys; throws named error listing both unrecognized keys found AND supported keys; stub type-annotated for compile-time shape check (e.g. `const overlay: FixtureOverlay = {...}`)? Validated in [courierflow_beta PR #16](https://github.com/sumrae412/courierflow_beta/pull/16). |
+| HITL Confirmation Trust | Model-summarized action looks benign but the tool call mutates state | Confirmation UI rendered from the tool call's **typed arguments**, NOT from a model-generated natural-language summary? E.g. UI says *"Send SMS to +1-555-… body: «Your rent is due Friday.»"* (reconstructed from `tool_input`), NOT *"Confirm: {model_summary}"*. The HITL prompt itself is treated as untrusted — a malicious model can summarize a state-mutating call as a benign read. See [`references/llm-defense-in-depth.md`](references/llm-defense-in-depth.md) Layer 4. |
+| Empty-on-Block Shape Collision | Unit tests green; production fetcher returns `[]` forever | A bot-block detector that returns `[]` collides with the legitimate "empty input → []" contract — unit tests can't distinguish. Either return a `status: "blocked"` flag OR gate with a `RUN_LIVE_TESTS=1` smoke against real data before claiming the fetcher works. Validated 2026-06-02 on [claude-skills PR #149](https://github.com/sumrae412/claude-skills/pull/149) `off-market` Redfin fetcher — over-broad `_BLOCK_SIGNALS` regex matched Redfin's adblock JS (`window.adblocked = true`); unit tests passed; live data silently returned empty. |
+| Calendar-Year Day-Math Off-By-One | "≥20-year owner" rubric triggers on 19y360d sales | `(today - date).days // 365` rounds 19y360d up to 20 at the rubric threshold (7300 / 365 = 20). Use calendar math: `(today.year - date.year) - (1 if (today.month, today.day) < (date.month, date.day) else 0)`. Validated 2026-06-02 on [claude-skills PR #149](https://github.com/sumrae412/claude-skills/pull/149) `off-market` tenure signal. |
 
 ## Red Flags — STOP and Fix
 
@@ -123,6 +126,20 @@ Before finishing backend code, verify your code against the catalog. The Quick R
 - F-string interpolation of AI/user content into XML/TwiML/RSS without `xml.sax.saxutils.escape`
 - Interpolating user-supplied content (SMS body, email body, tenant input) into an LLM prompt using triple-quotes, backticks, or any open-coded quote scoping instead of a named XML delimiter + data-not-instructions preamble
 - A loader that silently no-ops when its input has unrecognized keys (makes every miswritten fixture/overlay/config invisible — throw instead, listing both found and expected keys)
+- A human-in-the-loop confirmation UI that renders the model's natural-language summary of an action (`"Confirm: {model_summary}"`) instead of reconstructing the confirmation text from the underlying tool call's typed arguments — a malicious model can phrase a state-mutating call as a benign read
+
+## Boundary Check vs. AI-Padded Check
+
+Not every defensive check earns its keep. Before adding (or keeping) a guard, classify it:
+
+- **Boundary defensive check — KEEP.** Guards genuinely-reachable external input or mutable state: request payloads, DB rows written by other code paths, third-party API responses, filesystem/network results. The invariant is *not* already guaranteed by the type system or ownership, so the runtime check is real defense.
+- **AI-padded defensive check — CONVERT or DELETE.** Restates an invariant the type system, a `@dataclass`, an enum, or single-ownership already guarantees (e.g. re-checking a non-`Optional` field for `None`, re-validating a value the constructor already validated). It reads as diligence but adds dead branches that can never fire. Either encode the programmer's intent as an `assert` (documents the invariant, fails loud in dev, compiles out under `-O`) or delete it.
+
+The test: *"Can this condition actually be false given the types and who writes this state?"* If no, it's padding.
+
+Ties to the thermo-nuclear `/simplify` rule 1 — "delete complexity, don't move it." An AI-padded guard is complexity with no reachable failure mode; converting it to an assertion moves the intent to where it belongs instead of leaving a dead runtime branch.
+
+Source: Laurence Tratt, "Local Reasoning for Global Properties" (from the 2026-07-14 /articles triage).
 
 ## Pre-flight Construction Smoke (Third-Party SDK Migration)
 
@@ -140,6 +157,16 @@ Saves a wasted commit cycle if the SDK shape doesn't match your plan.
 pre-flighting.** Local venv drift is silent — a stale venv (older
 pinned version, missing pinned packages) produces false-positive smokes
 that let no-op code ship.
+
+## LLM Defense in Depth (5-Layer Reference)
+
+When the backend exposes an LLM behind a tool surface (CourierFlow Charlie, any agent that calls services, any endpoint that renders model-generated content), the Quick Reference rows above cover specific anti-patterns but not the architectural frame. Load [`references/llm-defense-in-depth.md`](references/llm-defense-in-depth.md) for the 5-layer model (provenance tagging → least privilege → output validation → human-in-the-loop → application monitoring) when:
+
+- Designing a new agent surface — walk all 5 layers explicitly in the design doc.
+- Reviewing an existing LLM endpoint — pick one layer per pass, easier than auditing all 5 at once.
+- Triaging an injection incident — the layer that failed tells you the structural fix; don't patch the prompt.
+
+Source: ToxSec, "LLM Defense in Depth: Assume Breach and Contain the Blast" (2026-05). Pairs with the `LLM Prompt Injection (User Content)`, `Escape XML/TwiML Substitutions`, `Context-Aware Sanitizers`, and `Telemetry Fail-Open` rows above.
 
 ## When NOT to Use
 

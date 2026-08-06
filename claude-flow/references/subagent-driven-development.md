@@ -12,7 +12,7 @@ digraph when_to_use {
     "Tasks mostly independent?" [shape=diamond];
     "Stay in this session?" [shape=diamond];
     "subagent-driven-development" [shape=box];
-    "executing-plans" [shape=box];
+    "parallel-session execution (plan-execution.md)" [shape=box];
     "Manual execution or brainstorm first" [shape=box];
 
     "Have implementation plan?" -> "Tasks mostly independent?" [label="yes"];
@@ -20,7 +20,7 @@ digraph when_to_use {
     "Tasks mostly independent?" -> "Stay in this session?" [label="yes"];
     "Tasks mostly independent?" -> "Manual execution or brainstorm first" [label="no - tightly coupled"];
     "Stay in this session?" -> "subagent-driven-development" [label="yes"];
-    "Stay in this session?" -> "executing-plans" [label="no - parallel session"];
+    "Stay in this session?" -> "parallel-session execution (plan-execution.md)" [label="no - parallel session"];
 }
 ```
 
@@ -89,6 +89,32 @@ Siblings in this directory:
 - `./implementer-prompt.md` — Dispatch implementer subagent
 - `./spec-reviewer-prompt.md` — Dispatch spec compliance reviewer subagent
 - `./code-quality-reviewer-prompt.md` — Dispatch code quality reviewer subagent
+
+## Subagent Memory Persistence (Claude Code)
+
+Subagents in Claude Code do not inherit the main session's auto-memory. Each subagent starts fresh and forgets everything between runs. To give a subagent persistent memory across sessions, use the `memory` field in its agent configuration:
+
+```json
+{
+  "agentType": "explore",
+  "description": "...",
+  "memory": "project"   // user | project | local
+}
+```
+
+**Memory scopes:**
+
+| Scope | Storage | Best for |
+|-------|---------|----------|
+| `user` | Global, across all projects | Learnings applicable to all repos (coding style preferences, common mistakes) |
+| `project` | Repo-local, committable to git | Team-wide agent conventions, repo-specific gotchas |
+| `local` | Repo-local, gitignored | Private notes, per-developer preferences |
+
+The `memory` field assigns the subagent its own directory that loads before each run and writes back after. You cannot combine scopes in one field, but you can use `project` scope and add manual instructions for the subagent to read user preferences from a specific path.
+
+**Source:** [Lydia Hallie on X](https://x.com/lydiahallie/status/2079255826355892464) (July 2026).
+
+Complements the memory-injection pattern below — memory-injection supplies per-project gotchas at dispatch time; the `memory` field provides persistent cross-session context that survives across dispatches without re-injection.
 
 ## Pre-Dispatch: Memory Injection
 
@@ -435,7 +461,7 @@ Without inter-task verification, a subtle regression in Task 2 compounds silentl
 
 **Required workflow skills:**
 - **superpowers:using-git-worktrees** - REQUIRED: Set up isolated workspace before starting
-- **superpowers:writing-plans** - Creates the plan this skill executes
+- **`plan-execution.md` (this directory)** - Plan format the executed plan follows
 - **superpowers:requesting-code-review** - Code review template for reviewer subagents
 - **`/cleanup`** - Complete development after all tasks (branch teardown + session-learnings + repo sync)
 
@@ -443,4 +469,4 @@ Without inter-task verification, a subtle regression in Task 2 compounds silentl
 - `test-driven-development.md` (in this directory) — Subagents follow TDD for each task
 
 **Alternative workflow:**
-- **superpowers:executing-plans** - Use for parallel session instead of same-session execution
+- **Parallel-session plan execution** per `plan-execution.md` (this directory) - Use a fresh session instead of same-session execution

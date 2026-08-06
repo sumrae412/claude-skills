@@ -94,6 +94,40 @@ The grader does not replace offline evals. It complements them:
 offline evals tell you whether the grader itself is right; the
 grader tells you whether each individual production task is done.
 
+## Three-outcome parser contracts
+
+A binary grader contract (`PASS` / `FAIL: <reason>`) looks complete
+but hides a third real outcome: **format violation** — the model
+returned a refusal, hedged prose, an unrecognized token, or a string
+that doesn't match either branch of the contract. Silently coercing
+those to `FAIL` contaminates the pass-rate signal and hides judge
+regressions.
+
+Define three outcomes in the parser, not two:
+
+| Output shape                  | Action                                              |
+|-------------------------------|-----------------------------------------------------|
+| `PASS`                        | Record pass.                                        |
+| `FAIL: <reason>`              | Record fail, capture reason.                        |
+| Anything else                 | **Raise** (or surface in the result artifact as a distinct `format_violation` status). Never coerce to `FAIL`. |
+
+Why it matters:
+
+- Format-violations track **judge health**, not task health. A spike
+  in format-violations means the judge is regressing (model
+  deprecation, prompt drift, upstream API change) and needs
+  attention — that signal disappears if violations are mapped to
+  `FAIL`.
+- Composes with the snapshot-pin rule (`references/judge-calibration.md`)
+  — pin the judge model AND fail-loud on unexpected output shape.
+- For production graders, route format-violations to the retry /
+  escalation path defined in the design checklist above, not to the
+  `fail` path.
+
+Pattern from
+[Shredmetal/llmtest](https://github.com/Shredmetal/llmtest/blob/main/docs/reliability_testing/behavioral_testing_reliability.md)
+(strict PASS / FAIL:<reason> / RuntimeError contract).
+
 ## Alternative patterns
 
 A separate LLM-grader is one approach. Equivalent or better choices

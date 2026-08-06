@@ -1,0 +1,14 @@
+# Allegheny County (Pittsburgh) — East End example.
+# Target: 3+ bed houses in walkable streetcar neighborhoods, under $400k.
+
+beds_min: 3
+baths_min: 1.5
+lot_sqft_min: 3000
+year_built_max: 1960
+price_max: 400000
+
+zips:
+  - "15217"  # Squirrel Hill North + South
+  - "15232"  # Shadyside
+  - "15206"  # East Liberty / Highland Park
+  - "15208"  # Point Breeze

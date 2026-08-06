@@ -23,12 +23,7 @@ The two skills are intentionally separate (different stacks, different patterns,
 
 Skills for non-work surface area — teaching/learning, life logistics. Not invoked during feature development; useful standalone or in personal-context sessions.
 
-| Skill | Surface | When to load |
-|---|---|---|
-| [`learning-coach/SKILL.md`](learning-coach/SKILL.md) | Teaching, mental models, Feynman tutoring, Socratic dialogue, 30-day curricula | "Help me understand X", "explain this simply", "plan a learning curriculum for Y" |
-| [`life-planner/SKILL.md`](life-planner/SKILL.md) | Meal plans, plain-English legal documents, personal finance summaries, travel planning | "Plan my week of meals", "what does this contract say", "summarize this 401k", "plan a trip to X" |
-
-Both also reindexed in `~/.claude/CLAUDE.md` Domain Skills table for cross-project discovery.
+_Empty since the 2026-07-17 skills audit (`learning-coach`, `life-planner` retired — recover from git history if needed)._
 
 ---
 
@@ -40,6 +35,9 @@ Skills that shape how Summer writes and sends — voice on the way in, state and
 |---|---|---|
 | [`communication-safeguards/SKILL.md`](communication-safeguards/SKILL.md) | Pre-composition state/intent layer — activation 1–10, HALT, Two-Sentence Response, 2-Minute Reset, ToneGuard handoff | "Draft a Slack message", "how should I respond to", "I'm fuming about", "I can't stop replaying", "help me reply to" — any communication request that may be carrying conflict heat |
 | [`writing-voice/SKILL.md`](writing-voice/SKILL.md) | Summer's personal voice profile — sensory + deadpan dark humor for creative work, minimal + direct + lead-with-the-ask for business writing | "Write this for me", "draft an email", "help me write", "write as me", "in my voice" — any drafting task she'll put her name on |
+| [`sme-voice/SKILL.md`](sme-voice/SKILL.md) | Inverse of `writing-voice` — capture and apply another person's writing voice (SME ghostwriting/editing); per-subject profiles saved to `~/claude_code/agent-vault/sme-voices/<slug>.md` for cross-machine sync | "Build a voice profile for [name]", "capture [name]'s voice", "edit this in [name]'s voice", "ghostwrite as [name]", `/sme-voice ...` |
+
+`writing-voice` and `sme-voice` are an inverse pair — `writing-voice` writes as Summer, `sme-voice` writes as a captured SME. They share `shared/communication-principles.md`, but `sme-voice` inverts the precedence: the SME's register wins when in conflict with the shared principles.
 
 Sequencing: `communication-safeguards` Phase 1 (activation + HALT) → `writing-voice` for drafting → `communication-safeguards` Phase 4 (ToneGuard pre-send review). The shared communication principles at `shared/communication-principles.md` apply across both — see the "Writing skills load shared communication principles" section in `~/.claude/CLAUDE.md`.
 
