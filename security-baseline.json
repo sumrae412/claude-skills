@@ -3,7 +3,7 @@
     "description": "Reviewed security baseline for sumrae412/claude-skills. Each suppressed finding has been manually classified. Do NOT add new entries without a reason field and PR review. 'self-match-false-positive' = the scanner's own pattern strings / documented threat examples. 'documented-pattern-example' = skill documents an attack for educational purposes. 'tooling-fp' = scanner or test tooling legitimately uses the flagged construct. 'bounded-tempfile-op' = file operation on a bounded tempfile within known scope.",
     "seeded_at": "2026-08-06",
     "seeded_by": "charlie/skill-security-gate",
-    "total_suppressed": 53
+    "total_suppressed": 54
   },
   "claude-flow": {
     "suppressed_findings": [
@@ -479,6 +479,15 @@
         "line": 717,
         "pattern": "# Check for pip/npm install in code",
         "reason": "self-match-false-positive: Python comment in scan_dependencies() describing what the following loop checks for. 'npm install' substring appears in '# Check for pip/npm install in code'. The DEPS-RUNTIME scan_dependencies() function lacks comment-skipping, so it matches its own source comment."
+      },
+      {
+        "key": "skill-security-auditor::PROMPT-EXFIL::skill-security-auditor/references/threat-model.md::341",
+        "severity": "CRITICAL",
+        "category": "PROMPT-EXFIL",
+        "file": "skill-security-auditor/references/threat-model.md",
+        "line": 341,
+        "pattern": "- Access credential files or sensitive env vars",
+        "reason": "self-match-false-positive: this line sits inside the threat model's '### Don't' list \u2014 it is the auditor telling skill authors NOT to access credentials. The scanner flags its own prohibition text as if it were an instruction to exfiltrate. Documentation of a threat, not an instance of one."
       }
     ]
   },
