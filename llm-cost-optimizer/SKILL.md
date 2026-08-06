@@ -76,6 +76,15 @@ Building new AI features. Design cost controls in from the start -- budget envel
 
 ## Mode 1: Cost Audit
 
+**Step 0 -- Attribute the Spend Source BEFORE Optimizing Anything**
+
+A "$X spent" report needs source attribution first: which API key, which org, which billing plan (subscription seats vs metered API are separate pools — a Claude Max/Pro session bills the plan, not the console). Then sweep all three call surfaces in order:
+1. **CI runs** — `gh run list` (workflow-triggered API calls)
+2. **Production traffic** — request/message counts from the app's own DB or logs
+3. **LOCAL runs** — invisible to both of the above. Find them via artifact mtimes: `find <results-dir> -newermt "<window>"`, then read run parameters (sample counts, n_runs) from the result files themselves.
+
+Why the order matters: 2026-07-02, hours went into optimizing CI workflows (~$30/day) while the actual driver was one unbounded local eval run (`n_runs_per_task=25`, no ceiling, 27 min, ~$200) that appeared in NO `gh run list` output — found only via result-file mtimes. A console chart's model split fits multiple architectures at once (agent tiering AND eval SUT/judge both produce "Sonnet + Haiku"); model-split evidence is necessary but never sufficient for attribution.
+
 **Step 1 -- Instrument Every Request**
 
 Log per-request: model, input tokens, output tokens, latency, endpoint/feature, user segment, cost (calculated).
@@ -223,7 +232,7 @@ All output follows the structured standard:
 | Compressing prompts to the point of ambiguity | Over-compressed prompts cause the model to hallucinate or produce low-quality output, requiring retries | Compress filler words and redundant context but preserve all task-critical instructions |
 | Gating routing-change promotion on cross-provider agreement | Two correctly-functioning providers can disagree 2x on the same input — they emphasize different signals and calibrate severity differently. Agreement measures similarity, not correctness. Empirical 2026-05-20: Anthropic Sonnet 49 findings (13 CRITICAL) vs NVIDIA kimi-k2.6 23 findings (4 CRITICAL) on same PR diff | Build a small hand-labeled gold set (~30-50 representative inputs). Measure baseline accuracy on current provider. Promote candidate provider only if its gold-set accuracy ≥ baseline − 5pp tolerance |
 | Synthetic-only A/B before committing to a routing change | Synthetic prompts miss the real call-site framing, prompt-cache shape, and downstream parsing — the actual savings/regression delta only appears on real traffic | If a pr-reviewer-style tool already runs the surface, do a 1-PR A/B in existing infra (~$0.10, <1min wall) as the first eval. Use it to size the calibration gap before designing the gold set |
-| Treating peer coding agents (OpenCode, Aider, Cline, Claude Code) as model providers | Coding agents *consume* model APIs — they don't expose one. They have no `complete(messages)` endpoint a router can call. Wrapping a peer agent inside another agent adds latency and constraints without adding capability | If the goal is free-tier model routing, add another model provider (Groq, Together, Cerebras, OpenRouter free models) next to NVIDIA in the router. If the goal is to offload human work, use the peer agent separately — workflow change, not code change |
+| Treating peer coding agents (OpenCode, Aider, Claude Code) as model providers — with one verified exception | Coding agents generally *consume* model APIs rather than exposing one; wrapping a peer agent adds latency without capability. **Exception (verified 2026-07-02): Cline DOES expose an OpenAI-compatible API** at `https://api.cline.bot/api/v1` (NOT `/v1/...` — that 404s). Gotchas: model id format is `modelType/model` (`zai/glm-5.2` works; `z-ai/glm-5.2` → HTTP 500 "empty response content"); responses arrive wrapped in an undocumented `{"data": {...}}` envelope; `/models` 404s (pin the model id); thinking models (GLM 5.2) emit visible reasoning that consumes `max_tokens` — downstream parsers/judges must strip it | If routing to free/cheap tiers, prefer documented providers (Groq, Together, OpenRouter) first; treat the Cline endpoint as a usable-but-undocumented proxy — pin the model, unwrap `data`, budget max_tokens for reasoning |
 
 ### Cost gates that meter only one call path are theater
 

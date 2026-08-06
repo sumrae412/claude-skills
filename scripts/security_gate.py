@@ -17,8 +17,22 @@ Options:
                       (use only during initial seeding, never on CI)
 
 Exit codes:
-    0 = All findings are in the baseline (gate passes — GREEN)
-    1 = New findings detected beyond the baseline (gate fails — RED)
+    0 = No new blocking findings (gate passes — GREEN). Warn-tier findings may
+        still be reported; they are printed but do not fail the build.
+    1 = New blocking findings detected beyond the baseline (gate fails — RED)
+
+Warn tier:
+    A detector class can be landed in report-only mode by listing its category
+    prefix under `_meta.warn_only_categories` in the baseline file. Matching
+    findings are printed under a WARN heading and excluded from the exit code.
+
+    This exists so a new detector can be measured before it can block a merge.
+    The alternative — landing a detector and immediately baselining everything
+    it finds — ships it pre-silenced, which is close to not shipping it.
+
+    Run with --strict to promote warn-tier findings back to blocking. That is
+    how you check whether a class is ready to gate, and it is what CI should
+    switch to once the false-positive rate is known.
 """
 
 from __future__ import annotations
@@ -119,6 +133,28 @@ def build_baseline_keys(baseline: dict) -> set[str]:
     return keys
 
 
+def warn_only_prefixes(baseline: dict) -> tuple[str, ...]:
+    """Category prefixes that report but do not block, from `_meta`.
+
+    Kept in the baseline rather than hardcoded here so the policy sits next to
+    the suppressions it interacts with, and so promoting a class to blocking is
+    a reviewable one-line data change rather than a code change.
+    """
+    meta = baseline.get("_meta", {})
+    prefixes = meta.get("warn_only_categories", [])
+    if not isinstance(prefixes, list):
+        print(
+            "ERROR: _meta.warn_only_categories must be a list of category prefixes",
+            file=sys.stderr,
+        )
+        sys.exit(1)
+    return tuple(str(p) for p in prefixes)
+
+
+def is_warn_only(category: str, prefixes: tuple[str, ...]) -> bool:
+    return any(category.startswith(p) for p in prefixes)
+
+
 def detect_new_findings(
     scan_results: dict[str, dict],
     baseline_keys: set[str],
@@ -195,6 +231,12 @@ def main() -> int:
         action="store_true",
         help="Write current findings as a new baseline (seeding only, never on CI)",
     )
+    parser.add_argument(
+        "--strict",
+        action="store_true",
+        help="Treat warn-tier findings as blocking (use to check whether a "
+             "warn-only category is ready to gate)",
+    )
     args = parser.parse_args()
 
     root = Path(args.root).resolve()
@@ -219,48 +261,81 @@ def main() -> int:
     baseline_keys = build_baseline_keys(baseline)
     new_findings = detect_new_findings(scan_results, baseline_keys)
 
-    # Summary counts
-    total_criical = sum(1 for f in new_findings if f["severity"] == "CRITICAL")
-    total_high = sum(1 for f in new_findings if f["severity"] == "HIGH")
+    # Split into blocking and warn-tier. --strict collapses the distinction,
+    # which is how you test whether a warn-only class is ready to gate.
+    prefixes = warn_only_prefixes(baseline)
+    if args.strict:
+        blocking, warnings = new_findings, []
+    else:
+        blocking = [f for f in new_findings if not is_warn_only(f["category"], prefixes)]
+        warnings = [f for f in new_findings if is_warn_only(f["category"], prefixes)]
+
+    total_critical = sum(1 for f in blocking if f["severity"] == "CRITICAL")
+    total_high = sum(1 for f in blocking if f["severity"] == "HIGH")
 
     if args.json_output:
         summary = {
             "skills_scanned": skill_count,
             "baseline_suppressions": len(baseline_keys),
-            "new_findings_count": len(new_findings),
-            "new_critical": total_criical,
+            "warn_only_categories": list(prefixes),
+            "strict": args.strict,
+            "new_findings_count": len(blocking),
+            "new_critical": total_critical,
             "new_high": total_high,
-            "new_findings": new_findings,
+            "new_findings": blocking,
+            "warn_findings_count": len(warnings),
+            "warn_findings": warnings,
         }
         print(json.dumps(summary, indent=2))
 
-    if new_findings:
-        print(
-            f"\n❌ SECURITY GATE: FAIL — {len(new_findings)} new finding(s) not in baseline "
-            f"({total_criical} CRITICAL, {total_high} HIGH)\n",
-            file=sys.stderr,
-        )
-        for f in new_findings:
+    def _render(findings: list[dict]) -> None:
+        for f in findings:
             print(
                 f"  [{f['severity']}] {f['category']}  {f['file']}:{f['line']}",
                 file=sys.stderr,
             )
             print(f"    Pattern: {f['pattern'][:100]}", file=sys.stderr)
             print(f"    Risk:    {f['risk']}", file=sys.stderr)
+
+    if warnings:
+        by_cat: dict[str, int] = {}
+        for f in warnings:
+            by_cat[f["category"]] = by_cat.get(f["category"], 0) + 1
+        spread = ", ".join(f"{c}={n}" for c, n in sorted(by_cat.items()))
+        print(
+            f"\n⚠️  SECURITY GATE: {len(warnings)} warn-tier finding(s) "
+            f"— reported, not blocking ({spread})\n",
+            file=sys.stderr,
+        )
+        _render(warnings)
+        print(
+            "\nThese categories are listed in _meta.warn_only_categories and do not "
+            "fail the build. Re-run with --strict to see whether they would.",
+            file=sys.stderr,
+        )
+
+    if blocking:
+        print(
+            f"\n❌ SECURITY GATE: FAIL — {len(blocking)} new blocking finding(s) not in baseline "
+            f"({total_critical} CRITICAL, {total_high} HIGH)\n",
+            file=sys.stderr,
+        )
+        _render(blocking)
         print(
             "\nTo suppress a finding, add it with a `reason` to security-baseline.json "
             "and open a PR for review.",
             file=sys.stderr,
         )
         return 1
-    else:
-        suppressed_count = len(baseline_keys)
-        print(
-            f"✅ SECURITY GATE: PASS — no new findings "
-            f"({suppressed_count} baseline-suppressed finding(s) unchanged)",
-            file=sys.stderr,
-        )
-        return 0
+
+    suppressed_count = len(baseline_keys)
+    warn_note = f", {len(warnings)} warn-tier reported" if warnings else ""
+    print(
+        f"✅ SECURITY GATE: PASS — no new blocking findings "
+        f"({suppressed_count} baseline-suppressed finding(s) unchanged{warn_note})",
+        file=sys.stderr,
+    )
+    return 0
 
 
 if __name__ == "__main__":
