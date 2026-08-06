@@ -1,6 +1,6 @@
 ---
 name: writing-workshop
-description: Edit, rewrite, ghostwrite, transform, or critique writing. Use for style mimicry from samples, brutal editing, audience rewrites, converting bullets into articles/posts/emails/reports, tightening drafts, LinkedIn bio/headline rewrites, or adapting one idea for different readers.
+description: Edit, rewrite, ghostwrite, transform, or critique writing. Use for style mimicry from samples, brutal editing, audience rewrites, converting bullets into articles/posts/emails/reports, tightening drafts, LinkedIn bio/headline rewrites, adapting one idea for different readers, or auditing a draft for AI tells without rewriting.
 ---
 
 # Writing Workshop
@@ -23,7 +23,7 @@ Before editing or rewriting, load [`../shared/communication-principles.md`](../s
 
 ## Mode Selection
 
-Use **Style Mimic** when the user provides writing samples and wants new copy in their voice.
+Use **Style Mimic** when the user provides writing samples and wants new copy in their voice — for a *reusable* voice profile of a specific person (build once, apply repeatedly), use [`sme-voice`](../sme-voice/SKILL.md) instead.
 
 Use **Brutal Editor** when the user wants a tough edit, teardown, ruthless cuts, or a publishable revision.
 
@@ -32,6 +32,8 @@ Use **Audience Rewrite** when the user wants one idea adapted for multiple audie
 Use **Bullets To Piece** when the user provides notes/fragments and wants a finished article, post, email, or report.
 
 Use **LinkedIn Positioning** when the user asks for LinkedIn headline/about/bio versions. For a full resume-to-JD rewrite, use `resume-tailor`.
+
+Use **Slop Detect** when the user asks whether a draft reads as AI, or wants it audited / scanned / flagged for AI tells *without* a rewrite.
 
 ## Style Mimic
 
@@ -82,7 +84,17 @@ Ban obvious sludge: `passionate`, `results-driven`, `innovative`, `leveraging`, 
 
 Recommend the best version for the stated audience and explain in one sentence.
 
+## Slop Detect
+
+Audit for AI tells without rewriting. Name each pattern found, quote the line, give the fix in a few words, then stop.
+
+1. Read the full draft.
+2. Flag each named pattern from [`ai-writing`](../ai-writing/SKILL.md) §3b (binary contrast, faux-insight setup, colon reveal, superficial `-ing` analysis, importance puffery, weasel attribution, fake-strong verb, synonym cycling, negative listing, dramatic fragmentation, fake-profound kicker, summary-recap ending, robotic rhythm) plus the word/opener/closer blocklist.
+3. Report per finding: `**Pattern** — "quoted line." → fix in a few words.`
+4. Do not rewrite, score, or claim an AI wrote it — named patterns are checkable evidence, a detector verdict is a guess. Offer to run Brutal Editor afterward.
+
 ## See also
 
 - [`sme-voice`](../sme-voice/SKILL.md) — when the style mimicry target is a specific SME with reusable voice profile (build once from samples, apply repeatedly).
 - [`writing-voice`](../writing-voice/SKILL.md) — when drafting in Summer's own voice rather than mimicking someone else's.
+- [`ai-writing`](../ai-writing/SKILL.md) — consolidated best-practices gate for AI-authored prose (sameness detector, AI-tell blocklist, generic-swap test).

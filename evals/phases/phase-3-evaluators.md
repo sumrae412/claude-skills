@@ -16,9 +16,18 @@ Always try these first.
 | Numeric tolerance          | Math, prices, dates                            |
 | Embedding cosine similarity| Paraphrase / semantic match against reference (pin embedding model + version — see Reproducibility below) |
 | Span-attribute assertion   | Tool calls, retry counts, latency, cost        |
+| External source-of-truth lookup | Any factual claim about YOUR data — product/price/availability, account state, record existence. Query the catalog/DB/API and compare the agent's claim against it |
 
 Code evaluators are cheap, deterministic, debuggable. If you can
 express the check in code, do.
+
+The source-of-truth row is the routinely under-used one: it is
+groundedness checking with no judge involved. Recipe — find the
+objective question, find the source of truth, write a function that
+compares the claim against it. See
+`references/evaluator-selection-and-rubrics.md` § 2 (and § 1 for
+choosing between code / pre-built judge / custom rubric before you write
+anything).
 
 **Embedding-based evaluators are only deterministic if you pin the
 embedding model and version.** A vendor update to the embedding API
@@ -27,7 +36,15 @@ part of the evaluator version (see Phase 4 § Reporting).
 
 ## LLM-as-judge evaluators
 
-For open-ended outputs. Three rules:
+For open-ended outputs. **Try a pre-built evaluator first** —
+correctness, groundedness, relevance, and refusal ship with most
+platforms and work unmodified for most agents. Write a custom rubric
+only when the pre-built set doesn't encode your application's specific
+criterion; a custom rubric you didn't need is one more artifact to
+calibrate, version, and maintain. Rubric anatomy for when you do need
+one: `references/evaluator-selection-and-rubrics.md` § 4.
+
+Three rules:
 
 ### 1. One criterion per judge call
 
@@ -160,6 +177,15 @@ any other prompt — it is one.
 Report calibration alongside every eval result so a reader can
 tell what the score is measuring against.
 
+**Split the labeled set before you tune anything.** Stratify the split
+so the failure class appears in both halves, hold the final test set
+back for one measurement at the end, and iterate against a separate
+validation set. Read precision and recall on the *failure* class, not
+overall accuracy. When a judge label and a human label disagree, the
+cause is judge error, a rubric gap, **or a bad reference label** — apply
+the rubric to the trace yourself before assuming the judge was wrong.
+Full procedure: `references/judge-calibration.md` § Meta-evaluation.
+
 ### Calibration regime: measurement vs guardrail
 
 A judge that **measures** quality and a judge that **blocks** a
@@ -272,9 +298,134 @@ versions). When a judge model you depend on is scheduled for sunset:
 Track judge deprecation announcements alongside model version
 upgrades — it's a recurring operational cost, not a one-time setup.
 
+## Component isolation & ablation
+
+Use these when a multi-step pipeline fails and you need to attribute
+the error to a specific stage.
+
+**Component isolation:** test a stage with controlled, clean inputs
+*independent of the upstream stage*. Feed the reasoning step a
+perfect retrieval result — does it still err? Feed the formatter a
+correct answer — does it present it well? If yes, the problem is
+upstream. If not, the problem is the stage itself. This is the
+orthogonalization principle from `references/eval-philosophy.md`
+applied at implementation time.
+
+**Ablation:** remove or disable a component entirely and measure the
+delta on your primary metric. If the delta is near zero, the component
+earns neither its latency nor its cost — consider removing it. Example:
+does the "rephrase for clarity" post-processing step actually improve
+quality, or does it just add 300ms and 500 tokens? An ablation answers
+that cheaply; user intuition does not.
+
+**Pairs well with orthogonal debugging** (change one variable at a
+time, measure independently). Distinct from the `isolate-trials` rule
+in `references/agent-type-graders.md` — that's environmental isolation
+per trial (clean sandbox per run); component isolation is structural
+isolation per pipeline stage (clean inputs per evaluator).
+
+## Pairwise / preference evaluation
+
+When absolute scoring is unreliable (open-ended generation, style,
+overall quality), ask "is A better than B?" instead.
+
+**Why:** LLMs discriminate between options more reliably than they
+assign absolute scores. A judge that gives both outputs "4/5" often
+produces a clear preference when shown them side by side.
+
+**How to run:**
+1. Show the judge both outputs (order randomized) and ask: "Which
+   better satisfies the criterion?"
+2. **Control position bias** — run both orderings (A before B, and B
+   before A). If the verdict flips, the outputs are too similar to
+   distinguish; call it a tie.
+3. Aggregate as **win-rate** (% of comparisons won) across a test set,
+   or **Elo** across a larger versioning history.
+
+**When to use:**
+- "Is the new prompt better than the old one?" (regression/improvement
+  decision with no clear ground truth)
+- Model selection when cost trade-offs exist (A is cheaper but B might
+  be better — by how much?)
+- Regression check: "is this at least as good as production?"
+
+**Cross-ref:** see § Counterfactual-pair evaluators below — counterfactual
+pairs detect bias by varying one demographic dimension; pairwise evaluation
+measures preference between two system outputs. Related structure, different
+goal.
+
+## Multi-judge / LLM-as-jury
+
+When a single judge introduces too much variance or a failure mode you
+can't calibrate away, use multiple independent judges and aggregate.
+
+**Setup:**
+- Use **diverse model families or providers** — same-family judges
+  share training-data correlations and will agree on each other's
+  errors, not catch them.
+- Aggregate by **majority vote** or **weighted vote** (weight by each
+  judge's validated accuracy on your calibration set, not by model size
+  or cost).
+- **Disagreement = ambiguous case** — route to human review rather than
+  forcing a tie-break algorithmically.
+- Assign **different dimensions to different judges** when possible
+  (one for faithfulness, one for style, one for safety) rather than
+  asking all three to score the same criterion.
+
+**Diminishing returns:** more than 3–5 judges rarely improves accuracy
+meaningfully on well-defined criteria — and cost multiplies linearly.
+Reserve multi-judge setups for high-stakes decisions (model selection,
+safety guardrail calibration); a single calibrated judge is fine for
+routine quality monitoring.
+
+**Cross-ref:** `debate-team/references/critic-calibration.md` — the
+meta-evaluation case: calibrating the judges of your eval is itself a
+multi-judge problem. The critic-concordance rule there (cross-family
+third critic for statistical claims) applies directly.
+
+## Agent-as-a-judge
+
+A tool-using judge that queries real systems — database lookups, web
+search, code execution, doc retrieval — to ground its grading in
+external evidence.
+
+**When to use:**
+- **Fact-checking:** "did the agent actually look up the correct account
+  balance?" — run a DB query to verify.
+- **Groundedness:** "is every claim in this response traceable to the
+  retrieved documents?" — the judge retrieves and checks.
+- **Exploratory failure analysis over a batch:** give the agent-judge
+  a batch of failures and ask it to cluster them — "23% are
+  right-info-wrong-product → propose a 'product relevance' evaluator."
+- **Competitive comparison:** the judge queries a reference system and
+  scores against its output.
+
+**Risks:**
+- **Non-determinism compounds:** the judge's tool calls introduce their
+  own variance on top of the task agent's. Run multiple repetitions if
+  the judge itself calls an LLM.
+- **Slower and more expensive** than a prompt-only judge — budget
+  accordingly; reserve for high-stakes or exploratory runs, not routine
+  nightly grading.
+- **Meta-evaluation:** the agent-judge itself needs calibration. A
+  tool-using judge with a wrong SQL query or a bad search is harder to
+  debug than a wrong word in a prompt-judge.
+
+**Cross-ref:** `references/outcome-grader.md` for the managed-agent /
+background-agent grading pattern where the judge gates production
+decisions (same shape, production-context flavor).
+
 ## Span / trace evaluators
 
-For agent behavior. Examples:
+For agent behavior. A **trace** covers one agent invocation; a
+**session** covers the full multi-turn arc (many traces). Session-level
+graders check arc-level invariants — did context accumulate across
+turns, was the issue resolved, did tone hold end-to-end — and usually
+require a second LLM to simulate realistic user behavior. See
+`phases/phase-1-design.md` § Session-level evaluation for when to
+add session graders on top of per-trace assertions.
+
+Examples of trace/span assertions:
 
 - "Tool X was called with valid args" — assert on span attributes
 - "No tool was called more than 2x in a row" — span sequence check
@@ -289,6 +440,29 @@ For agent behavior. Examples:
 These live next to your judges and run on the same dataset. Treat
 any numeric threshold (cost, retrieval, latency) as a calibrated
 per-system value, not a portable constant.
+
+### Grade the outcome, not the trajectory
+
+The most common agent-eval bug: asserting on a **prescribed sequence
+of steps**. Agents regularly find valid approaches the eval designer
+didn't anticipate, so a rigid step-sequence check rejects correct work
+and rewards mimicry of one blessed path. Default to grading the
+**end-state/outcome**; only assert on a step when that step *is* the
+spec (e.g. "must call the refund API before confirming a refund," "must
+not delete before backing up"). For multi-component tasks, give
+**partial credit** per component rather than all-or-nothing — it
+yields a usable gradient instead of a flat zero that hides which part
+broke.
+
+Also build **two-sided** sets: include cases where the behavior
+**should** fire *and* cases where it **should not**. A one-sided eval
+(all positives) rewards an agent that always says yes, and you'll
+optimize straight into that failure.
+
+Two more agent-grader patterns live in
+`references/agent-type-graders.md`: **conditional scorers** (route the
+grader by the agent's action — tool-call vs direct answer) and **fault
+injection** (break tools/APIs deliberately to grade resilience).
 
 ## RAG-specific metrics
 

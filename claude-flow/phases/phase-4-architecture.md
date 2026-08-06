@@ -190,10 +190,39 @@ Present both options (post-advisor-refinement) to the user with the advisor's an
 
 ---
 
+## Step 3.5: Create the Spec Kit-inspired specification (mandatory)
+
+Before writing an implementation plan, create or update the specification
+artifact required by the router's **Spec-first implementation plans** gate. Do
+not treat `$requirements` as the spec itself: it is the structured input used
+to produce the durable artifact.
+
+Use the Spec Kit sequence:
+
+1. **Constitution** - cite governing project principles and constraints from
+   `AGENTS.md`, `CLAUDE.md`, ADRs, and design docs; mark session-derived
+   principles when no durable source exists.
+2. **Specify** - record the problem, actors, user scenarios, functional and
+   non-functional requirements, scope in/out, edge cases, and stable
+   requirement/acceptance IDs (`FR-*`, `AC-*`).
+3. **Clarify** - resolve material ambiguities and record assumptions or open
+   questions rather than silently choosing.
+4. **Plan handoff** - add the spec path to the plan's `References` and map every
+   plan task to at least one requirement or acceptance ID.
+
+Save at the project convention or `docs/specs/<feature>-spec.md` by default.
+The spec is a separate artifact from `$plan`, and its path plus ID inventory
+must be included in the top-level `spec` block of the plan contract. Present
+the spec alongside the architecture options and plan for the existing user
+approval gate. A plan without a spec artifact is not ready for Phase 4c.
+
 ## Step 4: Write Implementation Plan
 
-After user chooses, write a structured plan using the `writing-plans` skill:
+After user chooses, write a structured plan per `../references/plan-execution.md` (plan header, task structure, task taxonomy):
 - Numbered steps with specific files and changes
+- A top-level `spec` block naming the spec artifact, constitution source,
+  requirement IDs, and acceptance criterion IDs; every task references the IDs
+  it implements
 - Test requirements per step (freeform prose — the *why*)
 - **`success_contract` populated on every step** per [plan.schema.md](../contracts/plan.schema.md). This is the machine-checkable *what proves it* — a `command`, `expected` truth-line, and optional `artifact`. Phase 5.5 executes every contract before declaring the phase done; vague contracts (`expected: "tests pass"`) get caught and rejected there. Maps to CLAUDE.md Guardrail 2 (evidence on completion claims) and Pipeline Discipline Rule 4 (define success, loop until verified). If a step is doc-only or pure-refactor with no executable check, set `command: N/A` and put the equivalent one-line check in `expected` — don't omit the field.
 - If `$requirements.risk_class.level == high`, include explicit rollback,
@@ -204,10 +233,44 @@ After user chooses, write a structured plan using the `writing-plans` skill:
   - `knowledge` — only needs to know the predecessor's *shape* or *decision*. Parallelizable; the subagent records assumptions in its context.
 
   If a step has no real upstream requirement, set `depends_on: []` (explicit empty list, not omitted). Phase 5 uses these types to fan out parallel implementers — an absent or empty-by-default `depends_on` drops the step into the heuristic-fallback path which conservatively serializes. Err toward `knowledge` over `build` when in doubt; the Phase 5 guard regression check at step 3b catches mis-typed parallel races.
+- **Four-way failure encoding for every known failure mode.** Each failure the plan must defend against appears in ALL of: (a) a numbered step constraint or business rule, (b) a fixture / repro case, (c) an acceptance criterion (the step's `success_contract`), and (d) the test plan. One failure = one unit — specified, reproduced, and tested together. A rule with no test, or a test with no stated rule, is a half-encoded failure that ships defended-in-prose-only. Pattern from `Carr1005/spec-build-lab`.
+- **Regeneration test — the plan-quality bar.** Before finalizing, ask: could a fresh agent rebuild behaviorally-equivalent output from this plan alone, with no access to this conversation or the Phase 2 exploration notes? Any divergence points to a missing constraint — fold it back in. The plan says *what* and *why*, never *how*; encode contracts as schemas, not prose, because agents hallucinate shapes from prose. Pattern from `Carr1005/spec-build-lab`.
 
 ---
 
 ## Step 5: Advisor — Plan Stress-Test
+
+### Optional high-risk Red/Blue/Green review protocol
+
+Run this protocol only when `$requirements.risk_class.level == high`, the plan
+touches `auth`, `privacy`, `money`, `data_loss`, `external_side_effects`, or
+`public_api`, or the user explicitly requests a Red/Blue/Green review. It is a
+structured variant of the existing plan stress-test, not a new generic review
+skill and not a substitute for an independent verifier.
+
+Use the protocol in [`../references/red-blue-green-review.md`](../references/red-blue-green-review.md):
+
+1. **Red Team - discover:** a fresh reviewer identifies realistic failure,
+   confusion, misuse, and risk cases against `$spec`, `$requirements`, and
+   `$plan`. Each finding requires evidence and an affected requirement or
+   acceptance criterion.
+2. **Blue Team - adjudicate:** a separate reviewer ranks Red findings by
+   severity and explains which ones materially affect safety, scope, or the
+   acceptance contract. Blue does not rewrite the plan.
+3. **Green Team - revise:** the plan author revises only the affected plan
+   sections, preserving the goal and tone. Each revision names the changed
+   section, the finding it closes, and its verification command.
+4. **Re-check:** a fresh verifier reruns the relevant acceptance checks against
+   the revised plan. A finding is not closed because Green says it is fixed.
+
+Required output for every finding:
+
+`finding → evidence → severity → acceptance impact → scoped revision → re-check`
+
+If Red finds no material issue, record `no material finding` plus the evidence
+and checks that support that conclusion. If Green cannot fix a P0/P1 finding
+without changing scope or requirements, stop and return it to the user approval
+gate.
 
 ### Advisor: Plan Stress-Test
 
@@ -253,7 +316,7 @@ Optional UI-mockup loop that runs after `$plan` is finalized and before the user
 
 ### Substeps (when guard passes)
 
-1. **Load skill.** Read `skills/excalidraw-canvas/SKILL.md` — it routes to `references/excalidraw-schema.md` (JSON subset), `references/mockup-prompts.md` (generation + drift-detection prompts), and `skills/claude-flow/contracts/mockup-manifest.schema.md` (state-matrix manifest).
+1. **Load mockup references.** Read the two files under `skills/claude-flow/references/mockups/` directly — `excalidraw-schema.md` (JSON subset) and `mockup-prompts.md` (generation + drift-detection prompts) — plus `skills/claude-flow/contracts/mockup-manifest.schema.md` (state-matrix manifest).
 
    If `$design_context` exists, pass its task-specific design brief and
    design-system rules into the mockup prompt. The mockups should cover the
@@ -268,7 +331,7 @@ Optional UI-mockup loop that runs after `$plan` is finalized and before the user
    ```
    If the script returns a skip envelope (Playwright missing, URL unreachable) or writes a visibly lossy output (empty, single-box flattening), discard the extract and fall back to blank-canvas generation — note the fallback in the Phase 4 output. Greenfield (non-refactor) tasks skip this substep.
 
-3. **Generate state-matrix mockups.** Using the generation prompt from `skills/excalidraw-canvas/references/mockup-prompts.md`, synthesize one `.excalidraw` file per (screen, state) tuple. Required-state sets per screen type are listed in `skills/claude-flow/contracts/mockup-manifest.schema.md`. Paths follow `docs/design/<feature>/mockups/<screen-slug>__<state>.excalidraw`. Feature slug comes from the branch name or `$requirements.feature_slug`.
+3. **Generate state-matrix mockups.** Using the generation prompt from `skills/claude-flow/references/mockups/mockup-prompts.md`, synthesize one `.excalidraw` file per (screen, state) tuple. Required-state sets per screen type are listed in `skills/claude-flow/contracts/mockup-manifest.schema.md`. Paths follow `docs/design/<feature>/mockups/<screen-slug>__<state>.excalidraw`. Feature slug comes from the branch name or `$requirements.feature_slug`.
 
 4. **Emit manifest.** After all state mockups for the feature are written, emit `docs/design/<feature>/mockup-manifest.json` per the schema in `skills/claude-flow/contracts/mockup-manifest.schema.md`. Every state entry must point to an existing `.excalidraw` file — a manifest that references a missing file is a HIGH-severity finding at the Phase 5 visual-verify gate.
 
@@ -280,13 +343,47 @@ Optional UI-mockup loop that runs after `$plan` is finalized and before the user
 
 6. **Pause for user edits.** Prompt: "Edit the mockup(s) directly, then reply `continue` when done — or `skip` to proceed without re-reading." Do not touch the files during the pause.
 
-7. **Drift detection.** On `continue`, re-read each edited `.excalidraw` and diff against the generator's original output. Use the drift-detection prompt from `skills/excalidraw-canvas/references/mockup-prompts.md` to convert visual deltas into `$plan` deltas (new components, renamed fields, removed screens, etc.). Apply deltas inline to `$plan` and note them in a "Visual-driven plan changes" callout for the user approval gate. If no drift, note "Mockup approved as-is" and continue. If states were added or removed during editing, update `mockup-manifest.json` to match.
+7. **Drift detection.** On `continue`, re-read each edited `.excalidraw` and diff against the generator's original output. Use the drift-detection prompt from `skills/claude-flow/references/mockups/mockup-prompts.md` to convert visual deltas into `$plan` deltas (new components, renamed fields, removed screens, etc.). Apply deltas inline to `$plan` and note them in a "Visual-driven plan changes" callout for the user approval gate. If no drift, note "Mockup approved as-is" and continue. If states were added or removed during editing, update `mockup-manifest.json` to match.
 
 ### Always-emit architecture diagram (runs regardless of guard)
 
 Independent of `--visual` and independent of the guard above: if `$plan` has a `diagrams` or `component_map` section, emit a one-way (no re-read) `docs/design/<feature>/architecture.excalidraw` summarizing modules, data flow, and dependencies. This runs even for backend-only features so the plan has a visual record; it does NOT pause for user edits. Skip only if `$plan` has no diagrams/component_map content to represent.
 
 **Output:** Updated `$plan` (if drift detected), plus `.excalidraw` files under `docs/design/<feature>/`. Do not block the User Approval Gate on mockup perfection — the user sees the revised `$plan` at the next gate and can still reject.
+
+---
+
+## Step 5c: Emit Sprint Contract (Phase 4 → Phase 5 handoff)
+
+Before the User Approval Gate, emit a **Sprint Contract** alongside `$plan`. This is the load-bearing artifact Phase 5 consumes — it makes the scope boundary explicit so the implementer cannot quietly expand the diff.
+
+The contract has three required fields:
+
+- **scope** — the in-scope task IDs from `$plan.steps`. Copy verbatim; do not paraphrase.
+- **verification_standards** — for each in-scope task, the exact commands or artifacts that prove "done." Examples: `pytest tests/test_foo.py::test_bar exits 0`, `alembic upgrade head succeeds`, `curl localhost:8000/health returns 200`, `docs/foo.md contains section "Bar"`. No vague criteria ("the feature works", "looks right").
+- **exclusions** — explicit out-of-scope items the implementer MUST NOT touch in Phase 5. Name files, functions, refactors, or adjacent features the executor noticed during exploration but is deferring. The exclusions list is the novel field — it converts "this is in scope" thinking into "this is out of scope" thinking, which is what actually prevents scope creep.
+
+**Emit the contract to `.claude/sprint-contract.json` and link from `$plan`:**
+
+```json
+{
+  "scope": ["task-1", "task-2", "task-3"],
+  "verification_standards": {
+    "task-1": ["pytest tests/test_models.py::TestFoo exits 0"],
+    "task-2": ["alembic upgrade head succeeds", "new column visible in \\d+ output"],
+    "task-3": ["curl /api/foo returns 200 with expected JSON shape"]
+  },
+  "exclusions": [
+    "Do NOT refactor app/services/legacy_helper.py (deferred to follow-up)",
+    "Do NOT modify the existing /api/bar endpoint (out of scope for this sprint)",
+    "Do NOT add new dependencies to requirements.txt"
+  ]
+}
+```
+
+**Why exclusions matter:** existing Phase 4 / Phase 5 gates catch logic errors and verify acceptance, but neither has a structural way to say "you noticed this adjacent mess; ignore it." Without an explicit exclusions list, implementers either expand scope (PR balloons, review churn) or silently leave a comment like `# TODO: clean this up later` (technical debt with no owner). The exclusions field forces the trade-off into the architecture phase where it can be debated, not the implementation phase where it's already happening.
+
+Source: [Learn Harness Engineering, lecture 11](https://walkinglabs.github.io/learn-harness-engineering/en/) — Sprint Contracts as the durable handoff artifact between planning and execution.
 
 ---
 

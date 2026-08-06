@@ -10,7 +10,7 @@ Capture the list of changed files. This drives both the minimal core checks and 
 
 ### Step 2: Run Minimal Core (Always)
 
-These three checks run on every invocation regardless of which files changed.
+These core checks run on every invocation regardless of which files changed.
 
 #### C1: Secrets in Code
 
@@ -95,6 +95,18 @@ done
 
 This is Core (not a deep-dive) because the trigger is narrow (`.github/workflows/*.yml` or lockfile-producing `package.json` / `pyproject.toml` in the diff) but very high-signal — every missed instance causes chronic PR failure until manually traced.
 
+#### C5: Unsafe Dynamic Execution
+
+Grep the diff for newly-introduced dynamic code execution: `eval`, `exec`, `Function()` constructors, or a shell invoked on interpolated input (`os.system`, `subprocess(... shell=True)`, `child_process` with a built string).
+
+```bash
+git diff origin/main...HEAD -U0 | grep -E '^\+' | grep -nE '\beval\(|\bexec\(|new Function\(|os\.system\(|subprocess\.[A-Za-z]+\([^)]*shell\s*=\s*True|child_process'
+```
+
+- **Score: 90** — a new `eval` / `exec` / `Function()` / `shell=True` call on non-constant input is a critical injection surface. A literal-only argument with no interpolation is a nit: flag it, don't FAIL.
+
+This is Core (not a deep-dive) because dynamic execution is a top-tier injection vector and the grep is cheap and high-signal on any diff.
+
 ### Step 3: Match Deep-Dive Triggers
 
 Compare changed file paths against these patterns. If any match, run the corresponding expanded section.
@@ -165,6 +177,7 @@ Only run the sections triggered in Step 3.
 | DB4 | Connection pooling configured | code-check | If DB engine configuration is touched, grep for pool settings: `pool_size=`, `QueuePool`, `max_overflow=`, `poolclass=`, external pooler (`PgBouncer`, `RDS Proxy`). **Score: 60** if DB engine configured without explicit pooling. |
 | DB5 | Migrations in version control | code-check | If schema-shaped changes appear in diff (`models/`, `schema.sql`, `CREATE TABLE`, `ALTER TABLE`, column adds/drops), verify a corresponding migration file exists in `alembic/versions/`, `migrations/`, or equivalent. **Score: 85** per schema change without migration. No manual DB surgery. |
 | DB6 | Non-root DB user | infra-confirm | Ask: "Does the application connect with a non-superuser DB account (limited to the schemas/tables it needs)?" UNCONFIRMED if unsure. Superuser connections magnify SQLi blast radius. |
+| DB7 | Resume/retry/replay blast radius | user-judgment | Triggers when the diff resumes, retries, or replays previously-failed or queued rows (workflow engines, job queues, background tasks, batch retriers). Risk scales with the size of the affected backlog, NOT the size of the diff — run `SELECT COUNT(*) FROM <table> WHERE status='failed'` (or equivalent) **in the target environment** before recommending merge/ship, since resuming can re-fire real side effects (emails, SMS, payments, webhooks) for every affected row. Also establish the trigger condition: strictly per-row user-initiated (blast radius 1) vs. anything batch/deploy/poll-triggered (blast radius = whole backlog). Report the count in the finding; a 2-row and a 20,000-row backlog are different ship decisions with an identical diff. |
 
 #### Deployment Deep-Dive
 

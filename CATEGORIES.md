@@ -23,12 +23,7 @@ The two skills are intentionally separate (different stacks, different patterns,
 
 Skills for non-work surface area — teaching/learning, life logistics. Not invoked during feature development; useful standalone or in personal-context sessions.
 
-| Skill | Surface | When to load |
-|---|---|---|
-| [`learning-coach/SKILL.md`](learning-coach/SKILL.md) | Teaching, mental models, Feynman tutoring, Socratic dialogue, 30-day curricula | "Help me understand X", "explain this simply", "plan a learning curriculum for Y" |
-| [`life-planner/SKILL.md`](life-planner/SKILL.md) | Meal plans, plain-English legal documents, personal finance summaries, travel planning | "Plan my week of meals", "what does this contract say", "summarize this 401k", "plan a trip to X" |
-
-Both also reindexed in `~/.claude/CLAUDE.md` Domain Skills table for cross-project discovery.
+_Empty since the 2026-07-17 skills audit (`learning-coach`, `life-planner` retired — recover from git history if needed)._
 
 ---
 

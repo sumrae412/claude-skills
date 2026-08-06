@@ -92,6 +92,17 @@ PY
      --redactions-output /tmp/review-redactions.json \
      --json
    ```
+3b. **Always-run deterministic security gate — runs regardless of the Tier-1 cascade.**
+   Run the canonical `core_gate.sh` script against the RAW diff (`/tmp/claude-flow-review.raw.diff`, pre-scrub — the secret grep needs unmasked content). This REPLACES the earlier prose-only instruction to "run the production-readiness-check core" — that had no runnable script behind it; `core_gate.sh` is the deterministic implementation of checks.md's C1/C3/C5 and is also the exact script Henry's `prc-merge-gate.sh` merge-time hook calls, so there is exactly one place these grep patterns live.
+   ```bash
+   <claude-flow-root>/../production-readiness-check/scripts/core_gate.sh \
+     --diff-file /tmp/claude-flow-review.raw.diff
+   ```
+   Exit 1 means the script printed one or more `[FAIL]` lines (C1 secrets or C5 unsafe `eval`/`exec` on interpolated input) — feed each `[FAIL]` line straight into Findings Resolution below as a HIGH finding, independent of what Tier 1 returns. `[WARN]` lines (C3 new-endpoint-without-logging, or a C5 literal-only nit) do not gate — surface them as low-severity notes only. This is a deterministic complement to the LLM `safety-reviewer`, not a duplicate: an LLM pass can miss a grep-catchable secret, and step 7 skips the LLM reviewers entirely on a clean Tier 1 — so without this gate a secret or an unlogged endpoint on an otherwise-clean diff ships unchecked.
+3c. **Always-run deterministic project-rule gate — runs regardless of the Tier-1 cascade.** `core_gate.sh` is the built-in security instance of the general class: a deterministic invariant checked against the raw diff. The same class covers *project-defined* rules no generic linter can know ("no migration drops a column without a backfill step", "error logs carry the request ID"), the way `project_skill_menu` holds project-defined *builder* skills. If the project has a verification-rule set (see `../references/verification-rule-skills.md` and `project-skill-menu.md` § Verification-rule menu), run it here:
+   - Script-encoded rules: run the project's `verify-<rule>` scripts against `/tmp/claude-flow-review.raw.diff` — each `[FAIL]`-style line is a HIGH finding in the cascade independent of the review pass.
+   - SKILL.md-encoded rules: dispatch the project's `verify-<rule>` skills over the raw diff with the same find-report-then-fix contract as the `verify-log-hygiene` pattern.
+   Keep the set small (~2–3 rules) and deterministic-only; a rule that needs human judgement belongs in the LLM cascade or the Exemplar Benchmark, not here.
 4. Run the selector script:
    ```bash
    git diff --name-only "$REVIEW_BASE_SHA"..HEAD | \
@@ -106,7 +117,7 @@ PY
    - `registry_sources`
 6. Run Tier 1 (`coderabbit`) first.
 7. If Tier 1 returns no HIGH+ findings:
-   - skip Tiers 2-4
+   - skip Tiers 2-4 (the always-run deterministic gate at step 3b still applies — its FAILs gate independently of this skip)
    - run the design-review pass only if UI files changed
    - proceed to verification
 8. If Tier 1 returns HIGH+ findings:
@@ -115,6 +126,18 @@ PY
 9. If `lightweight-reviewer` is selected, load
    `references/phase-6-review-operations.md` for the batched checklist rules.
 10. If UI files changed, load `references/phase-6-design-review.md`.
+10b. If `$requirements.reference_exemplar` is present, run the Exemplar
+   Benchmark from `references/phase-6-review-operations.md` — blind-labeled,
+   builder history withheld, scored on the named dimensions only, and bounded on
+   marginal improvement plus a named budget rather than a round count. Applies to
+   any deliverable with an openable best-in-class equivalent, not just UI. Skip
+   silently when the field is absent (the default).
+10c. If more than one builder touched a single user-visible artifact, run
+   **check 5 (builder drift)** of Cross-Cutting Synthesis in
+   `references/phase-6-review-operations.md`. This one runs **independently of
+   the step 7 clean-path skip**: drift is precisely what a clean per-part review
+   produces, so gating it on findings would make it unreachable exactly when it
+   is needed. Skip for single-builder work.
 11. For CLI-backed reviewers, use `resolved_runner_script`, not the raw
    `runner_script`.
 12. For scored reviewers, run:
@@ -177,6 +200,19 @@ failing scenario through each candidate before using minimality as a tiebreaker.
 For scored reviewers, require every sub-threshold score to cite a concrete
 production break case rather than an aesthetic objection.
 
+**Authorship bias.** The guard above covers conciseness, familiarity, and
+resemblance-to-gold. It does not cover the largest bias in a comparative pass:
+knowing which artifact is ours. Whenever a reviewer scores our output against an
+external reference — the Exemplar Benchmark, a competitor surface, a prior
+version — label the two `Candidate A` and `Candidate B` in randomized order and
+withhold which is generated until scoring is complete. Add to the prompt:
+
+```text
+One of these artifacts was generated by this team and one was not. You are not
+told which. Do not speculate about authorship — score only what is observable in
+each artifact. Any reasoning that depends on guessing provenance is invalid.
+```
+
 ## Reviewer Payload Contract
 
 All reviewers receive:
@@ -188,6 +224,20 @@ All reviewers receive:
 
 If the scrubber redacted anything, include the redaction summary in the review
 payload so reviewers know why a token/value was masked.
+
+The Exemplar Benchmark reviewer is the one exception to the slimming rule: it
+also receives `$requirements.reference_exemplar` (name, locator, dimensions) and
+the rendered artifact, not just the diff. It cannot compare rendered quality from
+a patch. No other reviewer receives this field.
+
+It is also the one reviewer with an explicit **exclusion**: no builder history.
+Strip the implementer's self-review findings, its notes on what it attempted, and
+any prior round's exchange before assembling the payload. Every other reviewer
+benefits from that context; a comparative critic is prejudiced by it, because the
+builder's account of its own choices tells the critic what to conclude. Blinding
+hides which artifact is ours, this hides how ours came to be, and the payload is
+where both are actually enforced — a rule stated only in the procedure is a rule
+the payload builder can quietly skip.
 
 Default reviewers:
 
@@ -227,6 +277,27 @@ That same reference also carries:
 - optional strategic pre-review
 - cross-cutting synthesis
 - optional post-review simplifier
+
+## Quality Document update
+
+After Findings Resolution completes (all HIGH+ findings either fixed or explicitly waived), update the repo's Quality Document at `docs/quality/QUALITY.md`. The full format, rubric, and update protocol live in `references/quality-document.md` — load it now.
+
+Summary of what happens here:
+
+1. Read `docs/quality/QUALITY.md` if it exists. If not, bootstrap it per the reference (one row per top-level module at grade B, note "Initial bootstrap").
+2. Identify modules touched by `$diff` (use the file list from the Active Flow step 2).
+3. For each touched module:
+   - If this review surfaced new HIGH+ findings that remain unresolved → consider a grade downgrade.
+   - If the review was clean AND the previous grade was C/D AND the diff materially improved the surface → consider a grade upgrade.
+   - Otherwise → update only the `Last updated` date and `Last reviewer` column (re-confirmation, no grade change).
+4. When a grade changes, append a one-line note citing the PR/reviewer that drove the change.
+5. Commit the QUALITY.md update as part of the Phase 6 finish-branch commit — NOT a separate commit. Keeping it in the same commit links the grade change to the diff that produced it.
+
+**Do not** change grades for modules NOT touched in this review. Grade changes require evidence from the current review; stale grades are better than guessed grades.
+
+The Quality Document outlives any single workflow run — Phase 0 (Context) reads it to decide which modules need extra care, and future Phase 6 reviews update it. A surface graded C/D should trigger smaller diffs, more reviewers, and mandatory tests in subsequent workflows.
+
+Source: [Learn Harness Engineering, lecture 12](https://walkinglabs.github.io/learn-harness-engineering/en/) — Quality Documents as the durable per-module quality signal that converts point-in-time review findings into a long-lived quality map.
 
 ## Static Analysis Gate
 
@@ -327,11 +398,6 @@ After the feature completes, record:
 
 If the retrospective suggests a workflow improvement, keep it to one targeted
 change.
-
-## Optional Follow-Up: `/personas`
-
-If the diff changed user-facing flows in a non-trivial way, optionally offer a
-synthetic beta pass before real-user testing.
 
 ## State Transition
 

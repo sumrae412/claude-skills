@@ -1,25 +1,25 @@
 ---
 name: sme-voice
-description: >
-  Captures another person's writing voice from samples and applies it when
-  ghostwriting or editing in their voice — primarily for SME (subject-matter
-  expert) scripts at DeepLearning.AI. Two phases: build a saved voice profile
-  from 2+ samples (Phase A), then apply that profile when editing or extending
-  the SME's scripts (Phase B). Saved profiles live in
-  ~/claude_code/agent-vault/sme-voices/ so they sync across machines.
-
-  Trigger on: "build a voice profile for [name]", "capture [name]'s voice",
-  "edit this in [name]'s voice", "rewrite as [name]", "keep [SME's] style",
-  "ghostwrite as [name]", or "/sme-voice ...".
-
-  Do NOT use this skill when writing as Summer herself (use writing-voice
-  instead), running ToneGuard analysis, or summarizing/analyzing documents.
+description: "Captures another person's writing voice from samples and applies it when ghostwriting or editing in their voice — primarily for SME (subject-matter expert) scripts at DeepLearning.AI. Phase A builds a saved voice profile from samples; Phase B applies it when editing or extending the SME's scripts. Profiles live in ~/claude_code/agent-vault/sme-voices/ to sync across machines. Trigger on 'capture [name]'s voice', 'edit this in [name]'s voice', 'ghostwrite as [name]', or '/sme-voice'. NOT for writing as Summer herself (use writing-voice), ToneGuard analysis, or summarizing/analyzing documents."
 user-invocable: true
 ---
 
 # SME Voice
 
 Capture and apply another person's writing voice — the inverse of [`writing-voice`](../writing-voice/SKILL.md), which writes as Summer.
+
+## Role Contract
+
+You are the SME voice profiler and ghostwriting adapter. Your role is to infer
+another person's writing patterns from evidence, preserve that person's register,
+and avoid replacing their voice with Summer's defaults.
+
+## Scope
+
+Use this skill to build reusable SME voice profiles from samples or to apply an
+existing profile while editing, extending, or ghostwriting. Return the saved
+profile path, revised draft, or voice-fidelity notes required by the active
+phase.
 
 ## What this skill does
 
@@ -75,6 +75,10 @@ Read [`references/application-guide.md`](references/application-guide.md). It wa
 | "Build a voice profile from these 3 samples" | this skill (build) |
 | "Update this script keeping the instructor's voice" | this skill (apply, ad-hoc if no profile) |
 | "Ghostwrite a LinkedIn post as Andrew" | this skill (apply) |
+
+## Voice-preservation boundary
+
+When preserving an SME's voice, use AI for research and fact-checking only — never to generate the prose itself. Once the words are machine-drafted, the SME's voice is gone no matter how good the profile; the profile guides *your* edits of their words, it does not license synthesizing new prose in their name. Source: Craig Mod, "How a Writer Uses AI Without Losing His Voice" (Every), from the 2026-07-14 /articles triage.
 
 ## Anti-overfitting reminder
 

@@ -91,5 +91,13 @@ Produce only what the user needs:
   evaluation.
 - Call out when exact-match search, SQL, or a smaller retrieval pattern
   would beat RAG.
+- Consider agentic retrieval WITHOUT embeddings as a candidate baseline:
+  an agent navigating structured sources directly (file reads, grep, API
+  calls) can beat vector search on reliability for small/structured
+  corpora. Field report: Ed Donner's Digital Twin build found results more
+  reliable after removing vector retrieval
+  ([video](https://www.youtube.com/watch?v=eMd_0gCy5p4),
+  [repo](https://github.com/ed-donner/avatar)). Vector search earns its
+  place at corpus scale, not by default.
 - Treat source attribution and hallucination control as first-class
   requirements.

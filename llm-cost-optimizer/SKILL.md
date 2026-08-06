@@ -21,6 +21,25 @@ You are an expert in LLM cost engineering with deep experience reducing AI API s
 
 AI API costs are engineering costs. Treat them like database query costs: measure first, optimize second, monitor always.
 
+## Measure ROT, Not Just Cost
+
+Return on Tokens: `ROT = (Value of Output − Cost of Tokens) / Cost of Tokens × 100`. Cost-side optimization (everything below) only matters relative to the value the tokens produce — a feature with negative ROT should be redesigned or cut, not just made cheaper. During a cost audit, estimate value per feature (revenue attribution, time saved, tickets deflected) alongside spend so the top optimization targets rank by ROT, not raw spend. Source: [Return on Tokens (ROT), Not Boring, 2026-06](https://www.notboring.co/p/return-on-tokens-rot).
+
+**Compile-to-deterministic-code pattern:** for repetitive, high-accuracy work, the highest-ROT move is often eliminating the per-request LLM call entirely — use the LLM once to learn the rule, then refactor it into deterministic code that runs free and only changes when the world changes. Agents improvise; that's the wrong runtime for work that needs consistent quality at volume. Worked example: [courierflow_beta PR #140](https://github.com/sumrae412/courierflow_beta/pull/140) — a regex grader superseded an LLM judge once the spec collapsed to a single verifiable clause (1.00 on 10 calibration items, zero recurring judge spend).
+
+## Keep Costs Flat While Usage Grows (policy posture)
+
+When usage is growing, the goal is flat spend through infrastructure, not usage
+caps. Five levers, in the order Coinbase reported applying them at scale
+(Brian Armstrong, X, 2026-06): (1) cheaper open-weight defaults for
+non-judgment traffic (e.g. GLM/Kimi tiers — matches the eval-iteration tier
+pattern below); (2) prompt-preprocessing routing (see `model-router`);
+(3) cache-aware request shaping — their reported cache-hit move was 5%→60%;
+(4) lean context + disconnecting unused tools per request; (5) **visibility
+over suppression** — tie spend to feature-level impact (the ROT framing above)
+and alert on anomalies, rather than hard-capping users. Suppression hides
+demand signal; visibility converts it into routing decisions.
+
 ## Before Starting
 
 **Check for context first:** If project-context.md exists, read it before asking questions. Pull the tech stack, architecture, and AI feature details already there.
@@ -57,6 +76,15 @@ Building new AI features. Design cost controls in from the start -- budget envel
 
 ## Mode 1: Cost Audit
 
+**Step 0 -- Attribute the Spend Source BEFORE Optimizing Anything**
+
+A "$X spent" report needs source attribution first: which API key, which org, which billing plan (subscription seats vs metered API are separate pools — a Claude Max/Pro session bills the plan, not the console). Then sweep all three call surfaces in order:
+1. **CI runs** — `gh run list` (workflow-triggered API calls)
+2. **Production traffic** — request/message counts from the app's own DB or logs
+3. **LOCAL runs** — invisible to both of the above. Find them via artifact mtimes: `find <results-dir> -newermt "<window>"`, then read run parameters (sample counts, n_runs) from the result files themselves.
+
+Why the order matters: 2026-07-02, hours went into optimizing CI workflows (~$30/day) while the actual driver was one unbounded local eval run (`n_runs_per_task=25`, no ceiling, 27 min, ~$200) that appeared in NO `gh run list` output — found only via result-file mtimes. A console chart's model split fits multiple architectures at once (agent tiering AND eval SUT/judge both produce "Sonnet + Haiku"); model-split evidence is necessary but never sufficient for attribution.
+
 **Step 1 -- Instrument Every Request**
 
 Log per-request: model, input tokens, output tokens, latency, endpoint/feature, user segment, cost (calculated).
@@ -73,7 +101,7 @@ Sort by: feature x model x token count. Usually 2-3 endpoints drive the majority
 |---|---|---|
 | Simple | Classification, extraction, yes/no, short output | Small (Haiku, GPT-5-mini, Gemini Flash) |
 | Medium | Summarization, structured output, moderate reasoning | Mid (Sonnet, GPT-5) |
-| Complex | Multi-step reasoning, code gen, long context | Large (Opus, GPT-5, o3) |
+| Complex | Multi-step reasoning, code gen, long context | Large (Opus, Fable, GPT-5, o3) |
 
 ---
 
@@ -84,6 +112,8 @@ Apply techniques in this order (highest ROI first):
 ### 1. Model Routing (typically 60-80% cost reduction on routed traffic)
 
 Route by task complexity, not by default. Use a lightweight classifier or rule engine.
+
+For the executor+advisor pairing pattern (cheap model executes, stronger model advises mid-generation via Anthropic's beta advisor tool) — see [`model-router`'s Advisor Tool section](../model-router/SKILL.md#advisor-tool-executoradvisor-pairing).
 
 Decision framework:
 - **Use small models** for: classification, extraction, simple Q&A, formatting, short summaries
@@ -104,7 +134,7 @@ Cache hit rates to target: >60% for document Q&A, >40% for chatbots with static 
 
 **Tool-use wrinkle:** With beta tool schemas (e.g. advisor-tool), each call may write a fresh cache instead of reading a prior one — verify `cache_read > 0` across consecutive calls, not just `cache_creation > 0` on the first.
 
-**One breakpoint at tail of `tools`, not separate `system` + `tools` markers.** Anthropic caches everything sent BEFORE the marked breakpoint — so one tail-of-`tools` breakpoint caches `system + tools` together as a single ~5-line diff. Marking BOTH `system` and `tools` forces `system: STRING` → `system: [{type:"text", text:..., cache_control:...}]` array restructuring and adds no cache benefit. Pair with a `--validate-cache` preflight CLI (mirror the `--validate-grader` pattern from deterministic-grader work): 2 probe calls asserting `cache_creation > 0` then `cache_read > 0`, exit non-zero on miss — catches the 4 silent-fail modes (under-minimum block, SDK wrapper strip, missing `anthropic-beta` header, per-call payload variability) that all produce `cache_creation=0` with NO error. **How to apply:** any eval/agent loop resending a ≥1K-token stable prefix every call gets caching + preflight + per-call telemetry logging (`cache_creation_input_tokens` / `cache_read_input_tokens` → `cacheHitRate` + `estimatedSavingsUsd` rollup) in the SAME PR — "wired" and "working" are different claims. Validated 2026-05-30 on [courierflow_beta PR #147](https://github.com/sumrae412/courierflow_beta/pull/147) (~80% Layer B nightly cost cut from ~$8.46/run baseline).
+**Breakpoint placement depends on which client library owns the call — check FIRST.** On raw Anthropic Messages API calls you build yourself: one breakpoint on the LAST block of the stable prefix caches everything before it (a marker on `system` covers tools+system), so avoid redundant double markers. On the Vercel AI SDK path (`@ai-sdk/anthropic` via `wrapLanguageModel`/`streamText`/`generateText`): `cache_control` is read independently per block — tools via `prepareTools()`, system via `convertToAnthropicMessagesPrompt()`'s `case "system"` — so a tools-only marker leaves `system` uncached on every call with NO error (looks wired, isn't). There you need TWO breakpoints: one on the last tool, one on the system message's `providerOptions.anthropic.cacheControl`. Validated 2026-07-02 on courierflow_beta: [PR #564](https://github.com/sumrae412/courierflow_beta/pull/564) applied the raw-API guidance on an AI-SDK path, leaving a ~21.7K-token system prompt uncached; [PR #567](https://github.com/sumrae412/courierflow_beta/pull/567) traced the vendor source and added the second breakpoint. Pair with a `--validate-cache` preflight CLI (mirror the `--validate-grader` pattern from deterministic-grader work): 2 probe calls asserting `cache_creation > 0` then `cache_read > 0`, exit non-zero on miss — catches the 4 silent-fail modes (under-minimum block, SDK wrapper strip, missing `anthropic-beta` header, per-call payload variability) that all produce `cache_creation=0` with NO error. **How to apply:** any eval/agent loop resending a ≥1K-token stable prefix every call gets caching + preflight + per-call telemetry logging (`cache_creation_input_tokens` / `cache_read_input_tokens` → `cacheHitRate` + `estimatedSavingsUsd` rollup) in the SAME PR — "wired" and "working" are different claims. Validated 2026-05-30 on [courierflow_beta PR #147](https://github.com/sumrae412/courierflow_beta/pull/147) (~80% Layer B nightly cost cut from ~$8.46/run baseline).
 
 ### 3. Output Length Control (20-40% reduction)
 
@@ -202,7 +232,7 @@ All output follows the structured standard:
 | Compressing prompts to the point of ambiguity | Over-compressed prompts cause the model to hallucinate or produce low-quality output, requiring retries | Compress filler words and redundant context but preserve all task-critical instructions |
 | Gating routing-change promotion on cross-provider agreement | Two correctly-functioning providers can disagree 2x on the same input — they emphasize different signals and calibrate severity differently. Agreement measures similarity, not correctness. Empirical 2026-05-20: Anthropic Sonnet 49 findings (13 CRITICAL) vs NVIDIA kimi-k2.6 23 findings (4 CRITICAL) on same PR diff | Build a small hand-labeled gold set (~30-50 representative inputs). Measure baseline accuracy on current provider. Promote candidate provider only if its gold-set accuracy ≥ baseline − 5pp tolerance |
 | Synthetic-only A/B before committing to a routing change | Synthetic prompts miss the real call-site framing, prompt-cache shape, and downstream parsing — the actual savings/regression delta only appears on real traffic | If a pr-reviewer-style tool already runs the surface, do a 1-PR A/B in existing infra (~$0.10, <1min wall) as the first eval. Use it to size the calibration gap before designing the gold set |
-| Treating peer coding agents (OpenCode, Aider, Cline, Claude Code) as model providers | Coding agents *consume* model APIs — they don't expose one. They have no `complete(messages)` endpoint a router can call. Wrapping a peer agent inside another agent adds latency and constraints without adding capability | If the goal is free-tier model routing, add another model provider (Groq, Together, Cerebras, OpenRouter free models) next to NVIDIA in the router. If the goal is to offload human work, use the peer agent separately — workflow change, not code change |
+| Treating peer coding agents (OpenCode, Aider, Claude Code) as model providers — with one verified exception | Coding agents generally *consume* model APIs rather than exposing one; wrapping a peer agent adds latency without capability. **Exception (verified 2026-07-02): Cline DOES expose an OpenAI-compatible API** at `https://api.cline.bot/api/v1` (NOT `/v1/...` — that 404s). Gotchas: model id format is `modelType/model` (`zai/glm-5.2` works; `z-ai/glm-5.2` → HTTP 500 "empty response content"); responses arrive wrapped in an undocumented `{"data": {...}}` envelope; `/models` 404s (pin the model id); thinking models (GLM 5.2) emit visible reasoning that consumes `max_tokens` — downstream parsers/judges must strip it | If routing to free/cheap tiers, prefer documented providers (Groq, Together, OpenRouter) first; treat the Cline endpoint as a usable-but-undocumented proxy — pin the model, unwrap `data`, budget max_tokens for reasoning |
 
 ### Cost gates that meter only one call path are theater
 
@@ -227,6 +257,6 @@ When diagnosing an LLM cost split (input vs cache_read vs cache_creation vs outp
 ## Related Skills
 
 - **rag-architect**: Use when designing retrieval pipelines. NOT for cost optimization of the LLM calls within RAG (that is this skill).
-- **prompt-governance**: Use when managing prompts in production. Pairs with this skill — governance catches quality regressions when you route to cheaper models.
+- **evals**: Use for regression gates and production sampling. Pairs with this skill — eval gates catch quality regressions when you route to cheaper models.
 - **claude-api**: Use when building/tuning Anthropic SDK apps. Pairs with this skill for prompt-cache-aware implementations.
 - **brevity**: Complementary at a different layer. `llm-cost-optimizer` audits SDK call patterns (caching, batching, model tier) inside an AI product. `brevity` trims the outer Claude session's output. Use both together: tune SDK calls with this skill, invoke `brevity` on the Claude session iterating on the code.

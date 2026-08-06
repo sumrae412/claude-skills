@@ -1,15 +1,6 @@
 ---
 name: "skill-security-auditor"
-description: >
-  Security audit and vulnerability scanner for AI agent skills before installation.
-  Use when: (1) evaluating a skill from an untrusted source, (2) auditing a skill
-  directory or git repo URL for malicious code, (3) pre-install security gate for
-  Claude Code plugins, OpenClaw skills, or Codex skills, (4) scanning Python scripts
-  for dangerous patterns like os.system, eval, subprocess, network exfiltration,
-  (5) detecting prompt injection in SKILL.md files, (6) checking dependency supply
-  chain risks, (7) verifying file system access stays within skill boundaries.
-  Triggers: "audit this skill", "is this skill safe", "scan skill for security",
-  "check skill before install", "skill security check", "skill vulnerability scan".
+description: "Security audit and vulnerability scanner for AI agent skills before installation. Use when evaluating a skill from an untrusted source, auditing a skill directory or git repo URL for malicious code, gating installs of Claude Code plugins / OpenClaw / Codex skills, scanning Python for dangerous patterns (os.system, eval, subprocess, network exfiltration), detecting prompt injection in SKILL.md files, or checking dependency supply-chain risk and file-system boundary violations. Triggers on 'audit this skill', 'is this skill safe'."
 ---
 
 # Skill Security Auditor
@@ -36,12 +27,45 @@ python3 scripts/skill_security_auditor.py /path/to/skill-name/
 # Audit a skill from a git repo
 python3 scripts/skill_security_auditor.py https://github.com/user/repo --skill skill-name
 
-# Audit with strict mode (any WARN becomes FAIL)
+# Audit with strict mode (any WARN becomes FAIL; T6 findings honor strict mode too)
 python3 scripts/skill_security_auditor.py /path/to/skill-name/ --strict
 
 # Output JSON report
 python3 scripts/skill_security_auditor.py /path/to/skill-name/ --json
+
+# T6 (Agent Trust & Permission Patterns) — all 5 checks ON by default
+# Skip the whole T6 category (legacy fast scan):
+python3 scripts/skill_security_auditor.py /path/to/skill-name/ --skip-t6
+
+# Run a single T6 check in isolation (any --check-* overrides the default ON set):
+python3 scripts/skill_security_auditor.py /path/to/skill-name/ --check-lethal-trifecta
+python3 scripts/skill_security_auditor.py /path/to/skill-name/ --check-egress-scope
+python3 scripts/skill_security_auditor.py /path/to/skill-name/ --check-trust-boundary
+python3 scripts/skill_security_auditor.py /path/to/skill-name/ --check-scope-creep
+python3 scripts/skill_security_auditor.py /path/to/skill-name/ --check-hitl
+
+# Exempt the auditor itself from T6 (its broad file reads trip the heuristics):
+python3 scripts/skill_security_auditor.py skill-security-auditor/ --self-exempt
 ```
+
+### T6 known false-positive patterns
+
+T6 checks are conservative heuristics — most legitimate advisory skills score
+0 T6 findings, but a few patterns will reliably trip them. Document any
+recurring FP class here when you see it:
+
+- **Docs skills that show API examples** (e.g. `coding-best-practices`) may
+  trip `T6-LETHAL-TRIFECTA` when their reference markdown shows `fetch()`
+  POSTs + `process.env.API_KEY` examples + tool-name strings in the same
+  skill. The skill itself doesn't *do* anything — it's documentation. Inspect
+  the flagged lines; if all three buckets resolve to code-fence examples in
+  reference files, downgrade manually.
+- **The auditor itself** matches every pattern it scans for (it's a scanner —
+  its source contains all the dangerous-pattern regexes by design). Run with
+  `--self-exempt` when auditing `skill-security-auditor/`.
+- **Test fixture strings** containing payloads like `"rm -rf /\n"` for stress
+  testing trip `T6-NO-HITL`. Inspect — if the string is genuinely a fixture
+  (not an executable command), it's noise.
 
 ## Use as a pre-install gate
 
@@ -116,6 +140,21 @@ For skills with `requirements.txt`, `package.json`, or inline `pip install`:
 | **Binary files** | Unexpected executables, `.so`, `.dll`, `.exe` | 🔴 CRITICAL |
 | **Large files** | Files >1MB that could hide payloads | ⚪ INFO |
 | **Symlinks** | Symbolic links pointing outside skill directory | 🔴 CRITICAL |
+| **Config-as-Code** | Writes to `.vscode/`, `.cursor/`, `venv/bin/`, `.git/hooks/`, `.claude/hooks/` — workspace config files the host IDE auto-discovers and executes unsandboxed | 🟡 HIGH |
+
+### 5. Agent Trust & Permission Patterns
+
+Audits for agentic-AI-specific risks where a skill *itself* is benign but its
+combination of capabilities or its data-handling assumptions create a high-blast-radius
+runtime. Sources: [Anthropic — How we contain Claude across products](https://www.anthropic.com/engineering/how-we-contain-claude) (2026-05-25); [ToxSec — Google I/O: Agentic Security and New Threats](https://www.toxsec.com/p/ai-agent-security-after-google-io) (2026-05-25).
+
+| Check | What It Does | Severity |
+|-------|-------------|----------|
+| **Lethal Trifecta** | Skill combines (a) read untrusted content (web fetch, file ingest, message read), (b) access sensitive data (Gmail, Drive, vault, env vars), AND (c) external communication (network egress, message send, repo push). All three together enable autonomous data exfiltration via prompt injection. | 🔴 CRITICAL |
+| **Egress treated as destination filter** | Skill restricts outbound calls by URL/domain allowlist rather than by *capability* (what data is allowed to leave, regardless of destination). Approved destinations can still exfiltrate when the model is induced to send sensitive data to a benign-looking domain. Look for `ALLOWED_DOMAINS = [...]` patterns without payload-scope checks. | 🟡 HIGH |
+| **Trust-boundary parsing** | Skill parses project-local config (`.claude/`, `package.json` scripts, repo-local hooks, `.env`) BEFORE establishing a trust boundary — e.g. running a project's `prestart` or `postinstall` script in the same process as the agent's privileged tools. | 🔴 CRITICAL |
+| **Permission scope creep** | Skill accumulates standing permissions (Gmail+Drive+filesystem+network) across sessions without per-action confirmation for sensitive actions. Indicator: skill requests broad OAuth scopes / `permissions.allow` entries that exceed its stated function. | 🟡 HIGH |
+| **No human-in-the-loop for sensitive actions** | Skill performs irreversible or externally-visible actions (send message, push commit, charge card, delete file, sign document) without an explicit confirmation step or audit log. | 🟡 HIGH |
 
 ## Audit Workflow
 
@@ -190,6 +229,18 @@ done
 ## Threat Model Reference
 
 For the complete threat model, detection patterns, and known attack vectors against AI agent skills, see [references/threat-model.md](references/threat-model.md).
+
+## Future expansion candidates
+
+The [mukul975/Anthropic-Cybersecurity-Skills](https://github.com/mukul975/Anthropic-Cybersecurity-Skills) repo (community-authored, despite the name — 754 skills under Apache-2.0, mapped to MITRE ATT&CK / NIST CSF / ATLAS / D3FEND / NIST AI RMF) has 5 skills directly applicable to extending this auditor's pattern coverage. Logged as candidates rather than imported wholesale — each must be vetted with this auditor before bundling.
+
+| Upstream skill | What it would add | Where it lands |
+|---|---|---|
+| `detecting-ai-model-prompt-injection-attacks` | 25+ named prompt-injection regex patterns (delimiter escapes, role-play escapes, encoding obfuscation, multi-language obfuscation) + heuristic scoring (instruction density, special-char ratio) | New `references/extended-patterns.md` (loaded on scan only) |
+| `detecting-typosquatting-packages-in-npm-pypi` | PEP 503 normalization, QWERTY-distance keyboard substitution, combosquatting/StarJacking, weighted scoring | Port to `scripts/skill_security_auditor.py` as `--check-supply-chain` flag |
+| `deobfuscating-javascript-malware` | Explicit obfuscation taxonomy beyond base64/hex (`String.fromCharCode` chains, array-lookup dispatchers, `new Function()`, control-flow flattening, opaque predicates) | `references/extended-patterns.md` |
+| `implementing-llm-guardrails-for-security` | Indirect prompt-injection via retrieved/referenced content (RAG poisoning) + PII-in-prompt detection | Append to `references/threat-model.md` |
+| `analyzing-supply-chain-malware-artifacts` | Binary-integrity checks (PE-section entropy, import-table diffing, code-signing anomalies) — gives teeth to the existing "Binary files" CRITICAL check | Port to `scripts/skill_security_auditor.py` as `--check-binary-integrity` flag |
 
 ## Limitations
 

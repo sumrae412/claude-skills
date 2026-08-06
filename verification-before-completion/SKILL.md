@@ -42,7 +42,10 @@ BEFORE claiming any status or expressing satisfaction:
 4. VERIFY: Does output confirm the claim?
    - If NO: State actual status with evidence
    - If YES: State claim WITH evidence
-5. ONLY THEN: Make the claim
+5. SURFACE RISKS: Name what was NOT verified — skipped suites, untested
+   environments, runtime paths not exercised — and what could still break.
+   Nothing unverified? Say so explicitly.
+6. ONLY THEN: Make the claim
 
 Skip any step = lying, not verifying
 ```
@@ -60,6 +63,12 @@ Skip any step = lying, not verifying
 | Requirements met | Line-by-line checklist | Tests passing |
 | Count / quantity claim | Enumerate full result set | API `resultSizeEstimate` / `total` / `count` heuristic field |
 | LLM-judge grader "works" | Hand-labeled calibration set (≥6 neg + ≥4 amb) passes the gate THIS run | Spot-check of 3 positives, eyeballed evidence strings, "looks reasonable" |
+| Async UI action verified via logs | Settle/poll window before the verification query runs, AND confirmed record/card identity matches the one acted on | Log timestamps read immediately after the action, first matching row assumed correct |
+| Background job/sweep "ran clean, did nothing" | Direct state read confirming the negative (e.g. a count query returns 0) | Absence of a conditionally-gated log line, e.g. `if (count > 0) logger.warn(...)` |
+
+**Async-settle + identity-confirmation failure mode.** After an async UI action (approve/send/submit), a verification query fired before the effect lands reads stale state and looks like failure — and in a multi-card/multi-record UI, the first or top match may not be the record the user actually acted on. Both errors compound: a premature query plus a wrong-card read produces a confident, wrong root cause. Validated 2026-07-19 on courierflow_beta: an "approve→send is broken, GoDaddy redirect returns fake-success HTML" root-cause claim was wrong — a full-log-window re-check found two clean successful sends; the original verdict was a verification race (query ran before the tap's effect landed) compounded by reading the wrong card. Demoted from trust-critical incident to routine cosmetic issue on re-verification.
+
+**Log-silence-is-ambiguous failure mode.** A log line gated behind a conditional (`if (newItems > 0) logger.warn(...)`) proves nothing on its own when absent — "ran clean, 0 items" and "never ran at all" produce identical silence. Treat that silence as inconclusive until an orthogonal direct-state check (a DB count, an API response, a file diff) confirms which case it is. Validated 2026-07-19 on courierflow_beta: a production reconcile sweep's absent warning log was consistent with both "it ran and found nothing" and "the flag never took effect" — only a direct `SELECT count(*) ... WHERE processed_at IS NULL` (0, down from 16) closed the gap.
 
 ## Red Flags - STOP
 
@@ -170,6 +179,20 @@ When a fix landed on `main` but a feature branch was forked BEFORE the fix, you 
 Validated 2026-05-22 on courierflow_beta PR #17 (cache-sync hook): post-fix bundle stayed on `/dashboard`; pre-fix bundle bounced back to `/onboarding` because `AppShell` guard re-read stale TanStack cache. Same DB row, different React behavior = clean isolation of the React-layer fix.
 
 **Pre-flight check before any runtime verification on a feature branch:** run `git log --oneline origin/main..HEAD` and `git merge-base HEAD origin/main` to know which fixes the bundle DOES NOT include. A branch forked before a fix lands ships the buggy bundle even when `main` is green.
+
+## False-Confidence Audit (test effectiveness, not just presence)
+
+A passing test suite is only evidence if the tests would actually *fail* when the behavior breaks. A test that passes whether or not the code works proves nothing — it is false confidence, and a green run built on it is a lie dressed as verification.
+
+Before claiming green on a test-backed change, audit test **effectiveness**:
+
+1. **Break the behavior on purpose** — revert the fix, comment out the guard, or corrupt the value the test depends on.
+2. **Run the suite — it MUST fail**, and fail for the *right reason* (the assertion that targets your change, not an unrelated error).
+3. **Restore and re-run — green again.**
+
+A test that stays green through step 2 asserts nothing about your change; fix the test before trusting the score. This is the general form of the TDD red-green cycle and the red-green-revert pattern above — applied as a gate on *any* "tests pass" claim, not just newly-written regression tests.
+
+Source: Jamon Holmgren's agentic verification setup (from the 2026-07-14 /articles triage).
 
 ## Why This Matters
 

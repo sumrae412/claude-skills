@@ -19,9 +19,10 @@ When the candidate has distinctive proof points (named employers, scale numbers,
 
 The wrong tradeoff is `5-sentence inventory` vs. `2-sentence abstract`. The right resolution is concrete + compressed:
 
-1. **Compressed through-line (3–4 sentences, employer-anchored)** — preferred when candidate has distinctive proof points. See §2 first shape.
-2. **Executive summary (2–3 sentences, trait-led)** — only when proof points are generic, employer names don't move the reader, or the candidate is making a clean pivot where prior employers don't transfer.
-3. **No summary** — when headline + first role already establish the story.
+1. **3-line hiring-manager summary (DEFAULT — Summer's standing preference, 2026-07-17)** — see §2 first shape. Use for every tailored resume unless a listed fallback condition applies.
+2. **Compressed through-line (3–4 sentences, employer-anchored)** — fallback when the JD is too thin to name posting skills, or the role needs a pivot/story explanation three lines can't carry.
+3. **Executive summary (2–3 sentences, trait-led)** — only when proof points are generic, employer names don't move the reader, or the candidate is making a clean pivot where prior employers don't transfer.
+4. **No summary** — when headline + first role already establish the story.
 
 Rules of thumb:
 
@@ -32,7 +33,25 @@ Rules of thumb:
 
 ## 2. Default Shapes
 
-### Compressed through-line (preferred when candidate has distinctive proof points)
+### 3-line hiring-manager summary (DEFAULT — Summer's standing preference, 2026-07-17)
+
+Adopt the persona of the target company's senior hiring manager / expert recruiter for THIS role, then write exactly three lines:
+
+```text
+[Line 1 — position the candidate using the job title's own capability language. No JD echo >3 consecutive words.]
+[Line 2 — the single most relevant quantified achievement for this role, with its operational detail.]
+[Line 3 — the 2-3 skills from the posting the candidate most strongly demonstrates, each carrying its evidence.]
+```
+
+Rules:
+
+- No adjectives without evidence. "Passionate" and "results-driven" are banned outright.
+- Render as three body-text sentences under the contact line (no heading, per template).
+- Truth constraints and the overclaim register apply per line; line 2's number must trace to the fact inventory.
+- The standing headline+summary micro-polish loop and the §9 sameness pass still run on this shape.
+- Validated on OpenLoop Director of AI Technologies, 2026-07-17 (Summer: "I like this much better" vs. the narrative paragraph).
+
+### Compressed through-line (fallback: thin JD or pivot-story roles)
 
 ```text
 [Real lane.] [One sentence threading 2-3 employer-anchored proof points into a single through-line.] [Optional current-state sentence with named differentiator.] [Optional YOE tail.]
