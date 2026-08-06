@@ -43,6 +43,8 @@ one-pager (no slide structure needed).
 3. **Duration** — 5 / 10 / 20 minutes? (controls slide count)
 4. **The ask** — what should they do after?
 5. **Source content** — startup brief, product spec, traction data, team bios
+6. **Delivery mode** — live pitch (you present) or send-ahead (read with no
+   presenter)? Sets the per-slide word budget (Step 2).
 
 If audience and purpose conflict ("investor deck for a sales meeting"), ask
 once which dominates.
@@ -65,17 +67,80 @@ VC vs angel, C-suite vs technical buyer.
 
 ### Step 2 — Write each slide
 
-For every slide produce four fields:
+For every slide produce these fields:
 
 - **Headline** — *one takeaway sentence*, not a label. Headlines tell the
   story even if every body is hidden.
-- **Body** — 3–5 bullets max. Under 30 words total.
+- **Body** — 3–5 bullets max. Word budget depends on delivery mode: live-pitch
+  decks stay under ~40 words/slide (the visual carries it); send-ahead decks
+  can run ~60-80 words so they read without a presenter.
 - **Visual** — chart / diagram / image suggestion. One per slide.
 - **Speaker notes** — what to say out loud. 2–4 sentences.
+- **Investor question** — *(investor decks)* the question in the investor's
+  head at this point that the slide must answer ("Is this problem real and
+  expensive?", "Why now?", "Why this team?"). A slide that answers no real
+  question gets cut. For sales decks, substitute the buyer's question.
+
+**Entry conditions for optional/specialty slides.** Every slide beyond the core arc must earn its place with real input, not template momentum. Before including one, check its entry condition — if the input doesn't exist, cut the slide rather than filling it with generic content:
+
+| Slide | Entry condition |
+|---|---|
+| Traction | At least one sourced, dated figure (revenue, users, retention — not "growing fast") |
+| Demo / product tour | A live product or real screenshots exist (never mock UI as if shipped) |
+| Team | Named people with claims the fact inventory supports |
+| Testimonial / logo wall | Real quotes/customers with permission to name |
+| Competition matrix | You can name actual competitors — a matrix with invented axes and no rivals is filler |
+
+(Pattern adapted from [Bolt Slides](https://github.com/stackblitz/bolt-slides)' agent skill, which gates each specialty layout on an explicit entry condition — e.g. a chat layout only for genuinely conversational products, a big-number slide only with one sourced figure.)
 
 ### Step 3 — Quality check
 
 Run the checklist below. Fix anything failing before showing the user.
+
+### Step 3.5 — Pitch Stress-Test (optional roast)
+
+Before delivering, optionally run the deck through two quick AI personas for
+a final gut check. Inspired by [Roast & Review](https://www.roast-and-review.com/).
+Ask the user if they want this pass — it's optional.
+
+Offer when:
+- The user seems nervous about a live pitch
+- The deck is going to a gatekeeper (accelerator screener, first angel meeting)
+- The user asks "is this ready?"
+
+**Persona 1: The Roast**
+
+Reads every slide headline and body (skips numbers/fluff). Calls out:
+- Headlines that are labels, not takeaways
+- "No competition" claims or competitor matrices with empty cells
+- Jargon ("leveraging," "synergistic," "AI-powered," "best-in-class")
+- Traction slides with no numbers (or fake-looking round numbers)
+- Market size slides that quote a $B TAM but don't segment to SOM
+
+**Format:** Bullet points per offending slide. Include the slide number and
+the specific weak language. If no serious issues, say "this holds up" — don't
+invent a roast.
+
+**Persona 2: The Skeptical Investor**
+
+Reads the full deck in order (headlines + body + speaker notes). Simulates
+the first 2 minutes of attention a real investor gives. Flags:
+- Slides that don't answer a real investor question (cut candidates)
+- Claims that would get challenged in a live meeting ("prove it")
+- Missing arc — flow doesn't build conviction -> ask
+- Mismatch between problem urgency and solution size (small problem,
+  huge company — or huge problem, weak solution)
+- Ask that doesn't match the stage (asking $2M seed with no traction)
+
+**Format:** Each finding as "Slide N: [issue]" with the investor's likely
+response verbatim. Ends with a one-line verdict: Funds / Needs work /
+Would pass.
+
+**Usage:** Run both personas in one message. Fix any Slide-specific issues
+before delivering. Keep the Roast output for the user's own read (it's
+entertaining but the real useful output is the Investor's take).
+
+---
 
 ## Output Format
 
@@ -99,6 +164,7 @@ Use this exact structure so downstream rendering works:
 - Point 3
 **Visual:** [Suggestion]
 **Speaker notes:** [What to say]
+**Investor question:** [the implicit question this slide answers — investor decks]
 
 [continue for all slides]
 ```
@@ -124,13 +190,16 @@ Before delivering:
 
 - [ ] Every headline is a takeaway, not a label
 - [ ] One main idea per slide
-- [ ] Body text under 30 words per slide
+- [ ] Body within the delivery-mode word budget (live ~40 / send-ahead ~60-80)
+- [ ] Every slide answers a real investor (or buyer) question; none answers nothing
 - [ ] Visual suggested for every slide
 - [ ] Speaker notes for every slide
 - [ ] Final slide has a clear, specific ask
 - [ ] Logical flow — story arc, not a feature dump
 - [ ] No information overload (move detail to appendix)
 - [ ] Audience-tuned register (see `references/audiences.md`)
+- [ ] Every optional/specialty slide met its entry condition (Step 2 table) — no filler sections
+- [ ] Send-ahead decks: a partner could follow it alone at 11pm on their iPad, no presenter
 
 Common pitfalls and fixes: `references/pitfalls.md`.
 
@@ -160,3 +229,8 @@ Chrome headless): `references/render-pdf.md`.
 - no fabricated numbers — every metric traceable to user-provided source
 - no "disrupting" / "AI-powered" / "platform" filler — concrete claims only
 - if the user can't supply traction, name the gap honestly; don't invent it
+
+## See also
+
+- `startup-analysis` — validate the idea before building the deck.
+- `startup-positioning` — sharpen positioning before the deck narrative.

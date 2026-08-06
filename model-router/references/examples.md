@@ -21,7 +21,7 @@ Six representative routing decisions covering every mode + tier in the router, p
 > Task: Fix a bug in the auth module.
 >
 > ```
-> 🎯 Model: Sonnet 4.6 │ Mode: default │ Complexity: simple
+> 🎯 Model: Sonnet 5 │ Mode: default │ Complexity: simple
 >    Why:    Single-file bug fix in well-documented module. Haiku risks missing
 >            async edge cases; Opus is overkill for one-file scope.
 >    Apply:  /model sonnet
@@ -32,7 +32,7 @@ Six representative routing decisions covering every mode + tier in the router, p
 > Task: Add a new FastAPI endpoint touching 3 files (route, service, schema).
 >
 > ```
-> 🎯 Model: Sonnet 4.6 │ Mode: default │ Complexity: complex
+> 🎯 Model: Sonnet 5 │ Mode: default │ Complexity: complex
 >    Why:    Multi-file new feature, no architectural decisions, established
 >            patterns to follow. Sonnet is the sweet spot.
 >    Apply:  /model sonnet
@@ -43,7 +43,7 @@ Six representative routing decisions covering every mode + tier in the router, p
 > Task: Design a new auth system from scratch.
 >
 > ```
-> 🎯 Model: Opus 4.7 │ Mode: think │ Complexity: architectural
+> 🎯 Model: Opus 4.8 │ Mode: think │ Complexity: architectural
 >    Why:    System design with security implications. Reasoning depth and
 >            edge-case coverage justify the 5× cost over Sonnet.
 >    Apply:  /model opus     (consider effort: high for extended thinking)
@@ -65,7 +65,7 @@ Six representative routing decisions covering every mode + tier in the router, p
 > Task: Review an 80K-token diff.
 >
 > ```
-> 🎯 Model: Sonnet 4.6 │ Mode: longContext │ Complexity: (skipped)
+> 🎯 Model: Sonnet 5 │ Mode: longContext │ Complexity: (skipped)
 >    Why:    Context exceeds 60K threshold. Haiku quality drops on long inputs;
 >            Opus is justified only if the review uncovers architectural concerns.
 >    Apply:  /model sonnet
@@ -80,7 +80,7 @@ Six representative routing decisions covering every mode + tier in the router, p
 > Task: Quick security audit on the JWT validator — should only take 5 minutes.
 >
 > ```
-> 🎯 Model: Opus 4.7 │ Mode: default │ Complexity: simple (overridden)
+> 🎯 Model: Opus 4.8 │ Mode: default │ Complexity: simple (overridden)
 >    Why:    Step 3 override fires on "security audit" — Opus regardless of
 >            scope. Undercosting security work is the wrong failure mode.
 >    Apply:  /model opus
@@ -93,7 +93,7 @@ Six representative routing decisions covering every mode + tier in the router, p
 >
 > ```
 > 🎯 Mode: subagent-fleet │ Role: reviewer (security-audit) │ Models: per-agent
->    Per-agent: Opus 4.7 (security-audit floor — Haiku banned, Sonnet acceptable
+>    Per-agent: Opus 4.8 (security-audit floor — Haiku banned, Sonnet acceptable
 >               but Opus recommended for security stakes)
 >    Why:    First-match precedence puts longContext above subagent-fleet in
 >            the mode table, BUT subagent-fleet routes per-agent so longContext

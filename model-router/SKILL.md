@@ -1,6 +1,6 @@
 ---
 name: model-router
-description: Pick the optimal Claude model (Haiku 4.5 / Sonnet 4.6 / Opus 4.7) for the current task — two-layer router with mode detection (longContext, background, think, subagent-fleet, webSearch, default) and weighted complexity scoring (trivial/simple/complex/architectural) for default mode. Outputs a one-line recommendation card with model, mode, complexity, reasoning, cost anchor, and the `/model` or `claude --model` command to apply it. Use when starting a session, before dispatching parallel subagents (where model choice multiplies cost across N agents), when paying Opus prices on mechanical work, or when user asks "which model should I use for X". Triggers: "use opus / use haiku / cheap model / quick task / minimize cost / thorough / careful audit / fastest model / which model". NOT for production LLM API spend (use llm-cost-optimizer); NOT for picking PR-reviewer mode (use pr-reviewer-mode); NOT for picking skills (use skill-discovery).
+description: "Pick the optimal Claude model (Haiku / Sonnet / Opus / Fable) for the current task — two-layer router: mode detection (longContext, background, think, subagent-fleet, webSearch, default) plus weighted complexity scoring. Outputs a one-line recommendation card with model, mode, complexity, reasoning, cost anchor, and the `/model` or `claude --model` command. Use at session start, before dispatching parallel subagents (model choice multiplies cost across N agents), when paying Opus prices on mechanical work, or on 'which model should I use'. NOT for production LLM API spend (use llm-cost-optimizer), PR-reviewer mode (use pr-reviewer-mode), or picking skills (use skill-discovery)."
 user-invocable: true
 allowed-tools: Read, Grep, Glob
 ---
@@ -55,11 +55,11 @@ If current context exceeds the long-context threshold, jump straight to `longCon
 
 | Mode | Signals | Recommended model | Notes |
 |---|---|---|---|
-| `longContext` | context > 60K tokens (check via `/context`) | Sonnet 4.6 (Opus if reasoning-heavy) | Haiku quality drops on long inputs |
+| `longContext` | context > 60K tokens (check via `/context`) | Sonnet 5 (Opus 4.8 if reasoning-heavy) | Haiku quality drops on long inputs |
 | `background` | non-interactive, batch, `--print` flag, scripted, CI | Haiku 4.5 | Speed and throughput matter more than depth |
 | `subagent-fleet` | dispatching 2+ parallel agents via Task / Agent tool | per-role (see Subagent Fleet Routing) | Highest-leverage decision — cost multiplies across the fleet; placed before `think` so fleet routing wins for parallel-agent dispatches that also look like thinking tasks |
-| `think` | Plan Mode active (via `/plan`, **Shift+Tab**, or Claude auto-detection), "think carefully", architecture work, multi-model debate | Opus 4.7 + extended thinking — or `/model opusplan` for two-model workflow (see Plan-Mode Pattern below) | Reasoning depth justifies the cost |
-| `webSearch` | research / web-fetch heavy, `useful-for` triage, `synthesis-brief`, link-chasing | Sonnet 4.6 | Opus wastes tokens on synthesis steps |
+| `think` | Plan Mode active (via `/plan`, **Shift+Tab**, or Claude auto-detection), "think carefully", architecture work, multi-model debate | **Opus 5** (default for sustained reasoning) — start at `high` effort, use `xhigh` for the hardest agentic coding. Fable 5 for the most demanding long-horizon reasoning (2× Opus cost). Or `/model opusplan` for two-model workflow (see Plan-Mode Pattern below). | Reasoning depth justifies the cost |
+| `webSearch` | research / web-fetch heavy, `useful-for` triage, `synthesis-brief`, link-chasing | Sonnet 5 | Opus wastes tokens on synthesis steps |
 | `default` | everything else | drop to Step 2 |
 
 **First-match precedence:** if a task matches multiple modes, use the first match in table order. `longContext` always wins, then `background`, then `subagent-fleet`, then `think`, then `webSearch`, then `default`. This keeps the router deterministic when signals overlap — a parallel-subagent run that also looks like a thinking task is `subagent-fleet`, because fleet routing decides model per-agent rather than for the orchestrator.
@@ -68,14 +68,17 @@ If current context exceeds the long-context threshold, jump straight to `longCon
 
 Classify the task into one of four tiers, then route to the corresponding model:
 
-| Tier | What it looks like | Model | Cost |
-|---|---|---|---|
-| trivial | typo, rename, format, lint, single-file mechanical edit | Haiku 4.5 | 1× |
-| simple | bug fix, validation, refactor one function, write a test | Sonnet 4.6 | 3× |
-| complex | new feature, multi-file change, new API endpoint, migration | Sonnet 4.6 | 3× |
-| architectural | system design, security audit, major refactor, breaking change | Opus 4.7 | ~15× Haiku input / ~5× Sonnet input AND output |
+| Tier | What it looks like | Model | Cost (vs Haiku, input/output) |
+|---|---|---|---|---|
+| trivial | typo, rename, format, lint, single-file mechanical edit | Haiku 4.5 ($1/$5 per MTok) | 1× |
+| simple | bug fix, validation, refactor one function, write a test | Sonnet 5 ($3/$15) | 3× |
+| complex | new feature, multi-file change, new API endpoint, migration | Sonnet 5 ($3/$15) | 3× |
+| architectural | system design, security audit, major refactor, breaking change | **Opus 5** — start at `medium` effort, raise to `high` for the hardest reasoning (security reviews, schema migrations). Opus 5 at `low`/`medium` effort matches Opus 4.8 at `high` effort for most tasks, so there's room to use lower effort as the primary cost lever. | 5× Haiku / ~1.7× Sonnet |
+| frontier | hardest long-horizon agentic runs, deepest multi-constraint reasoning — only when Opus demonstrably falls short | Fable 5 ($10/$50) | 10× Haiku / 2× Opus |
 
 **First-match precedence within tier:** evaluate trivial → simple → complex → architectural. Mixed signals bias toward cheaper models — escalation after the fact is cheaper than over-spend.
+
+**Fast disambiguator — the rubric-gradability test.** When a task sits on the boundary between mechanical and judgment work (the trivial/simple vs. architectural split), ask one question: *could you write a rubric a machine could grade the output against?* If yes — the success criteria are enumerable in advance (matches a spec, passes named tests, follows a fixed format, transforms data to a defined shape) — route to the cheap tier; the work is execution, not judgment. If no — success depends on taste, tradeoff reasoning, or "I'll know it when I see it" — it needs Opus. This mirrors the orchestrator/executor split (Opus decides *what* and grades the result; the cheap tier executes the rubric-gradable steps) and `claude-flow`'s Rule 5 (use the model only for judgment calls; route deterministic transforms to code or the cheap tier). The test is decisive on the ~20% of cases where the tier table is ambiguous — if you're hesitating between Sonnet and Opus, a clean rubric you could hand to a grader is the signal to drop a tier.
 
 **For ambiguous cases, the full weighted-signal table, and worked examples of edge cases, see [`references/signal-scoring.md`](references/signal-scoring.md).** Load it only when the tier isn't obvious from the lookup above (~20% of cases).
 
@@ -110,6 +113,17 @@ Modifiers cap at one tier in either direction — don't chain them. The point is
 
 ---
 
+## Live pricing data (optional upgrade)
+
+The tier tables above hardcode the Claude price ratios. When routing decisions
+need cross-provider or up-to-the-day data (a GLM-vs-Haiku eval tier call, a
+"cheapest model above quality bar X" question), the **OpenRouter MCP** exposes
+live per-provider pricing, latency, and benchmark scores for 400+ models —
+query it instead of trusting a stale table. Not installed by default; connect
+it only for sessions that genuinely need cross-provider routing, and treat its
+benchmark scores as one signal, not the verdict. (Surfaced 2026-07-04 via
+/articles triage; static tables remain the default path.)
+
 ## Subagent Fleet Routing
 
 **Highest-leverage section.** When dispatching 2+ parallel agents, model choice multiplies across the fleet — a 5-agent Opus dispatch costs 5× more than a 5-agent Sonnet dispatch, and the marginal recall from Opus on file-search tasks is near zero. Conversely, dispatching Haiku reviewers for a security audit is false economy: each one produces shallow critiques and the orchestrator has to redo the work on Opus anyway.
@@ -117,17 +131,53 @@ Modifiers cap at one tier in either direction — don't chain them. The point is
 ### Role → default tier
 
 | Subagent role | Default tier | Quality floor |
-|---|---|---|
+|---|---|---|---|
 | Explorer / file-search / lookup / grep | Haiku 4.5 | — |
-| Executor / code-writer / refactor | Sonnet 4.6 | — |
-| Architect / planner / system-design | Opus 4.7 | Sonnet 4.6 |
-| Reviewer / red-team / security-audit / critic | Opus 4.7 | **Sonnet 4.6 (Haiku banned — produces shallow critiques)** |
-| Council / decision / judgment-call | Sonnet routine, Opus high-stakes | Sonnet 4.6 |
-| Research / synthesis / explain | Sonnet 4.6 | — |
+| Executor / code-writer / refactor | Sonnet 5 | — |
+| Architect / planner / system-design | **Opus 5** — use `medium` effort for design, `high` for security-sensitive | Sonnet 5 |
+| Reviewer / red-team / security-audit / critic | **Opus 5** — this role benefits most from Opus 5's built-in precision at lower effort settings. A `low`-effort Opus 5 review pass catches nearly as much as `high`-effort Sonnet; use effort as the cost knob, not model tier. | **Sonnet 5 (Haiku banned — produces shallow critiques)** |
+| Council / decision / judgment-call | Sonnet routine, Opus high-stakes | Sonnet 5 |
+| Research / synthesis / explain | Sonnet 5 | — |
 
 **Dispatch pattern:** specify the model per-subagent in the Agent tool's `model` parameter. The orchestrator's model is independent of the fleet's models — dispatch a Haiku swarm from a Sonnet orchestrator, or an Opus reviewer from a Sonnet orchestrator.
 
 **Quality floor rule:** never go below the floor for that role. Red-team and critique roles fail silently on Haiku — the agent produces grammatical, plausible-looking output that doesn't actually catch the issues you dispatched it to find (Daniel Miessler's PAI observation, validated across multiple agent frameworks). If budget can't cover the floor, the right move is fewer subagents at the right tier, not more subagents at a too-low tier.
+
+**Evidence notes (2026-07):**
+
+- **A pricier high-judgment orchestrator can be net-cheaper when it delegates.** [Joon Lee's Fable-vs-Opus benchmark](https://x.com/joon_h_lee/status/2076714221837173097) (sidekick-enabled runs): Fable 5 + sidekick $1.86/run vs Opus 4.8 + sidekick $2.04 despite ~2× per-token price — 11.5 vs 26.5 lead-model turns, ~1/3 the input tokens (545k vs 1,679k), and the lead made zero code edits in 81% of Fable runs vs 24% of Opus runs. The cost driver is turns + dragged context + what the lead declines to do itself, not the per-token rate. Reported third-party numbers, not internally reproduced — treat as directional support for orchestrator-delegates / executors-write, which this table already encodes.
+- **A small fixed tier set is the right shape.** [arXiv:2607.09197](https://arxiv.org/abs/2607.09197) ("When is Routing Meaningful?", abstract verified 2026-07-18): a curated subset of fewer than ten models recovers most available diversity of a large pool, and learned (KNN) routers gain accuracy but collapse in robustness under query perturbation while prompted routing stays stable. This skill's fixed Haiku/Sonnet/Opus/Fable set with prompted, rule-based routing is the robust end of that trade — don't replace it with a learned router.
+
+---
+
+## Advisor Tool (executor+advisor pairing)
+
+Anthropic's advisor tool (beta, header `advisor-tool-2026-03-01`; Claude API + AWS Claude Platform only — not Bedrock/GCP/Foundry) is a routing primitive distinct from subagent fleets and `opusplan`: a cheap **executor** model consults a stronger **advisor** mid-generation. The advisor sees the full transcript server-side and returns plan/course-correction text — near-advisor-quality output at executor generation rates, without a second full model pass. See [Anthropic docs](https://platform.claude.com/docs/en/agents-and-tools/tool-use/advisor-tool).
+
+**When to route to it:**
+
+| Situation | Move |
+|---|---|
+| Sonnet handling a complex task | Add an Opus advisor for a quality lift at similar-or-lower cost than upgrading the executor to Opus outright |
+| Haiku needing a step up | Opus advisor beats upgrading the executor tier — cheaper than running Sonnet/Opus end-to-end |
+
+**Pairing rule:** advisor must be ≥ executor capability (API-enforced — invalid pairs 400); valid advisors are Opus 4.8 or 4.7, and an Opus 4.8 executor accepts only an Opus 4.8 advisor.
+
+**Weak fit — don't reach for this:** single-turn Q&A, pass-through model pickers, or any task needing advisor-grade output on every turn (at that point just run the advisor as the executor).
+
+**Cost knobs (tested):**
+- `max_tokens: 2048` on the advisor tool definition — ~7× less advisor output vs. no cap, no measured quality loss. Below `1024` truncates guidance (~10% loss).
+- A user-message steer line ("Advisor: please keep your guidance under 80 words...") shrinks advisor turns further.
+- Advisor-side prompt caching (`{type: ephemeral, ttl: 5m}`) breaks even at ≥3 advisor calls per conversation — don't bother caching below that.
+- Sonnet executor at medium effort + Opus advisor ≈ Sonnet-at-default-effort quality, at lower cost than either straight Sonnet-high-effort or straight Opus.
+
+**Billing gotcha:** advisor tokens land in `usage.iterations[]` at advisor rates and are **excluded from top-level usage totals** — any cost-tracking code reading only the top-level `usage` block will silently undercount. Read `iterations[]` explicitly.
+
+**Failure mode:** advisor errors degrade gracefully — the executor continues without advice rather than failing the turn. Don't add manual fallback handling for this; it's built in.
+
+**Budget cap:** to bound advisor calls per conversation, count them client-side. At the cap, remove the advisor tool AND strip prior `advisor_tool_result` blocks from history — leaving stale advisor blocks in context after the tool is removed will error on the next call.
+
+For production cost-observability once this is wired into a shipped feature (not an in-session Claude Code decision), see `llm-cost-optimizer`.
 
 ---
 
@@ -136,9 +186,9 @@ Modifiers cap at one tier in either direction — don't chain them. The point is
 Print the card BEFORE the model switch is suggested or applied. The user sees the decision and can override before any action is taken — this supports the advisory framing and lets the user redirect mid-stream.
 
 ```
-🎯 Model: Sonnet 4.6 │ Mode: default │ Complexity: simple
+🎯 Model: Sonnet 5 │ Mode: default │ Complexity: simple
    Why:       <one line — task class + cost rationale>
-   Apply:     /model sonnet     (or:  claude --model claude-sonnet-4-6)
+   Apply:     /model sonnet     (or:  claude --model claude-sonnet-5)
    Fallback:  <Haiku if Sonnet rate-limited (acceptable for this complexity)>
    Adjacent:  <prompt caching CLAUDE.md ~3K tokens → 90% discount on subsequent turns>
 ```
@@ -151,13 +201,22 @@ Print the card BEFORE the model switch is suggested or applied. The user sees th
 
 Model choice is one knob — these are siblings worth pointing at when the model recommendation alone isn't the full answer.
 
+**Model vs. effort are different axes — set both deliberately.** Model selects capability/knowledge (which brain); effort selects thoroughness (how many actions/how much thinking that brain spends). A stronger model at low effort often beats a weaker model at high effort for judgment-bound tasks, while mechanical tasks want a cheaper model with effort matched to the work — cranking effort on the wrong-tier model buys motion, not insight. When a recommendation card fires, name the effort level alongside the model whenever the task is clearly reasoning-heavy (`high`) or clearly mechanical (`low`).
+
+**Opus 5 effort guidance.** Opus 5 produces strong quality at `low` and `medium` effort settings — the efficiency gain over Opus 4.8 is significant. Start at the default (`high`) and adjust based on evals: use `low` and `medium` liberally as the primary cost and latency control, and step up to `xhigh` only for the most demanding coding and agentic work. If you carried effort defaults over from Opus 4.8, re-run an effort sweep — you will likely find that most tasks hold quality at one tier lower than before. See [Effort](https://platform.claude.com/docs/en/build-with-claude/effort#recommended-effort-levels-for-claude-opus-5) for Anthropic's full recommendations.
+
+**Opus 5 prompt adjustments.** When routing to Opus 5, the prompts under use should be tuned for three behavioral differences:
+- **Remove explicit verification instructions** — Opus 5 verifies its own work. "Double-check your answer," "re-verify before responding," and separate "final verification step" instructions all cause over-verification and wasted tokens without quality gain. Strip them.
+- **Constrain task scope** — Opus 5 may add steps not asked for. Add explicit scope boundaries: "Deliver what was asked, at the scope intended."
+- **Cap subagent delegation** — Opus 5 delegates eagerly. For agentic workflows, add guidance like "delegate only for genuinely independent, parallelizable large tasks; don't use subagents to verify your own work."
+
 | Lever | What it does | When |
 |---|---|---|
 | `/model <name>` | Switch active model mid-session (or `/model` with no args, or **Option+P** on Mac / **Alt+P** on Windows, to open the interactive picker) | After a mode or tier change |
 | `/model opusplan` | Two-model workflow: Opus plans, Sonnet executes within one session — picker label: "Use Opus in plan mode, Sonnet otherwise" | Mixed planning + execution work; see Plan-Mode Pattern below |
 | Skill `model:` frontmatter | Pin model per-skill (loads when skill activates; reverts on next prompt) | Skill is consistently better on one tier (e.g. `/debate-team` pins Opus) |
 | Skill `effort:` frontmatter (`low` / `medium` / `high` / `xhigh` / `max`) | Adjust extended-thinking budget per-skill | Mechanical skills can run `effort: low`; reasoning-heavy skills `effort: high` |
-| `/fast` toggle (**Opus 4.6 only**) | Same model, optimized for faster output — not available on Opus 4.7 or other models | Only relevant if you've explicitly pinned Opus 4.6 via `/model claude-opus-4-6` or the `--model` flag; the skill's default architectural recommendation is Opus 4.7, which doesn't support `/fast` |
+| `/fast` toggle (**Opus 4.8 / 4.7 only** — not available on Opus 5) | Same model, up to 2.5× faster output at premium pricing — Opus 4.8 is the durable fast tier (4.7 fast mode is deprecated) | Relevant when the architectural recommendation feels too slow interactively. For Opus 5, use `medium` or `low` effort to control latency instead — no `/fast` toggle, lower effort gives comparable speed gains |
 | `/compact` vs `/clear` | Context hygiene (see `token-economy`) | Long sessions approaching limits |
 | CLAUDE.md under 500 tokens | Loads every turn regardless of model | Always — the cheapest optimization |
 | Prompt caching | 90% discount on cached prefix | Repeated CLAUDE.md or boilerplate |
@@ -207,7 +266,7 @@ Pin a per-project default in CLAUDE.md so the recommendation step only fires whe
 ```markdown
 ## Default model assumption
 
-This project's default work tier is Sonnet 4.6. Escalate to Opus for
+This project's default work tier is Sonnet 5. Escalate to Opus for
 architecture and security audits; drop to Haiku for renames, lookups,
 and batch ops.
 ```
@@ -247,9 +306,9 @@ Three core examples cover the decision space. For the full set (6 examples + 3 e
 > Task: Design a new auth system from scratch.
 >
 > ```
-> 🎯 Model: Opus 4.7 │ Mode: think │ Complexity: architectural
+> 🎯 Model: Opus 4.8 │ Mode: think │ Complexity: architectural
 >    Why:    System design with security implications. Reasoning depth and
->            edge-case coverage justify the 5× cost over Sonnet.
+>            edge-case coverage justify the ~1.7× cost over Sonnet.
 >    Apply:  /model opus     (or /model opusplan if implementation follows)
 > ```
 

@@ -104,3 +104,19 @@ When a slide contains a multi-panel or sequential diagram:
 
 ---
 
+## Slide-by-Slide Lesson Script (module video, non-TH)
+
+**Delivery shape per slide:** bullets → script (one beat per line) → flags section. Flags are the point of the pass, not a courtesy — don't compress or drop them to save space.
+
+**Before scripting:** decide what the video is ABOUT first. Cuts follow from that decision; don't cut first and reverse-engineer a throughline.
+
+**Teaching examples:** retire one once it's done its job. Returning to it after the learner has moved up an abstraction level pulls them back down instead of reinforcing.
+
+**Notebook boundary:** the video INTRODUCES the notebook; the notebook is standalone. Procedure and output-reading belong in the notebook, not narration.
+
+**Inter-video transitions (distinct from the L0→Lesson-1 tease):** end each video on completion of its own arc; open the next with the natural question it raises. Don't end on an unresolved tease — that's a bug carried over from L0 into ordinary module transitions.
+
+**Transition slides are first-class content.** Protect them explicitly during any condensing pass (see review-checklist.md).
+
+---
+

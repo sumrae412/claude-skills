@@ -10,6 +10,7 @@ Before dispatching expensive reviewers, the executor pauses to self-assess. Insp
 
 Run through these questions. If any answer is "no" or "unsure", fix before Phase 6:
 
+0. **Success contract execution (HARD GATE)** — For every step in `$plan` marked `status: complete`, run its `success_contract.command` and confirm the output matches `expected`. Surface the one-line truth per step (e.g. `step 3: pytest 12 passed, 0 failed ✓` or `step 5: grep -c old_api == 0 ✓`). Per CLAUDE.md Guardrail 2, *unverified* claims must be marked explicitly — if a contract was skipped or its command isn't runnable in this environment, emit `step N: unverified — <reason>` rather than ✓. A step cannot proceed to Phase 6 with an unrun contract and no documented reason. Emit `skipped: [...]`, `degraded: [...]`, `unverified: [...]` fields per Pipeline Discipline Rule 12 — empty arrays are fine; missing fields are not.
 1. **Plan adherence** — Does the diff match every numbered step in the plan? Any steps skipped or partially done?
 2. **Requirement coverage** — Does `$requirements` from Phase 3 have full coverage? Check each resolved edge case.
 3. **Pattern consistency** — Does new code follow the patterns discovered in `$exploration`? Any deviations?

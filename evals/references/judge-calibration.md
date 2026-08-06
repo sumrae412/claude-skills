@@ -170,6 +170,136 @@ A few situations where the standard procedure misleads:
   **report a confidence interval on κ** (bootstrap or
   asymptotic) — a point estimate at small N is meaningless.
 
+## Meta-evaluation: can you trust the labels?
+
+The sections above tune a judge from aggregate signal over many runs.
+This section is the other half: building a labeled benchmark and
+measuring, per item, whether the judge's labels can be trusted at all.
+An evaluator produces a label; that label is not automatically correct.
+
+Source: DeepLearning.ai evals course, Module 3. The evaluator-selection
+and rubric-authoring half of the same module is in
+`evaluator-selection-and-rubrics.md`.
+
+### Benchmark construction
+
+Collect traces the agent has already produced and have human reviewers
+label them against the rubric. Two requirements the standard
+`phases/phase-3-evaluators.md` § Calibration procedure does not cover:
+
+- **Stratify the split.** If the failure class is rare, a random split
+  puts almost no failing examples in the test half. Stratify so both
+  classes appear in both halves in proportion.
+- **Hold out the blind test set *before* tuning anything.** Split the
+  labeled examples before you make a single change. The held-out set is
+  for final measurement only. Tune on it and the resulting agreement
+  number is optimistic and untrustworthy.
+
+In production, split three ways — **train / validation / final test**.
+The validation set absorbs every iteration; the final test set stays
+clean for one measurement at the end. A two-way split is enough for a
+first pass, but the moment you start iterating it collapses into
+tuning-on-test.
+
+### Read precision and recall on the failure class
+
+Two statistics, and the failure class is where you read both.
+
+**`classification_report`-style precision / recall / F1 per class.**
+Report the failure class (`non_compliant`, `fail`, `unsafe`), not
+overall accuracy — accuracy on an imbalanced set is satisfied by a judge
+that predicts the majority class and catches nothing.
+
+- **Recall on the failure class** — of the traces that actually violated
+  the criterion, what fraction did the judge catch? Low recall means it
+  is missing real violations.
+- **Precision on the failure class** — of the traces the judge flagged,
+  what fraction actually were violations? Low precision means false
+  alarms.
+
+**Cohen's κ** corrects agreement for chance: two raters assigning labels
+at random still agree some of the time, and κ removes that baseline.
+Statistic selection by label type (plain / weighted / PABAK) is in
+`phases/phase-3-evaluators.md` § Calibration.
+
+**κ measures agreement, not accuracy.** The judge and the reviewer can
+agree and both be wrong — if both misread the rubric the same way, κ is
+high and the labels are still incorrect. Read κ alongside precision,
+recall, and the specific traces where the labels disagree. No single
+number tells the whole story, and there is no κ threshold that
+substitutes for reading the disagreements.
+
+### Diagnosing a disagreement: three sources, not one
+
+When the judge and the human label a trace differently, the instinct is
+to blame the judge. That instinct is wrong often enough to be a rule.
+There are three possible sources:
+
+1. **Judge error** — the judge applied the rubric inconsistently.
+2. **Rubric gap** — a criterion is ambiguous. Both the judge and the
+   reviewer applied the rubric as written; the rubric does not clearly
+   cover this case.
+3. **Bad reference label** — the reviewer made a mistake, applied the
+   rubric differently than intended, or missed a detail in the trace.
+
+**Apply the rubric to the trace yourself.** Read the trace, read the
+criterion, decide what the label should be, *then* attribute the
+disagreement to one of the three. Change one thing, then measure.
+
+This is per-item and complements § "When calibration fails" above, which
+diagnoses a *low aggregate* agreement number (ambiguous rubric,
+imbalanced set, under-capable judge model, gold-like bias). Run this one
+on the individual disagreements; run that one on the run.
+
+**Human labels are not automatically ground truth.** Reviewers miss
+details, interpret criteria differently, and make mistakes. The goal is
+not to reproduce any individual reviewer's first decisions — it is to
+align the judge with labels that have been carefully reviewed against a
+clear rubric. That review is what makes a benchmark worth trusting, and
+a benchmark needs a workflow for *correcting* a bad reference label and
+recomputing the metrics, not just for collecting labels.
+
+### Confidence bias
+
+The rubric is not the only source of judge error — the response itself
+can fool the judge. The most dangerous failures sound calm, detailed,
+and helpful: an agent invents a return process and presents it with
+complete confidence, and the judge mistakes polished delivery for a
+correct answer. That is **confidence bias**.
+
+When inspecting disagreements, weight the convincing answers that still
+break the criterion — a fluent wrong answer is much harder to catch than
+an obviously wrong one, and it is exactly the shape that reaches
+production.
+
+Sibling to **gold-like bias** above, and worth keeping distinct:
+gold-like bias is the judge preferring outputs that *look* clean on
+style grounds; confidence bias is the judge reading fluency as
+correctness on a substantive criterion.
+
+### After you change something
+
+- Test the revised evaluator on **new labeled examples you did not use
+  to tune it** — the validation set, not the held-out final test set.
+- Do not re-run on the blind test set to check whether a fix worked.
+  That is test-set leakage, and it silently converts your final number
+  into a training number.
+- Change one thing per cycle (same discipline as § Calibration cadence
+  above), so the measured move is attributable.
+
+### Terminology that keeps this precise
+
+- **"agreement"**, not "consistent," for the judge-vs-human statistic —
+  "consistent" describes a judge reliably applying rules; agreement is
+  the inter-rater property κ actually measures.
+- **"validated against carefully reviewed human labels"**, not
+  "calibrated," when the claim is about label quality rather than the
+  tuning procedure.
+- **"judge error, rubric gap, or bad reference label"** — never "rubric
+  bugs, not judge bugs," which forecloses two of the three diagnoses.
+- **"test on new labeled examples you did not use to tune"**, not
+  "re-run on the blind set."
+
 ## Calibration set drift
 
 The calibration set itself becomes stale. Human labels collected

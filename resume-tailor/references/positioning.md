@@ -125,6 +125,12 @@ If the experience section does not show decisions made, tradeoffs owned, or prob
 
 For executive-targeted rewrites, load `references/executive-bullets.md` before revising experience bullets.
 
+## JD-Verb-Driven Emphasis
+
+When the JD's core verb is teach / enable / advise / adopt rather than build / ship / architect, promote enablement credentials (teaching, curriculum design, training and adoption programs) from a clause to their own paragraph or the closing hook. Test: does the JD frame the need as "help people use this" rather than "build this"?
+
+Validated 2026-07-20 on Airtable's Director, AI Transformation & Customer Success. Summer: "Airtable isn't hiring a platform architect. They're hiring someone who can teach large enterprises how to become AI-native." Adjunct faculty work plus the DeepLearning.AI courses moved from one clause to a standalone paragraph and the closing line. The same credential stays a clause when the JD's verb is build.
+
 ## Gap Handling
 
 Visible gaps — career pauses, short tenures, industry changes, laid-off clusters, unemployment gaps. Every gap needs a *disclosure choice*:

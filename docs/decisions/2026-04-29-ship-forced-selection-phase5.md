@@ -17,7 +17,7 @@ before any tool calls. This replaces the previous progressive-disclosure pattern
 
 ## Evidence
 
-24-trial A/B run on 12 historical Phase 5 dispatches replayed via `claude -p` with `sonnet`. Full log: [.claude/experiments/skill_selection_ab.jsonl](../../.claude/experiments/skill_selection_ab.jsonl).
+24-trial A/B run on 12 historical Phase 5 dispatches replayed via `claude -p` with `sonnet`. Full log: `.claude/experiments/skill_selection_ab.jsonl` (local artifact, gitignored — not in the repo).
 
 | metric | variant A (control) | variant B (forced) | Δ |
 |---|---|---|---|

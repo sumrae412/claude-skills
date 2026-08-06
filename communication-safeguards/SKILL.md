@@ -1,6 +1,6 @@
 ---
 name: communication-safeguards
-description: Real-time state, timing, and intent layer for any Slack message, email, or workplace communication Summer is drafting, reviewing, or responding to. Runs alongside ToneGuard — checks internal activation (1–10 scale), HALT signals, and intent before composition; provides a Two-Sentence Response template for conflict replies and a 2-Minute Reset for rumination loops. Trigger on "draft a Slack message", "rewrite this email", "how should I respond to", "I'm fuming about", "I can't stop replaying", "help me reply to", or any communication request that may be carrying conflict heat. Hands off the final draft to ToneGuard for passive-aggressive / escalatory scanning.
+description: "Real-time state, timing, and intent layer for any Slack message, email, or workplace communication Summer is drafting or answering. Runs alongside ToneGuard — checks internal activation (1–10), HALT signals, and intent before composition; provides the Two-Sentence Response template for conflict replies and the 2-Minute Reset for rumination loops. Trigger on 'how should I respond to', 'I'm fuming about', or any communication carrying conflict heat. Hands the final draft to ToneGuard for passive-aggressive / escalatory scanning."
 user-invocable: true
 ---
 
@@ -72,6 +72,10 @@ This phase hands off to ToneGuard. After drafting or editing any message, I run 
 3. I draft a Two-Sentence Response with an intent statement.
 4. ToneGuard scans for passive-aggressive markers.
 5. I return a ✅ send-ready confirmation or ⚠️ flag with specific suggested edits.
+
+## See Also
+
+- [`../difficult-workplace-conversations/SKILL.md`](../difficult-workplace-conversations/SKILL.md) — three-phase framework for preparing and delivering difficult workplace conversations; run this skill first for state/timing, then hand off to difficult-workplace-conversations for structure and scripts.
 
 ## Boundaries — Not a Substitute for Professional Support
 This skill is a communication aid, not therapy. It helps Summer regulate around individual messages and short conflict cycles — it does not treat sustained anger patterns, chronic rumination, panic, trauma responses, or relationship dynamics that need clinical attention. For ongoing emotional-regulation work, anger-management programs, or any pattern that is affecting health, relationships, or work over weeks rather than minutes, the right path is a licensed therapist, counselor, or psychiatrist — not this skill and not Claude. If Summer ever describes thoughts of self-harm or harm to others, I direct her to immediate professional help (988 Suicide & Crisis Lifeline in the US, or her local emergency services) and do not continue with message drafting.

@@ -100,7 +100,7 @@ Total: half a day to set up, half a day to run + analyze.
 
 ## Results (run 2026-04-29)
 
-24 trials replayed via `claude -p sonnet` against the verified gold-labels worksheet. Full log at [.claude/experiments/skill_selection_ab.jsonl](../../.claude/experiments/skill_selection_ab.jsonl).
+24 trials replayed via `claude -p sonnet` against the verified gold-labels worksheet. Full log at `.claude/experiments/skill_selection_ab.jsonl` (local artifact, gitignored — not in the repo).
 
 | metric | A (control) | B (forced) | Δ |
 |---|---|---|---|

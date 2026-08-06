@@ -67,7 +67,10 @@ Load `references/quality-framework.md` for full rubrics. Quick assessment dimens
 - Assumed prior knowledge the model doesn't have
 - Instructions that say "don't X" instead of "do Y" (prefer positive framing)
 - No success criteria
-- Adding CoT to reasoning-native models (O1, O3, etc.) — degrades output
+- Adding CoT to reasoning-native models (OpenAI o-series / GPT-5 thinking, Claude 4.6+ adaptive thinking, **Opus 5 built-in thinking**) — degrades output
+- **Explicit verification / self-correction instructions on Opus 5** — Opus 5 verifies its own work and corrects its own mistakes without prompting. "Double-check your answer," "re-verify before responding," and "include a final verification step" cause over-verification: the model runs its internal check AND the prompted check, wasting tokens with no quality gain. Strip these from prompts targeting Opus 5.
+- **Unconstrained task scope on Opus 5** — Opus 5 may expand scope beyond what was asked. Add explicit boundaries like "Deliver what was asked, at the scope intended" for narrow tasks.
+- **No subagent delegation guidance for Opus 5 agents** — Opus 5 delegates eagerly. Agent prompts should cap delegation: "delegate only for genuinely independent large tasks" instead of leaving spawning unbounded.
 - Contradictory instructions without priority rules
 
 ---
@@ -79,7 +82,7 @@ Load `references/prompt-techniques.md` for the full catalog of 58 techniques.
 | Weakness | Apply |
 |----------|-------|
 | Vague goal | Expert Persona + Task Decomposition |
-| Missing reasoning | Chain of Thought (not for O1/O3 models) |
+| Missing reasoning | Chain of Thought (not for reasoning-native models — o-series, Claude adaptive thinking) |
 | No examples | Few-shot Learning |
 | Too broad | Template structure (CO-STAR, RISEN, or RTF) |
 | Hallucination risk | Grounding anchors + Confidence signaling |
@@ -112,6 +115,27 @@ Template frameworks (see `references/templates.md`): CO-STAR, RISEN, RTF
 2. **Optimized prompt** — Code block, copy-paste ready, zero placeholders
 3. **What changed** — Techniques applied and why
 4. Optionally: **Variant B** — Different technique combination for alternate framing
+
+---
+
+## Step 7 (optional): Close the Loop with Evals
+
+For prompts that run repeatedly in production (judges, classifiers, agent system
+prompts), one-shot optimization is a guess — close the loop against failures:
+
+1. **Build an eval corpus from your own git history.** Merged PRs + their linked
+   issues + the tests that shipped are labeled examples of "what good looked
+   like" for this codebase — mine them instead of hand-authoring cases from
+   scratch. (Pattern: Arize's prompt-learning loop,
+   https://github.com/arize-ai/prompting — "your git history is your own
+   SWE-bench.")
+2. **Run the current prompt against the corpus, collect failures.**
+3. **Feed failures to a meta-prompt that rewrites the target prompt**, then
+   re-run. Keep the change only if the pass rate moves.
+
+Skip this step for one-off prompts — the corpus cost only pays back on prompts
+with recurring traffic. For variant analysis at scale and judge-prompt
+integrity rules, hand off to `evals`.
 
 ---
 

@@ -1,6 +1,6 @@
 # Code Creation Workflow
 
-Unified orchestrator for all feature development. Supersedes brainstorming, writing-plans, executing-plans, test-driven-development, plancraft, and feature-dev.
+Unified orchestrator for all feature development. Supersedes brainstorming, test-driven-development, plancraft, feature-dev, and the retired plan-writing/plan-execution skills (their plan format and execution gates are inlined at `references/plan-execution.md`).
 
 ## Installation model
 
@@ -125,7 +125,8 @@ skills/claude-flow/
     ├── run-manifest.md               # Replayable per-run workflow metadata
     ├── workflow-profiles.md          # Human summary of path metadata
     ├── workflow-state-lifecycle.md   # Lazy-loaded state machine details
-    └── project-bootstrap.md          # Lazy-loaded memory + hook bootstrap
+    ├── project-bootstrap.md          # Lazy-loaded memory + hook bootstrap
+    └── container-use-execution.md    # Optional isolated Phase 5 backend
 
 scripts/hooks/
 ├── cleanup-worktrees.sh              # Prune orphaned worktrees on session start

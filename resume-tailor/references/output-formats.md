@@ -19,6 +19,8 @@ All Phase 5 deliverables go to `~/Documents/resumes/<Company>/` — one folder p
 
 Ask once if the target folder already exists with content that wasn't written this session — otherwise overwrite freely (each session owns its company folder).
 
+**`Submitted/` subfolder:** once an application ships, the company folder may move to `~/Documents/resumes/Submitted/<Company>/`. The move signals the application is in flight, and it can happen mid-session — a `cd` into a path that was valid moments earlier will fail with "no such file or directory" (hit 2026-07-20 on Airtable). Recover with `find ~/Documents/resumes -iname "*<company>*"` rather than assuming the original path still holds.
+
 ## 0.1 `jd.md` — Save the JD Alongside Every Tailored Output (Required)
 
 Every company folder must contain `jd.md` with:
@@ -28,6 +30,12 @@ Every company folder must contain `jd.md` with:
 3. The full JD text as pasted by the user
 
 URL collection is a Phase 5 input-validation step that runs before any file write. `jd.md` is written as part of the Phase 5 output set once the URL is in hand — the same step that writes the resume and cover letter, not after.
+
+## 0.2 `application-questions.md` — Application Short-Answer Questions (Optional)
+
+When an application asks its own short-answer questions separate from the cover letter, save the answers to `application-questions.md` in the company folder. Standardize on that filename; a 2026-07-17 GiveDirectly session used `<Company>_Application_Answers.md` and the inconsistency makes prior answers hard to find.
+
+**Structural rule — §5b's resume-narration ban applies to this artifact too.** Answer the question in sentence one, then organize evidence by responsibility or capability, never by employer chronology. A draft that walks five employers in sequence is a resume in paragraph form: it lists projects instead of answering what was asked. Pick two or three employers as evidence and cut the rest. Validated 2026-07-20 (Airtable, "managed delivery experience... concurrent projects, P&L"): the chronological draft was rejected outright, and the accepted rewrite opened *"My delivery experience has ranged from leading concurrent AI programs inside large organizations to running my own software business,"* then used three employers and dropped two.
 
 **Format:**
 
@@ -57,7 +65,7 @@ The outcome trail makes the per-company folder a forensic record — what was th
 
 **Promotion-only fields (do not pre-populate):** the `Outcome:` field stays absent until something happens. Pre-populating with `submitted` on every save adds noise without signal.
 
-**Recommended fetcher for LinkedIn URLs:** prefer the repo-local `jd-prep` CLI (`tools/jd-prep/jd_prep.py <url>`). It hits LinkedIn's unauthenticated guest endpoint, extracts structured metadata + deduplicated body, and writes `~/Documents/resumes/<Company>/jd.md` directly — satisfying this section's URL-retention rule in one step. Generic web fetch on LinkedIn job pages typically returns auth-walled content. For invocation details, read [tools/jd-prep/README.md](/Users/summerrae/claude_code/claude-skills/tools/jd-prep/README.md).
+**Recommended fetcher for LinkedIn URLs:** prefer the repo-local `jd-prep` CLI (`tools/jd-prep/jd_prep.py <url>`). It hits LinkedIn's unauthenticated guest endpoint, extracts structured metadata + deduplicated body, and writes `~/Documents/resumes/<Company>/jd.md` directly — satisfying this section's URL-retention rule in one step. Generic web fetch on LinkedIn job pages typically returns auth-walled content. For invocation details, read [tools/jd-prep/README.md](../../tools/jd-prep/README.md).
 
 **Input-handling rules (Phase 5 input validation, before any file write):**
 
@@ -233,7 +241,7 @@ Read the JD's voice and the company's public writing. Match it. A letter pitched
 ### Anti-patterns (reject in review)
 
 - Load `references/cover-letter-review.md` before drafting or revising. It is the local source for opener tests, anti-patterns, and final review passes.
-- **P1 comparative framing** ("rare to find a posting that asks for both") — rewrite to positive-personal ("I was excited to see…"). The hiring team is not the audience for market critique.
+- **P1 comparative framing** ("rare to find a posting that asks for both") — rewrite to the candidate-pattern opener ("My career has centered on...", see cover-letter-review.md §2), never to an enthusiasm opener. The hiring team is not the audience for market critique.
 - **P1 credential stacking.** P1 sentences stuffed with years, employer names, and stakeholder names ("fifteen years running AI functions for C-suite stakeholders, plus the past year working with Andrew Ng's team") are a P1 failure even when each fact is true. P1 positions; P2/P3 prove. If the hook paragraph carries numbers and named employers, cut them out and push them into the bridge paragraphs where they earn their keep.
 - **Aspirational-future framing in P1.** Phrases like "the blend I've been building toward", "the direction I've been working toward", "where I'm heading" read as LLM-generated and weaken owned claims. Prefer completed past tense: "this is exactly where I've spent the last few years" over "the blend I've been building toward." The user has done the thing — say so.
 - **Abstracted-away-from-the-posting language.** "A role asking for…" is one step removed; "your role posted for…" / "your posting for…" / "the X role you're hiring for" speaks directly to the reader. Keep P1 second-person-adjacent, not third-person about.
@@ -298,15 +306,26 @@ Why this matters: the Phase 2 and Phase 4 checkpoints validate individual bullet
 3. Show education, speaking, and any tail sections. Ask: *"Tail sections good, or edits?"*
 4. After every section is approved, show the full assembled resume once more and ask: *"Final read — anything to change before I write the file?"*
 
-Only after the final confirmation: write the markdown, generate DOCX, and produce the cover letter. The cover letter gets its own review pass (paragraph-by-paragraph) before file export.
+Only after the final confirmation: write the markdown, generate and verify the PDF beside it, generate DOCX only if requested, and produce the cover letter. The cover letter gets its own review pass (paragraph-by-paragraph) before file export.
 
 Before the final confirmation, load `references/resume-qa.md` and run its section-level, role-level, and document-level checks. If the summary is weaker than the first bullet, cut it. If the skills section is more specific than the experience section, strengthen the experience section before exporting.
 
-## 4. Format Conversion (Optional)
+## 4. Format Conversion
+
+PDF is required for every tailored resume. Save it beside the Markdown source in `~/Documents/resumes/<Company>/`; PDF generation is not optional. Use the PDF skill workflow, render the result when possible, and verify the file exists and contains the assembled resume text. If generation or visual verification is unavailable, mark the PDF blocked or unverified in the handoff rather than delivering Markdown alone.
 
 - **DOCX:** use pandoc with `--reference-doc=` pointing at the appropriate template in `templates/` — this inherits the user's fonts, margins, and heading styles on every render. See `templates/README.md` for the exact command. If `pandoc` is unavailable, deliver reviewed markdown and stop there unless the user requests a different conversion path you can actually verify.
 - **DOCX via `/tmp/` script:** if generating with a standalone node script that imports `docx-js`, the module is often installed globally. Wrap the call: `NODE_PATH="$(npm root -g)" node /tmp/generate_resume_docx.js`. Without `NODE_PATH`, node can't resolve global packages from scripts outside an npm project and fails with `Cannot find module 'docx'`.
-- **PDF:** convert from DOCX (Word, Pages, LibreOffice) OR render markdown via pandoc. Avoid PDF as primary source — ATS parses PDF unreliably. Submit DOCX when allowed; PDF only when required.
+- **PDF (Summer's default output — see note below):** the styling-preserving path is DOCX → PDF via LibreOffice (`soffice --headless --convert-to pdf out.docx`). When LibreOffice AND weasyprint are both unavailable (weasyprint needs pango/gobject native libs that are often missing on macOS Python.org installs and fails with `OSError: cannot load library 'gobject-2.0-0'`), the verified fallback is pandoc → styled HTML → Chrome headless:
+  ```bash
+  pandoc resume.md -t html5 -s --css=resume.css --embed-resources -o resume.html
+  "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome" --headless --disable-gpu \
+    --no-pdf-header-footer --print-to-pdf="$PWD/resume.pdf" "file://$PWD/resume.html"
+  ```
+  **The fallback CSS must reproduce the resume template's brand styling — do NOT default to a generic ATS sheet.** The DOCX `--reference-doc` path inherits the template automatically; the HTML→Chrome path does not, so a `resume.css` copied from a prior company folder (Georgia serif, black-and-white) silently discards the brand and ships a "plain black and white" resume (Summer flagged exactly this on the 2026-07-12 BNY Mellon render). Before rendering, extract the template's fonts/colors — `unzip -p references/templates/resume-template.docx word/styles.xml` — and reproduce them: the canonical template defines Title 30pt `#353744`, Subtitle 18pt `#00ab44` (green), section `h1` 14pt bold `#00ab44`, role `h2` 12pt `#353744`, body Proxima Nova (XML sizes are half-points: 60/36/28/24). A committed brand sheet lives at `references/templates/resume.css` — copy it and adjust `@page`/font-size/`line-height` for page fit; regenerate from `styles.xml` if the template ever changes. **Gotcha:** pandoc emits the name/headline `custom-style` divs as `data-custom-style="Title"` / `data-custom-style="Subtitle"` in HTML — target `div[data-custom-style="Title"] p` in the CSS, NOT `div[custom-style="Title"]` (no `data-` prefix), or the name silently renders as plain body text while a bolded contact line outweighs it. Tighten `@page` margins and `h1`/`h2` top-margins to pull a lone trailing line back onto the prior page. Count pages with `python3 -c "import re;print(len(re.findall(rb'/Type\s*/Page[^s]', open('resume.pdf','rb').read())))"` (macOS `mdls` page count is often null before Spotlight indexes). Avoid PDF as ATS *primary* source when DOCX is accepted; render PDF when the form requires it or the user prefers it.
+- **Never pass `--metadata title=` to the pandoc→HTML step: it prints the candidate's name twice.** With `--standalone`, pandoc renders `title` as a visible `<header id="title-block-header"><h1 class="title">` in the body, not just the `<title>` tag, so the page shows the metadata title AND the name paragraph beneath it. Use `--variable pagetitle="..."` instead (sets `<title>` only), and gate the render on `grep -c title-block-header out.html` returning `0`. Caught 2026-07-20 on the OpenLoop cover letter, but only after Summer sent a screenshot — ten renders had passed the page-count check.
+- **Page count is necessary, not sufficient — see the rendered page before shrinking anything.** The `/Type /Page` regex proves how many pages exist, not what is on them. A phantom H1, a doubled block, or a wrong font consumes vertical space invisibly, so "still two pages" gets misread as "text too long." On the OpenLoop letter that misread drove eight rounds of margin and line-height cuts (down to 0.55in) chasing overflow that a stray heading was causing; removing the heading restored a normal 0.7in page instantly. **Rule: if a document overflows after two typography reductions, stop cutting and inspect the rendered output.** On this Mac there is no self-serve way to do that (see agent-vault `hardware-and-environment.md`), so ask the user for a screenshot rather than looping on programmatic checks.
+- **Summer's standing preference:** deliver the resume as **PDF, not DOCX** (set 2026-07-04; see project memory `resume-output-pdf-preference`). Render the PDF, keep the `.md` source, and do not leave a DOCX behind unless she asks.
 - **Plain text:** for pasting into LinkedIn or ATS forms, generate a plain-text version stripped of markdown syntax.
 
 Never offer HTML, LaTeX, or heavily-designed templates as default. They fail ATS parsers.
@@ -342,6 +361,7 @@ These waste line real-estate on a modern resume. Cut them unless a specific JD o
 Before wrapping up:
 
 - [ ] Tailored resume (markdown)
+- [ ] Tailored resume (PDF), saved beside the Markdown source and verified or explicitly marked unverified
 - [ ] Keyword coverage report
 - [ ] DOCX version (if requested)
 - [ ] Cover letter draft (if requested)

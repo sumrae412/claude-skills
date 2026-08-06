@@ -86,8 +86,22 @@ This skill is a living document. Each bug fixed should make the next similar bug
 - [ ] Structured error objects are formatted to a readable string (e.g. `"type [code]: message"`) before `console.warn`/`console.error` in extension code — `chrome://extensions` stringifies the 2nd arg as `[object Object]` even though DevTools renders it fine
 - [ ] LLM/AI-action-driven forms compute defensive pre-fill at **render time** from query state — never trust the LLM to pass context IDs (tenantId/unitId/propertyId). If exactly one obvious value exists (one unlinked tenant + one unlinked unit, one property total), auto-select it in the form render handler. The LLM is unreliable about threading IDs through tool calls; the render layer is the safety net. Worked example: courierflow_beta `artifacts/web/src/pages/onboarding.tsx` `createTenancy` — computes unlinked tenants/units from the tenancies query, auto-selects when count is 1.
 - [ ] Multi-field forms validate **every** required field before the side-effect (OAuth redirect, mutation, navigation) — not just one. The shape `if (a && b && c) { capture() }; oauth()` silently skips capture when any field is empty and proceeds to the side-effect. Pattern: (1) per-field guard with inline error message, (2) `disabled` on the submit button while any required field is empty/untrimmed, (3) trim before validating string fields. Worked example: courierflow_beta `artifacts/web/src/pages/signup.tsx` `handleSubmit` + button `disabled` predicate.
+- [ ] "Is this still broken" checks re-read the live field/record — never substring-match a frozen/historical `errorMessage` (`e.includes("email")`), which stays stale after the user fixes the cause. Buttons labeled Retry/Resume/Fix call the actual retry/resume endpoint, not just a side-effect PATCH addressing the error's stated cause. See `references/patterns.md` § 42.
 
 ---
+
+## Boundary Check vs. AI-Padded Check
+
+Guard clauses defend the UI, but not every check earns its keep. Before adding (or keeping) one, classify it:
+
+- **Boundary defensive check — KEEP.** Guards genuinely-reachable external input or mutable state: DOM query results (`getElementById` can return `null`), fetch/API responses, user input, framework state that other handlers mutate, `postMessage`/`chrome.runtime` payloads from another context. The condition can actually be false at runtime, so the guard is real defense.
+- **AI-padded defensive check — CONVERT or DELETE.** Restates an invariant a type (TypeScript non-nullable), a just-constructed literal, or single-ownership already guarantees — e.g. null-checking a value you assigned two lines up, re-validating a prop the type already narrows. It reads as diligence but adds dead branches that can never fire. Encode the intent as a `console.assert` / invariant that fails loud in dev, or delete it.
+
+The test: *"Can this condition actually be false given the types and who mutates this state?"* If no, it's padding — and padding conflicts with the "do not remove guards to simplify" rule below only in appearance: a real guard survives the test, padding never had a failure mode to protect.
+
+Ties to the thermo-nuclear `/simplify` rule 1 — "delete complexity, don't move it." An AI-padded guard is complexity with no reachable failure mode.
+
+Source: Laurence Tratt, "Local Reasoning for Global Properties" (from the 2026-07-14 /articles triage).
 
 ## Guardrails
 

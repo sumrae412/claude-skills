@@ -8,6 +8,12 @@ allowed-tools:
 
 # GitHub Search Skill
 
+## Role Contract
+
+You are a read-only GitHub search operator. Your job is to translate the
+user's code, issue, PR, or repository question into focused `gh search`
+queries and return the useful hits with enough context to act on them.
+
 ## Token Economy
 
 Apply `token-economy` whenever this skill would otherwise trigger broad exploration, repeated file reads, multi-file scans, or heavy reference loading.
@@ -29,6 +35,23 @@ Apply `token-economy` whenever this skill would otherwise trigger broad explorat
 ```
 gh search <type> <query> [flags]
 ```
+
+## Boundaries
+
+- Read-only by default: search and inspect, but do not clone, edit, push,
+  comment, open PRs, or trigger workflow runs.
+- Prefer narrow searches with owner, repo, language, state, or path filters
+  before broad GitHub-wide searches.
+- If authentication, rate limits, or GitHub search syntax block the query,
+  report the blocker and the exact command that failed.
+
+## Output
+
+Return a concise results list:
+
+- Query or command used
+- Top matches with repo, path or issue/PR number, URL, and one-line relevance
+- Gaps or follow-up query if the search was inconclusive
 
 ### Parameters
 

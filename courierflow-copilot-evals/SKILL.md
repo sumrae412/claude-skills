@@ -37,6 +37,54 @@ Before writing or modifying any eval's grader, classify the assertion:
 3. Error-rate ceiling (>5% fails the suite regardless of pass_rate).
 4. Multi-sample wiring (N=1 PR-gate, N=2 nightly, item passes only if all samples agree on all bits) — short-alias model pinning, logged in result JSON.
 
+## Tool-Call Failure Taxonomy (read + aggregate, eval-only)
+
+The correctness runner emits a typed, non-lossy tool-call failure
+taxonomy per graded item. A session running or reading correctness
+evals MUST read and aggregate `tool_call_outcomes[]` — a bare pass/fail
+bit hides which kind of tool-call failure is driving a score.
+
+The four labels (they may coexist; a clean call is `[]`):
+
+- `wrong_tool` — the agent called a tool no expectation allowed (raw
+  pre-allowlist name, so allowlist filtering cannot masquerade as
+  `no_tool`).
+- `no_tool` — the agent made no acceptable call where one was required.
+- `missing_arguments` — a matched call omitted a required parameter.
+  Derived from the canonical Charley tool schema
+  (`lib/charley-prompt/src/tool-schemas.ts`), not mock executor error
+  strings.
+- `invalid_arguments` — a matched call sent a value failing schema
+  constraints: type, enum, const, oneOf (discriminator-aware), nested
+  objects, and array items.
+
+Where it lives: `per_item[].tool_call_outcomes` in the correctness
+runner artifact, written by
+`courierflow_beta/tools/correctness/run_correctness.py` to
+`<run-id>/results.json` under `--output-dir` (default
+`/tmp/correctness-runs/`).
+
+Aggregate across accumulated runs when asked "what do tool-call
+failures look like" — count label frequency:
+
+```bash
+python3 - <<'PY'
+import json, glob, collections
+c = collections.Counter()
+for f in glob.glob("/tmp/correctness-runs/*/results.json"):
+    with open(f) as fh:
+        for item in json.load(fh)["per_item"]:
+            for label in item.get("tool_call_outcomes", []):
+                c[label] += 1
+print(dict(c))
+PY
+```
+
+Observation only. Do NOT turn these labels into an automatic retry or
+clarification loop — Summer's standing decision is to let the labels
+accumulate before considering any such loop. (Taxonomy shipped in
+[courierflow_beta#1142](https://github.com/sumrae412/courierflow_beta/pull/1142).)
+
 ## Self-Improving Loop
 
 Use this loop for each specific Copilot failure mode:
@@ -148,6 +196,21 @@ self-improvement loop.
    - no unsafe claim was made,
    - no raw exception or internal stack trace was shown.
 
+6. **Persist and verify the result**
+   Keep the existing Phoenix-shaped artifact, but also emit one normalized
+   record per case:
+   - `schema_version`, `run_id`, `suite`, `case_id`
+   - provenance: dataset path, eval tier, grader, configured SUT model
+   - `outcome`: `pass`, `fail`, or `error`
+   - score, reason, expected evidence, observed evidence, and cost
+   - `served_model`: the model returned by `/api/eval/chat`, separate from
+     configured model; use `served_models` if one run mixes models
+
+   Treat runner/infrastructure failures as `error`, not model failures.
+   Add pure adapter tests for pass, fail, and error, then run one bounded
+   smoke and inspect the emitted JSON. A green unit test is not enough if the
+   artifact drops dataset, grader, or served-model provenance.
+
 ## Eval Case Shape
 
 Use YAML for human-reviewable eval cases:
@@ -210,6 +273,23 @@ Required spans for real Copilot activity:
 Smoke spans like `courierflow.phoenix_smoke_test` do not prove the chatbot path
 works.
 
+For the Layer B runner, use a hard cost ceiling and inspect provenance after
+the run:
+
+```bash
+set -a; source .env.local; set +a
+EVAL_SONNET_APPROVED=1 \
+  bash scripts/run-evals-local.sh \
+  --suite tool-selection --limit 1 --max-cost 0.25
+
+jq '.servedModels, .normalizedPerItem[].provenance' \
+  test-results/local/phoenix-tool-selection.json
+```
+
+The expected distinction is `sut_model` (configured) versus `served_model`
+(returned by the API). Never report a model comparison from configuration
+alone.
+
 ## Safety Assertions
 
 Always include safety checks for actions that can affect tenants:
@@ -231,6 +311,16 @@ Recommended cadence:
 
 If an eval fails, preserve the prompt, response, DB diff, and Phoenix trace IDs
 in the failure report.
+
+## Authoring discipline for bulk eval enumeration
+
+When a task is "ship N records from a policy/spec doc":
+
+1. **Audit policy coverage FIRST** via one grep on the spec for the target IDs/categories. Three outcomes: all enumerated with example outputs → author; categories defined but records not → ask whether to enumerate inline or defer; undefined → STOP (policy-lock task, not authoring task). Skips relitigation mid-authoring.
+2. **Use `_seed_gap` for data-ahead-of-infra.** When a fixture's graded path needs seeder state the seeder doesn't yet support, ship with an underscore-prefixed `_seed_gap` field naming the specific blocker. A follow-up seeder-extension slice resolves the tags. Preserves corpus coverage without blocking on infra.
+3. **Partition large enumerations by ID range** across parallel sessions when the corpus is append-only (`.jsonl` + per-record sidecars). Disjoint ranges merge conflict-free off the same `origin/main` base.
+
+See courierflow_beta `CLAUDE.md` for full gotcha entries and validating PRs (slice 6a [#151](https://github.com/sumrae412/courierflow_beta/pull/151), slice 6b [#156](https://github.com/sumrae412/courierflow_beta/pull/156)).
 
 ## References
 

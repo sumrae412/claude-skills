@@ -145,6 +145,42 @@ If `risk_class.level == high`, the change may not proceed on a fast or lite
 implementation path unless the user explicitly narrows scope to planning-only
 or documentation-only work.
 
+### Reference exemplar (optional)
+
+Acceptance criteria answer "is it correct." They do not answer "is it good."
+For deliverables whose quality is judged comparatively — a UI surface, a landing
+page, a README, a generated document, a CLI's output format — ask one question
+before closing this step:
+
+> Is there a specific, openable artifact that represents the bar we want to clear?
+
+If yes, populate `reference_exemplar` with its name, an inspectable locator, and
+the 2-5 dimensions "better" is judged on.
+
+**If the user did not name one, discover one before giving up.** The bar can be
+prescribed or found; only *vague* is disqualifying. Dispatch a bounded search
+with this instruction, from the source method:
+
+> Choose the strongest concrete bar that an agent can actually inspect and
+> compare its work against.
+
+Two constraints on what comes back. It must be **openable at review time** — a
+live URL, a vendored file, a committed screenshot — because Phase 6 aborts with
+`exemplar-unreachable` rather than grade from memory. And it must be the
+*strongest* available, not the nearest: the benchmark's whole value is that it
+can tell you a surface is consistent with a mediocre convention, which a bar
+picked for being easy to beat cannot do.
+
+Omit the field only when the work has no comparable surface at all — a bug fix,
+a migration, a service refactor. **Never invent one to fill the slot**: a vague
+exemplar produces a reviewer grading against taste, which is the exact failure
+the field exists to prevent. "No inspectable bar exists" and "I did not look" are
+different answers; say which.
+
+Naming the dimensions is what keeps the downstream comparison bounded. "Better
+than Linear's issue view" is unfalsifiable; "better on empty-state clarity,
+keyboard affordance, and scan density" is checkable.
+
 This contract flows downstream to Phase 4 (architecture references it), Phase 4c (validates plan coverage against it), and Phase 6 (reviewers check adherence).
 
 **Present to user for approval.** The structured requirements are the contract for everything downstream. If the user provides feedback, revise and re-present.

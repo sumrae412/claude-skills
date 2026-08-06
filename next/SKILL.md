@@ -14,14 +14,83 @@ Apply `token-economy` whenever this skill would otherwise trigger broad explorat
 - Batch independent tool calls and keep narration/results tight.
 - If the task is tiny or the file set is already known, apply the relevant patterns inline instead of loading extra material.
 
+## Model Economy
+
+**Default to the cheapest model that can safely do the step.** Most of `/next` is mechanical — state collection, file writes, git plumbing — and does not need a frontier model. Delegate those steps to a pinned-cheap executor instead of running them in the orchestrator's context.
+
+| Step / work | Tier |
+|---|---|
+| Pre-flight state collection (`git status`, `git worktree list`, `gh pr list`, `ls docs/plans/`), inventories, greps | Sonnet-class executor |
+| Drafting the handoff doc body from a supplied outline + collected state; mechanical edits; grep-for-old-framing sweep (Guardrail at bottom) | Sonnet-class executor |
+| Deciding **what the next task is**, resolving contradictory state, judging "is this doc self-contained?", triaging a blocked merge | Orchestrator (current model) |
+| Genuinely hard root-cause or architecture judgment blocking the handoff | Opus-class executor |
+
+**Dispatching a tier.** Use whichever mechanism the current project offers, in this order:
+1. A project-defined pinned subagent that is **read-only**, if one exists — check `ls .claude/agents/` first. In `~/claude_code/henry/` the read-only types are `recon-scout`, `ci-watcher`, `pr-reviewer`, and `memory-curator`; `cheap-worker`, `fast-worker`, and `deep-reasoner` are write-capable and will be blocked by `autonomy-guard` for read-only work. Do NOT assume these names exist elsewhere; they are henry-only.
+2. Otherwise `Agent` with an explicit `model:` override (`model: "sonnet"` / `"opus"`) on a read-only agent type — `Explore` for search and state collection, `Plan` when the step needs reasoning over what it reads.
+3. If neither is available, do the step inline — but keep the brief tight so the cost stays proportional.
+
+Rules:
+- **Never dispatch a frontier model for step-collection or file-writing.** If the brief is "run these commands and report" or "write this file from this outline", it is Sonnet work.
+- **Escalate on ambiguity, not on importance.** A high-stakes step still runs cheap if the spec is exact; escalate the moment the executor would have to make a design call.
+- **One escalation hop at a time** — Sonnet → orchestrator. Do not jump from Sonnet to Opus.
+- **Safety floor:** any step that decides what to ship, what to merge, or whether to STOP stays with the orchestrator. Cheap models collect evidence; they do not adjudicate it.
+- Batch cheap dispatches — one Sonnet call collecting all pre-flight state beats five.
+- **Every dispatched step here is read-only, so the executor must be a read-only agent type.** Henry's `autonomy-guard` hook blocks write-capable spawns (`cheap-worker`, `fast-worker`, `general-purpose`, and any type whose `.claude/agents/` frontmatter declares no `tools:` line) as the red-lane `spawn-unauthorized-agent` class. State collection is read-only, so dispatch a read-only type — `Explore` is the right default, with `model: "sonnet"` — rather than stamping `[write-ok]` on a dispatch that never needed write authority. Validated 2026-07-30: a `/next` run was blocked twice before switching to a read-only type.
+- **Writing the handoff doc is the one step that is NOT dispatched.** A read-only executor has no Write tool, so handing it the file to write fails outright; the alternative — spawning a write-capable type and stamping `[write-ok]` — buys nothing, because the orchestrator has to read the result back as the acceptance gate anyway and the doc is dense with exact SHAs, PR numbers, and session ids that a re-drafting pass can silently garble. The orchestrator writes it. Validated 2026-07-30: an `Explore` dispatch refused the write ("I don't have a Write tool available"), and the doc was written inline.
+
+### Model-economy checklist — create a TodoWrite item for each
+
+This is a checklist, not advice. The steps below are where it binds; skipping one is a deviation you must name.
+
+- [ ] **M1** — Step 0 pre-flight state collected by a Sonnet dispatch, not inline.
+- [ ] **M2** — handoff doc written by the orchestrator, from your own decisions + M1's output. Not dispatched: read-only executors cannot write, and this doc's exact identifiers must survive verbatim.
+- [ ] **M3** — orchestrator did only these four things: decide the next task, adjudicate contradictory state, judge self-containment, triage blockers.
+- [ ] **M4** — if M1 ran inline anyway, say so in the close-out with the reason. Silent inlining is the failure mode this section exists to catch. (M2 is inline by design and needs no such note.)
 
 **Announce at start:** "Using /next to write a handoff doc, then ship and clean up."
 
 Execute in this order. Do NOT interleave. Each step blocks the next.
 
+## Step 0 — Dispatch pre-flight collection (Sonnet)
+
+Do NOT run these commands yourself. Your first action in `/next` is this dispatch:
+
+```
+Agent(
+  subagent_type: "Explore",
+  model: "sonnet",
+  run_in_background: false,
+  description: "Collect /next pre-flight state",
+  prompt: """
+  Read-only. Run each command, return raw output under a heading per command.
+  Do not interpret, recommend, or summarize — the orchestrator adjudicates.
+    git rev-parse --show-toplevel
+    git branch --show-current
+    git worktree list
+    git status --short
+    git log --oneline -10
+    ls docs/plans/*handoff*.md 2>/dev/null
+    gh pr list --state open --json number,title,headRefName
+  Then: for the 2 most recently merged PRs, `gh pr view <n> --json reviews,statusCheckRollup`.
+  Word cap: none on raw output, but add zero prose of your own.
+  """
+)
+```
+
+The orchestrator reads that output and decides. That division — cheap model collects, expensive model adjudicates — is the whole point.
+
+If no Sonnet dispatch mechanism exists in this project (checked `ls .claude/agents/` and `model:` override unavailable), run inline and record it under **M4**.
+
 ## Step 1 — Write a continuation prompt
 
-Before anything destructive, capture the handoff so a fresh session can resume cleanly. Write (or append to) a doc under `docs/plans/` — check first with `ls docs/plans/*handoff*.md`. If an existing session-handoff doc covers this work stream, append a new dated execution-log entry. Otherwise create `docs/plans/<YYYY-MM-DD>-session-handoff.md`.
+Before anything destructive, capture the handoff so a fresh session can resume cleanly. Step 0 already returned the `docs/plans/*handoff*.md` listing — do not re-run it. If an existing session-handoff doc covers this work stream, append a new dated execution-log entry. Otherwise create `docs/plans/<YYYY-MM-DD>-session-handoff.md`.
+
+**Write this step yourself (M2).** Both the decisions and the file are orchestrator work — this is the exception to the dispatch-by-default rule above.
+
+- **Orchestrator decides**: the exact next task and why, which state is contradictory and which reading wins, what invariants to name, whether the doc is self-contained.
+- **Orchestrator writes** the file against the 9-item structure below, using Step 0's raw output for the state section. Do not dispatch it: a read-only executor has no Write tool, and a write-capable one would be re-typing SHAs, PR numbers, worktree paths, and session ids that must survive verbatim.
+- Then apply the self-containment test at the end of this step. That is the acceptance gate, not a formality.
 
 The continuation prompt must be **self-contained** — the next session has zero memory of this conversation. Include:
 
@@ -34,11 +103,13 @@ The continuation prompt must be **self-contained** — the next session has zero
    - **Canonical repo path.** Record the absolute path; do not assume `~/repos/<name>` or similar — the resumer's layout may differ. Validate with `git -C <path> rev-parse --show-toplevel`.
    - **Current branch + worktree.** `git branch --show-current` plus `git worktree list`. A handoff doc that says "current branch: X" may refer to a sibling worktree's branch, not the resumer's cwd.
    - **CR / CI wiring state for THIS repo.** `gh pr view <recent-merged-PR> --json reviews,statusCheckRollup` against 1–2 recently merged PRs. Both empty across both samples → no automated review will ever land; do NOT block on "address review feedback" before merge. See `shipping-workflow`'s no-review-wired-up fast path. Validated 2026-05-27 on [claude-skills PR #118](https://github.com/sumrae412/claude-skills/pull/118) — handoff doc had wrong path (`~/repos/claude-skills`), wrong branch assumption, and gated on nonexistent CodeRabbit feedback.
+   - **Worktree match.** If the handoff names a specific worktree (e.g. `silly-swanson-899c1e`), run `git worktree list` and verify the resumer's cwd matches. When the resumer opens in a different worktree, the named worktree may still exist with staged work — `cd` to the correct path before acting; do not recreate the work in the wrong tree. Validated 2026-05-28 on [courierflow_beta PR #108](https://github.com/sumrae412/courierflow_beta/pull/108): handoff named worktree `silly-swanson-899c1e`, resumer opened in `magical-mayer-4d97ac`, both worktrees existed with the silly-swanson tree holding the prior session's staged docs + open PR. `git worktree list` + `cd` prefix preserved the work; without this check the resumer would have re-authored from a clean tree and shipped a duplicate PR.
 6. **Architectural invariants to preserve** — cite by memory-file slug (e.g. `pattern_copilotkit_page_context_readables.md`) or CLAUDE.md section. Do not re-explain the invariants; name them.
 6a. **Parked artifacts (if any)** — if this session is leaving behind a saved patch, stash, or branch the next agent will resume from, name the artifact path AND the base SHA the artifact was generated against. Example: `Patch: abandoned/2026-05-04-foo.patch (generated from origin/main @ 5452caae)`. Also record net `+N / -M` line counts at save-time. The next agent will diff the recorded base SHA against current `origin/main` before applying — without it, they have no way to detect base-staleness silently. If the artifact is a stash, capture the `git stash list` entry too. See `feedback_verify_saved_patch_base_before_apply.md` and `pattern_parked_patch_double_anchor.md`.
 7. **Gates** — `./scripts/quick_ci.sh` (or project equivalent), `ruff format --check` on touched files, any test-subset command that isolates the relevant suite.
 8. **Ship instructions** — literal: "Ship via `/ship`. Update [specific doc row] with the PR number before merging." If the work is pattern-replication of an already-shipped PR, say so — the next agent should use `/ship`, not `/claude-flow`.
 9. **Mode directive** — `Auto mode. Surface premise contradictions only.`
+9a. **Unapproved drafts — embed verbatim, don't summarize.** If `/next` fires while drafts (decision records, spec amendments, PR bodies) are sitting in the conversation awaiting user sign-off, embed them VERBATIM in the handoff doc — not as a summary, not as a "see chat log" pointer. The next session has zero chat memory; a summary forces re-derivation and reopens decisions the current session had already worked through. Two reads of the user's `/next`-before-sign-off are valid (resume in cold context vs abandon the proposal); name both in the handoff and pick a default. Validated 2026-05-31 on courierflow_beta slice 7 binary-collapse handoff (PR #190): 6 spec amendment drafts embedded verbatim so the resuming session could ask for sign-off, then ship — no re-derivation.
 
 Write the handoff doc, then read it back and ask: "If I had no memory of this session, could I execute the next task from this doc alone?" If not, fill the gap before proceeding.
 
@@ -63,6 +134,10 @@ The handoff doc from Step 1 is committed as part of the shipping PR, NOT as a se
 Do not manually invoke session-learnings, sync repos, or remove worktrees — `/cleanup` (triggered by `/ship`) handles all of it.
 
 If Step 2 was skipped (clean tree, nothing to ship), invoke `/cleanup` directly instead.
+
+**Session-learnings is NOT skippable at /next.** Run it even if a learnings pass already fired earlier in the session — /next is a cluster boundary, and work done after the earlier pass (fixes, corrections, shipped rules) is exactly the material that otherwise dies in chat scroll. "The learning was already codified into a rule this session" is not a skip reason either: the analyst's job includes checking whether the codified rule needs cross-links or coverage elsewhere. The ONLY valid skip is a session with zero substantive work since the last pass (pure lookup/status sessions). Origin: 2026-07-06 — a /next close-out skipped learnings with a plausible-sounding rationale; Summer corrected: the next command should include running session learnings.
+
+**Delayed merge approval resumes at cleanup.** If `/ship` stops at a no-CI or user-approval merge gate and Summer later approves the merge, resume `/next` at Step 3 immediately after merge verification. Do not treat merge verification as the end of `/next`; session-learnings, repo sync, and worktree cleanup still run.
 
 ## Step 4 — Output the continuation prompt
 

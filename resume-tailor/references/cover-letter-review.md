@@ -7,7 +7,7 @@ Local review reference for Phase 5 cover-letter drafting. Load this file before 
 Before drafting, load these in order:
 
 1. **The candidate's canonical structural example** — `~/Documents/resumes/Summer_Rae_CoverLetter.md`. Always load. This is the endorsed paragraph shape, cadence, and voice baseline.
-2. **The annotated structural template** — `references/templates/cover-letter-structural-template.md`. Always load alongside the baseline. Captures the 4-paragraph hook → bridge → operational-evidence → close pattern as a skeleton with per-paragraph rules and two paired shapes (Shape A — operational-fit / Shape B — career-arc). The shape pair is selected from the JD signal at draft-start and carried through P1 → P2 → P4.
+2. **The annotated structural template** — `references/templates/cover-letter-structural-template.md`. Always load alongside the baseline. Captures the 4-paragraph hook → bridge → operational-evidence → close pattern as a skeleton with per-paragraph rules and three shapes: **Shape C — candidate pattern (the default since 2026-07-20)**, plus variants Shape A (operational-fit) and Shape B (career-arc). Shapes A and B pair through P1 → P2 → P4; Shape C pairs with any P2 and moves the company connection to the close.
 3. **Voice corpus** — `~/Documents/resumes/_voice-corpus/{originals,successful}/`. Proven-by-interview letters that supplement the baseline when available.
 
 Do NOT read prior letters from per-company folders (`~/Documents/resumes/<company>/cover-letter.md`) as voice templates. Those letters either failed, are in flight, or were endorsed in-session without an interview signal, and pulling voice from them compounds AI cadence over time.
@@ -22,7 +22,7 @@ A cover letter is a professional introduction, not a sales pitch or highlight re
 
 ### Tone
 
-- Lead with **their situation**, not the candidate's accomplishments. Open on what the company is actually trying to solve.
+- **P1 leads with the candidate's pattern; P2-P4 lead with the work.** Updated 2026-07-20: the old rule ("open on what the company is actually trying to solve") pushed P1 into explaining the company's business back to it, which reads as interpretation rather than fit. P1 states the through-line in the candidate's career; from P2 on, paragraphs open on the work, the problem, or the company's situation rather than a credential.
 - Connect experience conversationally. *"Your challenge with X reminds me of..."* beats *"I achieved X."*
 - Write like a peer-to-peer note, not a pitch deck to investors.
 - Confident, not boastful. Let the evidence speak; resist the urge to interpret it for the reader.
@@ -36,7 +36,7 @@ A cover letter is a professional introduction, not a sales pitch or highlight re
 ### Sentence subjects
 
 - Vary sentence subjects. Most sentences should NOT start with "I" — resume cadence is the failure mode this catches.
-- P1 may open with the canonical "I was excited to see..." but subsequent sentences in P1 and all of P2-P4 should rotate subjects (the company, the work, the dataset, the problem, the result, the lesson).
+- P1 opens with the candidate-pattern sentence ("My career has centered on...") per §2, but subsequent sentences in P1 and all of P2-P4 should rotate subjects (the company, the work, the dataset, the problem, the result, the lesson).
 - Diagnostic: if 3+ consecutive sentences in any paragraph start with "I", rewrite.
 
 ### Interview defensibility
@@ -72,7 +72,7 @@ Paragraphs 2-4 must open with the company's need, the role's actual work, or a c
 - Good: "Enterprise AI delivery breaks when orchestration, governance, and adoption are owned separately. At Govini, I led..."
 - Weak: "I led enterprise AI delivery at Govini..."
 
-Paragraph 1 may open with candidate positioning, but it still needs to speak directly to the role rather than drift into biography.
+Paragraph 1 opens with candidate positioning by default (§2 Shape C) and does NOT name the company. It still must not drift into biography: the pattern sentence plus three evidence clauses, then stop.
 
 ## 1a. Seniority Alignment
 
@@ -87,15 +87,22 @@ The clean move: in P3 or P4, name one concrete reason this specific role (not ju
 
 Use a short hook:
 
-1. Why this role lands.
-2. Why the candidate is already doing this kind of work.
+1. The pattern in the candidate's career.
+2. The evidence that the pattern is real.
 
-Default shape:
+**Default shape — candidate pattern, no company mention (set 2026-07-20, supersedes the "I was excited" default):**
 
 ```text
-I was excited to see you post the [ROLE TITLE] role because [fit statement].
-At [employer], I [specific evidence].
+My career has centered on [THE UNDERLYING DIFFERENTIATOR — not the domain].
+Whether that meant [EVIDENCE 1], [EVIDENCE 2], or [EVIDENCE 3], the work has
+always required the same [BALANCE / THROUGH-LINE].
 ```
+
+P1 does not name the company, interpret its strategy, or explain its business back to it. The reader already knows what their company does; what they do not know is the candidate. See the canonical baseline at `~/Documents/resumes/Summer_Rae_CoverLetter.md` for the endorsed instance.
+
+**Banned as an opener:** "I was excited to see you post the [ROLE]" and every candidate-enthusiasm variant. Summer called this "cringy" (2026-07-15) and it stayed rejected through the 2026-07-20 rewrite. Enthusiasm belongs in the close, if anywhere.
+
+**Variant — company-bet bridge (use only when the JD names a genuinely unusual problem the candidate has solved before):** P1 ends on the company's specific bet rather than the candidate's pattern. This was the default until 2026-07-20; it is now the exception, because manufacturing a hook out of JD interpretation reliably produces generic openers. Never characterize the company's strategy as fact — connect by recognition, not assertion.
 
 Avoid:
 
@@ -109,7 +116,7 @@ Avoid:
 
 ### Hook Variant Brainstorm (when the default feels flat)
 
-If the standard `I was excited to see you post the [ROLE] role because [fit statement]` opener reads generic against this particular JD, brainstorm 3 alternate hooks before committing:
+If the Shape C candidate-pattern opener reads generic against this particular JD (run the generic-swap test first — see §2), brainstorm 3 alternate hooks before committing. Note that none of these may reintroduce the banned enthusiasm opener:
 
 1. **Recent company moment** — a verifiable product launch, public statement, leadership move, or research output. Subject to §4: never invent the moment.
 2. **Stated value alignment** — quote one company value or mission line, then immediately ground it in a specific instance from the candidate's record. Skip if the only available connection is generic praise.
@@ -156,6 +163,13 @@ If verification is unavailable:
 
 Generic praise without evidence is filler and should be cut.
 
+## 4a. Candidate Fact Precision
+
+§4 governs claims about the company; this governs claims about the candidate, and the two failure modes need different handling.
+
+- **Accuracy correction (mandatory, no permission needed).** A detail is factually wrong: wrong program name, wrong number, wrong scope. Fix it. If the correct specific value is not known, GENERALIZE the claim rather than guessing again — never replace one invented specific with another. Validated 2026-07-20: a university program name was stated wrongly while adding specificity, and the fix was to name both institutions without naming either program.
+- **Register correction (surface it, do not silently apply).** A more clinically precise phrasing swapped in for how the candidate actually talks — e.g. "secure-cloud production" for "a highly regulated production environment." Precision is not automatically an improvement. Summer reverted exactly this one: "that's how real people talk." Name the swap and let her choose.
+
 ## 5. Anti-Patterns
 
 Reject the draft if it contains any of these:
@@ -170,8 +184,11 @@ Reject the draft if it contains any of these:
 - Puffery framings like "I am confident I would be an asset to your team" — these tell the reader what to conclude instead of letting the evidence do the work
 - Unsupported superlatives ("master of X", "expert in Y", "superior leadership skills") — claims without a credential, publication, named user, or measurable outcome behind them read as bragging, not confidence
 - Bulleted achievement lists inside body paragraphs (cover-letter bodies are prose; bullets belong in the resume)
+- **Pre-arguing an objection nobody raised** — hedging a credential before anyone questions it ("my direct P&L experience is older but real"). State the qualifying fact flatly and let it stand; do not contrast it against later roles unless the question specifically asks about recency. Generalizes §1a's seniority-apology ban to any credential. Summer, 2026-07-20: "That sounds defensive. The facts speak for themselves."
 - Resume-cadence stacking — 3+ consecutive sentences starting with "I" inside one paragraph (see §A Sentence subjects)
 - Passive closing lines: "I look forward to hearing from you", "Please feel free to contact me at your convenience", "Thank you for considering my application" as the standalone final sentence. The close must be active and specific — name what you'd talk about, not what you hope happens.
+- **Side-project-as-day-job blur.** A personal or side project written in the same voice and tense as current-employer work implies employer ownership it does not have, which is a reference-check risk. Summer flagged exactly this 2026-07-21 ("too much of a stretch for my current role"). Check every paragraph's subject clause: is it clear which work was employer-scoped and which was personal? If ambiguous, name it ("outside of work, I...").
+- **Implicit current-employer disparagement.** A closing or motivation line that frames the move as escaping somewhere inadequate — e.g. "take it back into the kind of organization where it has to actually hold up" — trashes the current employer without naming it. Distinct from the no-attack-other-companies rule, which covers competitors and other products, not the candidate's own employer. Frame the move as pursuit of something new, never as departure from something deficient.
 - Em dashes or en dashes
 
 ### 5a. LLM-era buzzwords and AI-influencer cadence
@@ -183,7 +200,10 @@ Hiring managers in 2024-2026 are increasingly skeptical of bare AI-industry voca
 - **"next-gen" / "cutting-edge" / "state-of-the-art"** without a named system or benchmark — always cut.
 - **"bets I want to be running" / "the bets that matter" / "the right bets"** — startup-founder cosplay. Closes that frame the role as a portfolio of bets read as performative rather than operational. Close on what would be discussed or built, not on betting language.
 - **Prestige stacking** — naming 3+ proper nouns (employers, publications, advisors, institutions) inside a single paragraph with no operational through-line. Prestige density asks the reader to *infer* importance; senior writing *demonstrates* it. If a paragraph has more than 2 proper-noun credentials, rewrite so each credential is doing one specific operational job.
+- **"career arc" / "this arc" / bare "arc"** as career-trajectory framing — jargon (Summer, 2026-07-21). Use "through-line" or just tell the sequence. The `ARC-FIT REASON` / `DECADE-ARC SUMMARY` placeholder names in `templates/cover-letter-structural-template.md` are authoring scaffolding only and must never leak into drafted prose.
 - **"the kind of work I have been doing"** / **"exactly the kind of"** / **"this is the work I want to be doing"** — vague affinity claims without naming the work. Replace with the specific operational dimension that maps to the JD.
+- **Invented reflective framing not grounded in a resume fact** — a memorable-sounding line asserting a sequence, motivation, or emotional truth the resume does not support (*"the harder half was earning the right to put it in front of them,"* *"building a function from nothing is the part I keep coming back to"*). These read as constructed rhetoric, not recollection, and the candidate cannot defend them in an interview. Test: can she point to the specific project moment the line describes without qualifying it? If the line is doing narrative work no fact backs up, cut it. Rejected twice on the 2026-07-20 OpenLoop letter, once as "not quite true" and once as "AI slop, over-reaching."
+- **Restating a fact already established earlier in the letter** — naming HIPAA or defense-security constraints again in the close after P2 and P3 already established both reads as padding and as reaching for credibility the letter already earned ("we know already," Summer, 2026-07-20). Every paragraph must add a fact the reader does not yet have.
 
 ### 5b. Resume narration in P1
 
@@ -215,7 +235,7 @@ If any fail condition triggers, the diagnostic itself names the violating paragr
 
 **Check 3 — Prestige-density count per paragraph.** Count proper-noun credentials (employers, publications, advisors, institutions) in each paragraph. Fail condition: any paragraph has 3+. Per §5a, prestige stacking asks the reader to infer importance instead of demonstrating it. If a paragraph fails, redistribute credentials or cut.
 
-**Check 4 — Hiring-risk anchor presence in P1.** Locate the P1 clause that grounds in the Phase 1 hiring-risk sentence (per `references/templates/cover-letter-structural-template.md` §P1). Print: *"Hiring-risk anchor in P1: [QUOTE the clause]"*. Fail condition: no clause in P1 can be traced to the hiring-risk sentence — the letter is orbiting a generic "AI leadership" frame rather than this role's actual hardest problem.
+**Check 4 — Hiring-risk anchor presence.** Locate the clause that grounds in the Phase 1 hiring-risk sentence (per `references/templates/cover-letter-structural-template.md` §P1). Under the candidate-pattern default the anchor lives in the CLOSE, not P1 — the close names what the candidate would do about the role's hardest problem. Print: *"Hiring-risk anchor: [PARAGRAPH] — [QUOTE the clause]"*. Fail condition: no clause anywhere in the letter can be traced to the hiring-risk sentence — the letter is orbiting a generic "AI leadership" frame rather than this role's actual hardest problem. A P1 with no company reference is expected, not a failure.
 
 **Check 5 — Structural diff against canonical baseline.** For each paragraph P1-P4, list (a) which structural move from the canonical baseline at `~/Documents/resumes/Summer_Rae_CoverLetter.md` and (b) which Shape (A vs B from the structural template) was applied. Format:
 
