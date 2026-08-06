@@ -1,6 +1,6 @@
 ---
 name: startup-analysis
-description: Brutally honest startup idea validation — 8-step CLEARFRAME stack (TAM, ICP, wedge, GTM, five-role debate team, Go/NoGo). Use for "validate this idea", "is this worth building", competitive analysis, or cold strategic feedback on a business concept.
+description: Brutally honest startup idea validation — 9-step CLEARFRAME stack (TAM, ICP, wedge, GTM, stress-test scorecard, five-role debate team, Go/NoGo). Use for "validate this idea", "is this worth building", competitive analysis, or cold strategic feedback on a business concept.
 ---
 
 # Startup Analysis
@@ -19,12 +19,18 @@ loading.
 
 ## Overview
 
-Eight-step startup pressure test using CLEARFRAME mode for direct,
+Nine-step startup pressure test using CLEARFRAME mode for direct,
 anti-sycophancy analysis. The five-role debate team (Researcher →
 Strategist → Copywriter → Builder → Marketer) runs as Phase 6 and feeds
 the Go/No-Go decision in Phase 7. The verdict cannot be issued without
 debate-team output — a chain Hold from any role is a structural No-Go
 signal.
+
+**Know what this instrument measures.** Phases 1-5 and the 5.5 pillars are
+demand-weighted — they answer "will someone pay." Phase 0 first diagnoses
+which risk actually binds (demand, epistemic, feasibility, regulatory,
+distribution, or unit cost); when it isn't demand, the run adds a gate for
+it and Phase 7 refuses a clean Go on an untested primary constraint.
 
 This file is a router. Keep the step details in phases.
 
@@ -55,13 +61,15 @@ Skip for free-form brainstorming or lightweight gut checks.
 ## Phase Map
 
 0. `phases/phase-0-clearframe.md`
+0.5 `phases/phase-05-roast.md` — optional multi-persona quick roast (Roast + Skeptical Investor + Potential Customer); skip for serious analysis, run when the user wants a fast gut check
 1. `phases/phase-1-market-reality.md`
 2. `phases/phase-2-icp.md`
 3. `phases/phase-3-value-props.md`
 4. `phases/phase-4-competitive-wedge.md`
 5. `phases/phase-5-gtm-mode.md`
+5.5 `phases/phase-55-scorecard.md` — six-pillar stress-test scorecard (Phase 7 consumes this alongside Phase 6)
 6. `phases/phase-6-debate-team.md` — invokes the five-role chain in `startup-debate-team/`
-7. `phases/phase-7-verdict.md` — consumes Phase 6 output as required evidence
+7. `phases/phase-7-verdict.md` — consumes Phase 5.5 + Phase 6 output as required evidence
 
 ## Session Rules
 
@@ -96,14 +104,24 @@ Produce only what the current phase needs:
 
 ## References
 
-Two non-CLEARFRAME paths to surface during Phase 4–5 when the founder (not the product) is the intended moat. Load only the one that matches the idea's shape; both files describe when to fall back to CLEARFRAME.
+Load only what the current phase needs.
+
+The first two are non-CLEARFRAME paths to surface during Phase 4–5 when the founder (not the product) is the intended moat. Load only the one that matches the idea's shape; both files describe when to fall back to CLEARFRAME.
 
 - [`references/distribution-first-counterexamples.md`](references/distribution-first-counterexamples.md) — viral format as the moat (consumer B2C, short-form social distribution, quick-exit profile).
 - [`references/brand-first-counterexamples.md`](references/brand-first-counterexamples.md) — founder expertise + audience as the moat (creator-economy solopreneurship, owned-media distribution, sustained solo revenue).
 - [`references/competitor-teardown-prompt.md`](references/competitor-teardown-prompt.md) — Phase 4 reusable prompt for single-competitor or analogue-company teardowns using the Harvard case-study spine.
+- [`references/idea-fit-scorecard.md`](references/idea-fit-scorecard.md) — Founder-fit / Economic-fit / Execution-fit scorecard (weighted 40/40/20), complementary to Phase 7's market-fit 6-axis scorecard. Run after Phase 4 once wedge sizing exists; feeds Phase 7 as an additional evidence column.
+- [`references/binding-constraint-diagnosis.md`](references/binding-constraint-diagnosis.md) — **Phase 0, run before the kill number.** Which risk actually decides this idea (Demand / Epistemic / Feasibility / Regulatory / Distribution / Unit cost), and whether this demand-weighted stack is the right instrument for it. Also carries the expected-information-per-dollar gate ordering and the No-Go path test.
+- [`references/primary-research-playbook.md`](references/primary-research-playbook.md) — Phase 1 cheap primary research: screened-survey design, willingness-to-pay elicited as a number and segmented by buying behaviour, the survey question built to overturn the plan, and the small-sample reporting guardrails. Load when the gating risk is "will a person pay recurring money for this"; its Fit section says where it misleads (B2B, regulated, pre-product technical bets).
 
 ## Guardrails
 
 - no hedging without logical need
 - no invented numbers presented as facts
+- every figure carries a source or the inline label `unverified`
+- diagnose the binding constraint before setting the kill number — this stack is demand-weighted, and a demand answer to a feasibility, regulatory, or epistemic question is a confident verdict about the wrong risk
+- state the kill number before the evidence, never after
+- never issue a clean Go on an untested primary constraint
+- stated willingness-to-pay is a ceiling, not an estimate
 - no flattering validation when the analysis points to no-go

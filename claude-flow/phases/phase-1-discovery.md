@@ -31,10 +31,17 @@ without an explicit user constraint:
 
 High-risk work defaults to the full path even when the diff is small.
 
+**Spec-trigger heuristic (size/ambiguity screen).** Alongside the risk screen,
+run a complexity check before locking in `fast`, `clone`, or `lite`: if the
+estimated change exceeds ~100 LOC, or the task is not one-shot-able (you cannot
+state the full diff plan from the request alone), route to a spec-producing
+path (`lite` minimum, `full` when both trip). Cheap paths are for changes you
+can already see end-to-end; ambiguity is a spec signal, not a reason to start
+typing. (Heuristic from Zach Lloyd's spec-driven software-factory routing rule,
+X, 2026-06; adopted 2026-07-04.)
+
 ## Path Criteria
 
-- **Direct-route (skip workflow):** Some requests match a dedicated skill better than any workflow path. Route without entering Phase 2+:
-  - "synthetic beta test &lt;app&gt;", "alpha test with personas", "assess usability with simulated users", "run persona-based eval" -> `/personas`
 - **Bug path:** error report, regression, stack trace, "fix this bug", GitHub issue tagged as bug
 - **Fast path:** typo fix, one-line change, config tweak, or contained single-file edit with no ripple effects
 - **Plan path:** an existing plan file or PRP already exists for this feature

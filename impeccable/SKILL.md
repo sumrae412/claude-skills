@@ -1,6 +1,6 @@
 ---
 name: impeccable
-description: "Use when the user wants to design, redesign, shape, critique, audit, polish, clarify, distill, harden, optimize, adapt, animate, colorize, extract, or otherwise improve a frontend interface. Covers websites, landing pages, dashboards, product UI, app shells, components, forms, settings, onboarding, and empty states. Handles UX review, visual hierarchy, information architecture, cognitive load, accessibility, performance, responsive behavior, theming, anti-patterns, typography, fonts, spacing, layout, alignment, color, motion, micro-interactions, UX copy, error states, edge cases, i18n, and reusable design systems or tokens. Also use for bland designs that need to become bolder or more delightful, loud designs that should become quieter, live browser iteration on UI elements, or ambitious visual effects that should feel technically extraordinary. Not for backend-only or non-UI tasks."
+description: "Use when the user wants to design, redesign, critique, audit, polish, or otherwise improve a frontend interface — websites, landing pages, dashboards, product UI, app shells, components, forms, settings, onboarding, empty states. Handles UX review, visual hierarchy, information architecture, cognitive load, accessibility, performance, responsive behavior, theming, typography, spacing, layout, color, motion, micro-interactions, UX copy, error states, i18n, and design systems or tokens; also bland-to-bold or loud-to-quiet rebalancing, live browser iteration, and ambitious visual effects. Not for backend-only or non-UI tasks."
 user-invocable: true
 license: Apache-2.0
 ---
@@ -177,7 +177,7 @@ Valid `<command>` is any command from the table above. Report the script's resul
 `/impeccable impeccable hooks <on|off|status|ignore-rule|ignore-file|ignore-value|reset>` manages the design detector hook for this project. The hook auto-runs the detector after direct UI file edits and surfaces findings as system reminders. Full flow is in [references/hooks.md](references/hooks.md); load it when the user invokes `/impeccable impeccable hooks` with any argument.
 
 ## See also
-- [design-audit](../design-audit/SKILL.md) — structured UI/UX audit with scoring
+- [design-audit](../design-audit/SKILL.md) — structured UI/UX audit with scoring. Boundary: start there when the ask is assess-only (read-only findings + phased plan); impeccable owns the build/fix work.
 - [defensive-ui-flows](../defensive-ui-flows/SKILL.md) — error states and edge case handling
 - [fixing-motion-performance](../fixing-motion-performance/SKILL.md) — animation performance
 - [vercel-react-best-practices](../vercel-react-best-practices/SKILL.md) — React production patterns

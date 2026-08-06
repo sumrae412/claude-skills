@@ -26,6 +26,7 @@ Reject sentences with these patterns:
 - mirrored list cadence across paragraphs
 - thesisless paragraphing where each sentence is just another claim
 - identity inflation: "uniquely positioned", "rare blend", "exceptional ability"
+- **generic industry observation** — an insight framed as universal industry wisdom rather than the candidate's own earned experience. Test: remove the byline. If the sentence could appear in any conference keynote, it is decoration. Rejected 2026-07-20 (Airtable): *"organizations rarely struggle because they lack AI tools. They struggle because they need practical guidance on where to apply them."* The replacement passes because the experience is hers and specific: *"The hardest part of every AI project I've worked on hasn't been getting a model to work. It's helping people change the way they work once it does."*
 
 ## 3. Stronger Replacements
 
@@ -59,9 +60,11 @@ Every paragraph needs:
 
 1. A governing idea in the first sentence.
 2. One concrete detail that proves it.
-3. A clean landing sentence or clause.
+3. A landing sentence that adds a fact or moves to the next beat, not a stated conclusion.
 
 If a paragraph is just three adjacent claims, it will read like a list even when it is written in sentences.
+
+**Do not end paragraphs on an interpreted "big takeaway."** A paragraph that closes by explaining what the preceding sentences mean ("Governance is not separate from delivery," "...and that is the throughline") reads as performed insight rather than narrative. Tell the story and let the reader draw the conclusion. Diagnostic: if 2+ consecutive paragraphs end on a sentence stating a meaning or lesson instead of a fact, cut the interpretive clause. Prefer an outcome: "By the time I left, the company had both the platform and the governance needed to use it confidently" beats "Governance is not separate from delivery." Validated 2026-07-20 (OpenLoop cover letter), flagged as "it reads like it's trying to sound insightful."
 
 ## 5. Read-Aloud Test
 

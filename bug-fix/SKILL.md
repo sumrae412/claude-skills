@@ -75,6 +75,12 @@ Produce only what the workflow stage needs:
 
 - Do not multi-hypothesize without runtime evidence on hard-to-reproduce
   bugs.
+- For parallel or repeated bug work, give each reproduction its own isolated
+  scratch environment (fresh worktree or rsync-ephemeral copy) instead of
+  reusing one dirty checkout — state left by bug A's repro contaminates bug
+  B's diagnosis. Verify in the isolated env before AND after the fix.
+  (Steinberger "crabbox" pattern, 2026-07; composes with the
+  fresh-agent-per-job rule for agent-driven fixes.)
 - Do not "improve adjacent code" while fixing.
 - Do not call the fix done if the reproducing test was never red then
   green.

@@ -1,0 +1,41 @@
+name: PR CI
+
+# Blocking gate for every PR: skill frontmatter integrity + repo-wide
+# relative-link resolution (scripts/validate_skills.py, pure stdlib),
+# and a security gate (scripts/security_gate.py) that fails only on NEW
+# findings not in the reviewed security-baseline.json.
+# Informational (never blocks): persona-contract lint and the doc-graph
+# orphan report, to surface prune candidates at review time.
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Validate skills (frontmatter + relative links)
+        run: python3 scripts/validate_skills.py
+
+      - name: Persona-contract lint (informational)
+        run: python3 scripts/lint_persona_contracts.py || true
+
+      - name: Doc-graph orphan report (informational)
+        run: |
+          python3 scripts/build_doc_graph.py --root . --out /tmp/doc-graph.md || true
+          if [ -f /tmp/doc-graph.md ]; then
+            { echo '## Doc-graph report (informational)'; echo; cat /tmp/doc-graph.md; } >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+      - name: Security gate (new findings vs baseline)
+        run: |
+          python3 scripts/security_gate.py \
+            --root . \
+            --baseline security-baseline.json

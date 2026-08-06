@@ -32,6 +32,19 @@ In rough order of value:
    production corpus, so a domain-generated set is the trustworthy
    signal for your deployment. Source:
    [Chroma Generative Benchmarking](https://www.trychroma.com/research/generative-benchmarking).
+6. **Weaker-model failure mining** — run your prompts through a weaker,
+   cheaper model; its organic mistakes resemble real production
+   failures better than hand-crafted defects. Curate like any synthetic
+   batch — a small model's error *distribution* is not ground truth.
+
+No source is neutral: support queues skew to failures, common requests
+skew easy, synthetic skews to what the generator prompt emphasized.
+Record `metadata.source` (schema below) and read scores per-source.
+For synthetic batches, vary situation × information quality (detailed /
+vague / conflicting) × phrasing (full sentences / shorthand / typos /
+second-language), then curate hard: drop duplicates, nothing-new cases,
+and one-line-fix cases; keep lasting-problem cases. Full checklist:
+`../references/error-analysis-and-test-sets.md`.
 
 ## Size
 

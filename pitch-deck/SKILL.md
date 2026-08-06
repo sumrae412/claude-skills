@@ -81,9 +81,66 @@ For every slide produce these fields:
   expensive?", "Why now?", "Why this team?"). A slide that answers no real
   question gets cut. For sales decks, substitute the buyer's question.
 
+**Entry conditions for optional/specialty slides.** Every slide beyond the core arc must earn its place with real input, not template momentum. Before including one, check its entry condition — if the input doesn't exist, cut the slide rather than filling it with generic content:
+
+| Slide | Entry condition |
+|---|---|
+| Traction | At least one sourced, dated figure (revenue, users, retention — not "growing fast") |
+| Demo / product tour | A live product or real screenshots exist (never mock UI as if shipped) |
+| Team | Named people with claims the fact inventory supports |
+| Testimonial / logo wall | Real quotes/customers with permission to name |
+| Competition matrix | You can name actual competitors — a matrix with invented axes and no rivals is filler |
+
+(Pattern adapted from [Bolt Slides](https://github.com/stackblitz/bolt-slides)' agent skill, which gates each specialty layout on an explicit entry condition — e.g. a chat layout only for genuinely conversational products, a big-number slide only with one sourced figure.)
+
 ### Step 3 — Quality check
 
 Run the checklist below. Fix anything failing before showing the user.
+
+### Step 3.5 — Pitch Stress-Test (optional roast)
+
+Before delivering, optionally run the deck through two quick AI personas for
+a final gut check. Inspired by [Roast & Review](https://www.roast-and-review.com/).
+Ask the user if they want this pass — it's optional.
+
+Offer when:
+- The user seems nervous about a live pitch
+- The deck is going to a gatekeeper (accelerator screener, first angel meeting)
+- The user asks "is this ready?"
+
+**Persona 1: The Roast**
+
+Reads every slide headline and body (skips numbers/fluff). Calls out:
+- Headlines that are labels, not takeaways
+- "No competition" claims or competitor matrices with empty cells
+- Jargon ("leveraging," "synergistic," "AI-powered," "best-in-class")
+- Traction slides with no numbers (or fake-looking round numbers)
+- Market size slides that quote a $B TAM but don't segment to SOM
+
+**Format:** Bullet points per offending slide. Include the slide number and
+the specific weak language. If no serious issues, say "this holds up" — don't
+invent a roast.
+
+**Persona 2: The Skeptical Investor**
+
+Reads the full deck in order (headlines + body + speaker notes). Simulates
+the first 2 minutes of attention a real investor gives. Flags:
+- Slides that don't answer a real investor question (cut candidates)
+- Claims that would get challenged in a live meeting ("prove it")
+- Missing arc — flow doesn't build conviction -> ask
+- Mismatch between problem urgency and solution size (small problem,
+  huge company — or huge problem, weak solution)
+- Ask that doesn't match the stage (asking $2M seed with no traction)
+
+**Format:** Each finding as "Slide N: [issue]" with the investor's likely
+response verbatim. Ends with a one-line verdict: Funds / Needs work /
+Would pass.
+
+**Usage:** Run both personas in one message. Fix any Slide-specific issues
+before delivering. Keep the Roast output for the user's own read (it's
+entertaining but the real useful output is the Investor's take).
+
+---
 
 ## Output Format
 
@@ -141,6 +198,7 @@ Before delivering:
 - [ ] Logical flow — story arc, not a feature dump
 - [ ] No information overload (move detail to appendix)
 - [ ] Audience-tuned register (see `references/audiences.md`)
+- [ ] Every optional/specialty slide met its entry condition (Step 2 table) — no filler sections
 - [ ] Send-ahead decks: a partner could follow it alone at 11pm on their iPad, no presenter
 
 Common pitfalls and fixes: `references/pitfalls.md`.
@@ -174,9 +232,5 @@ Chrome headless): `references/render-pdf.md`.
 
 ## See also
 
-- `elevator-pitch` — spoken 10/30/60/90-second verbal pitches (Villain-Hero framework); use before or alongside a deck.
 - `startup-analysis` — validate the idea before building the deck.
-- `yc-pitch-deck` — YC-style investor deck with PptxGenJS .pptx production and Kevin Hale design system; more opinionated than this skill.
-- `investor-research` — identify and tier target investors before tailoring the deck narrative.
-- `fundraising` — strategic fundraising process and "should I raise?" framing before building the deck.
-- [`../client-pitch-builder/SKILL.md`](../client-pitch-builder/SKILL.md) — prospect-tailored B2B sales pitch with live research and .pptx output; use when pitching a specific named client rather than building a generic investor deck.
+- `startup-positioning` — sharpen positioning before the deck narrative.

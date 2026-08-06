@@ -51,6 +51,19 @@ Examples:
 - "Reframe scope — OAuthToken inferred surfaces are too distant from PoC to extrapolate safely."
 - "No decision — purely informational status update."
 
+## Verification gate taxonomy
+
+Classify every load-bearing claim by what kind of verification it requires. Higher gates imply lower gates — if you've verified Behavioral, Structural is presumed but should still be called out.
+
+| Gate | Test question | Applies when | Evidence needed |
+|---|---|---|---|
+| **Structural** | Are the types, schemas, and interfaces correct? | Interface changes, schema migrations, API contracts | Type check pass, schema diff, interface conformance report |
+| **Behavioral** | Does the code do what the spec says? | Logic changes, algorithm changes, business rules | Test suite pass, assertion results, spec-to-output trace |
+| **Operational** | Does it handle errors, logging, and observability? | Service boundaries, error-handling paths, external API calls | Error-injection run, log line inspection, health check response |
+| **Boundary** | Does it handle edge cases and failure modes? | Non-happy-path states, rate limits, concurrent access, data corruption | Adversarial test results, chaos test, empty/null/duplicate inputs |
+
+Use the gate name as a tag in the **Verified** section (e.g., `Verified [Structural+Behavioral]:`) so the reader immediately knows the verification depth.
+
 ## Short-form variant
 
 For inline mentions inside longer messages where the full structured form would be overkill:
@@ -96,4 +109,4 @@ No layer is bulletproof. Use this skill on load-bearing claims and accept that y
 
 ## Why this exists
 
-Decision: [docs/decisions/2026-05-11-confidence-overclaim-discipline-failure.md](decisions/2026-05-11-confidence-overclaim-discipline-failure.md) (in CourierFlow). Recurring failure mode: extrapolation from a narrow verified case to broader uncovered surfaces in prose, with no signal for the user to intercept. Composes with `feedback_spike_unfalsifiable_when_prop_unaccessed.md` (same genus on a different artifact) and `feedback_verify_premise_before_executing_contradictory_plan.md` (premise-verification before acting).
+Decision: `~/claude_code/courierflow/docs/decisions/2026-05-11-confidence-overclaim-discipline-failure.md` (in the CourierFlow legacy repo). Recurring failure mode: extrapolation from a narrow verified case to broader uncovered surfaces in prose, with no signal for the user to intercept. Composes with `feedback_spike_unfalsifiable_when_prop_unaccessed.md` (same genus on a different artifact) and `feedback_verify_premise_before_executing_contradictory_plan.md` (premise-verification before acting).

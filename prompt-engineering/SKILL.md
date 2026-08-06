@@ -1,6 +1,6 @@
 ---
 name: prompt-engineering
-description: Router for all prompt-engineering work — dispatches to structured-prompt-builder (single-turn authoring), agent-prompt-architecture (tool-using agents), prompt-optimizer (improving), prompt-optimization (variant analysis at scale), or prompt-governance (production management). Centralizes the shared Anthropic prompting principles each sub-skill enforces. Use when the user asks about prompts in general, isn't sure which sub-skill applies, or needs an end-to-end pipeline (write → improve → govern). Triggers on "prompt engineering", "help with a prompt", "Anthropic prompting best practices", "how should I prompt Claude", or any prompt-related ask that doesn't cleanly map to one sub-skill. If the request clearly fits one sub-skill, invoke that directly.
+description: "Router for all prompt-engineering work — dispatches to structured-prompt-builder (single-turn authoring), agent-prompt-architecture (tool-using agents), or prompt-optimizer (improving an existing prompt); centralizes the shared Anthropic prompting principles each sub-skill enforces. Use when a prompt-related ask doesn't cleanly map to one sub-skill or needs the write → improve pipeline; triggers on 'prompt engineering', 'how should I prompt Claude'. If the request clearly fits one sub-skill, invoke that directly."
 ---
 
 # Prompt Engineering
@@ -27,6 +27,16 @@ All sub-skills implement these. Cite them by name when audit-flagging a prompt.
 10. **Prefill assistant message** — seed `{"`, `<answer>`, or `<scratchpad>` to lock format and skip preamble
 11. **Prompt chaining** — split heterogeneous subtasks into separate calls, don't mega-prompt
 12. **Test-driven iteration** — eval against real inputs after every change
+
+### Opus 5-specific overrides
+
+Opus 5 differs from prior models in three behavioral areas that override or narrow the universal principles above. Apply these when the target model is Opus 5:
+
+1. **Universal #6 (Chain-of-thought) — skip for Opus 5.** Opus 5 has built-in thinking. Adding explicit "think step by step" or `<thinking>...</thinking>` instructions causes over-reasoning. Let the model's native thinking handle reasoning; reserve prompt space for domain-specific instructions. This is the same principle as "don't add CoT to reasoning-native models" in `prompt-optimizer`, extended to Opus 5's always-on thinking.
+
+2. **Universal #10 (Prefill assistant message) — keep, but don't prefill a thinking tag.** Prefilling format (`{"`, `<answer>`) is still effective. Prefilling `<thinking>` or `<scratchpad>` is not — Opus 5 manages thinking internally. Reserve prefills for output structure, not reasoning scaffolding.
+
+3. **Remove explicit verification from any prompt targeting Opus 5.** Universal #12 (test-driven iteration) stays as an eval methodology. But "double-check your answer," "re-verify before responding," or "include a final verification step" in the prompt itself should be removed — Opus 5 verifies its own work, and these instructions cause over-verification. Applies to Agent principles #18 (reflection) and #21 (adversarial test triad is eval methodology, remains; in-prompt verification instructions should be removed).
 
 ### Single-turn only (numbered procedures fit)
 
@@ -86,8 +96,7 @@ Composes with `prompt-optimizer` (which is the reactive debugger — same framew
 | Write a new single-turn prompt (classification, extraction, summary) | [structured-prompt-builder](../structured-prompt-builder/SKILL.md) |
 | Write a prompt for a tool-using, multi-turn, or side-effecting agent | [agent-prompt-architecture](../agent-prompt-architecture/SKILL.md) |
 | Fix / improve / evaluate one prompt | [prompt-optimizer](../prompt-optimizer/SKILL.md) |
-| Compare variants, promote winners, draft challengers | [prompt-optimization](../prompt-optimization/SKILL.md) |
-| Registry, A/B tests, rollback, eval pipelines in CI | [prompt-governance](../prompt-governance/SKILL.md) |
+| Compare variants, regression-gate, or manage prompts in production | [evals](../evals/SKILL.md) |
 | Unclear or multi-stage | Stay here, ask one routing question |
 
 ## Routing flow

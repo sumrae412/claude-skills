@@ -22,37 +22,13 @@ CourierFlow-flavored example.
 
 ---
 
-## Default Menu (CourierFlow)
+## Default Menu (CourierFlow — retired)
 
-**Phase 5 forced-selection (5 skills, domain-coherent):**
-
-- `courierflow-ui` — Frontend code: Jinja templates, CSS, Vue workflow builder
-  pages, dashboards, calendar/sidebar layouts.
-- `courierflow-api` — Backend route and service code: FastAPI routes, service
-  layer, business logic, request handlers.
-- `courierflow-data` — Database layer: SQLAlchemy ORM models, Alembic
-  migrations, schema design, eager-loading, Household/HouseholdMember domain.
-- `courierflow-integrations` — External services: Google Calendar, Twilio SMS,
-  OpenAI, DocuSeal, Gmail, onboarding wizard.
-- `courierflow-security` — Auth, registration, login, secrets, permissions,
-  session handling, landlord/tenant access.
-
-**Phase 0 trigger matrix (file-pattern → skill):**
-
-```text
-templates / CSS / HTML?       -> courierflow-ui
-routes / services?            -> courierflow-api
-models / migrations?          -> courierflow-data
-external APIs / providers?    -> courierflow-integrations
-auth / security / webhooks?   -> courierflow-security
-prod incident / missed job?   -> courierflow-troubleshooter
-skill drift / routing edits?  -> courierflow-skill-sync or reviewer
-git / deploy / PR?            -> git skill
-```
-
-**Excluded from Phase 5 forced-selection** (use in Phase 0 / maintenance only):
-`courierflow-troubleshooter`, `courierflow-skill-sync`,
-`courierflow-skill-reviewer`.
+The original worked example was the legacy CourierFlow Python repo's 5-skill
+forced-selection menu (`courierflow-ui` / `-api` / `-data` / `-integrations` /
+`-security`). Those skills were retired with the frozen Python repo in the
+2026-07-17 skills audit — recover them from git history if a reference example
+is needed. Author new menus per the section below.
 
 ---
 
@@ -66,3 +42,28 @@ Two rules from the 2026-04-29 scale experiment (see
 2. **Make each menu entry domain-coherent.** UI / API / data / integrations /
    security covers most feature work without overlap. Avoid generic skills
    (e.g. "coding-best-practices") in the menu — those load via Phase 0 Step 4.
+
+---
+
+## Verification-rule menu
+
+The builder menu above is *producing* skills — how to build in this project.
+The verification-rule menu is the *checking* complement — what this project
+must never ship, encoded as deterministic rules. It is optional; most projects
+start with zero rules and add one when a manual correction repeats for the
+third time.
+
+Authoring and placement are covered in `verification-rule-skills.md`; the menu
+rules here mirror the builder menu's discipline:
+
+1. **Keep it to 2–3 rules.** A gate that fires on every change must stay
+   above the noise floor. One strong invariant beats five plausible ones.
+2. **Deterministic only.** If the check needs judgement, it belongs in the
+   Phase 6 LLM cascade or the Exemplar Benchmark, not the gate. Rules are
+   gates, not gradients.
+3. **Conventions, not style.** The valuable rules are the ones no generic
+   linter knows: "no migration drops a column without backfill", "error logs
+   carry the request ID", "nothing user-supplied is logged". Those are the
+   manual corrections this project keeps making by hand.
+4. **Name `verify-<rule>`.** The predicate reads clearly in Phase 6 gate
+   output and boards cleanly next to `core_gate.sh`.
