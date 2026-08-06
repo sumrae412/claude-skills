@@ -68,6 +68,10 @@ For each item in the profile's §8 "What they never do" list, grep the draft. **
 
 **Blind spot:** the grep only catches literal-token rules ("never says 'obviously'"). Structural/cadence rules (e.g. "no three-beat parallel repetition of the same verb") can't be grepped — they need a manual read-aloud rhythm pass as a *separate* step, not folded into the grep and marked PASS by default.
 
+### 5. SME-rewrite constraint check
+
+When the SME returns a rewrite, run the §8 never-does grep against **their** text, not just your own draft. Voice-to-text reintroduces dashes, possessive and casing drift, and numbered cross-references. Voice wins — do not overwrite the SME's wording. Flag the constraint break in one line and let Summer decide.
+
 ### Output format
 
 Append after the draft:
