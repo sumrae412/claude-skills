@@ -113,6 +113,18 @@ These rules are **always enforced**. Each links to a references file with Incorr
 7. **Review added components** — Always read added files and verify they are correct.
 8. **Registry must be explicit** — If no registry is specified, ask which registry to use.
 
+## Updating Components
+
+When the user asks to update a component from upstream while keeping their local changes, use `--dry-run` and `--diff` to intelligently merge. **NEVER fetch raw files from GitHub manually — always use the CLI.**
+
+1. Run `npx shadcn@latest add <component> --dry-run` to see all files that would be affected.
+2. For each file, run `npx shadcn@latest add <component> --diff <file>` to see what changed upstream vs local.
+3. Decide per file based on the diff:
+   - No local changes → safe to overwrite.
+   - Has local changes → read the local file, analyze the diff, and apply upstream updates while preserving local modifications.
+   - User says "just update everything" → use `--overwrite`, but confirm first.
+4. **Never use `--overwrite` without the user's explicit approval.**
+
 ## Quick Reference
 
 ```bash

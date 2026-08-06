@@ -1,6 +1,6 @@
 ---
 name: "evals"
-description: "Use when designing or running evals for an LLM feature — offline (golden datasets, LLM-as-judge / code-based evaluators, experiments comparing prompt/model/architecture versions, regression gates) or online (production sampling, blocking guardrails, drift detection, shadow / canary rollout, eval-based alerting, including the eval signals that gate rollout decisions). Triggers: 'design evals', 'build a golden dataset', 'LLM-as-judge', 'compare prompt versions', 'eval harness', 'regression gate for prompts', 'production evals', 'drift detection for LLM', 'shadow / canary an LLM change', 'block PII / jailbreak / toxicity', 'guardrails for LLM output'. NOT for prompt-registry mechanics or organization-wide governance policy (use prompt-governance — that skill handles approval workflows and registry plumbing; this skill handles the eval signals those policies depend on). NOT for empirical variant promotion across explorers/architects/reviewers (use prompt-optimization). NOT for tuning the wording of a single judge prompt during calibration (use prompt-optimizer — judge prompts are prompts). NOT for RAG retrieval design (use rag-architect)."
+description: "Use when designing or running evals for an LLM feature — offline (golden datasets, LLM-as-judge and code-based evaluators, prompt/model/architecture experiments, regression gates) or online (production sampling, blocking guardrails for PII/jailbreak/toxicity, drift detection, shadow/canary rollout, eval-based alerting). Triggers on 'design evals', 'golden dataset', 'LLM-as-judge', 'eval harness', 'production evals'. NOT for prompt-registry mechanics or governance policy, variant promotion at scale, tuning one judge prompt's wording (use prompt-optimizer — judge prompts are prompts), or RAG retrieval design (use rag-architect)."
 ---
 
 # Evals
@@ -71,11 +71,30 @@ hand-rolled harness.
   a metric.
 - Code-based evaluators beat LLM-judge evaluators whenever ground
   truth exists. Reach for LLM-judge only when the output is open-ended.
+- **Name the decision before picking the evaluator.** Objectively
+  correct answer → code evaluator (including a lookup against your
+  catalog / DB / API — code can check factual claims, not just format).
+  Requires judgment → LLM judge, starting from a **pre-built** evaluator
+  (correctness / groundedness / relevance / refusal). Judgment specific
+  to your policies or domain → custom rubric. An LLM judge on an
+  objective question buys variance and cost for nothing; a code
+  evaluator on a judgment question misses the real failures. See
+  `references/evaluator-selection-and-rubrics.md`.
+- **Label every evaluator guardrail or north-star.** Guardrails block
+  unacceptable behavior (fabricated product, invented refund process) —
+  the floor. North-star metrics measure how good the agent is at its job
+  — the ceiling. A stack with only one of the two can't tell you either
+  that it's safe to ship or that it's getting better.
 - Calibrate every LLM-judge against ≥ 30 human-labeled examples
   for an initial smoke check; production-gating judges need larger
   balanced sets with reported CIs. Report agreement.
 - One judge, one criterion. Don't ask a judge to score "helpfulness
-  and accuracy and tone" in one call.
+  and accuracy and tone" in one call. The multi-dimension rubric is the
+  **God Evaluator** anti-pattern: when it fails you can't tell which
+  dimension caused the verdict. Build one evaluator per dimension and
+  combine the verdicts **programmatically** (`correctness AND
+  policy_compliance`), specifying the combining rule as part of the eval
+  definition.
 - **When scoring on two decoupled axes (e.g. spec-fidelity vs
   ground-truth-fidelity), tell each grader explicitly NOT to do the
   other's job.** The ground-truth grader must not penalize the build
@@ -99,6 +118,17 @@ hand-rolled harness.
 - For agents, grade the **outcome/end-state**, not a prescribed step
   sequence — agents find valid paths designers didn't anticipate.
   Assert on a step only when the step *is* the spec.
+- **For tool-call surfaces, use a typed, non-lossy failure taxonomy
+  instead of a bare pass/fail.** Distinguish `wrong_tool`, `no_tool`,
+  `missing_arguments`, `invalid_arguments`; a call may carry more than
+  one label and success is the empty set. Derive argument failures from
+  the canonical tool schema (never executor error strings) and compare
+  raw pre-allowlist call names so allowlist filtering cannot masquerade
+  as `no_tool`. Aggregate label frequencies across runs to name dominant
+  failure modes before deciding whether any automatic retry/clarification
+  loop is worth building. Worked wiring (vocabulary + artifact field +
+  aggregator snippet): `courierflow-copilot-evals` § Tool-Call Failure
+  Taxonomy.
 - **Session ≠ trace.** A session is the full multi-turn arc (many
   traces); session-level failures (lost context, unresolved issue across
   N turns) are invisible at trace level. Add session-arc graders for
@@ -123,7 +153,46 @@ hand-rolled harness.
 - When comparing two versions on the same examples, use **paired**
   analyses, not independent-sample CIs.
 - Every failed example is dataset material.
+- No source is neutral — record `metadata.source` on every case and
+  read scores per-source (support queues skew to failures, common
+  requests skew easy, synthetic skews to the generator prompt). For
+  synthetic batches, vary information quality AND phrasing (shorthand,
+  typos, second-language), then curate for coverage, not volume. See
+  `references/error-analysis-and-test-sets.md`.
+- **Persist a normalized per-case record alongside native runner output.**
+  Keep the runner's native artifact for compatibility, but add an immutable
+  record with `schema_version`, `run_id`, `suite`, `case_id`, provenance
+  (`dataset`, eval tier, grader, configured model), `outcome` (`pass`,
+  `fail`, or `error`), score, reason, expected evidence, observed evidence,
+  and cost when available. Preserve runner/infrastructure errors as
+  `error`, never as model failures. Record the model returned by the API as
+  `served_model` separately from the configured model, and retain a
+  suite-level list when a run serves multiple models.
+- **Verify the emitted artifact, not only the test.** A pure adapter test
+  must cover pass, fail, and error cases; a bounded live smoke must then
+  inspect the written JSON for dataset, grader, configured-model, and
+  response-confirmed served-model provenance. Re-grading may update grades
+  without re-running the SUT; provenance and raw run evidence must remain
+  immutable.
 - **For any evals-infra COST reduction PR, run a cost-audit subagent BEFORE writing code — produces per-suite $ attribution (`suite × N_calls × model × tokens × $/MTok`) and identifies the dominant driver.** Pin Anthropic pricing in the subagent prompt to avoid web-fetch drift. Without the audit, the natural failure mode is to optimize the visible cost (judge calls) when the real driver is the silent one (uncached SUT prefix resends). Validated 2026-05-30 on [courierflow_beta PR #147](https://github.com/sumrae412/courierflow_beta/pull/147): audit surfaced ~$7.6/run from uncached `SYSTEM_INSTRUCTIONS + tools` resent on ~175 Charlie calls; judge cost was <1% of total. Composes with the existing `/debate-team --harden` rule for evals-infra PRs — Tier 0 surfaces 5+ hardening repairs (wiring + telemetry + preflight + CI gate + decision record) that ALL belong in one PR.
+
+## Benchmark / eval self-audit (before trusting a failing score)
+
+A low score can be the *eval's* fault, not the model's. Before treating a failing score as a real regression, audit your own eval set for four flaw categories:
+
+1. **Overly-strict tests** — assert an exact string/format when several correct answers exist; penalize a valid path the spec allowed.
+2. **Underspecified prompts** — the question is ambiguous, so a "wrong" answer is actually a reasonable read of an unclear ask.
+3. **Low-coverage tests** — the assertion checks a narrow slice and misses the behavior that actually matters.
+4. **Misleading prompts** — the prompt implies a wrong answer, contains a false premise, or steers the model off.
+
+**Method:** automated screen (flag suspect cases programmatically) → investigator pass (walk each flagged trace to where the failure *originates*) → **N human reviewers per flagged item** (multiple labelers, not one, to catch labeler disagreement).
+
+Two adjacent traps this audit surfaces:
+
+- **Criteria drift.** Grading criteria are often not fully known up front — they surface *during* review as you see real outputs. Expect the rubric to evolve; version it, and re-grade earlier cases against the final criteria rather than trusting scores from a since-changed rubric.
+- **Soft failures automated graders miss.** Code-based and even LLM graders routinely pass outputs that fail on formatting, objection-handling, tone, or partial-answer completeness — the model "got the answer" but the response is unusable. Add explicit graders (or human review) for these soft dimensions; a green automated score is not proof the output is good.
+
+Sources: OpenAI, "Separating signal from noise in coding evaluations" + Parlance Labs, "Do Automated Evals Work?" (both from the 2026-07-14 /articles triage).
 
 ## Deliverables
 
@@ -139,16 +208,16 @@ Produce only what the user needs:
 
 - `courierflow-copilot-evals` — concrete domain implementation:
   grader-selection decision tree, four-property LLM-judge contract,
-  YAML eval case schemas. Read this when you want a worked example.
-- `prompt-governance` (`phases/phase-2-evals.md`) — registry and
-  approval / rollback policy framing. This skill produces the eval
-  signals that policy gates on; that skill handles the workflow,
-  ownership, and registry plumbing.
-- `prompt-optimization` — *different* skill from `prompt-optimizer`
-  below. Use when empirically promoting prompt variants across
-  reviewer agents (explorers, architects, reviewers).
+  YAML eval case schemas, and the typed tool-call failure taxonomy with
+  its results-artifact aggregator. Read this when you want a worked
+  example.
 - `prompt-optimizer` — use when iterating the wording of a single
   judge prompt during calibration. Judge prompts are prompts.
+- `voice-agent-evals` — use when speech is the input, the output, or
+  both. Voice adds three things this skill does not model: cascade
+  error propagation (STT → LLM → TTS), latency as a correctness
+  property, and audio output that can differ from the text that
+  produced it. Transcript-level grading misses all three.
 - `anthropic-skills:skill-creator` — automates the with/without-skill
   baseline-delta loop for Claude Skills (runs both arms, grades
   assertions, aggregates benchmarks). Use it when the artifact under
@@ -181,6 +250,16 @@ Produce only what the user needs:
   / safety), conditional scorers, fault injection, and the
   isolate-trials harness rule. Sources: Anthropic "Demystifying evals
   for AI agents," Braintrust "Agent evaluation."
+- `references/error-analysis-and-test-sets.md` — data-first
+  error-analysis workflow (10–20 traces, four-field failure records,
+  name-the-failure-before-fixing, objective-vs-subjective decision
+  split), test-set construction do's (source bias, curation gates,
+  synthetic diversity axes, weaker-model failure mining, ambiguity
+  dual-review, reference-solution preflight), balance + honest
+  reporting for 50/50 sets, and human-baseline realism (κ expectations,
+  "better than a tired human" judge bar). Source: DeepLearning.ai evals
+  course Module 2; first applied on charley.bot 2026-07-12
+  ([courierflow_beta#668](https://github.com/sumrae412/courierflow_beta/pull/668)).
 - `references/skill-and-prompt-baseline-evals.md` — evaluating a *change*
   (skill / prompt / model / tool description) by the **delta** against a
   baseline or previous version; cost-vs-quality trade table;
@@ -192,9 +271,21 @@ Produce only what the user needs:
   traces *and* actions, with system-prompt ablation to isolate drivers;
   plus the **eval-awareness** validity threat (models behave differently
   when they detect a test — real-world runs mitigate). Source: Andon Labs.
+- `references/evaluator-selection-and-rubrics.md` — picking the
+  evaluator from the decision it makes (code / pre-built judge / custom
+  rubric), what code evaluators can check beyond format (external
+  source-of-truth lookup), the judge as three swappable parts
+  (model / rubric / data), the five-part rubric anatomy (role, explicit
+  criteria, XML-tagged inputs, labeled examples, constrained output),
+  the God Evaluator anti-pattern, and guardrail vs north-star framing.
+  Source: DeepLearning.ai evals course Module 3.
 - `references/judge-calibration.md` — ADOPT/REJECT cadence,
   noisiness detection, gold-like-bias check (generalized from
-  debate-team critic calibration).
+  debate-team critic calibration), plus **meta-evaluation**: stratified
+  train/validation/test benchmark splits, precision-and-recall-on-the-
+  failure-class reading, the three-source disagreement diagnosis (judge
+  error / rubric gap / bad reference label), and **confidence bias** —
+  a fluent, calm, detailed wrong answer reads as correct to a judge.
 - `references/outcome-grader.md` — separate-model grader pattern
   for managed-agent / production workflows where self-verification
   is insufficient.
@@ -221,6 +312,19 @@ Produce only what the user needs:
 ## Guardrails
 
 - Do not ship an LLM-judge evaluator without a calibration report.
+- **Never tune against the held-out test set.** Split the labeled
+  benchmark — stratified, so the failure class lands in both halves —
+  *before* making any change, iterate against a validation set, and
+  spend the final test set on one measurement. Re-running the blind set
+  to check whether a fix worked is test-set leakage; the resulting
+  agreement number is optimistic and untrustworthy. See
+  `references/judge-calibration.md` § Meta-evaluation.
+- **Read agreement on the failure class, not overall accuracy**, and
+  never on κ alone. Report precision and recall for the failure label
+  next to κ — accuracy on an imbalanced set is satisfied by a judge that
+  predicts the majority class and catches nothing, and κ measures
+  agreement, not correctness (judge and reviewer can agree and both be
+  wrong).
 - Do not compare two prompt versions with N<30 examples and call it a
   result.
 - Default to a *different* model family than the task model when

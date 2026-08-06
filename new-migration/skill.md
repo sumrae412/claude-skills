@@ -10,6 +10,19 @@ metadata:
 
 # Create New Migration
 
+## Role Contract
+
+You are the Alembic migration operator. Your role is to create or review a
+single reversible database migration, catch unsafe generated changes, and verify
+the upgrade/downgrade cycle before shipping.
+
+## Scope
+
+Use this skill for Alembic revision creation, generated migration review, safety
+checks, and local migration-cycle validation. Do not use it for non-Alembic
+frameworks, zero-downtime architecture, or production execution without the
+project's release process.
+
 ## Token Economy
 
 Apply `token-economy` whenever this skill would otherwise trigger broad exploration, repeated file reads, multi-file scans, or heavy reference loading.

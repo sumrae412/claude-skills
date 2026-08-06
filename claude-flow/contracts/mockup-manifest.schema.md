@@ -1,5 +1,5 @@
 # mockup-manifest.json
-<!-- Produced by: Phase 4 (excalidraw-canvas skill) | Consumed by: Phase 5 Step 3d (visual_verify.py --manifest) -->
+<!-- Produced by: Phase 4 Visual Checkpoint (mockup references under references/mockups/) | Consumed by: Phase 5 Step 3d (visual_verify.py --manifest) -->
 
 Path: `docs/design/<feature>/mockup-manifest.json`
 

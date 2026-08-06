@@ -85,7 +85,12 @@ Run it before manual consolidation and after every batch of memory adds. The scr
   contradictions
 - Maintenance decision (full mode, post-detection):
   five-outcome model (Keep / Update / Consolidate / Replace / Delete) +
-  stale-marking — see `phases/phase-5-maintenance-outcomes.md`
+  stale-marking — see `phases/phase-5-maintenance-outcomes.md`.
+  Supporting evidence: a 2026 arXiv study of LLM-agent memory systems
+  (data-management framing, four-module analysis) found localized
+  maintenance beats global reorganization under realistic workloads —
+  prefer targeted single-entry edits over section rewrites when both
+  would fix the finding.
 
 ## Session Rules
 

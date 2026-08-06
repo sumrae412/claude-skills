@@ -6,7 +6,7 @@ user-invocable: true
 metadata:
   hermes:
     tags: [coding, workflow, planning, review, verification]
-    related_skills: [smart-exploration, executing-plans, verification-before-completion, coding-best-practices]
+    related_skills: [smart-exploration, verification-before-completion, coding-best-practices]
 ---
 
 # Code Creation Workflow
@@ -39,7 +39,7 @@ Triggers:
 - One design doc spawns 2+ workstreams (e.g. Layer 1 positioning + Layer 2 tests + Layer 3 product reframe) that each need their own session.
 - Ship needs a "review-in-PR-author session" + "execute-in-tester session" split.
 
-Pattern: produce handoff prompts as fenced markdown blocks in the originating session's final turn, ready to copy-paste into fresh sessions. Each prompt is self-contained — the receiving session has no memory of the originating one. Validated on courierflow_beta PR #7 (2026-05-22) which spawned three handoff prompts (`/writing-plans` execution, Layer 1 positioning, Layer 3 product vision) from one brainstorm.
+Pattern: produce handoff prompts as fenced markdown blocks in the originating session's final turn, ready to copy-paste into fresh sessions. Each prompt is self-contained — the receiving session has no memory of the originating one. Validated on courierflow_beta PR #7 (2026-05-22) which spawned three handoff prompts (plan execution per `references/plan-execution.md`, Layer 1 positioning, Layer 3 product vision) from one brainstorm.
 
 
 Agentic multi-phase workflow for building features. **Executor/Advisor strategy:** Sonnet executor runs the main loop (exploring, drafting, implementing). Opus advisor fires on-demand at 3-5 decision points. **Workflow is project-generic; the Phase 0 trigger matrix and Phase 5 forced-selection menu are project-specific** — see `references/project-skill-menu.md` for the default (CourierFlow) menu and replacement guidance.
@@ -56,6 +56,8 @@ Agentic multi-phase workflow for building features. **Executor/Advisor strategy:
 | **Advisor (tiered)** | **sonnet** Phase 2, **opus** Phase 4 | Sonnet for gap-finding, Opus for architecture + plan critique |
 | **Lightweight reviewer** | **haiku** | Phase 6 — single batched dispatch (types, API docs, invariants, defensive) |
 | **Specialist reviewers** | **sonnet** | Phase 6 — safety (combined), test coverage |
+
+**Explicit-model rule (cheapest-capable-first).** Every subagent dispatch names `model:` per this table — an omitted `model` param inherits the SESSION model, so a claude-flow run driven by an Opus-tier orchestrator silently runs its whole fan-out at Opus prices (validated on the henry orchestrator, [sumrae412/henry#158](https://github.com/sumrae412/henry/pull/158)). Default down, not up: mechanical scans take haiku, standard research/build/review takes sonnet, opus only where this table already grants it. On a quality failure at a tier, re-dispatch ONE tier up with the failure named in the brief; never retry the same tier with an unchanged prompt. The Phase 5 judge downgrade (`decisions/2026-04-24-sonnet-vs-opus-phase-downgrade.md` in the claude_flow repo, 0.989 parity) is the template for challenging any opus grant in this table.
 
 **First-party adjacent levers:** `/model opusplan` mirrors this Executor/Advisor split at the main-loop level — use it for interactive plan-then-execute runs (Opus drafts the plan, Sonnet executes). Per-dispatch `model:` parameters still apply for subagent fan-out. Skill `model:`/`effort:` frontmatter, `/context` for size pre-checks, and `/plan` (Shift+Tab) for Plan Mode are all complementary to claude-flow's phase routing.
 
@@ -82,7 +84,7 @@ Optional flags modify specific phases without changing the path decision.
 - **Path-scoped** flags pick the whole workflow path — e.g. `--fast`, `--lite`, `--clone`, `--explore`, `--full`. These interact with Phase 1 triage (see Path Decision below) and typically skip later phases entirely.
 - **Phase-scoped** flags modify one phase's behavior without changing the path — e.g. `--visual` / `--no-visual` below. Path selection is unaffected; only the named phase runs differently. New phase-scoped flags should name the phase in the `Phase` column of this table so the scope stays obvious.
 
-**Flag propagation:** When claude-flow runs on LITE PATH and dispatches a heavyweight orchestrator subagent (`debate-team`, `research`), propagate `--lite` into the dispatch prompt. Otherwise a nominally lite run fans out into full-tier debate / full-wave research and defeats the purpose.
+**Flag propagation:** When claude-flow runs on LITE PATH and dispatches a heavyweight orchestrator subagent (`debate-team`, the built-in `deep-research` skill), propagate `--lite` into the dispatch prompt. Otherwise a nominally lite run fans out into full-tier debate / full-fan-out research and defeats the purpose.
 
 | Flag | Phase | Effect |
 |------|-------|--------|
@@ -124,10 +126,6 @@ When `--goal` is set, the executor invokes the `/goal` slash command at Phase 5 
 ## Path Decision (Phase 1 Core Logic)
 
 ```
-DIRECT-ROUTE? ("synthetic beta test", "alpha test with personas",
-                "assess usability with simulated users", "run persona-based eval")
-  → Invoke /personas skill — EXIT workflow
-
 BUG? (error report, regression, stack trace, "fix this bug")
   → Invoke /bug-fix skill — EXIT workflow
 
@@ -179,7 +177,7 @@ When a phase reaches outside the workspace (API docs, deployment logs, PR operat
 2. **CLI** for local-first tools without an MCP equivalent (e.g., `ruff`, `pytest`, `semgrep`, project scripts)
 3. **Direct HTTP / web fetch** only as fallback when neither exists
 
-Examples: GitHub ops → `gh` CLI is fine locally; prefer GitHub MCP when dispatching subagents to remote clients. Railway → use `mcp__railway-mcp-server__*` (memory: `reference_config_repos`). Sentry → `sentry:seer` or `mcp__sentry-*`. Supabase → `mcp__30db93f5-*`. Before fetching public web docs, check whether the service has an MCP server that exposes introspection — avoids the staleness problem `/fetch-api-docs` exists to solve.
+Examples: GitHub ops → `gh` CLI is fine locally; prefer GitHub MCP when dispatching subagents to remote clients. Railway → use `mcp__railway-mcp-server__*` (memory: `reference_config_repos`). Sentry → `sentry:seer` or `mcp__sentry-*`. Supabase → `mcp__30db93f5-*`. Before fetching public web docs, check whether the service has an MCP server that exposes introspection — avoids doc staleness.
 
 **Programmatic tool calling for bulk/deterministic work:** If a tool returns a large JSON payload and you need to filter/aggregate/transform deterministically, do it in a Python script (see `scripts/select_reviewers.py`, `aggregate_reviewer_findings.py`) rather than piping raw output through the executor. Saves tokens and eliminates a class of LLM parsing errors.
 
@@ -196,6 +194,32 @@ Examples: GitHub ops → `gh` CLI is fine locally; prefer GitHub MCP when dispat
 | `$design_context` | `contracts/design-context.schema.md` | Phase 0/4 UI preflight | Phases 4, 5, 6 |
 | `$plan` | `contracts/plan.schema.md` | Phase 4b | Phases 4c, 4d, 5, 6 |
 | `$diff` | `contracts/diff.schema.md` | Phase 5 | Phase 6 |
+
+## Spec-first implementation plans
+
+Any path that **creates** an implementation plan must create a Spec Kit-inspired
+specification first. This is a workflow gate, not a requirement to install the
+Spec Kit CLI. Follow the sequence from [github/spec-kit](https://github.com/github/spec-kit):
+
+1. **Constitution** - record the project principles and constraints that govern
+   the work, using the repo's `AGENTS.md`, `CLAUDE.md`, ADRs, and design docs as
+   sources. If no durable constitution exists, record the applicable principles
+   and mark them as session-derived rather than inventing policy.
+2. **Specify** - write the user problem, actors, user scenarios, functional and
+   non-functional requirements, scope in/out, edge cases, and acceptance
+   criteria. Use stable IDs (`FR-1`, `AC-1`, etc.).
+3. **Clarify** - resolve material ambiguities from the codebase and the user;
+   record remaining assumptions and explicit open questions.
+4. **Plan** - write the technical implementation plan only after the spec
+   exists. Every plan task must trace to one or more requirement or acceptance
+   criterion IDs, and the plan must list the spec path in `References`.
+
+Use `references/spec-template.md` as the minimum shape. Save the spec as
+`<project-convention>/<feature>-spec.md`; when the project has
+no convention, use `docs/specs/<feature>-spec.md`. Populate the `spec` block in
+`$plan` with the path, constitution source, requirement IDs, and acceptance
+criterion IDs. Existing plans are inputs to the plan/clone paths and do not need
+to be rewritten; a newly authored plan never skips this gate.
 
 Contracts are the interface between phases. When dispatching subagents, pass the named contract — not raw conversation. See each schema file for field definitions and notes. If success depends on a specific skill, docs source, MCP server, CLI, or browser/testing tool, name it explicitly in the dispatch prompt instead of assuming the subagent will discover or choose it.
 
@@ -225,8 +249,6 @@ frontend-design guidance.
 
 **Pattern vocabulary:** See `references/multi-agent-patterns.md` for which multi-agent pattern each phase implements. Load when designing a new phase or debating whether a phase's coordination approach is the right fit.
 
-**Phase 6 optional follow-up:** `/personas` — synthetic beta test (bugs, UI snags, usefulness ratings), offered non-gating when `$diff` touches user-facing flows. See `phases/phase-6-quality.md` §Optional follow-up.
-
 ---
 
 ## Error Recovery
@@ -255,7 +277,7 @@ frontend-design guidance.
 | Using Opus for Phase 2 exploration review | Sonnet handles gap-finding; Opus reserved for Phase 4 |
 | Running all Phase 6 tiers when Tier 1 is clean | Early exit: if CodeRabbit finds no HIGH+ issues, skip Tiers 2-4 |
 | Dispatching 4 separate haiku reviewers | Batch into single `lightweight-reviewer` with combined checklist |
-| Letting Opus 4.7 under-parallelize reviewer/researcher fan-outs | Explicitly name the fan-out in the dispatch prompt; emit all tool-use blocks in a single message |
+| Letting Opus-tier models (4.7+) under-parallelize reviewer/researcher fan-outs | Explicitly name the fan-out in the dispatch prompt; emit all tool-use blocks in a single message |
 | Initializing state machine for fast/lite paths | Skip — single-session linear flows don't need cross-session resume |
 | Re-running Phase 3 quality gate when Phase 2 scored it | Carry scores forward — skip redundant re-check |
 | Coding before clarification | Phase 3 is a hard gate |
@@ -263,7 +285,7 @@ frontend-design guidance.
 | Passing full conversation to subagents | Use named contracts ($plan, $requirements, etc.) |
 | Using full workflow for 1-2 file changes | Use Lite path |
 | Writing tests after code | TDD — test first |
-| Guessing external API patterns | Hard gate: `/fetch-api-docs` before any API code |
+| Guessing external API patterns | Hard gate: fetch current provider docs (MCP introspection or WebFetch) before any API code |
 | Not tagging workflow failures | Apply taxonomy tags (see `references/failure-taxonomy.md`) |
 | Letting context grow unbounded | Tool-result clearing at ~50K, compaction at ~80% |
 | Compacting a long-running phase instead of resetting | When a phase exceeds ~60% context, prefer `/next` handoff + fresh session over in-context compression. Empirical claim from Anthropic harness-design (2026): models exhibit "context anxiety" and wrap up prematurely as the window fills, so a clean reset with a written handoff outperforms summarization. Compaction is fine for cross-task drift; resets are for mid-phase rescue. |

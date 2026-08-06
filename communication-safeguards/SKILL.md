@@ -1,6 +1,6 @@
 ---
 name: communication-safeguards
-description: Real-time state, timing, and intent layer for any Slack message, email, or workplace communication Summer is drafting, reviewing, or responding to. Runs alongside ToneGuard — checks internal activation (1–10 scale), HALT signals, and intent before composition; provides a Two-Sentence Response template for conflict replies and a 2-Minute Reset for rumination loops. Trigger on "draft a Slack message", "rewrite this email", "how should I respond to", "I'm fuming about", "I can't stop replaying", "help me reply to", or any communication request that may be carrying conflict heat. Hands off the final draft to ToneGuard for passive-aggressive / escalatory scanning.
+description: "Real-time state, timing, and intent layer for any Slack message, email, or workplace communication Summer is drafting or answering. Runs alongside ToneGuard — checks internal activation (1–10), HALT signals, and intent before composition; provides the Two-Sentence Response template for conflict replies and the 2-Minute Reset for rumination loops. Trigger on 'how should I respond to', 'I'm fuming about', or any communication carrying conflict heat. Hands the final draft to ToneGuard for passive-aggressive / escalatory scanning."
 user-invocable: true
 ---
 

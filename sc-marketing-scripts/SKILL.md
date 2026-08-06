@@ -1,6 +1,6 @@
 ---
 name: sc-marketing-scripts
-description: Write, review, or improve DeepLearning.AI course scripts — Lesson Zero (L0) introductory videos, marketing teasers, Course Map/Overview slides, diagram walkthroughs, Talking Heads (THs). Covers Andrew Ng voice, DL.AI guidelines, teleprompter-aware phrasing, iteration protocol, and an annotated library of reference scripts. Use whenever asked to write, review, or improve any course intro / L0 / marketing / teaser / short-course video script, or evaluate script quality for course launch materials. Supersedes the bundled anthropic-skills:sc-marketing-scripts — this version has curated references (core-principles, script-formats, review-checklist, common-mistakes, example-scripts) and a progressive-disclosure loader the bundled version lacks.
+description: "Write, review, or improve DeepLearning.AI course scripts — Lesson Zero (L0) intros, marketing teasers, Course Map/Overview slides, diagram walkthroughs, Talking Heads (THs). Covers Andrew Ng voice, DL.AI guidelines, teleprompter-aware phrasing, iteration protocol, and an annotated reference-script library. Use for any course intro / L0 / marketing / teaser video script or script-quality review for launch materials. Supersedes the bundled anthropic-skills:sc-marketing-scripts — this version adds curated references and a progressive-disclosure loader."
 ---
 
 # SC Marketing Scripts
@@ -25,7 +25,7 @@ Internal guide for writing introductory lessons (Lesson Zero / L0) and marketing
 This skill uses progressive disclosure. Load the reference file for the task you're doing; skip the others to keep context lean.
 
 1. **Before writing OR reviewing any script → load [`references/core-principles.md`](references/core-principles.md).**
-   Voice & tone (Andrew Ng's voice), hook immediately, inverted pyramid, clarity over buzzwords, concrete over categorical, purpose framing, TH intro length, cut vague endings, what we write scripts for, iteration protocol, writing like a human, speakability, Lesson 1 preview guidance, don't condescend, teleprompter note. Foundational — always applies.
+   Voice & tone (Andrew Ng's voice), hook immediately, inverted pyramid, clarity over buzzwords, concrete over categorical, anchor to what they already know, honest limit (name where the simple version bends the truth), pre-empt where they'll get lost, purpose framing, TH intro length, cut vague endings, what we write scripts for, iteration protocol, writing like a human, speakability, Lesson 1 preview guidance, don't condescend, teleprompter note. Foundational — always applies.
 
 2. **When writing a specific script type → load [`references/script-formats.md`](references/script-formats.md).**
    Format-specific templates for Course Map / Overview Slides, Marketing Teaser (≤3 min), Lesson Zero / L0 (5–6 min), Diagram Walkthroughs, Lesson Talking Heads (THs). Load when you know which script type you're writing.

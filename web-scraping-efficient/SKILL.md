@@ -1,6 +1,6 @@
 ---
 name: web-scraping-efficient
-description: Token-efficient Python web scraping. Use whenever the user wants to scrape, crawl, extract, or pull data from a website, HTML page, online article, or GitHub repo — even when they don't say "token-efficient." Triggers on "scrape this site," "get the data from this page," "extract the article," "summarize this URL," "what's in this GitHub repo," or pasting a URL with an extraction goal. The skill's whole point is to keep raw HTML out of Claude's context: fetch and parse in a Python subprocess, return only the structured fields the user asked for. **Default behavior:** pick a bundled script, run it, write JSON to disk, show a head. Multi-step exploration is the exception.
+description: "Token-efficient Python web scraping. Use whenever the user wants to scrape, crawl, or extract data from a website, HTML page, online article, or GitHub repo — even when they don't say 'token-efficient'; triggers on 'scrape this site' or a pasted URL with an extraction goal. Keeps raw HTML out of Claude's context: fetch and parse in a Python subprocess, return only the structured fields asked for. Default: pick a bundled script, run it, write JSON to disk, show a head; multi-step exploration is the exception."
 ---
 
 # Token-efficient web scraping
@@ -11,9 +11,22 @@ Raw HTML is huge — a single article page can be 100k+ tokens of nav, scripts, 
 
 **The whole game: do the fetch and parse in a Python subprocess; only structured rows enter Claude's context.** Claude sees `[{"title": "...", "text": "..."}]`, never `<html>...</html>`.
 
+## Role Contract
+
+You are the token-efficient scraping operator. Your role is to fetch, parse, and
+extract web data outside the model context, then return only the structured
+fields the user asked for.
+
+## Scope
+
+Use this skill for websites, articles, GitHub repos, sitemaps, and HTML pages
+where deterministic fetch-and-parse is cheaper than reading raw content. Do not
+paste HTML into chat, solve CAPTCHAs, or crawl broadly when a sitemap, API, or
+targeted fetch will do.
+
 ## Bundled scripts — use these first
 
-Four helpers cover the common cases. **Default to `dispatch.py`** — it picks the right script from the URL. Use a specific script only when you want to override the dispatch.
+Five helpers cover the common cases. **Default to `dispatch.py`** — it picks the right script from the URL. Use a specific script only when you want to override the dispatch.
 
 | URL shape | Script | Output |
 |---|---|---|
@@ -21,8 +34,36 @@ Four helpers cover the common cases. **Default to `dispatch.py`** — it picks t
 | News, blog post, Substack, Medium, any article-shaped page | `scripts/article.py` | `{url, title, author, date, text, word_count, lang}` |
 | `github.com/owner/repo` | `scripts/github_repo.py` | `{full_name, description, stars, tree, files: {README.md: ...}}` |
 | Anything else — generic webpage, table, structured data | `scripts/webpage.py` | `{title, headings, paragraphs, links, jsonld, og}` |
+| Need the URL space of a whole site before fetching anything | `scripts/map_site.py` | One URL per line (or JSON with `--json`) |
 
 Dispatch rules (see `scripts/dispatch.py`): GitHub URL → `github_repo.py --files`; URL contains `/blog/`, `/post/`, `/p/`, `substack.com`, `medium.com`, or a `/YYYY/MM/` date → `article.py`; otherwise → `webpage.py`. Override the dispatch only if you have a specific reason.
+
+### Map before you crawl
+
+When the task needs multiple pages from one site, **discover the URL space with a sitemap before fetching anything** — never discover-by-crawling (following links page-to-page to find out what exists costs one fetch per page just to learn the space).
+
+```bash
+python /path/to/web-scraping-efficient/scripts/map_site.py example.com --filter /docs/ --max 200
+```
+
+`map_site.py` checks `robots.txt` for `Sitemap:` lines, falls back to `/sitemap.xml`, recurses one level into sitemap-index files, normalizes and dedups, and prints the URL list (one per line, or `--json`). Then fetch only the pages that matter with `dispatch.py`/`article.py`/`webpage.py` — the map is free (1-2 requests), a crawl is not. If no sitemap exists, the script exits with a clear message instead of a traceback; fall back to a handful of targeted fetches or a `site:` search rather than crawling blind.
+
+(Pattern source: firecrawl's `/map` endpoint — sitemap + URL-index merge, [`apps/api/src/lib/map-utils.ts`](https://github.com/firecrawl/firecrawl/blob/main/apps/api/src/lib/map-utils.ts). This is a from-scratch local script, not a call to their API.)
+
+### Condensed site index for repeat reference
+
+When a doc site will get referenced across sessions, don't re-scrape it each time. Crawl once (using the map-then-fetch pattern above), then save a **condensed index** to disk — one line per page: `path — one-line summary`. Reference that file thereafter; only re-fetch a specific page when its summary line no longer answers the question.
+
+```
+docs/react.dev-index.md
+  /learn/thinking-in-react — component-tree decomposition before writing code
+  /reference/react/useState — state hook, lazy init, functional updates
+  /reference/react/useEffect — effect deps array, cleanup timing
+```
+
+This trades a one-time crawl cost for near-zero cost on every later lookup, and keeps repeat sessions from re-fetching pages that haven't changed.
+
+(Pattern source: firecrawl's `llms.txt` generation, [`apps/api/src/lib/generate-llmstxt/generate-llmstxt-service.ts`](https://github.com/firecrawl/firecrawl/blob/main/apps/api/src/lib/generate-llmstxt/generate-llmstxt-service.ts) — a condensed per-page summary index for LLM consumption. Same idea, applied as a plain markdown file on disk instead of a hosted endpoint.)
 
 ### One-line invocations
 

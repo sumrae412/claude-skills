@@ -1,11 +1,11 @@
 ---
 name: prd
-description: Use when authoring a Product Requirements Document (PRD) — a sharable spec doc — before handing a feature to claude-flow or another AI coding agent. Triggers on "write/draft/create a PRD", "spec out [feature]", "product spec", "feature spec", "write product requirements", "requirements doc for [feature]", "PRD for [feature]". The PRD output maps directly onto claude-flow's $requirements contract (user stories, EARS acceptance criteria, scope.in/out, edge cases, risk class, non-functional) so Phase 3 can ingest it instead of re-asking the same questions. Distinct from claude-flow's inline Phase 3 — use this when the PM / founder / requester wants a durable spec document up front that survives across sessions, before kicking off the build.
+description: "Use when authoring a Product Requirements Document — a durable, sharable spec — before handing a feature to claude-flow or another AI coding agent. Triggers on 'write a PRD', 'spec out [feature]', 'product spec', 'requirements doc'. Output maps onto claude-flow's $requirements contract (user stories, EARS acceptance criteria, scope in/out, edge cases, risk class, non-functional) so Phase 3 ingests it instead of re-asking. Distinct from claude-flow's inline Phase 3: use when the PM / founder / requester wants a spec that survives across sessions."
 user-invocable: true
 metadata:
   hermes:
     tags: [planning, requirements, product, prd, claude-flow]
-    related_skills: [claude-flow, brainstorming, writing-plans]
+    related_skills: [claude-flow, brainstorming]
 ---
 
 # PRD — Product Requirements Document
@@ -13,6 +13,8 @@ metadata:
 ## Communication Principles
 
 Before drafting the PRD prose (problem statement, user stories, rationale, edge-case narratives), load [`../shared/communication-principles.md`](../shared/communication-principles.md). Before shipping the PRD, run the **§9 sameness-detector** pass on every prose section — PRDs default to template-shaped, interchangeable language ("As a user, I want…" boilerplate, generic edge cases, hand-wavy non-functional requirements). Name concrete instances across the eight axes and apply the cut/combine/sharpen/surprise/specify/restructure moves so the spec reads like *this* product, not any product. EARS clauses themselves stay templated — diversification applies to the surrounding narrative.
+
+**§11 spoken-voice register exempted for structured spec sections.** PRDs are scan-oriented artifacts: EARS clauses (Given/When/Then, "shall" statements), acceptance criteria, and scope in/out lists keep their templated, parallel framing — the §11 bans on parallel structure, the rule of three, and setup/payoff serve spoken narration and do not apply there. The §11 bans still apply to the *written narrative* — problem statement, rationale, edge-case narratives — which should read as plain spoken prose without antithesis, corrective negation, parataxis, or throat-clearing openers.
 
 ## What this produces
 

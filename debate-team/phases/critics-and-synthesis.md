@@ -123,3 +123,11 @@ Produce a **Changelog table**:
 | Claude | Over-abstracted service layer | REJECT | Matches existing pattern |
 | Haiku | Hardcoded font-size | ADOPT | Use var(--ds-text-sm) |
 ```
+
+#### Verdict Discipline (three rules the synthesis must satisfy)
+
+Borrowed from the `decision-panel` skill. The Lead's synthesis is not done until it passes all three:
+
+1. **No "it depends" findings.** Every ADOPT, REJECT, or DEFER must state a real verdict. If a finding genuinely depends, name the specific condition that flips it and DEFER with that condition stated, not a vague "depends on context." A finding that cannot be conditionalized is either ADOPT or REJECT.
+2. **Name the real axis of disagreement.** After the changelog, state in one line the single axis the critics split on (e.g. "ship speed vs. schema purity," "abstraction depth vs. YAGNI"). This is the decision the user is actually being asked to make. If critics all agree, say so explicitly and skip the axis line.
+3. **Hand back the one human-judgment call.** End the synthesis with the one question only the user (or PR author) can answer, the one the critics could not resolve with evidence alone. Do not bundle it into the findings list. State it separately so the decision stays theirs.

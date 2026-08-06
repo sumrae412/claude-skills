@@ -1303,3 +1303,18 @@ console.warn("ToneGuard:", formatErrorForLog(result.error));
 **Learned from:** [courierflow_beta PR #5](https://github.com/sumrae412/courierflow_beta/pull/5). Authenticated routes ping-ponged to `/onboarding` because `useGetMe` returned HTML as a "user" object with `onboardingCompleted: undefined`.
 
 ---
+
+## 42. Don't Derive Live State From a Frozen Error String — And Make Action Buttons Do What Their Label Says
+
+**Trigger:** A UI computes "is this thing still broken" by substring-matching a stored `errorMessage` field (`e.includes("email")`) rather than re-checking the live underlying data. Common on retry/resume flows for failed jobs, workflow steps, or queued tasks.
+
+**Failure mode:** The error string is frozen at the moment of the original failure. When the user fixes the root cause (e.g. adds the missing email), the UI still substring-matches the stale text and reports the same stale diagnosis — with no way to re-check or clear it. Compounding failure: an action button labeled "Retry"/"Resume X" that only patches the ONE field named in the error without calling the actual retry/resume endpoint. The label promises an action the button doesn't perform, so the user believes they've tried the fix and it failed.
+
+**Defenses (do both):**
+
+1. Compute "is this still broken" by re-reading the live field/record at render or click time — never by matching text baked into a historical error.
+2. Audit every button whose label contains a verb ("Retry", "Resume", "Fix") — confirm it calls the endpoint that actually performs that verb, not just a side-effect PATCH that happens to address the error's stated cause.
+
+**Learned from:** [courierflow_beta PR #799](https://github.com/sumrae412/courierflow_beta/pull/799). `artifacts/web/src/pages/pipeline.tsx:363-366` computed `needsEmail = failedErrors.some(e => e.includes("email"))` against a frozen `errorMessage`; "Link Tenant & Resume Workflow" only PATCHed `tenancyId` and never retried the failed step, even though a correctly-wired retry endpoint already existed — reachable only from a separate "Retry Step" button. A landlord who linked a tenant that *did* have an email was told the tenant had no email, with no way to edit it.
+
+---
