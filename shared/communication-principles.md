@@ -125,7 +125,7 @@ Full catalog with before→after fixes and a Detect-only mode: [`ai-writing`](..
 
 ## 11. Spoken-voice register
 
-The strictest register in this reference: writing that must read like speech, with the rhetorical machinery stripped out. §10 bans individual AI-slop *tells*; this register bans whole structure-level moves — parallelism, setup/payoff, the rule of three — that ordinary polished prose still permits. When a host skill applies this register, these bans outrank §2–§9 where they conflict. Apply it to scripts, voiceover, L0 intros, video narration, and anything a human will read aloud; do not apply to dense reference docs, resumes, or formal correspondence unless the host skill says so.
+The default register for Summer-signed writing: it must read like speech, with the rhetorical machinery stripped out. §10 bans individual AI-slop *tells*; this register bans whole structure-level moves — parallelism, setup/payoff, the rule of three — that ordinary polished prose still permits. Its bans outrank §2–§9 where they conflict. It applies to everything Summer puts her name on — scripts, voiceover, L0 intros, video narration, emails, marketing copy, social posts, blog posts, resumes and bios, and formal correspondence. The only exceptions are artifacts that exist to be scanned rather than read (dense reference docs, PRDs, decision records, legal or technical specifications), where the host skill should say so explicitly rather than silently dropping the register.
 
 The rule set, verbatim:
 
@@ -170,7 +170,7 @@ Before shipping any piece of writing produced under a skill that loads this refe
 - [ ] No ego residue, no completeness-anxiety filler, no hedges that blur the claim.
 - [ ] Ran the sameness-detector pass (§9): named concrete instances on the eight axes, made the cut/combine/sharpen/surprise/specify/restructure calls, passed the generic-swap test.
 - [ ] Scanned for the §10 named AI-slop patterns and fixed each one found.
-- [ ] If the medium is spoken (script, voiceover, L0, narration): applied the §11 spoken-voice register — no parallelism, no setup/payoff, no rule of three, no em dashes, varying sentence length.
+- [ ] Applied the §11 spoken-voice register — no parallelism, no setup/payoff, no rule of three, no em dashes, varying sentence length (unless the host skill named a scan-only exception).
 
 ---
 
