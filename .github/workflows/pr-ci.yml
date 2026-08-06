@@ -1,7 +1,9 @@
 name: PR CI
 
 # Blocking gate for every PR: skill frontmatter integrity + repo-wide
-# relative-link resolution (scripts/validate_skills.py, pure stdlib).
+# relative-link resolution (scripts/validate_skills.py, pure stdlib),
+# and a security gate (scripts/security_gate.py) that fails only on NEW
+# findings not in the reviewed security-baseline.json.
 # Informational (never blocks): persona-contract lint and the doc-graph
 # orphan report, to surface prune candidates at review time.
 
@@ -31,3 +33,9 @@ jobs:
           if [ -f /tmp/doc-graph.md ]; then
             { echo '## Doc-graph report (informational)'; echo; cat /tmp/doc-graph.md; } >> "$GITHUB_STEP_SUMMARY"
           fi
+
+      - name: Security gate (new findings vs baseline)
+        run: |
+          python3 scripts/security_gate.py \
+            --root . \
+            --baseline security-baseline.json
