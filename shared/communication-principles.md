@@ -123,6 +123,38 @@ The sameness detector catches predictability at the draft level. These are the s
 
 Full catalog with before→after fixes and a Detect-only mode: [`ai-writing`](../ai-writing/SKILL.md) §3b. Source: Peter Yang's [no-ai-slop](https://github.com/petergyang/no-ai-slop).
 
+## 11. Spoken-voice register
+
+The strictest register in this reference: writing that must read like speech, with the rhetorical machinery stripped out. §10 bans individual AI-slop *tells*; this register bans whole structure-level moves — parallelism, setup/payoff, the rule of three — that ordinary polished prose still permits. When a host skill applies this register, these bans outrank §2–§9 where they conflict. Apply it to scripts, voiceover, L0 intros, video narration, and anything a human will read aloud; do not apply to dense reference docs, resumes, or formal correspondence unless the host skill says so.
+
+The rule set, verbatim:
+
+- No antithesis.
+- No corrective negation.
+- No paragraph pinning.
+- No parataxis.
+- No summary beats.
+- No rhetorical crutches.
+- No negative parallelisms.
+- No negative anaphoras.
+- No contrasting pairs.
+- No rule of three.
+- No em dashes.
+- No throat-clearing openers.
+- No landing sentences.
+- No setup/payoff constructions.
+- No parallel sentence structures within a paragraph.
+- Vary sentence length unpredictably.
+- No stacked noun phrases.
+- No filler intensifiers (genuinely, really, truly, actually).
+- No corporate-register verbs (leverage, underscore, reflect).
+- No nominalization.
+- No hedging qualifiers.
+- Write for the spoken voice.
+- No performed enthusiasm.
+
+Scan for these at the same pass as §10, and treat them the same way: fix the pattern, don't reshape it into a fancier version of the same move. Overlaps with earlier sections are intentional — §2 already bans intensifiers and hedges; §10 already names negative listing and the summary-recap ending. This register is stricter than both, so when it applies, its line wins.
+
 ---
 
 ## Quick checklist
@@ -138,6 +170,7 @@ Before shipping any piece of writing produced under a skill that loads this refe
 - [ ] No ego residue, no completeness-anxiety filler, no hedges that blur the claim.
 - [ ] Ran the sameness-detector pass (§9): named concrete instances on the eight axes, made the cut/combine/sharpen/surprise/specify/restructure calls, passed the generic-swap test.
 - [ ] Scanned for the §10 named AI-slop patterns and fixed each one found.
+- [ ] If the medium is spoken (script, voiceover, L0, narration): applied the §11 spoken-voice register — no parallelism, no setup/payoff, no rule of three, no em dashes, varying sentence length.
 
 ---
 
