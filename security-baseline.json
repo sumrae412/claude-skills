@@ -6,8 +6,8 @@
     "total_suppressed": 53,
     "t6_rebaseline_at": "2026-08-06",
     "t6_rebaseline_by": "charlie/land-t6-rebaseline",
-    "t6_rebaseline_note": "T6 PRs #128 (docs) + #131 (scanner) landed. 21 new suppressions added (self-match FPs, documented-pattern-examples, tooling FPs, bounded-tempfile-ops). 1 genuine finding NOT suppressed: inbox-triage::T6-LETHAL-TRIFECTA::SKILL.md::62 — true positive per PR #131 commit body. Needs Summer review.",
-    "total_suppressed_after_t6": 74
+    "t6_rebaseline_note": "T6 PRs #128 (docs) + #131 (scanner) landed. 21 new suppressions added (self-match FPs, documented-pattern-examples, tooling FPs, bounded-tempfile-ops). 1 genuine finding NOT suppressed: inbox-triage::T6-LETHAL-TRIFECTA::SKILL.md::62 \u2014 true positive per PR #131 commit body. Needs Summer review. Override 2026-08-06: SUPPRESSED as worth-review/accepted by Henry on Summer\u2019s behalf (ownership grant). worth-review/accepted: verified genuine Lethal Trifecta on Summer's own personal inbox-triage automation (1 account, local machine, read-only cred access with 'never log/echo/write', structural guardrails bar money/irrevocable-sends/PII-outside-Mem at line 308). The exfil destination is Summer's own Slack DM, which is the skill's existing output channel. Bounded single-user personal exposure, not a product vuln. Accepted consciously by Henry on Summer's behalf (ownership grant 2026-08-06); follow-up = consider an input-sanitization / re-read-of-instructions step before Step 10 if triage expands beyond personal account.",
+    "total_suppressed_after_t6": 75
   },
   "claude-flow": {
     "suppressed_findings": [
@@ -76,7 +76,7 @@
         "file": "docs/api-design.md",
         "line": 55,
         "pattern": "untrusted_read@docs/api-design.md:55; sensitive_access@docs/testing.md:348; external_comms@docs/testing.md:189",
-        "reason": "documented-pattern-example: coding-best-practices is a documentation-only skill containing reference markdown with code examples (fetch() POSTs, process.env.API_KEY references, async request patterns). None of the three trifecta buckets represent live runtime behaviour — all are code snippets inside fenced blocks showing API patterns. The skill itself never executes network requests or accesses credentials."
+        "reason": "documented-pattern-example: coding-best-practices is a documentation-only skill containing reference markdown with code examples (fetch() POSTs, process.env.API_KEY references, async request patterns). None of the three trifecta buckets represent live runtime behaviour \u2014 all are code snippets inside fenced blocks showing API patterns. The skill itself never executes network requests or accesses credentials."
       }
     ]
   },
@@ -97,7 +97,7 @@
         "category": "PROMPT-OVERRIDE",
         "file": "defensive-backend-flows/references/patterns.md",
         "line": 1274,
-        "pattern": "- Body with literal `IGNORE PREVIOUS INSTRUCTIONS` + tier-override request → tier ≠ 1",
+        "pattern": "- Body with literal `IGNORE PREVIOUS INSTRUCTIONS` + tier-override request \u2192 tier \u2260 1",
         "reason": "documented-pattern-example: bullet point in a test-case table describing what the defender's test verifies against. The phrase names the attack payload that the test should reject, not an active prompt-injection instruction."
       },
       {
@@ -107,7 +107,7 @@
         "file": "evidence.md",
         "line": 856,
         "pattern": "untrusted_read@evidence.md:856; sensitive_access@evidence.md:150; external_comms@evidence.md:150",
-        "reason": "documented-pattern-example: evidence.md is a bug-evidence log documenting past CourierFlow production bugs (e.g. ephemeral-storage failures, Gmail quota errors). The trifecta is matched on prose descriptions of bugs involving email/Drive, not on active code paths. The skill itself (defensive-backend-flows) provides defensive coding patterns — it does not execute email, credential, or network operations."
+        "reason": "documented-pattern-example: evidence.md is a bug-evidence log documenting past CourierFlow production bugs (e.g. ephemeral-storage failures, Gmail quota errors). The trifecta is matched on prose descriptions of bugs involving email/Drive, not on active code paths. The skill itself (defensive-backend-flows) provides defensive coding patterns \u2014 it does not execute email, credential, or network operations."
       }
     ]
   },
@@ -142,7 +142,7 @@
         "file": "evals/references/error-analysis-and-test-sets.md",
         "line": 121,
         "pattern": "sets stay one-sided by design (target ~100%) and are reported as such.",
-        "reason": "self-match-false-positive: same regex false-positive as evals/SKILL.md:116. 'get ~' matched in 'target ~100%' — tilde as math approximation, not a home-directory path reference. No exfiltration instruction present."
+        "reason": "self-match-false-positive: same regex false-positive as evals/SKILL.md:116. 'get ~' matched in 'target ~100%' \u2014 tilde as math approximation, not a home-directory path reference. No exfiltration instruction present."
       }
     ]
   },
@@ -195,7 +195,7 @@
         "file": "production-readiness-check/scripts/test_core_gate.sh",
         "line": 70,
         "pattern": "+eval(\"literal\")",
-        "reason": "tooling-fp: synthetic diff fixture line — same pattern as line 61. The +prefix marks it as a diff addition being injected into a test fixture string, not a shell eval() call."
+        "reason": "tooling-fp: synthetic diff fixture line \u2014 same pattern as line 61. The +prefix marks it as a diff addition being injected into a test fixture string, not a shell eval() call."
       },
       {
         "key": "production-readiness-check::CODE-EXEC::production-readiness-check/scripts/test_core_gate.sh::72",
@@ -509,7 +509,7 @@
         "file": "skill-security-auditor/references/threat-model.md",
         "line": 324,
         "pattern": "- Access credential files or sensitive env vars",
-        "reason": "documented-pattern-example: threat-model bullet listing what an attacker could instruct an agent to do — this is documentation of the threat, not an active instruction. The PROMPT-EXFIL regex matches 'access ... credentials' in the threat description."
+        "reason": "documented-pattern-example: threat-model bullet listing what an attacker could instruct an agent to do \u2014 this is documentation of the threat, not an active instruction. The PROMPT-EXFIL regex matches 'access ... credentials' in the threat description."
       },
       {
         "key": "skill-security-auditor::DEPS-RUNTIME::skill-security-auditor/scripts/skill_security_auditor.py::717",
@@ -527,8 +527,8 @@
         "file": "/private/var/folders/69/qj2ntc153mjd8s04bl4j16f40000gn/T/opencode/t6-rebaseline/skill-security-auditor/scripts/skill_security_auditor.py",
         "line": 715,
         "pattern": "r'\"Bash\\(sudo[^\"]*\\)\"',",
-        "risk": "Sudo invocation — privilege escalation attempt",
-        "reason": "self-match-false-positive: this is the regex string literal defining T6-SCOPE-CREEP's PERMISSIONS_ALLOW_BROAD detection list. The string r'\"Bash(sudo[^\"]*)'\" is the pattern the scanner uses to detect over-broad sudo permissions — it is not a sudo invocation. The T1/PRIV-ESC scanner matches the word 'sudo' inside this regex constant definition."
+        "risk": "Sudo invocation \u2014 privilege escalation attempt",
+        "reason": "self-match-false-positive: this is the regex string literal defining T6-SCOPE-CREEP's PERMISSIONS_ALLOW_BROAD detection list. The string r'\"Bash(sudo[^\"]*)'\" is the pattern the scanner uses to detect over-broad sudo permissions \u2014 it is not a sudo invocation. The T1/PRIV-ESC scanner matches the word 'sudo' inside this regex constant definition."
       },
       {
         "key": "skill-security-auditor::PRIV-ESC::skill-security-auditor/scripts/skill_security_auditor.py::1251",
@@ -537,7 +537,7 @@
         "file": "/private/var/folders/69/qj2ntc153mjd8s04bl4j16f40000gn/T/opencode/t6-rebaseline/skill-security-auditor/scripts/skill_security_auditor.py",
         "line": 1251,
         "pattern": "\"permissions.allow entries (e.g. Bash(*), sudo, curl). Each \"",
-        "risk": "Sudo invocation — privilege escalation attempt",
+        "risk": "Sudo invocation \u2014 privilege escalation attempt",
         "reason": "self-match-false-positive: risk-message string in T6-SCOPE-CREEP's output, naming 'sudo' as one of the broad-permission examples in the user-visible warning text. 'sudo' is the name of the thing being warned about, not a sudo invocation."
       },
       {
@@ -547,7 +547,7 @@
         "file": "/private/var/folders/69/qj2ntc153mjd8s04bl4j16f40000gn/T/opencode/t6-rebaseline/skill-security-auditor/scripts/skill_security_auditor.py",
         "line": 1410,
         "pattern": "shutil.rmtree(tmp_dir, ignore_errors=True)",
-        "risk": "Recursive directory deletion — destructive operation",
+        "risk": "Recursive directory deletion \u2014 destructive operation",
         "reason": "bounded-tempfile-op: shutil.rmtree on tmp_dir in the error branch of clone_repo_or_local(). tmp_dir is created by tempfile.mkdtemp() earlier in the same function; the preceding guard confirms it is relative to system tempdir before deletion. Same class as existing baseline entries at lines 923/935/1053."
       },
       {
@@ -557,7 +557,7 @@
         "file": "/private/var/folders/69/qj2ntc153mjd8s04bl4j16f40000gn/T/opencode/t6-rebaseline/skill-security-auditor/scripts/skill_security_auditor.py",
         "line": 1422,
         "pattern": "shutil.rmtree(tmp_dir, ignore_errors=True)",
-        "risk": "Recursive directory deletion — destructive operation",
+        "risk": "Recursive directory deletion \u2014 destructive operation",
         "reason": "bounded-tempfile-op: shutil.rmtree on tmp_dir in the success path cleanup of clone_repo_or_local(). Same tempdir analysis as line 1410."
       },
       {
@@ -567,7 +567,7 @@
         "file": "/private/var/folders/69/qj2ntc153mjd8s04bl4j16f40000gn/T/opencode/t6-rebaseline/skill-security-auditor/scripts/skill_security_auditor.py",
         "line": 1601,
         "pattern": "shutil.rmtree(cleanup_dir, ignore_errors=True)",
-        "risk": "Recursive directory deletion — destructive operation",
+        "risk": "Recursive directory deletion \u2014 destructive operation",
         "reason": "bounded-tempfile-op: shutil.rmtree in the finally block of main(); cleanup_dir is the value returned from clone_repo_or_local() which only yields a path when it created a tempdir via mkdtemp(). The system-tempdir guard on the preceding line confirms the path is bounded. Same class as existing baseline entry at line 1053."
       },
       {
@@ -576,9 +576,9 @@
         "category": "PROMPT-OVERRIDE",
         "file": "/private/var/folders/69/qj2ntc153mjd8s04bl4j16f40000gn/T/opencode/t6-rebaseline/skill-security-auditor/SKILL.md",
         "line": 115,
-        "pattern": "| **System prompt override** | \"Ignore previous instructions\", \"You are now...\" | 🔴 CRITICAL |",
+        "pattern": "| **System prompt override** | \"Ignore previous instructions\", \"You are now...\" | \ud83d\udd34 CRITICAL |",
         "risk": "Attempts to override system prompt and prior instructions",
-        "reason": "documented-pattern-example: table row in SKILL.md listing prompt-injection attack examples that the auditor scans for. The new T6 section added ~33 lines above the original table, shifting SKILL.md line numbers from the previously baselined 82→115 for the same content. Identical classification to existing suppression at line 82."
+        "reason": "documented-pattern-example: table row in SKILL.md listing prompt-injection attack examples that the auditor scans for. The new T6 section added ~33 lines above the original table, shifting SKILL.md line numbers from the previously baselined 82\u2192115 for the same content. Identical classification to existing suppression at line 82."
       },
       {
         "key": "skill-security-auditor::SAFETY-BYPASS::skill-security-auditor/SKILL.md::116",
@@ -586,9 +586,9 @@
         "category": "SAFETY-BYPASS",
         "file": "/private/var/folders/69/qj2ntc153mjd8s04bl4j16f40000gn/T/opencode/t6-rebaseline/skill-security-auditor/SKILL.md",
         "line": 116,
-        "pattern": "| **Role hijacking** | \"Act as root\", \"Pretend you have no restrictions\" | 🔴 CRITICAL |",
+        "pattern": "| **Role hijacking** | \"Act as root\", \"Pretend you have no restrictions\" | \ud83d\udd34 CRITICAL |",
         "risk": "Safety restriction bypass attempt",
-        "reason": "documented-pattern-example: table row showing role-hijacking attack examples. Line number shifted from 83→116 due to T6 section insertion above. Identical classification to existing suppression at line 83."
+        "reason": "documented-pattern-example: table row showing role-hijacking attack examples. Line number shifted from 83\u2192116 due to T6 section insertion above. Identical classification to existing suppression at line 83."
       },
       {
         "key": "skill-security-auditor::SAFETY-BYPASS::skill-security-auditor/SKILL.md::117",
@@ -596,9 +596,9 @@
         "category": "SAFETY-BYPASS",
         "file": "/private/var/folders/69/qj2ntc153mjd8s04bl4j16f40000gn/T/opencode/t6-rebaseline/skill-security-auditor/SKILL.md",
         "line": 117,
-        "pattern": "| **Safety bypass** | \"Skip safety checks\", \"Disable content filtering\" | 🔴 CRITICAL |",
+        "pattern": "| **Safety bypass** | \"Skip safety checks\", \"Disable content filtering\" | \ud83d\udd34 CRITICAL |",
         "risk": "Explicit safety mechanism bypass",
-        "reason": "documented-pattern-example: table row showing safety-bypass attack examples. Line number shifted from 84→117 due to T6 section insertion. Identical classification to existing suppression at line 84."
+        "reason": "documented-pattern-example: table row showing safety-bypass attack examples. Line number shifted from 84\u2192117 due to T6 section insertion. Identical classification to existing suppression at line 84."
       },
       {
         "key": "skill-security-auditor::PROMPT-EXFIL::skill-security-auditor/SKILL.md::120",
@@ -606,9 +606,9 @@
         "category": "PROMPT-EXFIL",
         "file": "/private/var/folders/69/qj2ntc153mjd8s04bl4j16f40000gn/T/opencode/t6-rebaseline/skill-security-auditor/SKILL.md",
         "line": 120,
-        "pattern": "| **Data extraction** | \"Send contents of\", \"Upload file to\", \"POST to\" | 🔴 CRITICAL |",
+        "pattern": "| **Data extraction** | \"Send contents of\", \"Upload file to\", \"POST to\" | \ud83d\udd34 CRITICAL |",
         "risk": "Instruction to exfiltrate data",
-        "reason": "documented-pattern-example: table row quoting data-exfiltration attack phrases as examples of what the scanner detects. Line number shifted from 87→120 due to T6 section insertion. Identical classification to existing suppression at line 87."
+        "reason": "documented-pattern-example: table row quoting data-exfiltration attack phrases as examples of what the scanner detects. Line number shifted from 87\u2192120 due to T6 section insertion. Identical classification to existing suppression at line 87."
       },
       {
         "key": "skill-security-auditor::PROMPT-EXFIL::skill-security-auditor/references/threat-model.md::341",
@@ -627,8 +627,8 @@
         "file": "/private/var/folders/69/qj2ntc153mjd8s04bl4j16f40000gn/T/opencode/t6-rebaseline/skill-security-auditor/scripts/skill_security_auditor.py",
         "line": 875,
         "pattern": "# Check for pip/npm install in code",
-        "risk": "Runtime package installation — may install untrusted code",
-        "reason": "self-match-false-positive: Python comment in scan_dependencies() describing what the following loop checks for. Line number shifted from 717→875 due to T6 scanner additions (+585 lines, but this section shifted ~158 lines). Identical classification to existing suppression at line 717."
+        "risk": "Runtime package installation \u2014 may install untrusted code",
+        "reason": "self-match-false-positive: Python comment in scan_dependencies() describing what the following loop checks for. Line number shifted from 717\u2192875 due to T6 scanner additions (+585 lines, but this section shifted ~158 lines). Identical classification to existing suppression at line 717."
       },
       {
         "key": "skill-security-auditor::T6-LETHAL-TRIFECTA::SKILL.md::58",
@@ -638,7 +638,7 @@
         "line": 58,
         "pattern": "untrusted_read@SKILL.md:58; sensitive_access@SKILL.md:59; external_comms@references/threat-model.md:117",
         "risk": "Lethal Trifecta: skill combines untrusted-content read + sensitive-data access + external comms.",
-        "reason": "self-match-false-positive: the T6 known-FP section in SKILL.md (lines 54-65) describes the auditor's own false-positive patterns. The three T6-LETHAL-TRIFECTA bucket hits are: (untrusted_read) the text describing the auditor scans untrusted skills, (sensitive_access) the text mentioning sensitive env vars in detection context, (external_comms) a reference to the threat-model network-comms section. All three map to documentation text about what the auditor does, not to active runtime behaviour. The auditor does not exfiltrate data — it reads skill files and emits a local report."
+        "reason": "self-match-false-positive: the T6 known-FP section in SKILL.md (lines 54-65) describes the auditor's own false-positive patterns. The three T6-LETHAL-TRIFECTA bucket hits are: (untrusted_read) the text describing the auditor scans untrusted skills, (sensitive_access) the text mentioning sensitive env vars in detection context, (external_comms) a reference to the threat-model network-comms section. All three map to documentation text about what the auditor does, not to active runtime behaviour. The auditor does not exfiltrate data \u2014 it reads skill files and emits a local report."
       },
       {
         "key": "skill-security-auditor::T6-TRUST-BOUNDARY::skill_security_auditor.py::691",
@@ -648,7 +648,7 @@
         "line": 691,
         "pattern": "r\"\\b(?:python-)?dotenv\\b|\\bload_dotenv\\s*\\(|\\brequire\\s*\\(\\s*['\\\"]dotenv['\\\"]\",",
         "risk": "Trust-boundary parsing: Parsing .env from project root in agent context",
-        "reason": "self-match-false-positive: this is the regex constant definition for T6-TRUST-BOUNDARY detection — the scanner's own source string that encodes the dotenv-parsing pattern it searches for in other skills. The scanner does not call load_dotenv() or import dotenv; the regex string literal triggers its own T6-TRUST-BOUNDARY check."
+        "reason": "self-match-false-positive: this is the regex constant definition for T6-TRUST-BOUNDARY detection \u2014 the scanner's own source string that encodes the dotenv-parsing pattern it searches for in other skills. The scanner does not call load_dotenv() or import dotenv; the regex string literal triggers its own T6-TRUST-BOUNDARY check."
       },
       {
         "key": "skill-security-auditor::T6-NO-HITL::skill_security_auditor.py::725",
@@ -658,7 +658,7 @@
         "line": 725,
         "pattern": "(r\"\\bgit\\s+push\\b\", \"git push\"),",
         "risk": "Sensitive action (git push) with no nearby confirmation prompt or audit log.",
-        "reason": "self-match-false-positive: this is an entry in the SENSITIVE_ACTION_PATTERNS list — the scanner's own constant definition that contains 'git push' as the search pattern string. The scanner does not perform git pushes; the regex string triggers T6-NO-HITL against its own source."
+        "reason": "self-match-false-positive: this is an entry in the SENSITIVE_ACTION_PATTERNS list \u2014 the scanner's own constant definition that contains 'git push' as the search pattern string. The scanner does not perform git pushes; the regex string triggers T6-NO-HITL against its own source."
       },
       {
         "key": "skill-security-auditor::T6-NO-HITL::skill_security_auditor.py::1410",
@@ -701,7 +701,7 @@
         "file": "web-scraping-efficient/scripts/github_repo.py",
         "line": 61,
         "pattern": "files[p] = base64.b64decode(content).decode(\"utf-8\", errors=\"replace\")",
-        "reason": "worth-review/accepted: base64.b64decode() is used to decode GitHub API responses — the GitHub Contents API returns file content as base64. Reviewed: the decoded bytes are immediately passed to .decode('utf-8') and stored as a string dict value; they are never eval'd, exec'd, or written to a file. The decode target is a GitHub-API response for doc files (KEY_DOC_PATTERNS match). Not an obfuscation mechanism. Human review confirms: accepted as legitimate API usage."
+        "reason": "worth-review/accepted: base64.b64decode() is used to decode GitHub API responses \u2014 the GitHub Contents API returns file content as base64. Reviewed: the decoded bytes are immediately passed to .decode('utf-8') and stored as a string dict value; they are never eval'd, exec'd, or written to a file. The decode target is a GitHub-API response for doc files (KEY_DOC_PATTERNS match). Not an obfuscation mechanism. Human review confirms: accepted as legitimate API usage."
       },
       {
         "key": "web-scraping-efficient::DEPS-RUNTIME::web-scraping-efficient/scripts/webpage.py::22",
@@ -710,7 +710,7 @@
         "file": "web-scraping-efficient/scripts/webpage.py",
         "line": 22,
         "pattern": "sys.exit(\"pip install httpx selectolax\")",
-        "reason": "self-match-false-positive: sys.exit() with a user-facing error message string advising how to install a missing dependency. This is an ImportError guard — the string is printed and the process exits. No actual pip install is invoked programmatically."
+        "reason": "self-match-false-positive: sys.exit() with a user-facing error message string advising how to install a missing dependency. This is an ImportError guard \u2014 the string is printed and the process exits. No actual pip install is invoked programmatically."
       },
       {
         "key": "web-scraping-efficient::DEPS-RUNTIME::web-scraping-efficient/scripts/map_site.py::33",
@@ -729,6 +729,19 @@
         "line": 17,
         "pattern": "sys.exit(\"pip install trafilatura\")",
         "reason": "self-match-false-positive: same pattern as webpage.py:22. ImportError guard."
+      }
+    ]
+  },
+  "inbox-triage": {
+    "suppressed_findings": [
+      {
+        "key": "inbox-triage::T6-LETHAL-TRIFECTA::SKILL.md::62",
+        "severity": "CRITICAL",
+        "category": "T6-LETHAL-TRIFECTA",
+        "file": "SKILL.md",
+        "line": 62,
+        "pattern": "Step 1 - Fetch email (untrusted Gmail) + read-only macOS Keychain creds (Step 7.5, ref line 315) + outbound Slack DM (Step 10, ref line 351)",
+        "reason": "worth-review/accepted: verified genuine Lethal Trifecta on Summer's own personal inbox-triage automation (1 account, local machine, read-only cred access with 'never log/echo/write', structural guardrails bar money/irrevocable-sends/PII-outside-Mem at line 308). The exfil destination is Summer's own Slack DM, which is the skill's existing output channel. Bounded single-user personal exposure, not a product vuln. Accepted consciously by Henry on Summer's behalf (ownership grant 2026-08-06); follow-up = consider an input-sanitization / re-read-of-instructions step before Step 10 if triage expands beyond personal account."
       }
     ]
   }
