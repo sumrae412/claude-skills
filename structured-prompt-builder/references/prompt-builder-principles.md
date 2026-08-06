@@ -4,8 +4,7 @@
 
 - OpenAI Prompt guidance for GPT-5.5 / GPT-5.x models, verified 2026-04-29:
   https://developers.openai.com/api/docs/guides/prompt-guidance?model=gpt-5.5
-- `prompt-optimization/SKILL.md`: metrics, trace analysis, challenger prompts.
-- `prompt-governance/SKILL.md`: prompt ownership, evals, rollout, rollback.
+- `evals/SKILL.md`: regression gates, production sampling, metrics, trace analysis.
 - `context-engineering/SKILL.md`: context hierarchy, packing, ambiguity.
 - `smart-exploration/SKILL.md`: task-classified subagent prompts.
 - `token-economy/SKILL.md`: compact tool use and subagent reporting.
@@ -36,15 +35,16 @@ Existing local skills add:
 - optimize from observed failure buckets, not taste
 - pack only useful context and provide one pattern example when style matters
 - keep prompts and subagent reports compact enough to be followed
-- route image prompts, production governance, and empirical variant promotion to
-  their specialist skills
+- route image prompts to their specialist skills; production governance and
+  empirical variant promotion run through evals (regression gates and
+  production sampling)
 
 ## Trigger Boundaries
 
 Use `structured-prompt-builder` for creating or repairing the prompt itself.
-Use `prompt-governance` when the question is about lifecycle infrastructure:
-registry, owners, versioning, rollout, rollback, A/B tests, or CI evals.
-Use `prompt-optimization` when there are traces, variants, scores, or a
+Use `evals` (regression gates, production sampling) when the question is about
+lifecycle infrastructure — registry, owners, versioning, rollout, rollback,
+A/B tests, CI evals — or when there are traces, variants, scores, or a
 promotion decision. Use `context-engineering` when the issue is what context an
 agent should see rather than how the prompt should be written.
 

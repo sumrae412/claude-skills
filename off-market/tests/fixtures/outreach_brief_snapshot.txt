@@ -1,0 +1,29 @@
+# Draft an off-market outreach letter
+
+## Candidate
+- Address: 123 ELM ST, PITTSBURGH, PA, 15217
+- Mailing: 999 BEACH RD, MIAMI, FL, 33101 (out-of-state — absentee)
+- Propensity tier: high_priority (score 50)
+- Signal reasons:
+  - sheriff_sale:2026-08-01
+  - absentee:FL
+  - long_tenure_high_equity:25
+
+## User note about this property
+Blue craftsman with the porch swing on the corner of Elm and 5th.
+
+## Voice profile (excerpt)
+## Tone
+Warm, specific. Not salesy.
+## Sentence cadence
+Short declaratives. Avg ~12 words.
+
+## Tone constraints (from references/letter-craft.md)
+- Warm, specific to this property/street.
+- NO investor jargon: avoid "we buy houses", "cash offer", "investment opportunity", "no realtors".
+- Generic salutation — WPRDC owner_name is a code, not a real name. Use "To the homeowner at <address>" or similar.
+- Sign with placeholders: <Your Name> / <your-email>. The user replaces these at print time.
+- Length: 100-200 words. One page of handwritten-friendly text.
+- Mention a real detail about the property or street (the user can edit in specifics; the LLM should leave a `[<specific detail>]` placeholder where unknown).
+
+## Now draft the letter.

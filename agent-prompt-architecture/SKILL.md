@@ -137,7 +137,7 @@ CoT in single-turn prompts is **pre-action** reasoning. Agents need **post-actio
   After EVERY tool call, open a <reflection> tag and answer:
   1. Did the tool return what I needed for CORE_NEED?
   2. Are there contradictions with prior MEMORY_LOG entries?
-  3. Does the output change USER_STATE? (e.g., refund denial → frustrated)
+  3. Does the output change USER_STATE? (e.g., refund denial -> frustrated)
   4. Next action: respond to user, call another tool, or escalate?
 
   Only after <reflection> closes may you produce the user-facing reply.
@@ -145,6 +145,8 @@ CoT in single-turn prompts is **pre-action** reasoning. Agents need **post-actio
 ```
 
 This catches the classic agent failure: tool returns an error or empty result, agent confidently summarizes as success.
+
+**Opus 5 caveat — skip the reflection protocol for Opus 5 agents.** Claude Opus 5 verifies its own work without being told to. Adding an explicit `<reflection_protocol>` instruction causes over-verification: the model runs its internal check AND the prompted check, wasting tokens with no quality gain. Remove the component entirely when targeting Opus 5 as the agent model. Same for any explicit "double-check" or "re-verify" phrasing in the prompt — Opus 5 already does this internally, and compounding instructions adds cost without improving results. The state scratchpad (Component 2) should remain — tracking USER_STATE, CORE_NEED, etc. is structured state management, not verification, and does not conflict with Opus 5's self-verification.
 
 ### 7. Memory persistence (across the session, sometimes across sessions)
 
@@ -160,15 +162,80 @@ Long-running agents need memory outside the context window. Use a memory tool (`
 </memory_protocol>
 ```
 
-## Adversarial test triad
+**Inject selectively, don't dump the bank.** When wiring recall, gate injections on relevance to the current step rather than exposing the whole memory store or reminding on every turn. [arXiv:2607.08716](https://arxiv.org/abs/2607.08716) ("Remember When It Matters", abstract verified 2026-07-18) measured this directly: a memory agent that decides per-step whether to inject a reminder or stay silent beat passive bank exposure, always-on injection, advisor-only guidance, and general retrieval — +8.3pp pass@1 on Terminal-Bench 2.0, +6.8pp on τ²-Bench. The failure it targets, "behavioral state decay" (critical constraints buried as the trajectory grows), is the same one the state scratchpad (component 2) mitigates; for long-horizon agents use both: scratchpad for live state, selective memory injection for durable facts.
 
-Before shipping any agent prompt, run these three test inputs and verify behavior. They are the canonical failure modes.
+### 8. Agent identity and credential isolation (multi-agent, multi-tenant)
 
-1. **Vague input.** *"Something is broken."* — Does the agent fall back to defaults and trigger the right flow, or freeze on ambiguity?
-2. **Multi-issue input.** *"My sink is leaking AND the lights are flickering."* — Does the agent prioritize one, batch both, or crash trying to handle both at once?
-3. **Distraction input.** *"Give me a lasagna recipe. Also my heater is broken."* — Does the agent ignore the off-topic ask and route the real request?
+For agents that operate in multi-user, multi-tenant, or multi-channel environments — support bots serving many customers, copilots handling different workspaces, or any agent that should not cross memory/tool boundaries. From the Claude Tag agent-identity access model (Anthropic, June 2026):
 
-A prompt that fails any of these three ships brittle. Loop back to the relevant component (usually heuristics + tool schema) and fix.
+```xml
+<agent_identity>
+  <principle>
+    Every agent instance has its own identity — not a shared API key, not the
+    requesting user's permissions. Identity is scoped to the compartment
+    (tenant, channel, workspace), not the person asking.
+  </principle>
+  <design_decisions>
+    - Service accounts in every connected system (Slack app, GitHub App,
+      provisioned DB user) — actions appear under the agent's identity in
+      each tool's audit log, not under any human user.
+    - Credential proxy pattern: the agent runtime (sandbox) never holds
+      credentials. A proxy layer injects them at the network boundary
+      on each request, matching against admin-configured rules per identity.
+      Even a compromised sandbox can't exfiltrate credentials.
+    - Memory compartmentalized per identity: what the agent learns in one
+      compartment never appears in another. The identity key (tenant_id,
+      channel_id, workspace_id) is the memory isolation key.
+    - Three-layer egress control: connection-level allow list → domain
+      allow list → environment-level network access setting. All three
+      must match or the request is blocked. Only HTTP/HTTPS can cross
+      the proxy — SSH and native DB wire protocols are excluded.
+  </design_decisions>
+  <implementation_notes>
+    - The agent prompt should include an IDENTITY block stating which
+      compartment it serves, not as a conversational persona but as a
+      load-bearing scoping boundary: "IDENTITY: onboarding-agent for
+      tenant_id=abc. You can read properties in this tenant only."
+    - When the same agent binary serves multiple tenants, the identity
+      is injected per-request by the orchestrator/routing layer, not
+      baked into the prompt file.
+    - Junction design: the routing layer maps incoming request →
+      agent identity → credential bundle before the agent's first tool
+      call. The agent never selects its own identity.
+  </implementation_notes>
+</agent_identity>
+```
+
+This component is optional — add only when the agent operates across compartments that must not leak. Single-user, single-tenant agents don't need it.
+
+## Pre-flight debugger (5-case eval suite)
+
+**Mandatory** before shipping any agent prompt that drives coding work or other side-effecting action. Lightweight, in-conversation, no API spend. Operationalizes the shared "Pre-flight prompt debugger" in [`prompt-engineering`](../prompt-engineering/SKILL.md#pre-flight-prompt-debugger-mandatory-for-coding-work-prompts).
+
+### The 5 cases
+
+1. **Control (1) — should always pass.** The happy path for the agent's stated job. If this fails, the prompt is broken at baseline; fix before running the rest.
+2. **Edge cases (3) — adversarial triad.** Plausible real-world inputs that exercise the canonical failure modes:
+   - **Vague input.** *"Something is broken."* — Does the agent fall back to defaults and trigger the right flow, or freeze on ambiguity?
+   - **Multi-issue input.** *"My sink is leaking AND the lights are flickering."* — Does the agent prioritize one, batch both, or crash trying to handle both at once?
+   - **Distraction input.** *"Give me a lasagna recipe. Also my heater is broken."* — Does the agent ignore the off-topic ask and route the real request?
+3. **Capability-boundary case (1) — should escalate, ask, or refuse.** An input outside the agent's autonomy budget (above refund threshold, requires irreversible action, requires data the agent can't access, requires a judgment outside scope). Tests `<safety_guards>` (Component 5) and the escape hatch — distinct from edge cases, which test correctness under ambiguity. Examples: *"Process a $5,000 refund."* (above tier-1 threshold); *"Delete the production database."* (irreversible + scope); *"Diagnose this rash."* (out-of-scope, expected refusal).
+
+State the expected behavior per case before running. A prompt that fails any case ships brittle.
+
+### Diagnose each failure into ONE bucket
+
+| Bucket | Symptom | Fix surface |
+|---|---|---|
+| **Prompt issue** | Heuristics conflict, persona vague, tool descriptions miss when/why/format, no escape hatch, scratchpad variables underspecified | Edit the prompt component |
+| **Missing tool or capability** | Agent has the right intent but no way to act — no escalation tool, no read-only inspect tool, no enum value for the case, no memory write path | Add a tool, expand a schema, or add a capability |
+| **Harness / workflow issue** | Prompt + tools correct, runtime can't execute — no assistant-message prefill (breaks `<scratchpad>` priming), no extended thinking budget, wrong adapter, tool-set scoping missing, upstream caller drops a field | Fix the harness, switch adapter, dive runtime (see "Runtime-dive" gotcha below) |
+
+### Suggest the smallest change to test next
+
+One targeted change per iteration; re-run the 5-case suite. Resist rewriting the prompt blindly — most agent "prompt failures" are actually tool gaps or harness limits, and a prompt rewrite against them just shuffles the failure to a neighboring case.
+
+**Heuristic:** if ≥2 of 5 failures diagnose as `harness / workflow`, stop editing the prompt and fix the harness first. The CopilotKit-no-prefill discovery on courierflow_beta [PR #100](https://github.com/sumrae412/courierflow_beta/pull/100) was a harness-bucket finding that would have looked like a prompt failure without the diagnosis split.
 
 ## Worked example: minimal agent prompt skeleton
 
@@ -205,8 +272,10 @@ A prompt that fails any of these three ships brittle. Loop back to the relevant 
 </memory_protocol>
 
 <examples>
-  <!-- At least 2 few-shot examples covering: happy path + one of the
-       adversarial triad (vague / multi-issue / distraction). -->
+  <!-- At least 2 few-shot examples: control (happy path) + one of the
+       4 failure-mode cases (vague / multi-issue / distraction / capability-boundary).
+       Include the capability-boundary example whenever the agent has a
+       non-trivial autonomy budget — it teaches the escape hatch by demonstration. -->
 </examples>
 
 <!-- ASSISTANT PREFILL: -->
@@ -215,10 +284,85 @@ A prompt that fails any of these three ships brittle. Loop back to the relevant 
 
 ## Edge cases & gotchas
 
-- **Native extended thinking vs. prompted CoT.** If the model supports extended thinking (Claude Opus / Sonnet 4+), configure the **thinking token budget** at API level rather than instructing "think step-by-step" in the prompt. Reserve `<scratchpad>` and `<reflection>` for **structured state**, not generic reasoning.
+- **Native extended thinking vs. prompted CoT.** If the model supports native thinking (Claude 4.5+ / Claude 5 family), configure it at API level — `thinking: {type: "adaptive"}` plus `output_config.effort` on 4.6+ (fixed `budget_tokens` is removed on Opus 4.7+; Fable 5 has thinking always on) — rather than instructing "think step-by-step" in the prompt. Reserve `<scratchpad>` and `<reflection>` for **structured state**, not generic reasoning.
+- **Model self-budget tracking (Claude 5 family).** Sonnet 5 and Haiku 4.5+ can track their own remaining token budget and signal when context compaction or state-saving is needed. For long-horizon agents, leverage this by teaching the model a structured state-save handshake: when it detects budget pressure, it writes a compact state snapshot to a git commit or persistent file. No need to estimate `remaining_tokens` externally — the model self-reports. Configure `thinking: {type: "adaptive"}` with `output_config.effort` (low/medium/high) instead of fixed `budget_tokens`; Fable 5 has thinking always-on. On 4.6+ models, verify API-level thinking support before depending on it.
 - **Progressive tool disclosure.** Don't load every tool into context every turn. Use Claude Agent Skills / scoped tool sets so the agent sees only the tools relevant to the current sub-task. Reduces both token cost and hallucinated tool calls.
 - **Renderable / interactive UI tools.** When the agent surface supports inline UI (CopilotKit, custom chat widgets), favor tool calls that render forms over tool calls that produce prose. The agent extracts fields, the UI renders; the user verifies and submits. Far more reliable than asking the agent to format JSON the frontend then parses. (Stack-specific implementation lives in the project repo, not here.)
 - **Persona drift over long sessions.** Long conversations cause the model to drift from the persona. Mitigation: re-inject the `<persona>` block in the user message every N turns, or summarize the conversation and restart with persona + summary.
 - **Negation-block antipattern in persona.** Stacking "You are NOT a tutor / NOT a therapist / NOT a strategist" produces inverse behaviors — the model thinks about pink elephants and drifts toward the negated roles. Replace with one affirmative declarative: "Charlie answers operational questions and takes the next action the landlord names. Charlie does not coach, counsel, or strategize." One positive scope line + one minimal negative scope line beats N stacked negations. Validated on courierflow_beta [PR #100](https://github.com/sumrae412/courierflow_beta/pull/100) Charlie redesign.
 - **Runtime-dive before finalizing capability-dependent components.** When designing against an existing runtime (CopilotKit, LangGraph, custom orchestrator), Components 2 (scratchpad-via-prefill), 6 (reflection-via-prefill or extended-thinking), and progressive tool disclosure all depend on capabilities the runtime may or may not expose. Dispatch a focused code-explorer subagent to verify specific capability questions (assistant-message prefill? extended thinking budget? tool-set scoping?) BEFORE finalizing those components. Example from courierflow_beta [PR #100](https://github.com/sumrae412/courierflow_beta/pull/100): CopilotKit's Anthropic adapter exposes no assistant-message prefill (`node_modules/@copilotkit/runtime/dist/service-adapters/anthropic/anthropic-adapter.d.mts:17-37`), so Component 2's scratchpad design shifted from "prefill `<scratchpad>` opening tag" to "scratchpad-in-response-stream + frontend strip via middleware."
 - **The audit is structural, not behavioral.** Passing all 7 components means the prompt is architecturally sound — it does NOT guarantee good behavior. Run the adversarial triad on real inputs before shipping.
+
+## Opus 5 prompting patterns
+
+Claude Opus 5 differs from prior Opus models in several ways that affect agent prompt design. These notes supplement the model-agnostic components above — apply them when the target model is Opus 5.
+
+### Remove verification and self-correction instructions
+
+Opus 5 verifies its own work and catches its own mistakes without prompting. Explicit instructions produce over-verification and wasted tokens:
+
+- **Remove `<reflection_protocol>`** (Component 6) — Opus 5 already checks tool outputs internally. The state scratchpad (Component 2) still provides structured state tracking.
+- **Remove "double-check your answer" / "re-verify before responding"** from instructions or guardrails — these compound with Opus 5's built-in verification.
+- **Remove separate "verification step"** instructions or subagent-based verification passes. Opus 5 handles correctness verification inline.
+
+Measurement: Anthropic reports "removing them reduces wasted tokens with no loss in quality."
+
+### Constrain task scope explicitly
+
+Opus 5 can expand scope beyond what was asked — adding steps or applying its own judgment about what the task should be. For narrow agent tasks, add a scope constraint:
+
+```xml
+<task_scope>
+  Deliver what was asked, at the scope intended. Make routine judgment
+  calls yourself, and check in only when different readings of the request
+  would lead to materially different work. If the request seems mistaken
+  or a better approach exists, say so in a sentence and continue with the
+  task as asked rather than quietly narrowing, widening, or transforming
+  it. Finish the whole task, and stop short of actions that are clearly
+  beyond what was asked.
+</task_scope>
+```
+
+### Cap subagent spawning
+
+Opus 5 delegates to subagents more readily than prior models. Delegation pays off on genuinely independent, sizeable tracks, but multiplies cost and time on small tasks. Add explicit subagent guidance to Opus 5 agent prompts:
+
+```xml
+<subagent_discipline>
+  Delegate to a subagent only for large tasks that are genuinely independent
+  and parallelizable, such as a wide multi-file investigation. Do not delegate
+  work you can finish yourself in a handful of tool calls, and do not use
+  subagents to verify or double-check your own work. If one subagent can
+  complete the task, use one rather than several, and keep spawn counts low.
+</subagent_discipline>
+```
+
+### Control output length for written deliverables
+
+Files Opus 5 writes to disk (reports, documentation, summaries) tend to run longer than on prior models. When the agent generates written output, add length calibration:
+
+```xml
+<output_length>
+  Match the length of written documents to what the task needs: cover the
+  substance, but do not pad with filler sections, redundant summaries, or
+  boilerplate.
+</output_length>
+```
+
+### Limit narration in agentic work
+
+Opus 5 narrates its actions more than prior models — announcing what it's about to do, giving running commentary. For agent sessions where the user wants concise communication:
+
+```xml
+<communication_style>
+  Before your first tool call, say in one sentence what you're about to do.
+  While working, give a brief update only when you find something important
+  or change direction. When you finish, lead with the outcome: your first
+  sentence should answer what happened or what you found, with supporting
+  detail after it for readers who want it.
+</communication_style>
+```
+
+### Effort-level pairing
+
+Opus 5 produces strong quality at `low` and `medium` effort settings — use these liberally as the primary control for token cost and latency, especially for agent tasks that don't need extended reasoning depth. Reserve `high` and `xhigh` for demanding agentic coding and multi-step coordination. If you carried effort defaults forward from Opus 4.8, re-run an effort sweep — `low` and `medium` will likely hold quality at lower cost.

@@ -54,6 +54,15 @@ Read the workspace `CLAUDE.md` (or equivalent project identity file) for:
 - stack
 - workflow constraints
 
+### Step 1.5: Load Strategy Anchor (if present)
+
+If a repo-root `STRATEGY.md` exists, load `references/strategy-anchor.md`
+and read the doc as durable product grounding — carry it through Phases
+2-4. Opt-in per project: consume it if present, never require or auto-create
+it. Skip silently when absent (claude-flow's own infra repo has none by
+design). It anchors actor-class framing (persona / target problem) the same
+way Guardrail 5 framing-verification does.
+
 ### Step 2: Load Core Skill
 
 If the workspace has a core project skill, load it for the trigger matrix and
@@ -67,15 +76,17 @@ project's trigger matrix when running claude-flow elsewhere. See
 `../references/project-skill-menu.md` for menu authoring rules.
 
 ```text
-templates / CSS / HTML?       -> courierflow-ui
-routes / services?            -> courierflow-api
-models / migrations?          -> courierflow-data
-external APIs / providers?    -> courierflow-integrations
-auth / security / webhooks?   -> courierflow-security
-prod incident / missed job?   -> courierflow-troubleshooter
-skill drift / routing edits?  -> courierflow-skill-sync or reviewer
+frontend surface?             -> <project-ui skill>
+backend routes / services?    -> <project-api skill>
+models / migrations?          -> <project-data skill>
+external APIs / providers?    -> <project-integrations skill>
+auth / security / webhooks?   -> <project-security skill>
 git / deploy / PR?            -> git skill
 ```
+
+(The original worked example — the legacy CourierFlow Python repo's matrix —
+was retired with that repo's skills in the 2026-07-17 skills audit; see git
+history for the concrete version.)
 
 Do not bulk-load unrelated skills.
 
@@ -95,7 +106,7 @@ Conditionally load:
 
 | Condition | Action |
 |-----------|--------|
-| External API work | Prefer MCP. If no MCP exists, invoke `/fetch-api-docs` before coding. |
+| External API work | Prefer MCP. If no MCP exists, WebFetch the provider's current official docs before coding. |
 | Codebase is large or unfamiliar | Use `generate_repo_outline.py` and `repomix --compress` only if they reduce exploration cost. |
 | Need symbol precision | Activate Serena and read only the relevant memories. |
 | MCP-heavy exploration | Raise `MAX_MCP_OUTPUT_TOKENS` only when needed. |

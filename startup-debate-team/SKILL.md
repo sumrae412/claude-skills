@@ -25,7 +25,6 @@ Standalone use is acceptable when:
 
 Skip for:
 
-- Genesis / Kawasaki workshop — use `startup-planner`.
 - Prompt rewriting — use `structured-prompt-builder`.
 
 ## How It Differs From `debate-team`

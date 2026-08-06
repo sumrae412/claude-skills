@@ -43,7 +43,7 @@ When adding a new check, ask: does correctness depend on enclosing block or sibl
 This skill uses progressive disclosure. Load the reference file for the phase you're in; skip the others to keep context lean.
 
 1. **Run the trigger system → load [`references/checks.md`](references/checks.md).**
-   Step 1 (get the diff) → Step 2 (minimal core: secrets, request logging, CI/CD lockfile pinning — always run) → Step 3 (match changed-file paths against deep-dive triggers: Authentication / Data Protection / Monitoring / Security Extended / Database / Deployment / Code Hygiene) → Step 4 (run the matched expanded check tables). Standalone `/production-readiness` invocation runs every deep-dive regardless of trigger matches.
+   Step 1 (get the diff) → Step 2 (minimal core: secrets, request logging, CI/CD lockfile pinning, unsafe eval/exec — always run) → Step 3 (match changed-file paths against deep-dive triggers: Authentication / Data Protection / Monitoring / Security Extended / Database / Deployment / Code Hygiene) → Step 4 (run the matched expanded check tables). Standalone `/production-readiness` invocation runs every deep-dive regardless of trigger matches.
 
 2. **Format and report findings → load [`references/reporting.md`](references/reporting.md).**
    Step 5 (FAIL / UNCONFIRMED grouping by domain, Score 0-100 per finding, ship-readiness summary) → Step 6 (fix iteration loop: prioritize by score, apply remediations, re-verify). Advisory mode — never hard-blocks Phase 6 completion.

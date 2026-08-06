@@ -12,6 +12,7 @@ index lines, frontmatter schema issues, and stale code references.
 3. Stale code references
 4. Index line length
 5. Frontmatter schema
+6. Index/description drift — flag files where the body contains a newer date, or a resolution marker (RESOLVED/SHIPPED/CLOSED/re-verified) not reflected in the file's own `description:` frontmatter or its MEMORY.md index line
 
 ## Auto-Fixable
 
@@ -25,6 +26,7 @@ index entries when applicable.
 ## Rules
 
 - Report proposed fixes before applying them.
+- Check 6 is manual-only (never auto-fix): index/description drift needs a human judgment on which surface is current. Origin: two same-night instances (henry project memory, 2026-07-11) where a stale index line drove wasted dispatches while the body was correct — see `agent-vault/agent/memory-index-drift.md`.
 - Keep filename matching broad for top-level `*.md`.
 - Ignore known exclusions such as `MEMORY.md`, JSON/JSONL, and subdir
   runtime state where the check says to.

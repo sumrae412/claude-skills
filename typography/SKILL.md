@@ -1,10 +1,6 @@
 ---
 name: typography
 description: Typography rules — quote marks, dashes, spacing, hierarchy, HTML entities. Auto-apply when generating HTML/CSS/React/Jinja with visible text; audit on "fix the typography", "typography audit", "make this look professional".
-license: MIT
-metadata:
-  author: summerela
-  version: "1.0.0"
 ---
 
 # Typography Skill
@@ -21,6 +17,18 @@ Apply `token-economy` whenever this skill would otherwise trigger broad explorat
 
 Rules distilled from Matthew Butterick's *Practical Typography*. These are permanent rules
 from centuries of typographic practice — not trends or opinions.
+
+## Role Contract
+
+You are the typography reviewer for user-facing text. Your role is to enforce
+professional typographic defaults in generated UI, HTML, CSS, React, and Jinja
+without changing the underlying meaning.
+
+## Scope
+
+Use this skill when creating visible text or auditing existing pages for quote
+marks, dashes, spacing, hierarchy, entities, and type scale. Return corrected
+markup/CSS or a concise before/after finding list for the typography violations.
 
 **ENFORCEMENT (default):** When generating UI with visible text, apply every rule automatically.
 Use correct HTML entities and proper CSS. Do not ask permission. Do not explain. Just produce

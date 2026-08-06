@@ -78,6 +78,66 @@ Local SQLite-backed code knowledge graph that agents query instead of scanning f
 
 ---
 
+## jwill824/nudge-mcp — token telemetry MCP
+
+**Repo:** https://github.com/jwill824/nudge-mcp
+**License:** MIT
+**Saved from Mem reading queue 2026-06-02. Audited via `skill-security-auditor` on 2026-06-02 (verdict: contextual pass; install: DEFERRED — see "Audit outcome" below).**
+
+MCP server that reads `~/.claude/projects/` JSONL session files and exposes per-session cost and efficiency metrics as tools the agent can query mid-conversation. Also tracks Copilot CLI from `~/.copilot/session-state/`.
+
+**Exposed tools:**
+- `claude_session_report` — recent sessions with cost and efficiency metrics
+- `claude_monthly_summary` — total token usage and spend vs. budget
+- `analyze_copilot_session` — prompt quality, tool batching, context overhead
+- `copilot_model_efficiency` — whether the active model matched task complexity
+- `configure_subscription` — update plans and monthly budgets
+
+**Author's reported thresholds** (un-validated until trial — see protocol above):
+
+| Metric | Healthy | Warning |
+|---|---|---|
+| Cache hit % | >80% (stable prompts) | <60% (unstable prompts or short sessions) |
+| Tokens/turn | 40–60k | >150k (speculative reads or oversized context) |
+
+**Maps to skill patterns:**
+- Empirical layer for the whole skill — turns "read less" (advisory) into "your tokens/turn is 180k; pattern 4 likely applies" (measurable).
+- Pattern 12 (compaction signal): a tokens/turn spike is the early-warning that compaction should be planned, not deferred.
+
+**When to install:**
+- Long-running coding sessions where per-session numerics would change pattern selection.
+- Multi-project cost accountability — when Summer needs monthly totals across CourierFlow + DLAI work.
+
+**When to skip:**
+- Single-shot lookups (telemetry overhead exceeds the gain).
+- Cost-constrained sessions where the MCP itself adds tool-list tokens to every prompt.
+
+**Audit outcome (2026-06-02):** `skill-security-auditor` returned a literal FAIL verdict (1 CRITICAL, 7 HIGH). Hand-review of every flagged line determined all findings are false positives in the MCP-server context:
+
+| Auditor flag | Line | Actual behavior | Verdict |
+|---|---|---|---|
+| `CRED-HARVEST` reads `GH_TOKEN` | `core/copilot.py:892` | Used only to authenticate against `api.github.com` for the documented `copilot_premium_usage` feature | False positive |
+| `NET-EXFIL` × 4 (urllib) | `core/copilot.py:927–982` | All four `urllib.request` calls target `api.github.com` for the same GitHub Copilot billing feature | False positive |
+| `STRUCTURE` missing SKILL.md | n/a | Auditor scans for skill shape; this is an MCP server | Wrong tool for surface |
+| `FS-HIDDEN` `.mcp.json`, `.github` | repo root | Expected for an MCP project (mcp.json is the MCP config; .github holds CI) | False positive |
+
+**No malicious patterns detected in current code.** Install remains DEFERRED for residual risks the auditor cannot resolve:
+
+1. **Supply-chain trust** — `uvx nudge-mcp` pulls from PyPI; the repo→package hash binding is not verified, so the installed code may diverge from the audited code.
+2. **0-star single-maintainer repo** — future versions can change behavior; `uvx` auto-pulls unless pinned to a specific revision.
+3. **JSONL session read access** — the MCP reads `~/.claude/projects/*.jsonl`, which contain full prompt/output history across every project. Current code does NOT exfil that data, but a future update could (and would not require any new dependency or API).
+
+**Conditional install (when residual risks are mitigated):**
+
+```bash
+# Pin to a specific repo commit, not the floating PyPI release.
+claude mcp add nudge-mcp -- uvx --from "git+https://github.com/jwill824/nudge-mcp.git@<commit-sha>" nudge-mcp
+```
+
+Plus OS-level egress monitoring to alert on any destination other than `api.github.com` while the MCP is running. Until those mitigations are in place, this entry is reference documentation only.
+
+---
+
 ## Subagent + MCP scoping (least-privilege pattern)
 
 **Source:** Philschmid, "How to correctly use MCP servers with your AI Agents" (philschmid.de, 2026-05).

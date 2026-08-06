@@ -71,7 +71,7 @@ Read `references/audit-template.md` for the output format. Organize findings int
 
 - **Phase 1 — Critical**: Hierarchy, usability, responsiveness, consistency issues that actively hurt UX
 - **Phase 2 — Refinement**: Spacing, typography, color, alignment, iconography that elevate the experience
-- **Phase 3 — Polish**: Micro-interactions, transitions, empty/loading/error states, dark mode
+- **Phase 3 — Polish**: Micro-interactions, transitions, empty/loading/error states, dark mode. For concrete, checkable values (radius formula, exact shadow CSS, press scale, spring params, type rules), load `references/micro-polish.md`.
 
 Implementation notes must be precise enough for a build agent to execute without interpretation:
 - BAD: "Make the cards feel softer"
@@ -125,3 +125,7 @@ If a design improvement requires a functional change, flag it:
 - Use `/fixing-accessibility` for HTML implementation a11y fixes (ARIA, keyboard, focus, semantics, form errors)
 - Use `/design:design-system` for token and component documentation
 - Use `/defensive-ui-flows` for state/feedback/failure-mode patterns on interactive surfaces
+
+## See also
+
+- [impeccable](../impeccable/SKILL.md) — full design-craft command suite (craft, shape, polish, bolder, colorize, animate, and more). Boundary: design-audit is the lightweight read-only entry point (findings + phased plan, no edits); route to impeccable when the ask is to build or fix the UI, not just assess it.

@@ -1,6 +1,6 @@
 ---
 name: token-economy
-description: "Tool-call-level discipline for minimizing session token burn without sacrificing correctness. Use when starting a cost-constrained session, when noticing heavy token usage mid-session (file-slurping, serial searches, verbose tool narration), before /compact or session handoff, or when briefing a subagent on efficient tool use. Teaches combine-discover-and-read, batched edits, parallelized independent searches, entry-point-first exploration, targeted line ranges, don't-re-read-unchanged-files, cheap-subagent delegation, DB introspection over schema-file reads, response-shape minimalism, dense-prose compression of always-loaded context files (CLAUDE.md and similar), and preserve-vs-drop categories during compaction (preserve skill outputs / todos / edits / plans; drop errored tool inputs and stale reads first). NOT for production LLM API spend (use llm-cost-optimizer) or strategic decisions about *which* files/docs the agent should see (use context-engineering) or claude-flow Phase 2 exploration (use smart-exploration)."
+description: "Tool-call-level discipline for minimizing session token burn without sacrificing correctness. Use at the start of a cost-constrained session, on heavy mid-session burn (file-slurping, serial searches, verbose narration), before /compact or handoff, or when briefing a subagent on efficient tool use. Teaches combine-discover-and-read, batched edits, parallelized searches, entry-point-first exploration, targeted line ranges, cheap-subagent delegation, DB introspection over schema-file reads, dense-prose compression of always-loaded context files, and preserve-vs-drop compaction categories. NOT for production LLM API spend (use llm-cost-optimizer), choosing which files the agent sees (use context-engineering), or claude-flow Phase 2 exploration (use smart-exploration)."
 ---
 
 # Token Economy
@@ -13,6 +13,8 @@ Tactical, per-tool-call discipline for keeping a coding session's token burn low
 - Noticing token usage spike mid-session (whole-file reads for a 10-line answer, serial independent searches, verbose tool-call narration).
 - Before dispatching a subagent — inject the relevant rules into the subagent's prompt.
 - Handing off long-running tasks (debugging, refactors, audits) where small wastes compound.
+
+**Skip on trivial/tiny tasks.** The discipline has a fixed overhead that only amortizes over enough tool calls: in a 2026-07-18 SkillsBench A/B, the with-skill arm used ~70% MORE tokens than baseline on a small single-lookup task (recorded: henry ledger #160). Apply above a rough task-size floor — multi-step or long-session work — not universally.
 
 **Sibling skills — don't overlap:**
 - `context-engineering` — strategic decisions about *which* files/docs the agent sees, across sessions. Pattern 11 below is complementary: once you've decided a file is loaded every session, compress its prose densely.
@@ -79,6 +81,29 @@ For open-ended codebase questions ("how does X work?", "find everything that tou
 - A report word-count cap ("under 200 words").
 
 Haiku is ~10–20× cheaper than Opus for tool-driven exploration. Every explored file that never enters your main-thread context is pure savings.
+
+**Name the model explicitly on every dispatch.** Omitting `model` on an Agent-tool dispatch inherits the ORCHESTRATOR'S model, not a cheap default — the harness default inverts cheapest-capable routing, so an unpinned "cheap" explorer dispatched from an Opus session runs at Opus prices. Hook-enforced version: henry's `docs/henry-manual/delegation.md` (Model Tiering) + `.claude/hooks/model-tier-guard.sh` ([sumrae412/henry#158](https://github.com/sumrae412/henry/pull/158)).
+
+### 7.5 Skip subagent dispatch when the controller already has the full spec
+
+`subagent-driven-development` defaults to dispatching even content-write tasks (markdown reference files, doc pages) to per-task subagents. When the orchestrator already holds the full spec for all N files in its current context — and the writes are sequential markdown with no independent exploration needed — the per-subagent briefing tokens exceed the savings, and there's no parallelism gain (each subagent re-pays the spec cost).
+
+- **Dispatch when:** files need independent exploration, the spec is large enough you'd re-paste it per subagent, or writes can genuinely parallelize on distinct surfaces (e.g. tests in unrelated modules).
+- **Stay main-thread when:** the controller drafted the spec this turn, files are pure content (no code execution), and writes are batchable as parallel `Write` calls in one assistant turn (see #2).
+
+Validated 2026-05-28 building [`sme-voice`](../sme-voice/SKILL.md): 4 reference markdown files written main-thread from the in-context plan; dispatching 4 subagents would have re-paid ~2K briefing tokens each for zero parallelism gain.
+
+### 7.6 Combine spec + quality review in one dispatch for tightly-spec'd phases
+
+When a phase's tasks are individually small (≤50 LoC each) AND the spec is concrete (test bodies given verbatim), dispatch ONE reviewer subagent that does BOTH passes — spec-compliance first, then code-quality — in clearly separated sections of one prompt. Reviewer re-pays the diff-read cost once instead of twice. Stay split when reviews need distinct viewpoints (e.g. security vs perf) or when spec divergence is a likely outcome that should short-circuit the quality pass.
+
+Validated 2026-06-02 on [claude-skills PR #149](https://github.com/sumrae412/claude-skills/pull/149) `off-market` Phase 2 (5 signal modules, ~50 LoC each, test bodies in the brief verbatim) — saved ~40% on reviewer tokens vs split, caught the same leap-year off-by-one bug.
+
+### 7.7 Surgical fixup dispatch BETWEEN phases prevents compounded broken state
+
+When live-smoke surfaces a phase-N bug whose fix is one file + one signal, dispatch a focused fixup BEFORE moving to phase N+1. Bundling the fix into the next phase's PR loses bisect-ability and the fix dies in review noise. Pattern: one fix → one commit → one re-run → next phase. The fixup's brief is ~½ a normal phase brief (just the bug + verification command), and the cost beats discovering N+1 was built on a broken N.
+
+Validated 2026-06-02 on [claude-skills PR #149](https://github.com/sumrae412/claude-skills/pull/149) `off-market` — WPRDC server-side zip pushdown + comma-before-zip regex fixup between Phase 6 and Phase 7 took candidates surfaced from 0 to 4 on real 15217 data.
 
 ### 8. Introspect the live DB — don't read `schemas/` or `migrations/`
 
@@ -165,3 +190,6 @@ A few harness tools have invocation costs worth knowing about, since they don't 
 - **`Skill` tool re-emits the full skills list** as a system reminder on each invocation. The reminder block can be 5–10K tokens depending on the installed plugin set. Invoke `Skill` deliberately for a known target — don't probe-fire it to see what's available. When you're unsure which skill fits, invoke `skill-discovery` once and act on its output rather than calling `Skill` multiple times with guesses.
 - **Background `Agent` dispatches with `run_in_background: true`** keep the subagent's full JSONL transcript in a temp file the harness warns you not to `cat`. The completion notification carries the agent's final summary — that's the canonical record; don't try to re-read the transcript for "more detail."
 - **`AskUserQuestion`** is cheap on the user's end but each call breaks model flow. Batch related questions into one call (up to 4 questions) rather than firing sequentially.
+- **Idle MCP servers tax every message.** Each connected MCP server loads its full tool definitions into context on *every* message, used or not — one server can add ~17,600 tokens/message (Cursor-measured — a different harness than Claude Code, so the absolute number is illustrative-of-mechanism, not a Claude Code measurement; [source](https://medium.com/@grvharariya/cursor-token-optimization-a-data-driven-investigation-176ae06bb247)). Disable MCP servers you aren't using this session. The same study found ~97.9% of a typical request was context and only ~2.1% was the generated answer — context, not generation, is where the budget goes.
+- **Subagent fan-out costs ~7–10× a single-agent session** (same source) — an *architecture* cost separate from per-model price (each subagent re-pays its briefing + tool-discovery context). Fan out only when the work genuinely parallelizes or needs isolation, not as a reflex.
+- **Scoped tool definitions beat universal discovery tools — benchmarked.** CData's enterprise MCP benchmark ([source](https://www.cdata.com/blog/token-efficient-enterprise-claude-workflows)) measured a federated query dropping from 183,541 tokens ($0.596) to 4,427 tokens ($0.027) by replacing exploratory universal tools with a scoped custom tool — a 97.6% cut. Their ladder: custom tools 97.6% > scoped workspaces 93.6% > curated toolkits 91.1% > jobs/caching 89.2% > pre-joined views 77.7%. Root causes named: tool-definition overhead (~55k tokens for a 5-server setup) and schema bloat (70+ unused fields per tool). Vendor benchmark, but the mechanism is the same one Pattern 10 and the idle-MCP bullet above encode: the tool *surface* you expose, not the queries you run, dominates the bill. When designing an MCP integration or agent tool set, scope definitions to the fields and operations actually used.

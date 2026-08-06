@@ -29,5 +29,5 @@ Go up a layer of abstraction. Produce a map of all the relevant modules and call
 
 ## Pairs with
 
-- `/courierflow-core`, project CLAUDE.md, or a future `CONTEXT.md` glossary — supplies the vocabulary.
+- project CLAUDE.md or a `CONTEXT.md` glossary — supplies the vocabulary.
 - `smart-exploration` — for task-typed multi-subagent exploration. Use `zoom-out` for the lighter, single-shot orientation pass.
